@@ -1,0 +1,765 @@
+/*
+  NEXO GROUP - Inventario Smart
+  Puente Velo actualizado para Wix Data - DEBUG v6 con botón copiar debug en HTML
+
+  Página Wix:
+  - Debe existir un componente HTML / Embed con ID: inventoryHtml
+  - En código se usa como: $w("#inventoryHtml")
+
+  Colección principal:
+  - Nombre visual: Inventario Usuario
+  - Collection ID: UserInventory
+
+  Field keys confirmados:
+  - productName
+  - supplier
+  - presentation
+  - unidadCosto
+  - unitOfMeasure
+  - costPerUnit
+  - totalCost
+  - maxStock
+  - itemType
+  - productImage
+  - expira
+  - fechaMod
+
+  Nota:
+  - Este archivo es el código completo para pegar en el código Velo de la página.
+  - Compatible con HTML v10 Wix Bridge.
+  - DEBUG v6: Collection ID real UserInventory. No debe aparecer el nombre duplicado viejo en ninguna parte.
+  - Incluye respuesta de diagnóstico NEXO_HTML_READY y reintentos WIX_READY.
+*/
+
+import wixData from 'wix-data';
+
+const HTML_ID = "#inventoryHtml";
+
+const COLLECTIONS = {
+  items: "UserInventory",
+
+  /*
+    Revisa después el Collection ID real de "aviso vencimiento".
+    Si el ID interno es diferente, cambia este valor.
+  */
+  alerts: "aviso_vencimiento"
+};
+
+const FIELDS = {
+  productName: "productName",
+  supplier: "supplier",
+  presentation: "presentation",
+  unidadCosto: "unidadCosto",
+  unitOfMeasure: "unitOfMeasure",
+  costPerUnit: "costPerUnit",
+  totalCost: "totalCost",
+  maxStock: "maxStock",
+  itemType: "itemType",
+  productImage: "productImage",
+  expira: "expira",
+  fechaMod: "fechaMod"
+};
+
+/*
+  Estos field keys de aviso vencimiento son provisionales.
+  Cuando revisemos esa colección, los ajustamos si Wix usa otros nombres internos.
+*/
+const ALERT_FIELDS = {
+  productKey: "productKey",
+  productLabel: "productLabel",
+  diasAviso: "diasAviso",
+  updatedAt: "updatedAt"
+};
+
+$w.onReady(function () {
+  console.log("[NEXO/WIX] Página lista. Puente HTML ↔ Wix iniciado. DEBUG v6 UserInventory.");
+  sendDebug("info", "Página lista. Puente Velo iniciado.", {
+    htmlId: HTML_ID,
+    collection: COLLECTIONS.items,
+    alertsCollection: COLLECTIONS.alerts
+  });
+
+  $w(HTML_ID).onMessage(async (event) => {
+    let message = event.data;
+
+    if (typeof message === 'string') {
+      try {
+        message = JSON.parse(message);
+      } catch (error) {
+        console.warn("[NEXO/WIX] Mensaje string no JSON recibido:", message);
+      }
+    }
+
+    if (!message || !message.type) {
+      console.warn("[NEXO/WIX] Mensaje inválido recibido:", message);
+      return;
+    }
+
+    console.log("[NEXO/WIX] Mensaje recibido:", message.type, message.payload);
+    sendDebug("info", "Mensaje recibido desde HTML", {
+      type: message.type,
+      payload: message.payload || {}
+    });
+
+    try {
+      switch (message.type) {
+        case "NEXO_HTML_READY":
+          sendToHtml("WIX_READY", {
+            ok: true,
+            message: "Wix recibió el HTML. Puente activo. DEBUG v6 UserInventory."
+          });
+          await loadInventoryItems();
+          await loadExpirationAlerts();
+          break;
+
+        case "PING_WIX":
+          sendToHtml("PONG_WIX", {
+            ok: true,
+            message: "Conexión HTML ↔ Wix activa. DEBUG v6 UserInventory."
+          });
+          break;
+
+        case "LOAD_INVENTORIES":
+          await loadInventories();
+          break;
+
+        case "CREATE_INVENTORY":
+          await createInventoryNotReady();
+          break;
+
+        case "LOAD_INVENTORY_ITEMS":
+          await loadInventoryItems();
+          break;
+
+        case "SAVE_INVENTORY_ITEM":
+          await saveInventoryItem(message.payload);
+          break;
+
+        case "UPDATE_INVENTORY_ITEM":
+          await updateInventoryItem(message.payload);
+          break;
+
+        case "DELETE_INVENTORY_ITEM":
+          await deleteInventoryItem(message.payload);
+          break;
+
+        case "DUPLICATE_INVENTORY_ITEM":
+          await duplicateInventoryItem(message.payload);
+          break;
+
+        case "LOAD_EXPIRATION_ALERTS":
+          await loadExpirationAlerts();
+          break;
+
+        case "SAVE_EXPIRATION_ALERT":
+          await saveExpirationAlert(message.payload);
+          break;
+
+        default:
+          sendToHtml("ERROR", {
+            sourceType: message.type,
+            message: `Tipo de mensaje no reconocido: ${message.type}`
+          });
+      }
+    } catch (error) {
+      console.error("[NEXO/WIX] Error procesando mensaje:", error);
+      sendDebug("error", "Error procesando mensaje", {
+        type: message.type,
+        message: error.message,
+        stack: error.stack
+      });
+
+      sendToHtml("ERROR", {
+        sourceType: message.type,
+        message: error.message || "Error desconocido en Wix."
+      });
+    }
+  });
+
+  sendToHtml("WIX_READY", {
+    ok: true,
+    message: "Wix está listo para recibir mensajes del HTML."
+  });
+
+  // Reintentos por si el iframe todavía no terminó de cargar.
+  setTimeout(() => sendToHtml("WIX_READY", { ok: true, message: "Wix Bridge listo." }), 800);
+  setTimeout(() => sendToHtml("WIX_READY", { ok: true, message: "Wix Bridge listo. Reintento de conexión." }), 2200);
+});
+
+/* =========================================================
+   COMUNICACIÓN CON HTML
+========================================================= */
+
+function sendToHtml(type, payload = {}) {
+  $w(HTML_ID).postMessage({
+    type,
+    payload
+  });
+}
+
+function sendDebug(level, message, details = {}) {
+  const payload = {
+    source: "VELO",
+    level,
+    message,
+    details,
+    at: new Date().toISOString()
+  };
+
+  try {
+    $w(HTML_ID).postMessage({
+      type: "DEBUG_LOG",
+      payload
+    });
+  } catch (error) {
+    console.warn("[NEXO/WIX] No se pudo enviar DEBUG_LOG al HTML:", error);
+  }
+
+  if (level === "error") {
+    console.error("[NEXO/WIX/DEBUG]", message, details);
+  } else if (level === "warn") {
+    console.warn("[NEXO/WIX/DEBUG]", message, details);
+  } else {
+    console.log("[NEXO/WIX/DEBUG]", message, details);
+  }
+}
+
+/* =========================================================
+   INVENTARIOS
+   Por ahora usamos Inventario Usuario como inventario base.
+   Todavía no existe colección separada para inventarios guardados.
+========================================================= */
+
+async function loadInventories() {
+  sendDebug("info", "Enviando inventario base virtual", {});
+  sendToHtml("INVENTORIES_LOADED", {
+    items: [
+      {
+        _id: "base",
+        title: "Inventario Base",
+        inventoryKey: "base",
+        isBase: true
+      }
+    ]
+  });
+}
+
+async function createInventoryNotReady() {
+  sendToHtml("ERROR", {
+    sourceType: "CREATE_INVENTORY",
+    message: "Crear inventarios separados todavía requiere una colección adicional de inventarios. Por ahora Inventario Usuario funciona como inventario base."
+  });
+}
+
+/* =========================================================
+   CARGAR PRODUCTOS
+========================================================= */
+
+async function loadInventoryItems() {
+  sendDebug("info", "Consultando productos", {
+    collection: COLLECTIONS.items,
+    sortField: FIELDS.productName
+  });
+
+  const result = await wixData.query(COLLECTIONS.items)
+    .ascending(FIELDS.productName)
+    .limit(1000)
+    .find();
+
+  console.log("[NEXO/WIX] Productos encontrados:", result.items.length);
+  sendDebug("info", `Productos encontrados: ${result.items.length}`, {
+    collection: COLLECTIONS.items,
+    firstRawItem: result.items[0] || null
+  });
+
+  const htmlItems = result.items.map(fromWixInventoryItem);
+
+  sendToHtml("INVENTORY_ITEMS_LOADED", {
+    inventoryId: "base",
+    items: htmlItems,
+    rawItems: result.items
+  });
+}
+
+/* =========================================================
+   GUARDAR PRODUCTO NUEVO
+========================================================= */
+
+async function saveInventoryItem(payload = {}) {
+  sendDebug("info", "Guardando producto nuevo", payload);
+  const rawItem = payload.item || {};
+  const wixItem = toWixInventoryItem(rawItem);
+
+  const saved = await wixData.insert(COLLECTIONS.items, wixItem);
+
+  sendToHtml("ITEM_SAVED", {
+    item: fromWixInventoryItem(saved),
+    rawItem: saved
+  });
+
+  await loadInventoryItems();
+}
+
+/* =========================================================
+   MODIFICAR PRODUCTO EXISTENTE
+========================================================= */
+
+async function updateInventoryItem(payload = {}) {
+  sendDebug("info", "Modificando producto", payload);
+  const rawItem = payload.item || {};
+  const itemId = rawItem._id || payload.itemId;
+
+  if (!itemId) {
+    throw new Error("No se puede modificar el item porque falta _id.");
+  }
+
+  const existing = await wixData.get(COLLECTIONS.items, itemId);
+
+  const wixItem = {
+    ...existing,
+    ...toWixInventoryItem(rawItem),
+    _id: itemId
+  };
+
+  const updated = await wixData.update(COLLECTIONS.items, wixItem);
+
+  sendToHtml("ITEM_UPDATED", {
+    item: fromWixInventoryItem(updated),
+    rawItem: updated
+  });
+
+  await loadInventoryItems();
+}
+
+/* =========================================================
+   ELIMINAR PRODUCTO
+========================================================= */
+
+async function deleteInventoryItem(payload = {}) {
+  sendDebug("warn", "Eliminando producto", payload);
+  const itemId = payload.itemId || payload._id;
+
+  if (!itemId) {
+    throw new Error("No se puede eliminar porque falta itemId.");
+  }
+
+  const removed = await wixData.remove(COLLECTIONS.items, itemId);
+
+  sendToHtml("ITEM_DELETED", {
+    itemId,
+    item: fromWixInventoryItem(removed),
+    rawItem: removed
+  });
+
+  await loadInventoryItems();
+}
+
+/* =========================================================
+   DUPLICAR PRODUCTO
+========================================================= */
+
+async function duplicateInventoryItem(payload = {}) {
+  sendDebug("info", "Duplicando producto", payload);
+  const itemId = payload.itemId || payload._id;
+
+  if (!itemId) {
+    throw new Error("No se puede duplicar porque falta itemId.");
+  }
+
+  const original = await wixData.get(COLLECTIONS.items, itemId);
+
+  const duplicate = {
+    ...original
+  };
+
+  delete duplicate._id;
+  delete duplicate._createdDate;
+  delete duplicate._updatedDate;
+  delete duplicate._owner;
+
+  duplicate[FIELDS.fechaMod] = new Date();
+
+  const saved = await wixData.insert(COLLECTIONS.items, duplicate);
+
+  sendToHtml("ITEM_DUPLICATED", {
+    originalItem: fromWixInventoryItem(original),
+    item: fromWixInventoryItem(saved),
+    rawItem: saved
+  });
+
+  await loadInventoryItems();
+}
+
+/* =========================================================
+   AVISOS DE VENCIMIENTO
+========================================================= */
+
+async function loadExpirationAlerts() {
+  sendDebug("info", "Consultando avisos de vencimiento", { collection: COLLECTIONS.alerts });
+  try {
+    const result = await wixData.query(COLLECTIONS.alerts)
+      .limit(1000)
+      .find();
+
+    const alerts = result.items.map((item) => ({
+      _id: item._id,
+      productKey: item[ALERT_FIELDS.productKey],
+      productLabel: item[ALERT_FIELDS.productLabel],
+      diasAviso: item[ALERT_FIELDS.diasAviso],
+      updatedAt: serializeDate(item[ALERT_FIELDS.updatedAt])
+    }));
+
+    sendDebug("info", `Avisos de vencimiento encontrados: ${alerts.length}`, {
+      collection: COLLECTIONS.alerts,
+      firstAlert: result.items[0] || null
+    });
+
+    sendToHtml("EXPIRATION_ALERTS_LOADED", {
+      inventoryId: "base",
+      items: alerts,
+      rawItems: result.items
+    });
+  } catch (error) {
+    console.warn("[NEXO/WIX] No se pudieron cargar avisos de vencimiento:", error);
+    sendDebug("warn", "No se pudieron cargar avisos de vencimiento", {
+      collection: COLLECTIONS.alerts,
+      message: error.message,
+      stack: error.stack
+    });
+
+    sendToHtml("EXPIRATION_ALERTS_LOADED", {
+      inventoryId: "base",
+      items: [],
+      warning: "No se pudieron cargar avisos de vencimiento. Revisa el Collection ID y field keys de aviso vencimiento."
+    });
+  }
+}
+
+async function saveExpirationAlert(payload = {}) {
+  sendDebug("info", "Guardando aviso de vencimiento", payload);
+  const productLabel = cleanText(payload.productLabel);
+  const productKey = cleanText(payload.productKey) || makeKey(productLabel);
+  const diasAviso = Number(payload.diasAviso);
+
+  if (!productKey) {
+    throw new Error("No se puede guardar el aviso porque falta productKey.");
+  }
+
+  if (!Number.isFinite(diasAviso) || diasAviso < 0) {
+    throw new Error("Los días de aviso deben ser un número válido.");
+  }
+
+  const existing = await wixData.query(COLLECTIONS.alerts)
+    .eq(ALERT_FIELDS.productKey, productKey)
+    .limit(1)
+    .find();
+
+  const alertItem = {
+    [ALERT_FIELDS.productKey]: productKey,
+    [ALERT_FIELDS.productLabel]: productLabel || productKey,
+    [ALERT_FIELDS.diasAviso]: diasAviso,
+    [ALERT_FIELDS.updatedAt]: new Date()
+  };
+
+  let saved;
+
+  if (existing.items.length > 0) {
+    saved = await wixData.update(COLLECTIONS.alerts, {
+      ...existing.items[0],
+      ...alertItem
+    });
+  } else {
+    saved = await wixData.insert(COLLECTIONS.alerts, alertItem);
+  }
+
+  sendToHtml("EXPIRATION_ALERT_SAVED", {
+    item: {
+      _id: saved._id,
+      productKey: saved[ALERT_FIELDS.productKey],
+      productLabel: saved[ALERT_FIELDS.productLabel],
+      diasAviso: saved[ALERT_FIELDS.diasAviso],
+      updatedAt: serializeDate(saved[ALERT_FIELDS.updatedAt])
+    },
+    rawItem: saved
+  });
+
+  await loadExpirationAlerts();
+}
+
+/* =========================================================
+   CONVERTIR ITEM WIX → ITEM HTML
+========================================================= */
+
+function fromWixInventoryItem(wixItem = {}) {
+  return {
+    _id: wixItem._id,
+
+    productName: wixItem[FIELDS.productName] || "",
+    supplier: wixItem[FIELDS.supplier] || "",
+
+    presentation: toNumber(wixItem[FIELDS.presentation]),
+    unidadCosto: wixItem[FIELDS.unidadCosto] || "",
+    unitOfMeasure: wixItem[FIELDS.unitOfMeasure] || "",
+
+    costPerUnit: toNumber(wixItem[FIELDS.costPerUnit]),
+    totalCost: toNumber(wixItem[FIELDS.totalCost]),
+
+    /*
+      Tu colección tiene maxStock.
+      Por ahora lo usamos como stock visible y stock máximo.
+      Si después quieres stock actual separado, agregamos un campo nuevo.
+    */
+    stock: toNumber(wixItem[FIELDS.maxStock]),
+    maxStock: toNumber(wixItem[FIELDS.maxStock]),
+
+    itemType: wixItem[FIELDS.itemType] || "INSUMO",
+    productImage: wixItem[FIELDS.productImage] || null,
+
+    expira: serializeDate(wixItem[FIELDS.expira]),
+    fechaMod: serializeDate(wixItem[FIELDS.fechaMod]),
+
+    inventoryId: "base",
+    notes: ""
+  };
+}
+
+/* =========================================================
+   CONVERTIR ITEM HTML → ITEM WIX
+========================================================= */
+
+function toWixInventoryItem(rawItem = {}) {
+  const productName = cleanText(
+    rawItem.productName ||
+    rawItem[FIELDS.productName]
+  );
+
+  const supplier = cleanText(
+    rawItem.supplier ||
+    rawItem[FIELDS.supplier]
+  );
+
+  const presentation = toNumber(
+    rawItem.presentation ||
+    rawItem[FIELDS.presentation]
+  );
+
+  const unitOfMeasure = cleanText(
+    rawItem.unitOfMeasure ||
+    rawItem[FIELDS.unitOfMeasure]
+  );
+
+  const unidadCosto = cleanText(
+    rawItem.unidadCosto ||
+    rawItem[FIELDS.unidadCosto] ||
+    getBaseUnit(unitOfMeasure)
+  );
+
+  const totalCost = toNumber(
+    rawItem.totalCost ||
+    rawItem[FIELDS.totalCost]
+  );
+
+  const maxStock = toNumber(
+    rawItem.maxStock ||
+    rawItem.stock ||
+    rawItem[FIELDS.maxStock]
+  );
+
+  const itemType = cleanText(
+    rawItem.itemType ||
+    rawItem[FIELDS.itemType]
+  ) || "INSUMO";
+
+  const productImage = rawItem.productImage || rawItem[FIELDS.productImage] || null;
+
+  const costPerUnit = calculateCostPerUnit({
+    presentation,
+    unitOfMeasure,
+    unidadCosto,
+    totalCost
+  });
+
+  const wixItem = {
+    [FIELDS.productName]: productName,
+    [FIELDS.supplier]: supplier,
+    [FIELDS.presentation]: presentation,
+    [FIELDS.unidadCosto]: unidadCosto,
+    [FIELDS.unitOfMeasure]: unitOfMeasure,
+    [FIELDS.costPerUnit]: costPerUnit,
+    [FIELDS.totalCost]: totalCost,
+    [FIELDS.maxStock]: maxStock,
+    [FIELDS.itemType]: itemType,
+    [FIELDS.expira]: parseDateOrNull(rawItem.expira || rawItem[FIELDS.expira]),
+    [FIELDS.fechaMod]: new Date()
+  };
+
+  if (productImage) {
+    wixItem[FIELDS.productImage] = productImage;
+  }
+
+  return wixItem;
+}
+
+/* =========================================================
+   CÁLCULO DE COSTO POR UNIDAD
+========================================================= */
+
+function calculateCostPerUnit({ presentation, unitOfMeasure, unidadCosto, totalCost }) {
+  if (!presentation || !totalCost || !unitOfMeasure) {
+    return null;
+  }
+
+  const comparableAmount = convertUnitAmount(presentation, unitOfMeasure, unidadCosto);
+
+  if (!comparableAmount || comparableAmount <= 0) {
+    return null;
+  }
+
+  return Number((totalCost / comparableAmount).toFixed(6));
+}
+
+function convertUnitAmount(amount, fromUnit, toUnit) {
+  const from = normalizeUnit(fromUnit);
+  const to = normalizeUnit(toUnit || getBaseUnit(fromUnit));
+
+  if (!amount || !from) {
+    return null;
+  }
+
+  if (!to || from === to) {
+    return amount;
+  }
+
+  const units = {
+    g: { group: "weight", factorToBase: 1 },
+    kg: { group: "weight", factorToBase: 1000 },
+    lb: { group: "weight", factorToBase: 453.59237 },
+    oz: { group: "weight", factorToBase: 28.349523125 },
+
+    ml: { group: "volume", factorToBase: 1 },
+    l: { group: "volume", factorToBase: 1000 },
+    lt: { group: "volume", factorToBase: 1000 },
+    litro: { group: "volume", factorToBase: 1000 },
+    liter: { group: "volume", factorToBase: 1000 },
+
+    unidad: { group: "unit", factorToBase: 1 },
+    unidades: { group: "unit", factorToBase: 1 },
+    unit: { group: "unit", factorToBase: 1 },
+    docena: { group: "unit", factorToBase: 12 },
+    dozen: { group: "unit", factorToBase: 12 }
+  };
+
+  const fromRule = units[from];
+  const toRule = units[to];
+
+  if (!fromRule) {
+    return amount;
+  }
+
+  if (!toRule) {
+    return amount * fromRule.factorToBase;
+  }
+
+  if (fromRule.group !== toRule.group) {
+    return amount;
+  }
+
+  const amountInBase = amount * fromRule.factorToBase;
+  return amountInBase / toRule.factorToBase;
+}
+
+function getBaseUnit(unit) {
+  const value = normalizeUnit(unit);
+
+  if (["kg", "g", "lb", "oz"].includes(value)) {
+    return "g";
+  }
+
+  if (["l", "lt", "litro", "liter", "ml"].includes(value)) {
+    return "ml";
+  }
+
+  if (["unidad", "unidades", "unit", "docena", "dozen"].includes(value)) {
+    return "unidad";
+  }
+
+  return value || "";
+}
+
+/* =========================================================
+   UTILIDADES
+========================================================= */
+
+function cleanText(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value).trim();
+}
+
+function normalizeUnit(value) {
+  return cleanText(value)
+    .toLowerCase()
+    .replace(".", "");
+}
+
+function toNumber(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  return number;
+}
+
+function parseDateOrNull(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  /*
+    Algunos registros antiguos pueden venir como texto con comillas.
+    Ejemplo: "2026-05-01T05:00:00.000Z"
+  */
+  const cleaned = cleanText(value).replace(/^"+|"+$/g, "");
+  const date = new Date(cleaned);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
+function serializeDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  const parsed = parseDateOrNull(value);
+
+  if (!parsed) {
+    return "";
+  }
+
+  return parsed.toISOString();
+}
+
+function makeKey(value) {
+  return cleanText(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
