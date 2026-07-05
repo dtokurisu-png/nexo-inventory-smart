@@ -1,8 +1,8 @@
-# Nexo Inventory GitHub Pages v36
+# Nexo Inventory GitHub Pages v39 Raster Pickers
 
-Cambios:
-- Acciones de inventario salen del modal y quedan como pestañas/botones inline sobre la lista de productos.
-- El botón superior de Acciones inventario fue reemplazado por Acciones FT.
-- Acciones FT contiene Ver FT y Agregar a FT.
-- Crear inventario, Cambiar inventario y Guardar/recargar quedan visibles junto al inventario activo.
-- Agregar producto existente y Mover a otro inventario se mantienen como acciones contextuales.
+Cambios principales:
+- Reemplazo de iconos vectoriales del selector de icono descriptivo por iconos rasterizados estilo emoji.
+- Generación de imágenes base para todas las opciones que antes estaban como emoji/placeholders en "Elegir imagen base".
+- Se conserva la lógica de modales en cascada de Crear inventario.
+- Se mantiene la estructura FT inline (Agregar a FT / Ver FT).
+- Entrega preparada para GitHub Pages en `index.html`.
