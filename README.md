@@ -1,9 +1,10 @@
-# NEXO Inventory Smart - v22 responsive + dropdown align
+# Nexo Inventory Smart v23
 
-Cambios principales:
-- Tablet sube textos a rango aproximado 15-18px.
-- Móvil sube textos a rango aproximado 10-12px.
-- Organizar y Filtrar abren el desplegable en el mismo marco: desde el borde izquierdo de Organizar hasta el borde derecho de Filtrar.
-- Mantiene iconos SVG en assets/icons.
+Cambios:
+- Organizar y Filtrar se marcan en naranja mientras su desplegable está abierto.
+- Panel lateral derecho en desktop con título blanco y bloques azul oscuro.
+- Se conserva carpeta assets/icons para GitHub Pages.
 
-Para GitHub Pages: subir index.html y la carpeta assets completa.
+Subir a GitHub Pages:
+- Reemplazar `index.html`.
+- Mantener `assets/icons/`.

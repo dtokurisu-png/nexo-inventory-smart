@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexo Inventory MVP v20 Dropdowns limpios</title>
+  <title>Nexo Inventory MVP v23 Dropdown activo + panel</title>
   <style>
     :root{
       --blue:#2f4f93;
@@ -1104,6 +1104,56 @@
       .confirmBox{width:min(330px,92vw)!important;min-height:120px!important;padding:13px!important;grid-template-columns:42px 1fr!important;border-radius:14px!important}
       .confirmIcon{width:40px!important;height:40px!important;border-radius:11px!important}.confirmIcon img{width:29px!important;height:29px!important}
       .confirmText{font-size:12px!important}.confirmSubText{font-size:10px!important}.confirmActions button{font-size:10px!important;padding:7px 10px!important;border-radius:8px!important}.confirmSuccessText{font-size:12px!important}
+    }
+
+  
+
+    /* v23: estado activo para desplegables + panel lateral más legible */
+    #sortBtn.dropdownActive,
+    #filterBtn.dropdownActive,
+    #mobileSortBtn.dropdownActive,
+    #mobileFilterBtn.dropdownActive{
+      background:var(--orange)!important;
+      color:#17151a!important;
+      border-color:rgba(20,20,25,.55)!important;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.18), 0 0 14px rgba(231,144,105,.18);
+    }
+    #sortBtn.dropdownActive .svgIcon img,
+    #filterBtn.dropdownActive .svgIcon img,
+    #mobileSortBtn.dropdownActive .svgIcon img,
+    #mobileFilterBtn.dropdownActive .svgIcon img{
+      filter:brightness(.2) saturate(1.2);
+    }
+
+    @media (min-width:1181px){
+      .sidePanel h3{
+        color:#ffffff!important;
+        text-shadow:0 1px 2px rgba(0,0,0,.25);
+      }
+      .sideResultBlock{
+        background:#1f233a!important;
+        color:#ffffff;
+        border-color:rgba(255,255,255,.26)!important;
+        box-shadow:0 8px 18px rgba(0,0,0,.18);
+      }
+      .sideResultBlock h4{
+        color:#ffffff!important;
+      }
+      .sideResultBlock .resultGrid{
+        background:rgba(255,255,255,.76);
+        color:#111827;
+        border:1px solid rgba(255,255,255,.25);
+        border-radius:8px;
+        padding:7px;
+      }
+      .sideResultBlock .compareNote{
+        background:rgba(255,255,255,.76);
+        color:#273654;
+      }
+      .sideResultBlock .noticeControl label,
+      .sideResultBlock .noticeHint{
+        color:#eef3ff;
+      }
     }
 
   </style>
@@ -2622,10 +2672,18 @@
       modal.classList.add('show');
     }
 
+    function clearDropdownActiveButtons(){
+      ['sortBtn','filterBtn','mobileSortBtn','mobileFilterBtn'].forEach(id => {
+        const btn = $(id);
+        if(btn) btn.classList.remove('dropdownActive');
+      });
+    }
+
     function closeModal(){
       const modal = $('modal');
       const card = modal.querySelector('.modalCard');
       modal.classList.remove('show','dropdownMode');
+      clearDropdownActiveButtons();
       card.style.left = '';
       card.style.top = '';
       card.style.width = '';
@@ -2638,6 +2696,15 @@
       $('modalTitle').textContent = title;
       $('modalContent').innerHTML = html;
       modal.classList.add('dropdownMode','show');
+      clearDropdownActiveButtons();
+      if(anchorId === 'sortBtn' || anchorId === 'mobileSortBtn'){
+        const btn = $(anchorId);
+        if(btn) btn.classList.add('dropdownActive');
+      }
+      if(anchorId === 'filterBtn' || anchorId === 'mobileFilterBtn'){
+        const btn = $(anchorId);
+        if(btn) btn.classList.add('dropdownActive');
+      }
 
       const sortBtn = $('sortBtn');
       const filterBtn = $('filterBtn');
