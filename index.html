@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexo Inventory MVP v25 Vencimiento + modo desplegable</title>
+  <title>Nexo Inventory MVP v29 Iconos armonizados con paleta</title>
   <style>
     :root{
       --blue:#2f4f93;
@@ -1198,7 +1198,7 @@
       border-color:rgba(20,20,25,.55)!important;
       box-shadow:inset 0 0 0 1px rgba(0,0,0,.18), 0 0 14px rgba(231,144,105,.18);
     }
-    /* v24: los iconos conservan sus colores originales, sin recolorear por estado activo. */
+    /* v29: iconos armonizados por contexto para respetar la paleta sobre fondos oscuros. */
 
     @media (min-width:1181px){
       .sidePanel h3{
@@ -1249,8 +1249,8 @@
   <main class="app">
     <section class="toolbarRow">
       <div class="toolGroup">
-        <button class="toolBtn" id="sortBtn"><span>Organizar</span><span class="ico svgIcon"><img src="assets/icons/organize.svg" alt="" aria-hidden="true"></span></button>
-        <button class="toolBtn" id="filterBtn"><span>Filtrar</span><span class="ico svgIcon"><img src="assets/icons/filter.svg" alt="" aria-hidden="true"></span></button>
+        <button class="toolBtn" id="sortBtn"><span>Organizar</span><span class="ico svgIcon"><img src="assets/icons/organize-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button class="toolBtn" id="filterBtn"><span>Filtrar</span><span class="ico svgIcon"><img src="assets/icons/filter-blue.svg" alt="" aria-hidden="true"></span></button>
       </div>
       <div class="searchWrap"><input id="searchInput" class="search" type="search" placeholder="buscar un producto" autocomplete="off"><div class="magnifier">🔎</div><div id="searchSuggestions" class="searchSuggestions" aria-label="Sugerencias de productos"></div></div>
     </section>
@@ -1261,17 +1261,17 @@
         <input id="supplier" placeholder="Proveedor" autocomplete="off"><input id="productName" placeholder="Nombre de producto" autocomplete="off"><input id="presentation" type="number" min="0" step="any" placeholder="Presentacion"><button id="unitSelectBtn" class="unitPickerBtn" type="button">Seleccionar modo</button><input id="unit" type="hidden"><input id="stock" type="number" min="0" step="any" placeholder="En Stock"><input id="totalCost" type="number" min="0" step="any" placeholder="CostoTotal"><input id="unitCost" class="calculated" readonly placeholder="Costo por Unidad"><input id="expires" type="date" placeholder="Expira">
       </div>
       <div class="actionBar">
-        <button id="desktopInventoryActionsBtn" class="actionHub" type="button"><span>Acciones inventario</span><span class="ico svgIcon"><img src="assets/icons/action-hub.svg" alt="" aria-hidden="true"></span></button>
-        <button id="duplicateProduct" type="button"><span>Duplicar producto</span><span class="ico svgIcon"><img src="assets/icons/copy.svg" alt="" aria-hidden="true"></span></button>
-        <button id="deleteProduct" type="button"><span>Eliminar producto</span><span class="ico svgIcon"><img src="assets/icons/delete.svg" alt="" aria-hidden="true"></span></button>
-        <button id="clearEditor" type="button"><span>Limpiar editor</span><span class="ico svgIcon"><img src="assets/icons/clean.svg" alt="" aria-hidden="true"></span></button>
-        <button id="exportBtn" type="button"><span>Agregar a lista</span><span class="ico svgIcon"><img src="assets/icons/add-inventory.svg" alt="" aria-hidden="true"></span></button>
-        <button id="modifyItem" type="button"><span>Modificar item</span><span class="ico svgIcon"><img src="assets/icons/edit.svg" alt="" aria-hidden="true"></span></button>
+        <button id="desktopInventoryActionsBtn" class="actionHub" type="button"><span>Acciones inventario</span><span class="ico svgIcon"><img src="assets/icons/action-hub-green.svg" alt="" aria-hidden="true"></span></button>
+        <button id="duplicateProduct" type="button"><span>Duplicar producto</span><span class="ico svgIcon"><img src="assets/icons/copy-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button id="deleteProduct" type="button"><span>Eliminar producto</span><span class="ico svgIcon"><img src="assets/icons/delete-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button id="clearEditor" type="button"><span>Limpiar editor</span><span class="ico svgIcon"><img src="assets/icons/clean-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button id="exportBtn" type="button"><span>Agregar a lista</span><span class="ico svgIcon"><img src="assets/icons/add-inventory-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button id="modifyItem" type="button"><span>Modificar item</span><span class="ico svgIcon"><img src="assets/icons/edit-blue.svg" alt="" aria-hidden="true"></span></button>
 
         <!-- Botones legado ocultos: mantienen compatibilidad con funciones/eventos existentes. -->
-        <button id="addToFT" class="legacyActionHidden" type="button"><span>Agregar a FT</span><span class="ico svgIcon"><img src="assets/icons/ft.svg" alt="" aria-hidden="true"></span></button>
-        <button id="addToInventory" class="legacyActionHidden" type="button"><span>Añadir a inventario</span><span class="ico svgIcon"><img src="assets/icons/add-inventory.svg" alt="" aria-hidden="true"></span></button>
-        <button id="saveInventory" class="legacyActionHidden" type="button"><span>Guardar inventario</span><span class="ico svgIcon"><img src="assets/icons/action-hub.svg" alt="" aria-hidden="true"></span></button>
+        <button id="addToFT" class="legacyActionHidden" type="button"><span>Agregar a FT</span><span class="ico svgIcon"><img src="assets/icons/ft-orange.svg" alt="" aria-hidden="true"></span></button>
+        <button id="addToInventory" class="legacyActionHidden" type="button"><span>Añadir a inventario</span><span class="ico svgIcon"><img src="assets/icons/add-inventory-green.svg" alt="" aria-hidden="true"></span></button>
+        <button id="saveInventory" class="legacyActionHidden" type="button"><span>Guardar inventario</span><span class="ico svgIcon"><img src="assets/icons/action-hub-green.svg" alt="" aria-hidden="true"></span></button>
       </div>
     </section>
 
@@ -1286,14 +1286,14 @@
       </div>
       <div id="mobileInventoryMenu" class="mobileDropdown" aria-label="Menú de acciones de inventario">
         <div class="mobileSearchBox"><input id="mobileSearchInput" type="search" placeholder="buscar producto" autocomplete="off"><div id="mobileSearchSuggestions" class="searchSuggestions" aria-label="Sugerencias de productos móvil"></div></div>
-        <button id="mobileAddToFT" type="button"><span>Agregar FT</span><span class="ico svgIcon"><img src="assets/icons/ft.svg" alt="" aria-hidden="true"></span></button>
-        <button id="mobileReloadInventory" type="button"><span>Guardar/recargar</span><span class="ico svgIcon"><img src="assets/icons/action-hub.svg" alt="" aria-hidden="true"></span></button>
-        <button id="mobileViewFT" type="button"><span>Ver FT</span><span class="ico svgIcon"><img src="assets/icons/ft.svg" alt="" aria-hidden="true"></span></button>
-        <button id="mobileChangeInv" type="button"><span>Cambiar inventario</span><span class="ico svgIcon"><img src="assets/icons/organize.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileAddToFT" type="button"><span>Agregar FT</span><span class="ico svgIcon"><img src="assets/icons/ft-orange.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileReloadInventory" type="button"><span>Guardar/recargar</span><span class="ico svgIcon"><img src="assets/icons/action-hub-green.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileViewFT" type="button"><span>Ver FT</span><span class="ico svgIcon"><img src="assets/icons/ft-orange.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileChangeInv" type="button"><span>Cambiar inventario</span><span class="ico svgIcon"><img src="assets/icons/organize-green.svg" alt="" aria-hidden="true"></span></button>
       </div>
       <div id="mobileViewMenu" class="mobileDropdown" aria-label="Menú de vista y filtros">
-        <button id="mobileSortBtn" type="button"><span>Organizar</span><span class="ico svgIcon"><img src="assets/icons/organize.svg" alt="" aria-hidden="true"></span></button>
-        <button id="mobileFilterBtn" type="button"><span>Filtrar</span><span class="ico svgIcon"><img src="assets/icons/filter.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileSortBtn" type="button"><span>Organizar</span><span class="ico svgIcon"><img src="assets/icons/organize-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileFilterBtn" type="button"><span>Filtrar</span><span class="ico svgIcon"><img src="assets/icons/filter-blue.svg" alt="" aria-hidden="true"></span></button>
       </div>
     </section>
 
@@ -1345,9 +1345,9 @@
     <div id="mobileProductActions" class="mobileProductActions" aria-label="Opciones del producto seleccionado">
       <button id="mobileProductToggle" class="mobileProductToggle" type="button">›</button>
       <div class="mobileProductMenu">
-        <button id="mobileDuplicateProduct" type="button"><span>Duplicar</span><span class="ico svgIcon"><img src="assets/icons/copy.svg" alt="" aria-hidden="true"></span></button>
-        <button id="mobileDeleteProduct" class="danger" type="button"><span>Eliminar</span><span class="ico svgIcon"><img src="assets/icons/delete.svg" alt="" aria-hidden="true"></span></button>
-        <button id="mobileModifyProduct" class="update" type="button"><span>Modificar</span><span class="ico svgIcon"><img src="assets/icons/edit.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileDuplicateProduct" type="button"><span>Duplicar</span><span class="ico svgIcon"><img src="assets/icons/copy-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileDeleteProduct" class="danger" type="button"><span>Eliminar</span><span class="ico svgIcon"><img src="assets/icons/delete-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileModifyProduct" class="update" type="button"><span>Modificar</span><span class="ico svgIcon"><img src="assets/icons/edit-blue.svg" alt="" aria-hidden="true"></span></button>
       </div>
     </div>
   </main>
@@ -1422,22 +1422,83 @@
     const ACTIVE_INVENTORY_ID = 'base';
 
     const ICON_PATHS = {
-      add: 'assets/icons/add-inventory.svg',
-      copy: 'assets/icons/copy.svg',
-      delete: 'assets/icons/delete.svg',
-      edit: 'assets/icons/edit.svg',
-      clean: 'assets/icons/clean.svg',
-      filter: 'assets/icons/filter.svg',
-      organize: 'assets/icons/organize.svg',
-      sort: 'assets/icons/sort.svg',
-      measure: 'assets/icons/measure.svg',
-      ft: 'assets/icons/ft.svg',
-      action: 'assets/icons/action-hub.svg'
+      add: {
+        base: 'assets/icons/add-inventory.svg',
+        blue: 'assets/icons/add-inventory-blue.svg',
+        green: 'assets/icons/add-inventory-green.svg',
+        orange: 'assets/icons/add-inventory-orange.svg'
+      },
+      copy: {
+        base: 'assets/icons/copy.svg',
+        blue: 'assets/icons/copy-blue.svg',
+        green: 'assets/icons/copy-green.svg',
+        orange: 'assets/icons/copy-orange.svg'
+      },
+      delete: {
+        base: 'assets/icons/delete.svg',
+        blue: 'assets/icons/delete-blue.svg',
+        green: 'assets/icons/delete-green.svg',
+        orange: 'assets/icons/delete-orange.svg'
+      },
+      edit: {
+        base: 'assets/icons/edit.svg',
+        blue: 'assets/icons/edit-blue.svg',
+        green: 'assets/icons/edit-green.svg',
+        orange: 'assets/icons/edit-orange.svg'
+      },
+      clean: {
+        base: 'assets/icons/clean.svg',
+        blue: 'assets/icons/clean-blue.svg',
+        green: 'assets/icons/clean-green.svg',
+        orange: 'assets/icons/clean-orange.svg'
+      },
+      filter: {
+        base: 'assets/icons/filter.svg',
+        blue: 'assets/icons/filter-blue.svg',
+        green: 'assets/icons/filter-green.svg',
+        orange: 'assets/icons/filter-orange.svg'
+      },
+      organize: {
+        base: 'assets/icons/organize.svg',
+        blue: 'assets/icons/organize-blue.svg',
+        green: 'assets/icons/organize-green.svg',
+        orange: 'assets/icons/organize-orange.svg'
+      },
+      sort: {
+        base: 'assets/icons/sort.svg',
+        blue: 'assets/icons/sort-blue.svg',
+        green: 'assets/icons/sort-green.svg',
+        orange: 'assets/icons/sort-orange.svg'
+      },
+      measure: {
+        base: 'assets/icons/measure.svg',
+        blue: 'assets/icons/measure-blue.svg',
+        green: 'assets/icons/measure-green.svg',
+        orange: 'assets/icons/measure-orange.svg'
+      },
+      ft: {
+        base: 'assets/icons/ft.svg',
+        blue: 'assets/icons/ft-blue.svg',
+        green: 'assets/icons/ft-green.svg',
+        orange: 'assets/icons/ft-orange.svg'
+      },
+      action: {
+        base: 'assets/icons/action-hub.svg',
+        blue: 'assets/icons/action-hub-blue.svg',
+        green: 'assets/icons/action-hub-green.svg',
+        orange: 'assets/icons/action-hub-orange.svg'
+      }
     };
 
-    function iconMarkup(key, extraClass=''){
-      const src = ICON_PATHS[key] || ICON_PATHS.action;
-      return `<span class="svgIcon ${extraClass}"><img src="${src}" alt="" aria-hidden="true"></span>`;
+    function getIconPath(key, variant='base'){
+      const bank = ICON_PATHS[key] || ICON_PATHS.action;
+      return bank[variant] || bank.base || ICON_PATHS.action.base;
+    }
+
+    function iconMarkup(key, variant='base', extraClass=''){
+      const src = getIconPath(key, variant);
+      const cls = [extraClass, variant !== 'base' ? `icon-${variant}` : ''].filter(Boolean).join(' ');
+      return `<span class="svgIcon ${cls}"><img src="${src}" alt="" aria-hidden="true"></span>`;
     }
 
     let pendingConfirmAction = null;
@@ -1726,7 +1787,7 @@
         key:'unitCost',
         label:'Costo por unidad',
         getValue:p => `${Number(p.unitCost || 0).toFixed(6)}|${cleanFilterValue(p.baseUnit)}`,
-        getLabel:p => `${fmtMoney(p.unitCost)} / ${getUnitShortLabel(p.baseUnit) || p.baseUnit || ''}`.trim()
+        getLabel:p => `${fmtUnitCost(p.unitCost)} / ${getUnitShortLabel(p.baseUnit) || p.baseUnit || ''}`.trim()
       },
       {
         key:'expires',
@@ -1941,6 +2002,7 @@
     function uid(){ return 'px_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
     function nowDate(){ return new Date().toISOString().slice(0,10); }
     function fmtMoney(v){ const n = Number(v); return Number.isFinite(n) ? n.toFixed(4).replace(/\.0000$/,'') : ''; }
+    function fmtUnitCost(v){ const n = Number(v); return Number.isFinite(n) ? n.toFixed(2) : ''; }
     function escapeHtml(str){ return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
     function showMessage(text){
@@ -2187,7 +2249,7 @@
       if(!qty || !cost || !rule) return {value:0, label:''};
       const baseQty = qty * rule.factor;
       const value = cost / baseQty;
-      return {value, label: fmtMoney(value) + ' / ' + getUnitShortLabel(rule.base)};
+      return {value, label: fmtUnitCost(value) + ' / ' + getUnitShortLabel(rule.base)};
     }
     function calculateUnitCost(){
       const c = calcCost($('presentation').value, $('unit').value, $('totalCost').value);
@@ -2264,17 +2326,32 @@
       const editBtn = $('modifyItem');
 
       if(editorMode === 'update'){
-        if(addBtn) addBtn.innerHTML = '<span>Guardar cambios</span>'+iconMarkup('edit');
-        if(hubBtn) hubBtn.innerHTML = '<span>Acciones inventario</span>'+iconMarkup('action');
-        if(listBtn) listBtn.innerHTML = '<span>Guardar cambios</span>'+iconMarkup('edit');
-        if(editBtn) editBtn.innerHTML = '<span>Editando item</span>'+iconMarkup('edit');
+        if(addBtn) addBtn.innerHTML = '<span>Guardar cambios</span>'+iconMarkup('edit','blue');
+        if(hubBtn) hubBtn.innerHTML = '<span>Acciones inventario</span>'+iconMarkup('action','green');
+        if(listBtn) listBtn.innerHTML = '<span>Guardar cambios</span>'+iconMarkup('edit','blue');
+        if(editBtn) editBtn.innerHTML = '<span>Editando item</span>'+iconMarkup('edit','blue');
         if(announce) showMessage('Modo edición activo. Ajusta los datos arriba y presiona Guardar cambios.');
       }else{
-        if(addBtn) addBtn.innerHTML = '<span>Añadir a inventario</span>'+iconMarkup('add');
-        if(hubBtn) hubBtn.innerHTML = '<span>Acciones inventario</span>'+iconMarkup('action');
-        if(listBtn) listBtn.innerHTML = '<span>Agregar a lista</span>'+iconMarkup('add');
-        if(editBtn) editBtn.innerHTML = '<span>Modificar item</span>'+iconMarkup('edit');
+        if(addBtn) addBtn.innerHTML = '<span>Añadir a inventario</span>'+iconMarkup('add','green');
+        if(hubBtn) hubBtn.innerHTML = '<span>Acciones inventario</span>'+iconMarkup('action','green');
+        if(listBtn) listBtn.innerHTML = '<span>Agregar a lista</span>'+iconMarkup('add','blue');
+        if(editBtn) editBtn.innerHTML = '<span>Modificar item</span>'+iconMarkup('edit','blue');
       }
+    }
+
+    function scrollEditorPanelIntoView(){
+      const panel = document.querySelector('.editorShell');
+      if(!panel) return;
+      requestAnimationFrame(() => {
+        panel.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+        setTimeout(() => {
+          const firstInput = $('supplier');
+          if(firstInput && typeof firstInput.focus === 'function'){
+            try{ firstInput.focus({ preventScroll:true }); }
+            catch(error){ firstInput.focus(); }
+          }
+        }, 260);
+      });
     }
 
     function startDesktopEdit(){
@@ -2283,8 +2360,8 @@
       if(!selected){ showMessage('No encuentro el producto seleccionado. Recarga el inventario.'); return; }
       fillForm(selected);
       setEditorMode('update', selected.id, true);
-      pendingFoilId = selected.id;
       render();
+      scrollEditorPanelIntoView();
     }
 
     /* =========================================================
@@ -2513,7 +2590,7 @@
       box.innerHTML = suggestions.map(product => `
         <button type="button" class="searchSuggestionItem" data-search-id="${escapeHtml(product.id)}">
           <span class="searchSugName">${escapeHtml(product.productName)}</span>
-          <span class="searchSugCost">${fmtMoney(product.unitCost)} / ${escapeHtml(getUnitShortLabel(product.baseUnit) || '')}</span>
+          <span class="searchSugCost">${fmtUnitCost(product.unitCost)} / ${escapeHtml(getUnitShortLabel(product.baseUnit) || '')}</span>
         </button>`).join('');
       box.classList.add('show');
       box.querySelectorAll('[data-search-id]').forEach(btn => {
@@ -2584,7 +2661,7 @@
           <div class="cell">${escapeHtml(getUnitLabel(p.unit) || '')}</div>
           <div class="cell">${p.stock ?? ''}</div>
           <div class="cell">${fmtMoney(p.totalCost)}</div>
-          <div class="cell">${fmtMoney(p.unitCost)} / ${escapeHtml(getUnitShortLabel(p.baseUnit) || '')}</div>
+          <div class="cell">${fmtUnitCost(p.unitCost)} / ${escapeHtml(getUnitShortLabel(p.baseUnit) || '')}</div>
           <div class="cell">${escapeHtml(p.expires || '')}</div>
           <div class="cell">${escapeHtml(p.modifiedAt || '')}</div>
         </div>`).join('');
@@ -2641,7 +2718,7 @@
         <div class="pair"><span class="k">Proveedor</span><span class="v">${escapeHtml(product.supplier)}</span></div>
         <div class="pair"><span class="k">Producto</span><span class="v">${escapeHtml(product.productName)}</span></div>
         <div class="pair"><span class="k">Presentación</span><span class="v">${escapeHtml(product.presentation)} ${escapeHtml(product.unit)}</span></div>
-        <div class="pair"><span class="k">Costo unidad</span><span class="v priceValue ${colorClass}">${fmtMoney(product.unitCost)} / ${escapeHtml(getUnitShortLabel(product.baseUnit) || '')}</span></div>`;
+        <div class="pair"><span class="k">Costo unidad</span><span class="v priceValue ${colorClass}">${fmtUnitCost(product.unitCost)} / ${escapeHtml(getUnitShortLabel(product.baseUnit) || '')}</span></div>`;
     }
 
     function updateSidePanel(){
@@ -2685,7 +2762,7 @@
       $('worstResultBlock').dataset.productId = worst.id;
       const diff = Number(worst.unitCost) - Number(best.unitCost);
       $('bestResult').innerHTML = productResultHtml(best, 'greenText') + `<div class="compareNote">Mejor rendimiento: menor costo por ${escapeHtml(best.baseUnit)}.</div>`;
-      $('worstResult').innerHTML = productResultHtml(worst, 'redText') + `<div class="compareNote">Diferencia contra el mejor: ${fmtMoney(diff)} / ${escapeHtml(best.baseUnit)}.</div>`;
+      $('worstResult').innerHTML = productResultHtml(worst, 'redText') + `<div class="compareNote">Diferencia contra el mejor: ${fmtUnitCost(diff)} / ${escapeHtml(best.baseUnit)}.</div>`;
     }
 
     function selectProductFromPanel(productId){
@@ -2918,11 +2995,11 @@
       const mainLabel = editorMode === 'update' ? 'Guardar cambios' : 'Añadir a inventario';
       const html = `
         <div class="inventoryActionMenu">
-          <button class="inventoryAction" type="button" data-inventory-action="saveProduct"><span>${mainLabel}</span>${iconMarkup('add')}</button>
-          <button class="ftAction pendingAction" type="button" data-inventory-action="addToFT"><span>Agregar a FT</span>${iconMarkup('ft')}</button>
-          <button class="inventoryAction" type="button" data-inventory-action="reload"><span>Guardar / recargar inventario</span>${iconMarkup('action')}</button>
-          <button class="ftAction pendingAction" type="button" data-inventory-action="viewFT"><span>Ver FT</span>${iconMarkup('ft')}</button>
-          <button class="inventoryAction pendingAction" type="button" data-inventory-action="changeInventory"><span>Cambiar inventario</span>${iconMarkup('organize')}</button>
+          <button class="inventoryAction" type="button" data-inventory-action="saveProduct"><span>${mainLabel}</span>${iconMarkup('add','green')}</button>
+          <button class="ftAction pendingAction" type="button" data-inventory-action="addToFT"><span>Agregar a FT</span>${iconMarkup('ft','orange')}</button>
+          <button class="inventoryAction" type="button" data-inventory-action="reload"><span>Guardar / recargar inventario</span>${iconMarkup('action','green')}</button>
+          <button class="ftAction pendingAction" type="button" data-inventory-action="viewFT"><span>Ver FT</span>${iconMarkup('ft','orange')}</button>
+          <button class="inventoryAction pendingAction" type="button" data-inventory-action="changeInventory"><span>Cambiar inventario</span>${iconMarkup('organize','green')}</button>
         </div>
       `;
       openModal('Acciones de inventario', html);
