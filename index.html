@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexo Inventory MVP v11 Responsive Wix Bridge</title>
+  <title>Nexo Inventory MVP v20 Dropdowns limpios</title>
   <style>
     :root{
       --blue:#2f4f93;
@@ -22,9 +22,9 @@
       --left-gap:16px;
       --work-width:min(1460px, calc(100vw - var(--right-panel) - 42px));
       --ui-font: Arial, Helvetica, sans-serif;
-      --title-size:17px;
-      --body-size:16px;
-      --small-size:14px;
+      --title-size:15px;
+      --body-size:14px;
+      --small-size:12px;
       --cell-h:52px;
       --field-h:46px;
       --line-w:1px;
@@ -47,7 +47,7 @@
     body:before{
       content:"";
       position:fixed;
-      inset:48px 0 0 0;
+      inset:0;
       background:
         radial-gradient(ellipse at 15% 75%, rgba(255,235,215,.45), transparent 23%),
         radial-gradient(ellipse at 49% 76%, rgba(255,235,215,.5), transparent 22%),
@@ -71,7 +71,7 @@
       min-width:185px;
       font-weight:800;
       letter-spacing:1px;
-      font-size:22px;
+      font-size:20px;
     }
     .molecule{
       width:30px;height:30px;position:relative;margin-right:9px;
@@ -84,8 +84,8 @@
     .molecule .l1{width:26px;left:16px;top:16px;transform:rotate(37deg)}
     .molecule .l2{width:26px;left:16px;top:26px;transform:rotate(-29deg)}
     .brand small{display:block;font-size:8px;font-style:italic;margin-top:-4px;margin-left:30px;font-weight:500;letter-spacing:0}
-    .nav{display:flex;gap:34px;align-items:center;font-size:16px;font-weight:600;white-space:nowrap}
-    .user{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:16px;font-weight:700}
+    .nav{display:flex;gap:34px;align-items:center;font-size:14px;font-weight:600;white-space:nowrap}
+    .user{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700}
     .avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#3b91d1}
 
     .app{
@@ -122,13 +122,13 @@
     .toolbarRow{
       width:var(--work-width);
       display:grid;
-      grid-template-columns:calc(var(--tool-cell) * 3) 52px calc(var(--tool-cell) * 2);
+      grid-template-columns:calc(var(--tool-cell) * 2) 1fr calc((var(--tool-cell) * 2) + 52px);
       align-items:end;
       gap:0;
       margin-left:2px;
       margin-bottom:0;
     }
-    .toolGroup{display:grid;grid-template-columns:repeat(3, var(--tool-cell));align-items:stretch;border:var(--line-w) solid #0e1737;border-bottom:0;border-radius:17px 17px 0 0;overflow:hidden;box-shadow:0 8px 18px rgba(0,0,0,.2)}
+    .toolGroup{display:grid;grid-template-columns:repeat(2, var(--tool-cell));align-items:stretch;border:var(--line-w) solid #0e1737;border-bottom:0;border-radius:17px 17px 0 0;overflow:hidden;box-shadow:0 8px 18px rgba(0,0,0,.2)}
     .toolBtn{
       height:var(--cell-h);
       min-width:0;
@@ -149,10 +149,10 @@
       cursor:pointer;
     }
     .toolBtn:last-child{border-right:0}
-    .toolBtn span:last-child{font-size:28px;line-height:1;flex:0 0 auto}
-    .searchWrap{grid-column:2 / 4;display:grid;grid-template-columns:52px calc(var(--tool-cell) * 2);align-items:end;gap:0;justify-self:end}
-    .magnifier{width:52px;height:var(--cell-h);border-radius:50%;background:var(--dark);display:grid;place-items:center;font-size:31px;border:var(--line-w) solid var(--line);margin-right:0;z-index:2}
-    .search{height:var(--cell-h);width:calc(var(--tool-cell) * 2);border:var(--line-w) solid var(--line);border-radius:15px 15px 0 0;background:#d8e3f8;padding:0 18px;color:#34405f;font-size:var(--body-size);font-weight:400;outline:none}
+    .toolBtn span:last-child{font-size:24px;line-height:1;flex:0 0 auto}
+    .searchWrap{grid-column:3;display:grid;grid-template-columns:calc(var(--tool-cell) * 2) 52px;align-items:end;gap:0;justify-self:end;width:calc((var(--tool-cell) * 2) + 52px)}
+    .magnifier{width:52px;height:var(--cell-h);border-radius:0 15px 0 0;background:var(--dark);display:grid;place-items:center;font-size:27px;border:var(--line-w) solid var(--line);border-left:0;margin-right:0;z-index:2}
+    .search{height:var(--cell-h);width:calc(var(--tool-cell) * 2);border:var(--line-w) solid var(--line);border-right:0;border-radius:15px 0 0 0;background:#d8e3f8;padding:0 14px;color:#34405f;font-size:var(--body-size);font-weight:400;outline:none}
 
     .editorShell{width:var(--work-width);margin-left:2px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.20))}
     .editorGrid{
@@ -160,7 +160,7 @@
       grid-template-columns:repeat(8, minmax(0, 1fr));
       border:var(--line-w) solid var(--line);
       border-bottom:0;
-      border-radius:0 19px 0 0;
+      border-radius:0;
       overflow:hidden;
       background:var(--line);
     }
@@ -181,7 +181,8 @@
     }
     .editorGrid .head:last-child,.inventoryGrid .head:last-child{border-right:0}
     .editorGrid input,
-    .editorGrid select{
+    .editorGrid select,
+    .editorGrid .unitPickerBtn{
       height:var(--field-h);
       width:100%;
       border:0;
@@ -195,10 +196,12 @@
       outline:none;
     }
     .editorGrid select{font-size:var(--body-size);font-weight:400;padding:0 8px;background:#b9cbed}
+    .unitPickerBtn{cursor:pointer;text-align:left;white-space:normal;line-height:1.08;background:#b9cbed!important;color:#111827!important;font-size:var(--body-size);font-weight:400;border:0}
+    .unitPickerBtn.hasValue{background:#9fd1e3!important;font-weight:700}
     .editorGrid input.calculated{background:#73a0ed;color:#102047;font-weight:400}
     .actionBar{
       display:grid;
-      grid-template-columns:repeat(8, minmax(0, 1fr));
+      grid-template-columns:repeat(6, minmax(0, 1fr));
       border:var(--line-w) solid var(--line);
       border-top:0;
       border-radius:0 0 20px 20px;
@@ -223,9 +226,43 @@
       white-space:normal;
       line-height:1.12;
     }
-    .actionBar button:nth-child(1),.actionBar button:nth-child(2),.actionBar button:nth-child(3){background:var(--green)}
+    .actionBar button.actionHub{background:var(--green)}
+    .legacyActionHidden{display:none!important}
     .actionBar button:hover,.toolBtn:hover{filter:brightness(1.13)}
-    .actionBar .ico{font-size:25px;line-height:1;flex:0 0 auto}
+
+    .desktopEditing #addToInventory,.desktopEditing #exportBtn{background:#2f4f93!important;box-shadow:0 0 0 2px rgba(0,255,223,.35) inset,0 0 12px rgba(0,255,223,.18)}
+    .desktopEditing #modifyItem{background:#3a2f93!important}
+
+    .actionBar .ico{font-size:22px;line-height:1;flex:0 0 auto}
+    .inventoryActionMenu{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:10px;
+      margin-top:10px;
+    }
+    .inventoryActionMenu button{
+      min-height:48px;
+      border:2px solid #172755;
+      border-radius:12px;
+      background:#e9f2ff;
+      color:#111827;
+      font-size:var(--body-size);
+      font-weight:700;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 12px;
+      text-align:left;
+      white-space:normal;
+      line-height:1.12;
+    }
+    .inventoryActionMenu button.primary,
+    .inventoryActionMenu button.inventoryAction{background:var(--green);color:#eaf6ec}
+    .inventoryActionMenu button.ftAction{background:var(--orange);color:#111827}
+    .inventoryActionMenu button.pendingAction{opacity:.88}
+    .inventoryActionMenu .menuIcon{font-size:20px;line-height:1;flex:0 0 auto}
 
     .message{
       max-width:var(--work-width);
@@ -244,29 +281,46 @@
 
     .debugPanel{
       position:fixed;
-      left:14px;
-      bottom:14px;
+      left:10px;
+      top:10px;
       z-index:99999;
-      width:min(520px, calc(100vw - 28px));
-      max-height:42vh;
-      background:rgba(16,24,44,.94);
+      width:36px;
+      height:36px;
+      max-height:36px;
+      background:rgba(16,24,44,.88);
       color:#eaf0ff;
-      border:1px solid rgba(255,255,255,.22);
-      border-radius:14px;
-      box-shadow:0 12px 36px rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.28);
+      border-radius:999px;
+      box-shadow:0 8px 20px rgba(0,0,0,.28);
       font-family:Arial, Helvetica, sans-serif;
       overflow:hidden;
+      transition:width .18s ease,height .18s ease,max-height .18s ease,border-radius .18s ease,background .18s ease;
+    }
+    .debugPanel.open{
+      width:min(520px, calc(100vw - 20px));
+      height:auto;
+      max-height:46vh;
+      border-radius:14px;
+      background:rgba(16,24,44,.96);
     }
     .debugTop{
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:center;
       gap:8px;
+      min-height:36px;
+      padding:0;
+      background:transparent;
+      border-bottom:0;
+    }
+    .debugPanel.open .debugTop{
+      justify-content:space-between;
       padding:8px 10px;
       background:rgba(255,255,255,.08);
       border-bottom:1px solid rgba(255,255,255,.12);
     }
-    .debugTitle{font-size:13px;font-weight:700;letter-spacing:.2px}
+    .debugTitle{display:none;font-size:13px;font-weight:700;letter-spacing:.2px}
+    .debugPanel.open .debugTitle{display:block}
     .debugActions{display:flex;gap:6px;align-items:center}
     .debugActions button{
       border:1px solid rgba(255,255,255,.22);
@@ -277,6 +331,20 @@
       font-size:12px;
       font-weight:700;
       cursor:pointer;
+    }
+    .debugPanel:not(.open) .debugActions button:not(#toggleDebug){display:none}
+    .debugPanel:not(.open) #toggleDebug{
+      width:34px;
+      height:34px;
+      padding:0;
+      border:0;
+      border-radius:999px;
+      background:transparent;
+      color:#eaf0ff;
+      font-size:17px;
+      line-height:1;
+      display:grid;
+      place-items:center;
     }
     .debugActions button:hover{filter:brightness(1.08)}
     .debugBody{display:none;padding:8px 10px}
@@ -355,7 +423,7 @@
     .sidePanel{
       position:fixed;
       right:0;
-      top:48px;
+      top:0;
       bottom:0;
       width:var(--right-panel);
       background:rgba(231,239,244,.72);
@@ -363,6 +431,7 @@
       border-left:var(--line-w) solid rgba(23,39,85,.65);
       backdrop-filter:blur(5px);
       padding:12px;
+      overflow-y:auto;
       font-size:var(--body-size);
       font-weight:400;
       overflow:auto;
@@ -410,11 +479,18 @@
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
     .modal.show{display:flex}
     .modalCard{width:min(920px,96vw);max-height:88vh;overflow:auto;background:#f4f7ff;color:#111827;border:3px solid #111b45;border-radius:18px;box-shadow:var(--shadow);padding:22px}
-    .modalCard h2{margin:0 0 14px;color:#243d7e}
-    .modalCard p{line-height:1.5;color:#243047}
+    .modalCard h2{margin:0 0 14px;color:#243d7e;font-size:18px}
+    .modalCard p{line-height:1.5;color:#243047;font-size:14px}
     .modalGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
     .modalCard label{font-size:13px;color:#23345e;font-weight:800;display:block;margin-bottom:5px}
     .modalCard input,.modalCard select,.modalCard textarea{width:100%;padding:10px;border:1px solid #9badcf;border-radius:8px;font-size:15px}
+    .measureMenu{display:grid;gap:8px;margin-top:8px}.measureOption{width:100%;min-height:38px;border:1px solid #19284f;border-radius:10px;background:#eef4ff;color:#102047;font-size:14px;font-weight:800;cursor:pointer;text-align:left;padding:8px 10px}.measureOption:hover{background:#9fd1e3}.measureCrumb{font-size:13px;color:#2f3a55;margin:4px 0 10px}.measureBack{background:#1c2b57!important;color:white!important}
+    .filterStatus{font-size:13px;line-height:1.25;background:rgba(255,255,255,.68);border:1px solid rgba(25,40,79,.24);border-radius:10px;padding:8px 10px;margin-bottom:10px;color:#243047}
+    .filterMenu{display:grid;gap:8px;margin-top:8px}
+    .filterOption{width:100%;min-height:38px;border:1px solid #19284f;border-radius:10px;background:#eef4ff;color:#102047;font-size:14px;font-weight:800;cursor:pointer;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .filterOption:hover{background:#9fd1e3}.filterOption.active{background:#91f0e6;color:#051827}.filterOption.clear{background:#1f233a;color:white}.filterOption.back{background:#1c2b57;color:white}
+    .filterCount{font-size:12px;font-weight:700;opacity:.78;white-space:nowrap}
+    .filterEmpty{font-size:13px;color:#4b5563;background:rgba(255,255,255,.65);border:1px dashed rgba(25,40,79,.32);border-radius:10px;padding:10px}
     .modalActions{display:flex;justify-content:flex-end;gap:12px;margin-top:18px}
     .modalActions button,.fileBtn{border:0;border-radius:10px;padding:10px 15px;background:#2f4f93;color:white;font-weight:800;cursor:pointer}
     .modalActions button.secondary{background:#1f233a}
@@ -422,12 +498,12 @@
 
     @media(max-width:900px){
       .app{min-width:0;padding:0 8px 40px}.topbar{padding:0 18px;gap:20px}.nav{display:none}.brand{font-size:28px;min-width:200px}.user{font-size:16px}
-      .switcher button{min-width:150px;font-size:14px}.toolbarRow{display:block;width:100%}.searchWrap{margin:12px 0}.app{padding-right:8px}.editorShell,.inventoryShell{width:100%;overflow-x:auto}.editorGrid,.actionBar,.inventoryGrid,.row{min-width:1100px}.sidePanel{display:none}
+      .switcher button{min-width:150px;font-size:14px}.toolbarRow{display:block;width:100%}.searchWrap{margin:12px 0}.app{padding-right:8px}.editorShell,.inventoryShell{width:100%;overflow-x:auto}.editorGrid,.inventoryGrid,.row{min-width:1100px}.actionBar{min-width:825px}.sidePanel{display:none}
     }
 
 
     /* =========================================================
-       v11 RESPONSIVE LAYOUT: Tablet / Mobile
+       v12 MODO DE CALCULO JERARQUICO LAYOUT: Tablet / Mobile
        Desktop conserva la estructura principal. En tablet/móvil se compactan
        acciones en menús, el editor se convierte en drawer y la comparación baja
        como cinta horizontal.
@@ -534,7 +610,7 @@
       }
       .mobileDrawerGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
       .mobileDrawerGrid label{display:block;color:#24345e;font-size:5px;font-weight:700;margin-bottom:2px;line-height:1.05}
-      .mobileDrawerGrid input,.mobileDrawerGrid select{
+      .mobileDrawerGrid input,.mobileDrawerGrid select,.mobileDrawerGrid .unitPickerBtn{
         width:100%;
         min-height:24px;
         border:1px solid #9badcf;
@@ -627,7 +703,7 @@
       .priceValue{font-size:8px}.compareNote{font-size:5px;padding:4px;border-radius:6px;line-height:1.12}.duplicateWarn{font-size:5px;padding:4px}.vencimientoBox{font-size:5px;padding:5px}.noticeControl label{font-size:5px}.noticeControl input{min-height:22px;font-size:5px;padding:3px 5px}.noticeHint{font-size:4.5px;padding:4px}
 
       .debugPanel{width:min(420px, calc(100vw - 18px));left:9px;bottom:9px;max-height:35vh;border-radius:10px}.debugTitle{font-size:8px}.debugActions button{font-size:7px;padding:4px 6px;border-radius:6px}.debugText{height:110px;font-size:7px}.debugHint{font-size:7px}
-      .modalCard{width:min(720px,96vw);padding:12px;border-radius:12px;border-width:2px}.modalCard h2{font-size:10px}.modalCard p{font-size:7px}.modalActions button,.fileBtn{font-size:7px;padding:6px 9px;border-radius:7px}
+      .modalCard{width:min(720px,96vw);padding:12px;border-radius:12px;border-width:2px}.modalCard h2{font-size:10px}.modalCard p{font-size:7px}.modalActions button,.fileBtn{font-size:7px;padding:6px 9px;border-radius:7px}.filterStatus,.filterEmpty,.measureCrumb{font-size:7px}.filterOption,.measureOption{font-size:7px;min-height:24px;border-radius:7px;padding:5px 7px}.filterCount{font-size:6px}
     }
 
     @media (max-width:750px){
@@ -644,53 +720,422 @@
       .mobileCommandBar{gap:3px;margin:4px 0 3px}
       .mobileCommandBar button,.mobileDropdown button,.mobileProductActions button,.mobileProductDrawer button{min-height:19px;border-radius:7px;font-size:5px;padding:3px 4px;border-width:1px}
       .mobileDropdown{gap:3px;padding:4px;border-radius:8px}.mobileDropdown input{min-height:19px;font-size:3px;padding:2px 4px;border-radius:6px}
-      .mobileProductDrawer{padding:4px;border-radius:8px;margin:3px 0 5px}.mobileDrawerTitle{font-size:5px;margin-bottom:3px}.mobileDrawerGrid{gap:3px}.mobileDrawerGrid label{font-size:3px}.mobileDrawerGrid input,.mobileDrawerGrid select{min-height:18px;font-size:3px;padding:2px 3px;border-radius:5px}.mobileDrawerActions{gap:3px;margin-top:4px}
+      .mobileProductDrawer{padding:4px;border-radius:8px;margin:3px 0 5px}.mobileDrawerTitle{font-size:5px;margin-bottom:3px}.mobileDrawerGrid{gap:3px}.mobileDrawerGrid label{font-size:3px}.mobileDrawerGrid input,.mobileDrawerGrid select,.mobileDrawerGrid .unitPickerBtn{min-height:18px;font-size:3px;padding:2px 3px;border-radius:5px}.mobileDrawerActions{gap:3px;margin-top:4px}
       .message{font-size:3px;padding:3px 5px;margin:3px 0;min-height:13px}
       .inventoryGrid,.row{width:560px;min-width:560px;grid-template-columns:68px 68px 62px 65px 52px 60px 70px 58px 57px}.inventoryGrid .head{min-height:20px;font-size:5px;padding:3px 4px}.inventoryRows{width:560px;min-width:560px;min-height:165px;max-height:46vh}.cell{min-height:19px;font-size:3px;padding:3px 4px}.empty{min-height:165px;font-size:3px;padding:10px}
       .mobileProductToggle{width:20px;min-width:20px;font-size:8px!important}.mobileProductMenu{gap:3px;max-width:calc(100vw - 32px)}.mobileProductMenu button{min-width:50px}
       .sidePanel{grid-template-columns:repeat(4, 136px);gap:4px;padding:5px;margin-top:5px}.sidePanel h3{font-size:5px;min-width:560px}.sideResultBlock{min-width:136px;border-radius:7px;padding:4px}.sideResultBlock h4{font-size:5px;margin-bottom:3px}.resultGrid{font-size:3px}.resultGrid .pair{grid-template-columns:39px 1fr;gap:2px}.priceValue{font-size:5px}.compareNote,.duplicateWarn,.vencimientoBox,.noticeControl label,.noticeControl input{font-size:3px}.noticeControl input{min-height:17px}.noticeHint{font-size:3px}
       .debugPanel{left:6px;bottom:6px;width:min(320px,calc(100vw - 12px));border-radius:8px}.debugTitle{font-size:5px}.debugActions button{font-size:5px;padding:3px 4px}.debugText{height:85px;font-size:5px}.debugHint{font-size:5px}
-      .modalCard{padding:8px;border-radius:9px}.modalCard h2{font-size:7px}.modalCard p{font-size:5px}.modalActions button,.fileBtn{font-size:5px;padding:4px 6px;border-radius:5px}
+      .modalCard{padding:8px;border-radius:9px}.modalCard h2{font-size:7px}.modalCard p{font-size:5px}.modalActions button,.fileBtn{font-size:5px;padding:4px 6px;border-radius:5px}.filterStatus,.filterEmpty,.measureCrumb{font-size:5px;padding:4px 5px}.filterOption,.measureOption{font-size:5px;min-height:19px;border-radius:6px;padding:3px 5px}.filterCount{font-size:4px}
+    }
+
+
+    /* v18: debug compacto y panel derecho anclado en desktop */
+    @media (min-width:1181px){
+      .sidePanel{top:0;bottom:0;height:auto;overflow-y:auto;}
+    }
+    @media (max-width:1180px){
+      .debugPanel{left:8px!important;top:8px!important;bottom:auto!important;width:32px!important;height:32px!important;max-height:32px!important;border-radius:999px!important;}
+      .debugPanel.open{width:min(420px, calc(100vw - 16px))!important;height:auto!important;max-height:44vh!important;border-radius:12px!important;}
+      .debugPanel:not(.open) #toggleDebug{width:30px;height:30px;font-size:14px;}
+    }
+    @media (max-width:520px){
+      .debugPanel{left:6px!important;top:6px!important;width:28px!important;height:28px!important;max-height:28px!important;}
+      .debugPanel.open{width:min(320px, calc(100vw - 12px))!important;max-height:42vh!important;}
+      .debugPanel:not(.open) #toggleDebug{width:26px;height:26px;font-size:12px;}
+    }
+
+
+    /* v19: organizar/filtrar como desplegables + jerarquía visual */
+    :root{
+      --cyan-selected:#00FF83;
+      --glass-bone:rgba(244,239,226,.03);
+      --glass-bone-line:rgba(244,239,226,.18);
+    }
+    @media (min-width:1181px){
+      .sidePanel{background:#264C8F;}
+    }
+    .modal.dropdownMode{
+      inset:0;
+      background:transparent;
+      display:none;
+      align-items:flex-start;
+      justify-content:flex-start;
+      padding:0;
+      z-index:14;
+    }
+    .modal.dropdownMode.show{display:block}
+    .modal.dropdownMode .modalCard{
+      position:fixed;
+      max-width:calc(100vw - 12px);
+      max-height:54vh;
+      overflow:auto;
+      background:rgba(31,35,58,.94);
+      color:#f7f8ff;
+      border:1px solid rgba(17,39,85,.95);
+      border-top:0;
+      border-radius:0 0 14px 14px;
+      box-shadow:0 18px 35px rgba(0,0,0,.34);
+      padding:10px;
+      backdrop-filter:blur(9px);
+      scrollbar-width:none;
+      -ms-overflow-style:none;
+    }
+    .modal.dropdownMode .modalCard::-webkit-scrollbar{display:none;width:0;height:0}
+    .modal.dropdownMode .modalCard h2{
+      color:#f7f8ff;
+      font-size:var(--small-size);
+      margin:0 0 8px;
+      font-weight:700;
+    }
+    .modal.dropdownMode .modalActions{margin-top:10px}
+    .modal.dropdownMode .modalActions button{
+      min-height:30px;
+      padding:6px 10px;
+      border-radius:8px;
+      background:var(--dark);
+      color:#fff;
+      font-size:var(--small-size);
+    }
+    .modal.dropdownMode .filterStatus,
+    .modal.dropdownMode .measureCrumb,
+    .modal.dropdownMode .filterEmpty{
+      background:var(--glass-bone);
+      color:#eef3ff;
+      border:1px solid var(--glass-bone-line);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+      backdrop-filter:blur(7px);
+    }
+    .modal.dropdownMode .filterMenu{gap:6px}
+    .modal.dropdownMode .filterOption{
+      background:var(--glass-bone);
+      color:#f7f8ff;
+      border:1px solid rgba(244,239,226,.16);
+      border-radius:9px;
+      min-height:34px;
+      font-weight:600;
+      backdrop-filter:blur(7px);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+      transition:background .14s ease,color .14s ease,border-color .14s ease,transform .14s ease;
+    }
+
+    .modal.dropdownMode .filterOption[data-sort-key]{justify-content:flex-start;}
+    .modal.dropdownMode .filterOption:hover{
+      background:var(--orange);
+      color:#17151a;
+      border-color:rgba(231,144,105,.95);
+      transform:translateY(-1px);
+    }
+    .modal.dropdownMode .filterOption.active{
+      background:var(--cyan-selected);
+      color:#04170e;
+      border-color:var(--cyan-selected);
+      box-shadow:0 0 0 1px rgba(0,0,0,.18) inset,0 0 16px rgba(0,255,131,.18);
+    }
+    .modal.dropdownMode .filterOption.clear,
+    .modal.dropdownMode .filterOption.back{
+      background:rgba(47,79,147,.34);
+      color:#f7f8ff;
+      border-color:rgba(157,184,240,.28);
+    }
+    .modal.dropdownMode .filterOption.clear:hover,
+    .modal.dropdownMode .filterOption.back:hover{
+      background:var(--orange);
+      color:#17151a;
+      border-color:var(--orange);
+    }
+    .inventoryRows{
+      background:rgba(244,239,226,.03);
+      backdrop-filter:blur(7px);
+    }
+    .row,
+    .row:nth-child(even){
+      background:rgba(244,239,226,.03);
+      color:#f8fbff;
+      backdrop-filter:blur(6px);
+      transition:background .14s ease,color .14s ease,box-shadow .14s ease;
+    }
+    .row:hover{
+      background:var(--orange)!important;
+      color:#16151a;
+    }
+    .row.selected,
+    .row.selected:hover{
+      background:var(--cyan-selected)!important;
+      color:#04170e;
+      outline:2px solid rgba(0,255,131,.88);
+      outline-offset:-2px;
+      box-shadow:0 0 18px rgba(0,255,131,.18) inset;
+    }
+    .row:hover .cell,
+    .row.selected .cell{color:inherit}
+
+    @media (max-width:1180px){
+      .modal.dropdownMode .modalCard{max-height:50vh;border-radius:0 0 10px 10px;padding:7px}
+      .modal.dropdownMode .filterOption{min-height:24px;border-radius:7px}
+    }
+    @media (max-width:520px){
+      .modal.dropdownMode .modalCard{max-height:48vh;border-radius:0 0 8px 8px;padding:5px}
+      .modal.dropdownMode .filterOption{min-height:20px;border-radius:6px}
+    }
+
+
+    /* v21: iconos del sitio y modales de confirmación */
+    .svgIcon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:clamp(18px, 2.2vw, 28px);
+      height:clamp(18px, 2.2vw, 28px);
+      flex:0 0 auto;
+      line-height:1;
+    }
+    .svgIcon img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;}
+    button .svgIcon{margin-left:5px;}
+    .actionBar button,.toolBtn,.mobileDropdown button,.mobileProductMenu button,.mobileCommandBar button{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+    }
+    .mobileDropdown button .svgIcon,
+    .mobileProductMenu button .svgIcon{width:16px;height:16px;margin-left:3px;}
+    @media (max-width:1180px){.svgIcon{width:12px;height:12px}.mobileDropdown button .svgIcon,.mobileProductMenu button .svgIcon{width:10px;height:10px}}
+    @media (max-width:750px){.svgIcon{width:8px;height:8px}.mobileDropdown button .svgIcon,.mobileProductMenu button .svgIcon{width:7px;height:7px}}
+
+    .confirmModal{
+      position:fixed;
+      inset:0;
+      z-index:80;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:rgba(8,13,32,.46);
+      backdrop-filter:blur(4px);
+    }
+    .confirmModal.show{display:flex;}
+    .confirmBox{
+      width:min(390px,92vw);
+      min-height:155px;
+      border:2px solid rgba(16,24,56,.82);
+      border-radius:18px;
+      box-shadow:0 20px 55px rgba(0,0,0,.38);
+      padding:18px;
+      color:#101827;
+      display:grid;
+      grid-template-columns:58px 1fr;
+      gap:12px;
+      align-items:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .confirmBox::after{
+      content:"";
+      position:absolute;
+      inset:-45% -20%;
+      background:linear-gradient(115deg, transparent 0%, rgba(255,255,255,.13) 42%, rgba(255,255,255,.42) 50%, rgba(255,255,255,.09) 58%, transparent 100%);
+      transform:translateX(-60%);
+      animation:confirmFoil 2.4s ease-in-out infinite;
+      pointer-events:none;
+      opacity:.75;
+    }
+    @keyframes confirmFoil{0%,70%{transform:translateX(-70%)}100%{transform:translateX(70%)}}
+    .confirmBox.confirm-add{background:#61B584;}
+    .confirmBox.confirm-duplicate,.confirmBox.confirm-update,.confirmBox.confirm-warning{background:#FFF3A9;}
+    .confirmBox.confirm-delete{background:#E18686;}
+    .confirmBox.confirm-success{background:#61B584;grid-template-columns:58px 1fr;}
+    .confirmIcon{
+      width:54px;height:54px;border-radius:14px;background:rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,.15);position:relative;z-index:2;
+    }
+    .confirmIcon img{width:40px;height:40px;object-fit:contain;}
+    .confirmText{font-size:17px;font-weight:800;line-height:1.22;position:relative;z-index:2;}
+    .confirmSubText{font-size:12px;font-weight:600;opacity:.82;margin-top:5px;line-height:1.25;}
+    .confirmActions{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;position:relative;z-index:2;}
+    .confirmActions button{
+      border:2px solid rgba(0,0,0,.28);
+      border-radius:12px;
+      padding:10px 14px;
+      font-size:14px;
+      font-weight:900;
+      cursor:pointer;
+      color:#101827;
+      box-shadow:0 5px 12px rgba(0,0,0,.16);
+    }
+    .confirmBtnGreen{background:#61B584;}
+    .confirmBtnYellow{background:#FFF3A9;}
+    .confirmBtnRed{background:#D85757;color:#fff!important;}
+    .confirmBtnBlue{background:#264C8F;color:#fff!important;}
+    .confirmSuccessText{display:none;font-size:19px;font-weight:900;position:relative;z-index:2;}
+    .confirmBox.confirm-success .confirmText,.confirmBox.confirm-success .confirmActions{display:none;}
+    .confirmBox.confirm-success .confirmSuccessText{display:block;}
+    @media(max-width:1180px){.confirmBox{width:min(300px,90vw);min-height:108px;padding:12px;grid-template-columns:40px 1fr;border-radius:12px}.confirmIcon{width:38px;height:38px;border-radius:10px}.confirmIcon img{width:29px;height:29px}.confirmText{font-size:8px}.confirmSubText{font-size:6px}.confirmActions{gap:6px}.confirmActions button{font-size:7px;padding:6px 9px;border-radius:8px}.confirmSuccessText{font-size:9px}}
+    @media(max-width:750px){.confirmBox{width:min(230px,90vw);min-height:82px;padding:8px;grid-template-columns:28px 1fr;border-radius:9px}.confirmIcon{width:26px;height:26px;border-radius:7px}.confirmIcon img{width:20px;height:20px}.confirmText{font-size:5px}.confirmSubText{font-size:3.5px}.confirmActions{gap:4px}.confirmActions button{font-size:4.5px;padding:4px 6px;border-radius:6px}.confirmSuccessText{font-size:6px}}
+
+
+
+    /* v22: prueba de escala responsive + mismo marco para Organizar/Filtrar */
+    @media (min-width:751px) and (max-width:1000px){
+      :root{
+        --title-size:18px;
+        --body-size:15px;
+        --small-size:15px;
+        --cell-h:48px;
+        --field-h:44px;
+      }
+      .mobileCommandBar{gap:8px;margin:10px 0 8px}
+      .mobileCommandBar button,
+      .mobileDropdown button,
+      .mobileProductActions button,
+      .mobileProductDrawer button{
+        min-height:46px!important;
+        font-size:16px!important;
+        padding:8px 10px!important;
+        border-radius:12px!important;
+        line-height:1.12!important;
+      }
+      .mobileDropdown{gap:8px;padding:9px;border-radius:14px;margin-bottom:10px}
+      .mobileDropdown input{min-height:44px!important;font-size:15px!important;padding:8px 12px!important;border-radius:11px!important}
+      .mobileProductDrawer{padding:12px;border-radius:16px;margin:9px 0 12px}
+      .mobileDrawerTitle{font-size:18px!important;margin-bottom:10px}
+      .mobileDrawerGrid{gap:10px}
+      .mobileDrawerGrid label{font-size:15px!important;margin-bottom:5px!important}
+      .mobileDrawerGrid input,.mobileDrawerGrid select,.mobileDrawerGrid .unitPickerBtn{
+        min-height:42px!important;font-size:15px!important;padding:7px 10px!important;border-radius:10px!important;
+      }
+      .mobileDrawerActions{gap:8px;margin-top:10px}
+      .message{font-size:15px!important;min-height:36px!important;padding:8px 12px!important;border-radius:12px!important}
+      .inventoryGrid,.row{
+        width:1280px!important;
+        min-width:1280px!important;
+        grid-template-columns:150px 160px 135px 165px 120px 140px 160px 130px 120px!important;
+      }
+      .inventoryRows{width:1280px!important;min-width:1280px!important;min-height:330px!important;max-height:52vh!important}
+      .inventoryGrid .head{min-height:54px!important;font-size:18px!important;padding:9px 11px!important;line-height:1.12!important}
+      .cell{min-height:46px!important;font-size:15px!important;padding:9px 11px!important;line-height:1.16!important}
+      .empty{min-height:300px!important;font-size:15px!important;padding:24px!important}
+      .mobileProductToggle{width:44px!important;min-width:44px!important;font-size:18px!important}
+      .mobileProductMenu{gap:8px;max-width:calc(100vw - 62px)}
+      .mobileProductMenu button{min-width:118px!important}
+      .sidePanel{grid-template-columns:repeat(4, 300px)!important;gap:10px!important;padding:12px!important;margin-top:12px!important}
+      .sidePanel h3{font-size:18px!important;min-width:1280px!important;margin-bottom:5px!important}
+      .sideResultBlock{min-width:300px!important;border-radius:13px!important;padding:12px!important}
+      .sideResultBlock h4{font-size:18px!important;margin-bottom:8px!important}
+      .resultLabel{font-size:13px!important}
+      .resultGrid{font-size:15px!important;gap:6px!important;line-height:1.18!important}
+      .resultGrid .pair{grid-template-columns:92px 1fr!important;gap:7px!important}
+      .priceValue{font-size:18px!important}
+      .compareNote,.duplicateWarn,.vencimientoBox{font-size:15px!important;padding:9px!important;border-radius:10px!important}
+      .noticeControl label{font-size:15px!important}.noticeControl input{min-height:40px!important;font-size:15px!important;padding:7px 9px!important}.noticeHint{font-size:14px!important}
+      .modalCard{padding:16px!important;border-radius:16px!important}.modalCard h2{font-size:18px!important}.modalCard p{font-size:15px!important}
+      .modalActions button,.fileBtn{font-size:15px!important;padding:9px 14px!important;border-radius:10px!important}
+      .filterStatus,.filterEmpty,.measureCrumb{font-size:15px!important;padding:9px 11px!important}
+      .filterOption,.measureOption{font-size:15px!important;min-height:42px!important;border-radius:10px!important;padding:9px 11px!important}
+      .filterCount{font-size:14px!important}
+      .modal.dropdownMode .modalCard{max-height:55vh!important;padding:11px!important;border-radius:0 0 14px 14px!important}
+      .modal.dropdownMode .filterOption{min-height:42px!important;border-radius:10px!important}
+      .svgIcon{width:22px!important;height:22px!important}.mobileDropdown button .svgIcon,.mobileProductMenu button .svgIcon{width:20px!important;height:20px!important}
+      .confirmBox{width:min(520px,92vw)!important;min-height:150px!important;padding:18px!important;grid-template-columns:56px 1fr!important;border-radius:18px!important}
+      .confirmIcon{width:52px!important;height:52px!important;border-radius:14px!important}.confirmIcon img{width:38px!important;height:38px!important}
+      .confirmText{font-size:18px!important}.confirmSubText{font-size:15px!important}.confirmActions button{font-size:15px!important;padding:10px 15px!important;border-radius:11px!important}.confirmSuccessText{font-size:18px!important}
+    }
+
+    @media (max-width:750px){
+      :root{
+        --title-size:12px;
+        --body-size:10px;
+        --small-size:10px;
+        --cell-h:36px;
+        --field-h:34px;
+      }
+      .mobileCommandBar{gap:6px;margin:8px 0 6px}
+      .mobileCommandBar button,
+      .mobileDropdown button,
+      .mobileProductActions button,
+      .mobileProductDrawer button{
+        min-height:36px!important;
+        font-size:12px!important;
+        padding:6px 8px!important;
+        border-radius:10px!important;
+        line-height:1.1!important;
+      }
+      .mobileDropdown{gap:6px;padding:7px;border-radius:12px;margin-bottom:8px}
+      .mobileDropdown input{min-height:34px!important;font-size:10px!important;padding:6px 9px!important;border-radius:9px!important}
+      .mobileProductDrawer{padding:9px;border-radius:13px;margin:7px 0 9px}
+      .mobileDrawerTitle{font-size:12px!important;margin-bottom:7px}
+      .mobileDrawerGrid{gap:7px}
+      .mobileDrawerGrid label{font-size:10px!important;margin-bottom:4px!important}
+      .mobileDrawerGrid input,.mobileDrawerGrid select,.mobileDrawerGrid .unitPickerBtn{
+        min-height:32px!important;font-size:10px!important;padding:5px 7px!important;border-radius:8px!important;
+      }
+      .mobileDrawerActions{gap:6px;margin-top:7px}
+      .message{font-size:10px!important;min-height:28px!important;padding:6px 9px!important;border-radius:10px!important}
+      .inventoryGrid,.row{
+        width:980px!important;
+        min-width:980px!important;
+        grid-template-columns:115px 125px 105px 130px 90px 110px 125px 100px 80px!important;
+      }
+      .inventoryRows{width:980px!important;min-width:980px!important;min-height:235px!important;max-height:48vh!important}
+      .inventoryGrid .head{min-height:42px!important;font-size:12px!important;padding:7px 8px!important;line-height:1.1!important}
+      .cell{min-height:36px!important;font-size:10px!important;padding:7px 8px!important;line-height:1.15!important}
+      .empty{min-height:230px!important;font-size:10px!important;padding:18px!important}
+      .mobileProductToggle{width:36px!important;min-width:36px!important;font-size:15px!important}
+      .mobileProductMenu{gap:6px;max-width:calc(100vw - 48px)}
+      .mobileProductMenu button{min-width:92px!important}
+      .sidePanel{grid-template-columns:repeat(4, 230px)!important;gap:8px!important;padding:9px!important;margin-top:9px!important}
+      .sidePanel h3{font-size:12px!important;min-width:980px!important;margin-bottom:4px!important}
+      .sideResultBlock{min-width:230px!important;border-radius:11px!important;padding:9px!important}
+      .sideResultBlock h4{font-size:12px!important;margin-bottom:6px!important}
+      .resultLabel{font-size:9px!important}
+      .resultGrid{font-size:10px!important;gap:5px!important;line-height:1.15!important}
+      .resultGrid .pair{grid-template-columns:70px 1fr!important;gap:5px!important}
+      .priceValue{font-size:12px!important}
+      .compareNote,.duplicateWarn,.vencimientoBox{font-size:10px!important;padding:7px!important;border-radius:8px!important}
+      .noticeControl label{font-size:10px!important}.noticeControl input{min-height:30px!important;font-size:10px!important;padding:5px 7px!important}.noticeHint{font-size:9px!important}
+      .debugPanel.open{width:min(360px, calc(100vw - 12px))!important}.debugTitle{font-size:10px!important}.debugActions button{font-size:10px!important}.debugText{font-size:10px!important}.debugHint{font-size:9px!important}
+      .modalCard{padding:12px!important;border-radius:13px!important}.modalCard h2{font-size:12px!important}.modalCard p{font-size:10px!important}
+      .modalActions button,.fileBtn{font-size:10px!important;padding:7px 10px!important;border-radius:8px!important}
+      .filterStatus,.filterEmpty,.measureCrumb{font-size:10px!important;padding:7px 8px!important}
+      .filterOption,.measureOption{font-size:10px!important;min-height:34px!important;border-radius:8px!important;padding:7px 8px!important}
+      .filterCount{font-size:9px!important}
+      .modal.dropdownMode .modalCard{max-height:52vh!important;padding:8px!important;border-radius:0 0 12px 12px!important}
+      .modal.dropdownMode .filterOption{min-height:34px!important;border-radius:8px!important}
+      .svgIcon{width:16px!important;height:16px!important}.mobileDropdown button .svgIcon,.mobileProductMenu button .svgIcon{width:14px!important;height:14px!important}
+      .confirmBox{width:min(330px,92vw)!important;min-height:120px!important;padding:13px!important;grid-template-columns:42px 1fr!important;border-radius:14px!important}
+      .confirmIcon{width:40px!important;height:40px!important;border-radius:11px!important}.confirmIcon img{width:29px!important;height:29px!important}
+      .confirmText{font-size:12px!important}.confirmSubText{font-size:10px!important}.confirmActions button{font-size:10px!important;padding:7px 10px!important;border-radius:8px!important}.confirmSuccessText{font-size:12px!important}
     }
 
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="molecule"><span class="n1"></span><span class="n2"></span><span class="n3"></span><i class="l1"></i><i class="l2"></i></div>
-      <div>NEXO<small>Group</small></div>
-    </div>
-    <nav class="nav"><span>Home</span><span>Biblioteca de engranaje</span><span>Features</span><span>FAQ</span><span>Courses</span></nav>
-    <div class="user"><span class="avatar">k</span><span>kurisu ...</span><span>⌄</span></div>
-  </header>
 
   <main class="app">
-    <section class="switcher"><div class="pill"><button id="viewFT">Ver FT ✨</button><button id="changeInv">Cambiar inventario ✨</button></div></section>
-
     <section class="toolbarRow">
       <div class="toolGroup">
-        <button class="toolBtn" id="calcMode"><span>Modo de cálculo</span><span>🧮</span></button>
-        <button class="toolBtn" id="sortBtn"><span>Organizar</span><span>📚</span></button>
-        <button class="toolBtn" id="filterBtn"><span>Filtrar</span><span>🌱</span></button>
+        <button class="toolBtn" id="sortBtn"><span>Organizar</span><span class="ico svgIcon"><img src="assets/icons/organize.svg" alt="" aria-hidden="true"></span></button>
+        <button class="toolBtn" id="filterBtn"><span>Filtrar</span><span class="ico svgIcon"><img src="assets/icons/filter.svg" alt="" aria-hidden="true"></span></button>
       </div>
-      <div class="searchWrap"><div class="magnifier">🔎</div><input id="searchInput" class="search" type="search" placeholder="buscar un producto"></div>
+      <div class="searchWrap"><input id="searchInput" class="search" type="search" placeholder="buscar un producto"><div class="magnifier">🔎</div></div>
     </section>
 
     <section class="editorShell">
       <div class="editorGrid">
-        <div class="head">Proveedor</div><div class="head">Nombre de producto</div><div class="head">Presentacion</div><div class="head">Unidad de Medida</div><div class="head">En Stock</div><div class="head">CostoTotal</div><div class="head">Costo por Unidad</div><div class="head">Expira</div>
-        <input id="supplier" placeholder="Proveedor" autocomplete="off"><input id="productName" placeholder="Nombre de producto" autocomplete="off"><input id="presentation" type="number" min="0" step="any" placeholder="Presentacion"><select id="unit"><option value="">Unidad de Medida</option><option value="g">g</option><option value="kg">kg</option><option value="lb">lb</option><option value="oz">oz</option><option value="ml">ml</option><option value="l">l</option><option value="unidad">unidad</option><option value="docena">docena</option></select><input id="stock" type="number" min="0" step="any" placeholder="En Stock"><input id="totalCost" type="number" min="0" step="any" placeholder="CostoTotal"><input id="unitCost" class="calculated" readonly placeholder="Costo por Unidad"><input id="expires" type="date" placeholder="Expira">
+        <div class="head">Proveedor</div><div class="head">Nombre de producto</div><div class="head">Presentacion</div><div class="head">Modo de cálculo</div><div class="head">En Stock</div><div class="head">CostoTotal</div><div class="head">Costo por Unidad</div><div class="head">Expira</div>
+        <input id="supplier" placeholder="Proveedor" autocomplete="off"><input id="productName" placeholder="Nombre de producto" autocomplete="off"><input id="presentation" type="number" min="0" step="any" placeholder="Presentacion"><button id="unitSelectBtn" class="unitPickerBtn" type="button">Seleccionar modo</button><input id="unit" type="hidden"><input id="stock" type="number" min="0" step="any" placeholder="En Stock"><input id="totalCost" type="number" min="0" step="any" placeholder="CostoTotal"><input id="unitCost" class="calculated" readonly placeholder="Costo por Unidad"><input id="expires" type="date" placeholder="Expira">
       </div>
       <div class="actionBar">
-        <button id="addToFT">Agregar a FT <span class="ico">🧾➕</span></button>
-        <button id="addToInventory">Añadir a inventario <span class="ico">📦➕</span></button>
-        <button id="saveInventory">Guardar inventario <span class="ico">⚙️💾</span></button>
-        <button id="duplicateProduct">Duplicar producto <span class="ico">▯▯</span></button>
-        <button id="deleteProduct">Eliminar producto <span class="ico">🗑️</span></button>
-        <button id="clearEditor">Limpiar editor <span class="ico">✨</span></button>
-        <button id="exportBtn">Agregar a lista <span class="ico">📋</span></button>
-        <button id="modifyItem">Modificar item <span class="ico">📝</span></button>
+        <button id="desktopInventoryActionsBtn" class="actionHub" type="button"><span>Acciones inventario</span><span class="ico svgIcon"><img src="assets/icons/action-hub.svg" alt="" aria-hidden="true"></span></button>
+        <button id="duplicateProduct" type="button"><span>Duplicar producto</span><span class="ico svgIcon"><img src="assets/icons/copy.svg" alt="" aria-hidden="true"></span></button>
+        <button id="deleteProduct" type="button"><span>Eliminar producto</span><span class="ico svgIcon"><img src="assets/icons/delete.svg" alt="" aria-hidden="true"></span></button>
+        <button id="clearEditor" type="button"><span>Limpiar editor</span><span class="ico svgIcon"><img src="assets/icons/clean.svg" alt="" aria-hidden="true"></span></button>
+        <button id="exportBtn" type="button"><span>Agregar a lista</span><span class="ico svgIcon"><img src="assets/icons/add-inventory.svg" alt="" aria-hidden="true"></span></button>
+        <button id="modifyItem" type="button"><span>Modificar item</span><span class="ico svgIcon"><img src="assets/icons/edit.svg" alt="" aria-hidden="true"></span></button>
+
+        <!-- Botones legado ocultos: mantienen compatibilidad con funciones/eventos existentes. -->
+        <button id="addToFT" class="legacyActionHidden" type="button"><span>Agregar a FT</span><span class="ico svgIcon"><img src="assets/icons/ft.svg" alt="" aria-hidden="true"></span></button>
+        <button id="addToInventory" class="legacyActionHidden" type="button"><span>Añadir a inventario</span><span class="ico svgIcon"><img src="assets/icons/add-inventory.svg" alt="" aria-hidden="true"></span></button>
+        <button id="saveInventory" class="legacyActionHidden" type="button"><span>Guardar inventario</span><span class="ico svgIcon"><img src="assets/icons/action-hub.svg" alt="" aria-hidden="true"></span></button>
       </div>
     </section>
 
@@ -705,15 +1150,14 @@
       </div>
       <div id="mobileInventoryMenu" class="mobileDropdown" aria-label="Menú de acciones de inventario">
         <input id="mobileSearchInput" type="search" placeholder="buscar producto">
-        <button id="mobileAddToFT" type="button">Agregar FT</button>
-        <button id="mobileReloadInventory" type="button">Guardar/recargar</button>
-        <button id="mobileViewFT" type="button">Ver FT</button>
-        <button id="mobileChangeInv" type="button">Cambiar inventario</button>
+        <button id="mobileAddToFT" type="button"><span>Agregar FT</span><span class="ico svgIcon"><img src="assets/icons/ft.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileReloadInventory" type="button"><span>Guardar/recargar</span><span class="ico svgIcon"><img src="assets/icons/action-hub.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileViewFT" type="button"><span>Ver FT</span><span class="ico svgIcon"><img src="assets/icons/ft.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileChangeInv" type="button"><span>Cambiar inventario</span><span class="ico svgIcon"><img src="assets/icons/organize.svg" alt="" aria-hidden="true"></span></button>
       </div>
       <div id="mobileViewMenu" class="mobileDropdown" aria-label="Menú de vista y filtros">
-        <button id="mobileCalcMode" type="button">Modo cálculo</button>
-        <button id="mobileSortBtn" type="button">Organizar</button>
-        <button id="mobileFilterBtn" type="button">Filtrar</button>
+        <button id="mobileSortBtn" type="button"><span>Organizar</span><span class="ico svgIcon"><img src="assets/icons/organize.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileFilterBtn" type="button"><span>Filtrar</span><span class="ico svgIcon"><img src="assets/icons/filter.svg" alt="" aria-hidden="true"></span></button>
       </div>
     </section>
 
@@ -726,7 +1170,7 @@
         <div><label for="mSupplier">Proveedor</label><input id="mSupplier" autocomplete="off"></div>
         <div><label for="mProductName">Producto</label><input id="mProductName" autocomplete="off"></div>
         <div><label for="mPresentation">Presentación</label><input id="mPresentation" type="number" min="0" step="any"></div>
-        <div><label for="mUnit">Unidad</label><select id="mUnit"><option value="">Unidad</option><option value="g">g</option><option value="kg">kg</option><option value="lb">lb</option><option value="oz">oz</option><option value="ml">ml</option><option value="l">l</option><option value="unidad">unidad</option><option value="docena">docena</option></select></div>
+        <div><label for="mUnitSelectBtn">Modo de cálculo</label><button id="mUnitSelectBtn" class="unitPickerBtn mobileUnitPicker" type="button">Seleccionar modo</button><input id="mUnit" type="hidden"></div>
         <div><label for="mStock">Stock</label><input id="mStock" type="number" min="0" step="any"></div>
         <div><label for="mTotalCost">Costo total</label><input id="mTotalCost" type="number" min="0" step="any"></div>
         <div><label for="mExpires">Expira</label><input id="mExpires" type="date"></div>
@@ -743,7 +1187,7 @@
       <div class="debugTop">
         <div class="debugTitle">Debug Wix / HTML</div>
         <div class="debugActions">
-          <button id="toggleDebug" type="button">Ver debug</button>
+          <button id="toggleDebug" type="button" title="Debug">🐞</button>
           <button id="copyDebug" type="button">Copiar debug</button>
           <button id="clearDebug" type="button">Limpiar</button>
         </div>
@@ -756,7 +1200,7 @@
 
     <section class="inventoryShell">
       <div class="inventoryGrid" aria-label="Encabezado de inventario">
-        <div class="head">Proveedor</div><div class="head">Producto</div><div class="head">Presentacion</div><div class="head">Unidad de Medida</div><div class="head">En Stock</div><div class="head">CostoTotal</div><div class="head">Costo por Unidad</div><div class="head">Expira</div><div class="head">Fecha mod</div>
+        <div class="head">Proveedor</div><div class="head">Producto</div><div class="head">Presentacion</div><div class="head">Modo de cálculo</div><div class="head">En Stock</div><div class="head">CostoTotal</div><div class="head">Costo por Unidad</div><div class="head">Expira</div><div class="head">Fecha mod</div>
       </div>
       <div id="inventoryRows" class="inventoryRows" aria-label="Productos guardados"></div>
     </section>
@@ -765,9 +1209,9 @@
     <div id="mobileProductActions" class="mobileProductActions" aria-label="Opciones del producto seleccionado">
       <button id="mobileProductToggle" class="mobileProductToggle" type="button">›</button>
       <div class="mobileProductMenu">
-        <button id="mobileDuplicateProduct" type="button">Duplicar</button>
-        <button id="mobileDeleteProduct" class="danger" type="button">Eliminar</button>
-        <button id="mobileModifyProduct" class="update" type="button">Modificar</button>
+        <button id="mobileDuplicateProduct" type="button"><span>Duplicar</span><span class="ico svgIcon"><img src="assets/icons/copy.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileDeleteProduct" class="danger" type="button"><span>Eliminar</span><span class="ico svgIcon"><img src="assets/icons/delete.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileModifyProduct" class="update" type="button"><span>Modificar</span><span class="ico svgIcon"><img src="assets/icons/edit.svg" alt="" aria-hidden="true"></span></button>
       </div>
     </div>
   </main>
@@ -809,6 +1253,22 @@
     </div>
   </aside>
 
+
+  <div id="confirmModal" class="confirmModal" aria-hidden="true">
+    <div id="confirmBox" class="confirmBox confirm-warning" role="dialog" aria-modal="true" aria-labelledby="confirmText">
+      <div id="confirmIcon" class="confirmIcon"></div>
+      <div>
+        <div id="confirmText" class="confirmText">¿Deseas continuar?</div>
+        <div id="confirmSubText" class="confirmSubText"></div>
+      </div>
+      <div id="confirmActions" class="confirmActions">
+        <button id="confirmYes" type="button">Sí, continuar</button>
+        <button id="confirmNo" type="button">No, cancelar</button>
+      </div>
+      <div id="confirmSuccessText" class="confirmSuccessText">Operación exitosa</div>
+    </div>
+  </div>
+
   <div id="modal" class="modal">
     <div class="modalCard">
       <h2 id="modalTitle">Panel</h2>
@@ -824,14 +1284,146 @@
     const STORAGE_KEY = 'nexo_inventory_mvp_v9_wix_cache';
     const AVISO_KEY = 'nexo_inventory_aviso_v9_wix_cache';
     const ACTIVE_INVENTORY_ID = 'base';
+
+    const ICON_PATHS = {
+      add: 'assets/icons/add-inventory.svg',
+      copy: 'assets/icons/copy.svg',
+      delete: 'assets/icons/delete.svg',
+      edit: 'assets/icons/edit.svg',
+      clean: 'assets/icons/clean.svg',
+      filter: 'assets/icons/filter.svg',
+      organize: 'assets/icons/organize.svg',
+      sort: 'assets/icons/sort.svg',
+      measure: 'assets/icons/measure.svg',
+      ft: 'assets/icons/ft.svg',
+      action: 'assets/icons/action-hub.svg'
+    };
+
+    function iconMarkup(key, extraClass=''){
+      const src = ICON_PATHS[key] || ICON_PATHS.action;
+      return `<span class="svgIcon ${extraClass}"><img src="${src}" alt="" aria-hidden="true"></span>`;
+    }
+
+    let pendingConfirmAction = null;
+    let confirmSuccessTimer = null;
+
+    const CONFIRM_CONFIG = {
+      add: {
+        boxClass: 'confirm-add',
+        icon: 'add',
+        message: '¿Deseas agregar este producto?',
+        sub: 'Se guardará como un nuevo item en el inventario actual.',
+        yes: 'Sí, agregar',
+        no: 'No, cancelar',
+        yesClass: 'confirmBtnGreen',
+        noClass: 'confirmBtnYellow'
+      },
+      duplicate: {
+        boxClass: 'confirm-duplicate',
+        icon: 'copy',
+        message: '¿Deseas duplicar este item?',
+        sub: 'Se creará una copia nueva del producto seleccionado.',
+        yes: 'Sí, duplicar',
+        no: 'No, cancelar',
+        yesClass: 'confirmBtnYellow',
+        noClass: 'confirmBtnGreen'
+      },
+      update: {
+        boxClass: 'confirm-update',
+        icon: 'edit',
+        message: '¿Deseas modificar este item?',
+        sub: 'Los datos actuales reemplazarán el producto seleccionado.',
+        yes: 'Sí, modificar',
+        no: 'No, cancelar',
+        yesClass: 'confirmBtnYellow',
+        noClass: 'confirmBtnGreen'
+      },
+      delete: {
+        boxClass: 'confirm-delete',
+        icon: 'delete',
+        message: '¿Deseas eliminar este item?',
+        sub: 'Esta acción quitará el producto del inventario.',
+        yes: 'Sí, eliminar',
+        no: 'No, cancelar',
+        yesClass: 'confirmBtnRed',
+        noClass: 'confirmBtnGreen'
+      },
+      warning: {
+        boxClass: 'confirm-warning',
+        icon: 'action',
+        message: '¿Deseas continuar?',
+        sub: '',
+        yes: 'Sí, continuar',
+        no: 'No, cancelar',
+        yesClass: 'confirmBtnYellow',
+        noClass: 'confirmBtnGreen'
+      }
+    };
+
+    function askConfirm(type, options={}){
+      const cfg = {...(CONFIRM_CONFIG[type] || CONFIRM_CONFIG.warning), ...options};
+      const modal = $('confirmModal');
+      const box = $('confirmBox');
+      const yes = $('confirmYes');
+      const no = $('confirmNo');
+      if(!modal || !box || !yes || !no){
+        if(typeof cfg.onConfirm === 'function') cfg.onConfirm();
+        return;
+      }
+      clearTimeout(confirmSuccessTimer);
+      pendingConfirmAction = typeof cfg.onConfirm === 'function' ? cfg.onConfirm : null;
+      box.className = `confirmBox ${cfg.boxClass}`;
+      $('confirmIcon').innerHTML = `<img src="${ICON_PATHS[cfg.icon] || ICON_PATHS.action}" alt="" aria-hidden="true">`;
+      $('confirmText').textContent = cfg.message;
+      $('confirmSubText').textContent = cfg.sub || '';
+      $('confirmSuccessText').textContent = 'Operación exitosa';
+      yes.textContent = cfg.yes;
+      no.textContent = cfg.no;
+      yes.className = cfg.yesClass;
+      no.className = cfg.noClass;
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden','false');
+    }
+
+    function closeConfirmModal(){
+      const modal = $('confirmModal');
+      if(!modal) return;
+      pendingConfirmAction = null;
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden','true');
+    }
+
+    function confirmYesAction(){
+      const action = pendingConfirmAction;
+      pendingConfirmAction = null;
+      closeConfirmModal();
+      if(typeof action === 'function') action();
+    }
+
+    function showConfirmSuccess(message='Operación exitosa'){
+      const modal = $('confirmModal');
+      const box = $('confirmBox');
+      if(!modal || !box) return;
+      clearTimeout(confirmSuccessTimer);
+      box.className = 'confirmBox confirm-success';
+      $('confirmIcon').innerHTML = `<img src="${ICON_PATHS.action}" alt="" aria-hidden="true">`;
+      $('confirmSuccessText').textContent = message;
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden','false');
+      confirmSuccessTimer = setTimeout(closeConfirmModal, 1150);
+    }
+
     const $ = (id) => document.getElementById(id);
 
     let products = [];
     let avisoSettings = {};
     let selectedId = null;
     let pendingFoilId = null;
-    let sortState = { field: 'modifiedAt', dir: 'desc' };
-    let activeFilter = 'all';
+    let editorMode = 'add';
+    let editorTargetId = null;
+    let sortState = { key: 'modifiedDesc', label: 'Modificados recientes' };
+    let activeFilter = { key:null, value:null, label:'' };
+    let currentFilterAnchorId = 'filterBtn';
     let bridgeReady = false;
     let hasLoadedFromWix = false;
     const debugLines = [];
@@ -885,18 +1477,314 @@
     const fields = ['supplier','productName','presentation','unit','stock','totalCost','unitCost','expires'];
 
     const unitToBase = {
-      g: { base:'g', factor:1 },
+      mg:{ base:'g', factor:0.001 },
+      g:{ base:'g', factor:1 },
       kg:{ base:'g', factor:1000 },
+      oz:{ base:'g', factor:28.349523125 },
       lb:{ base:'g', factor:453.59237 },
-      oz:{ base:'g', factor:28.3495 },
+
       ml:{ base:'ml', factor:1 },
       l:{ base:'ml', factor:1000 },
       lt:{ base:'ml', factor:1000 },
       litro:{ base:'ml', factor:1000 },
+      fl_oz:{ base:'ml', factor:29.5735295625 },
+      tsp:{ base:'ml', factor:4.92892159375 },
+      tbsp:{ base:'ml', factor:14.78676478125 },
+      cup:{ base:'ml', factor:236.5882365 },
+      qt:{ base:'ml', factor:946.352946 },
+      gal:{ base:'ml', factor:3785.411784 },
+
+      unit:{ base:'unidad', factor:1 },
       unidad:{ base:'unidad', factor:1 },
-      unidades:{ base:'unidad', factor:1 },
-      docena:{ base:'unidad', factor:12 }
+      piece:{ base:'unidad', factor:1 },
+      pieza:{ base:'unidad', factor:1 },
+      pack_2:{ base:'unidad', factor:2 },
+      pack_4:{ base:'unidad', factor:4 },
+      pack_6:{ base:'unidad', factor:6 },
+      pack_8:{ base:'unidad', factor:8 },
+      pack_10:{ base:'unidad', factor:10 },
+      pack_12:{ base:'unidad', factor:12 },
+      pack_24:{ base:'unidad', factor:24 },
+      pack_32:{ base:'unidad', factor:32 },
+      pack_48:{ base:'unidad', factor:48 },
+
+      mm:{ base:'cm', factor:0.1 },
+      cm:{ base:'cm', factor:1 },
+      m:{ base:'cm', factor:100 },
+      in:{ base:'cm', factor:2.54 },
+      ft:{ base:'cm', factor:30.48 },
+      yd:{ base:'cm', factor:91.44 },
+
+      cm2:{ base:'cm2', factor:1 },
+      m2:{ base:'cm2', factor:10000 },
+      in2:{ base:'cm2', factor:6.4516 },
+      ft2:{ base:'cm2', factor:929.0304 },
+      yd2:{ base:'cm2', factor:8361.2736 }
     };
+
+
+
+    const UNIT_LABELS = {
+      mg:'miligramo', g:'gramo', kg:'kilogramo', oz:'onza', lb:'libra',
+      ml:'mililitro', l:'litro', lt:'litro', litro:'litro', fl_oz:'onza líquida', tsp:'cucharadita', tbsp:'cucharada', cup:'copa / taza', qt:'cuarto', gal:'galón',
+      unit:'unidad', unidad:'unidad', piece:'pieza', pieza:'pieza', pack_2:'empaque de 2', pack_4:'empaque de 4', pack_6:'empaque de 6', pack_8:'empaque de 8', pack_10:'empaque de 10', pack_12:'empaque de 12', pack_24:'empaque de 24', pack_32:'empaque de 32', pack_48:'empaque de 48',
+      mm:'milímetro', cm:'centímetro', m:'metro', in:'pulgada', ft:'pie', yd:'yarda',
+      cm2:'centímetro²', m2:'metro²', in2:'pulgada²', ft2:'pie²', yd2:'yarda²'
+    };
+
+    const MEASURE_TREE = {
+      mass:{ label:'Masa', families:{ metric:{ label:'Gramos / sistema métrico', units:[['mg','miligramo'],['g','gramo'],['kg','kilogramo']] }, ounces:{ label:'Onzas', units:[['oz','onza']] }, pounds:{ label:'Libras', units:[['lb','libra']] } } },
+      volume:{ label:'Volumen', families:{ liters:{ label:'Litros', units:[['ml','mililitro'],['l','litro']] }, fluidOunces:{ label:'Onzas líquidas', units:[['fl_oz','onza líquida']] }, kitchen:{ label:'Cocina', units:[['tsp','cucharadita'],['tbsp','cucharada'],['cup','copa / taza']] }, gallons:{ label:'Galones y cuartos', units:[['qt','cuarto'],['gal','galón']] } } },
+      count:{ label:'Unidad / conteo', families:{ individual:{ label:'Individual', units:[['unit','unidad'],['piece','pieza']] }, packages:{ label:'Embalaje', units:[['pack_2','empaque de 2'],['pack_4','empaque de 4'],['pack_6','empaque de 6'],['pack_8','empaque de 8'],['pack_10','empaque de 10'],['pack_12','empaque de 12'],['pack_24','empaque de 24'],['pack_32','empaque de 32'],['pack_48','empaque de 48']] } } },
+      length:{ label:'Longitud', families:{ metric:{ label:'Sistema métrico', units:[['mm','milímetro'],['cm','centímetro'],['m','metro']] }, inches:{ label:'Pulgadas', units:[['in','pulgada']] }, feet:{ label:'Pies', units:[['ft','pie']] }, yards:{ label:'Yardas', units:[['yd','yarda']] } } },
+      area:{ label:'Área', families:{ metric:{ label:'Sistema métrico', units:[['cm2','centímetro²'],['m2','metro²']] }, inches:{ label:'Pulgadas cuadradas', units:[['in2','pulgada²']] }, feet:{ label:'Pies cuadrados', units:[['ft2','pie²']] }, yards:{ label:'Yardas cuadradas', units:[['yd2','yarda²']] } } }
+    };
+
+
+    const FILTER_FIELDS = [
+      {
+        key:'supplier',
+        label:'Proveedor',
+        getValue:p => cleanFilterValue(p.supplier),
+        getLabel:p => cleanFilterValue(p.supplier) || 'Sin proveedor'
+      },
+      {
+        key:'productName',
+        label:'Producto',
+        getValue:p => cleanFilterValue(p.productName),
+        getLabel:p => cleanFilterValue(p.productName) || 'Sin producto'
+      },
+      {
+        key:'presentation',
+        label:'Presentación',
+        getValue:p => `${cleanFilterValue(p.presentation)}|${cleanFilterValue(p.unit)}`,
+        getLabel:p => `${cleanFilterValue(p.presentation) || '0'} ${getUnitLabel(p.unit) || cleanFilterValue(p.unit) || ''}`.trim()
+      },
+      {
+        key:'unit',
+        label:'Modo de cálculo',
+        getValue:p => cleanFilterValue(p.unit || p.modoDeCalculo || p.unitOfMeasure),
+        getLabel:p => getUnitLabel(p.unit || p.modoDeCalculo || p.unitOfMeasure) || 'Sin modo'
+      },
+      {
+        key:'stock',
+        label:'En stock',
+        getValue:p => String(cleanNumber(p.stock)),
+        getLabel:p => String(cleanNumber(p.stock))
+      },
+      {
+        key:'totalCost',
+        label:'Costo total',
+        getValue:p => String(cleanNumber(p.totalCost)),
+        getLabel:p => fmtMoney(p.totalCost)
+      },
+      {
+        key:'unitCost',
+        label:'Costo por unidad',
+        getValue:p => `${Number(p.unitCost || 0).toFixed(6)}|${cleanFilterValue(p.baseUnit)}`,
+        getLabel:p => `${fmtMoney(p.unitCost)} / ${getUnitLabel(p.baseUnit) || p.baseUnit || ''}`.trim()
+      },
+      {
+        key:'expires',
+        label:'Expira',
+        getValue:p => cleanFilterValue(p.expires) || '__empty__',
+        getLabel:p => cleanFilterValue(p.expires) || 'Sin fecha'
+      },
+      {
+        key:'expirationStatus',
+        label:'Estado de vencimiento',
+        getValue:p => getExpirationFilterStatus(p).value,
+        getLabel:p => getExpirationFilterStatus(p).label
+      },
+      {
+        key:'modifiedAt',
+        label:'Fecha mod',
+        getValue:p => cleanFilterValue(p.modifiedAt) || '__empty__',
+        getLabel:p => cleanFilterValue(p.modifiedAt) || 'Sin fecha mod'
+      }
+    ];
+
+    const SORT_OPTIONS = [
+      {
+        key:'productAZ',
+        label:'Producto A → Z',
+        hint:'Orden alfabético por nombre de producto.',
+        compare:(a,b) => compareText(a.productName, b.productName, 'asc') || compareText(a.supplier, b.supplier, 'asc')
+      },
+      {
+        key:'productZA',
+        label:'Producto Z → A',
+        hint:'Orden alfabético inverso por nombre de producto.',
+        compare:(a,b) => compareText(a.productName, b.productName, 'desc') || compareText(a.supplier, b.supplier, 'asc')
+      },
+      {
+        key:'supplierAZ',
+        label:'Proveedor A → Z',
+        hint:'Agrupa primero por proveedor en orden alfabético.',
+        compare:(a,b) => compareText(a.supplier, b.supplier, 'asc') || compareText(a.productName, b.productName, 'asc')
+      },
+      {
+        key:'supplierZA',
+        label:'Proveedor Z → A',
+        hint:'Proveedor en orden inverso.',
+        compare:(a,b) => compareText(a.supplier, b.supplier, 'desc') || compareText(a.productName, b.productName, 'asc')
+      },
+      {
+        key:'amountDesc',
+        label:'Peso/cantidad mayor → menor',
+        hint:'Ordena por la presentación convertida a su unidad base: g, ml, unidad, cm o cm².',
+        compare:(a,b) => compareText(getBaseUnit(a.unit), getBaseUnit(b.unit), 'asc') || compareNumber(getComparableAmount(b), getComparableAmount(a), 'asc')
+      },
+      {
+        key:'amountAsc',
+        label:'Peso/cantidad menor → mayor',
+        hint:'Ordena por la presentación convertida a su unidad base: g, ml, unidad, cm o cm².',
+        compare:(a,b) => compareText(getBaseUnit(a.unit), getBaseUnit(b.unit), 'asc') || compareNumber(getComparableAmount(a), getComparableAmount(b), 'asc')
+      },
+      {
+        key:'unitCostAsc',
+        label:'Mejor rendimiento',
+        hint:'Costo por unidad de menor a mayor. El primero suele ser el más conveniente.',
+        compare:(a,b) => compareNumber(a.unitCost, b.unitCost, 'asc') || compareText(a.productName, b.productName, 'asc')
+      },
+      {
+        key:'unitCostDesc',
+        label:'Peor rendimiento',
+        hint:'Costo por unidad de mayor a menor. El primero suele ser el menos conveniente.',
+        compare:(a,b) => compareNumber(a.unitCost, b.unitCost, 'desc') || compareText(a.productName, b.productName, 'asc')
+      },
+      {
+        key:'totalCostAsc',
+        label:'Costo total menor → mayor',
+        hint:'Ordena por precio de compra más bajo primero.',
+        compare:(a,b) => compareNumber(a.totalCost, b.totalCost, 'asc')
+      },
+      {
+        key:'totalCostDesc',
+        label:'Costo total mayor → menor',
+        hint:'Ordena por precio de compra más alto primero.',
+        compare:(a,b) => compareNumber(a.totalCost, b.totalCost, 'desc')
+      },
+      {
+        key:'stockDesc',
+        label:'Stock mayor → menor',
+        hint:'Muestra primero lo que tiene más stock registrado.',
+        compare:(a,b) => compareNumber(a.stock, b.stock, 'desc')
+      },
+      {
+        key:'stockAsc',
+        label:'Stock menor → mayor',
+        hint:'Muestra primero lo que tiene menos stock registrado.',
+        compare:(a,b) => compareNumber(a.stock, b.stock, 'asc')
+      },
+      {
+        key:'expiresAsc',
+        label:'Vence primero',
+        hint:'Muestra primero fechas de expiración más cercanas.',
+        compare:(a,b) => compareDate(a.expires, b.expires, 'asc')
+      },
+      {
+        key:'expiredFirst',
+        label:'Vencidos primero',
+        hint:'Ordena por estado de vencimiento: vencidos, por vencer, vigentes y sin fecha.',
+        compare:(a,b) => compareNumber(getExpirationSortWeight(a), getExpirationSortWeight(b), 'asc') || compareDate(a.expires, b.expires, 'asc')
+      },
+      {
+        key:'modifiedDesc',
+        label:'Modificados recientes',
+        hint:'Muestra primero los productos modificados recientemente.',
+        compare:(a,b) => compareDate(a.modifiedAt, b.modifiedAt, 'desc')
+      },
+      {
+        key:'modifiedAsc',
+        label:'Modificados antiguos',
+        hint:'Muestra primero los productos modificados hace más tiempo.',
+        compare:(a,b) => compareDate(a.modifiedAt, b.modifiedAt, 'asc')
+      }
+    ];
+
+    function getUnitLabel(value){
+      const key = String(value || '').toLowerCase();
+      return UNIT_LABELS[key] || value || '';
+    }
+
+    function setUnitSelection(target='desktop', value=''){
+      const inputId = target === 'mobile' ? 'mUnit' : 'unit';
+      const btnId = target === 'mobile' ? 'mUnitSelectBtn' : 'unitSelectBtn';
+      const input = $(inputId);
+      const btn = $(btnId);
+      if(input) input.value = value || '';
+      if(btn){
+        btn.textContent = value ? getUnitLabel(value) : 'Seleccionar modo';
+        btn.classList.toggle('hasValue', Boolean(value));
+      }
+      if(target === 'mobile') calculateMobileUnitCost(); else calculateUnitCost();
+    }
+
+    function openMeasureSelector(target='desktop', categoryKey=null, familyKey=null){
+      let title = 'Modo de cálculo';
+      let html = '';
+      if(!categoryKey){
+        html += '<div class="measureCrumb">Elige la categoría principal.</div><div class="measureMenu">';
+        Object.entries(MEASURE_TREE).forEach(([key, category]) => {
+          html += `<button class="measureOption" type="button" data-measure-category="${key}" data-target="${target}">${category.label}</button>`;
+        });
+        html += '</div>';
+      }else if(!familyKey){
+        const category = MEASURE_TREE[categoryKey];
+        title = category.label;
+        html += `<div class="measureCrumb">${category.label} → elige la familia lógica.</div><div class="measureMenu">`;
+        html += `<button class="measureOption measureBack" type="button" data-measure-back="root" data-target="${target}">← Volver</button>`;
+        Object.entries(category.families).forEach(([key, family]) => {
+          html += `<button class="measureOption" type="button" data-measure-family="${key}" data-category="${categoryKey}" data-target="${target}">${family.label}</button>`;
+        });
+        html += '</div>';
+      }else{
+        const category = MEASURE_TREE[categoryKey];
+        const family = category.families[familyKey];
+        title = family.label;
+        html += `<div class="measureCrumb">${category.label} → ${family.label} → unidad final.</div><div class="measureMenu">`;
+        html += `<button class="measureOption measureBack" type="button" data-measure-back="family" data-category="${categoryKey}" data-target="${target}">← Volver</button>`;
+        family.units.forEach(([value, label]) => {
+          html += `<button class="measureOption" type="button" data-measure-value="${value}" data-target="${target}">${label}</button>`;
+        });
+        html += '</div>';
+      }
+      openModal(title, html);
+      bindMeasureSelectorButtons();
+    }
+
+    function bindMeasureSelectorButtons(){
+      document.querySelectorAll('[data-measure-category]').forEach(btn => {
+        btn.addEventListener('click', () => openMeasureSelector(btn.dataset.target, btn.dataset.measureCategory, null));
+      });
+      document.querySelectorAll('[data-measure-family]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const category = MEASURE_TREE[btn.dataset.category];
+          const family = category?.families?.[btn.dataset.measureFamily];
+          if(family && family.units.length === 1){
+            setUnitSelection(btn.dataset.target, family.units[0][0]);
+            closeModal();
+            showMessage('Modo de cálculo seleccionado: ' + family.units[0][1]);
+          }else{
+            openMeasureSelector(btn.dataset.target, btn.dataset.category, btn.dataset.measureFamily);
+          }
+        });
+      });
+      document.querySelectorAll('[data-measure-value]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setUnitSelection(btn.dataset.target, btn.dataset.measureValue);
+          closeModal();
+          showMessage('Modo de cálculo seleccionado: ' + getUnitLabel(btn.dataset.measureValue));
+        });
+      });
+      document.querySelectorAll('[data-measure-back]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if(btn.dataset.measureBack === 'root') openMeasureSelector(btn.dataset.target, null, null);
+          else openMeasureSelector(btn.dataset.target, btn.dataset.category, null);
+        });
+      });
+    }
 
     function uid(){ return 'px_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
     function nowDate(){ return new Date().toISOString().slice(0,10); }
@@ -917,6 +1805,209 @@
     }
     function productKey(value){ return normalizeText(value); }
     function normalizeName(value){ return normalizeText(value); }
+
+    function cleanFilterValue(value){
+      if(value === null || value === undefined) return '';
+      return String(value).trim();
+    }
+
+    function getFilterField(key){
+      return FILTER_FIELDS.find(field => field.key === key);
+    }
+
+    function getExpirationFilterStatus(product){
+      if(!product || !product.expires) return { value:'sin_fecha', label:'Sin fecha' };
+      const info = getExpirationInfo(product);
+      if(info.type === 'danger') return { value:'vencido', label:'Vencido' };
+      if(info.type === 'warn') return { value:'por_vencer', label:'Por vencer' };
+      return { value:'vigente', label:'Vigente' };
+    }
+
+    function getFilterOptions(fieldKey){
+      const field = getFilterField(fieldKey);
+      if(!field) return [];
+      const map = new Map();
+      products.forEach(product => {
+        const value = field.getValue(product);
+        const label = field.getLabel(product);
+        const key = value || '__empty__';
+        if(!map.has(key)){
+          map.set(key, { value:key, label:label || 'Sin valor', count:0 });
+        }
+        map.get(key).count += 1;
+      });
+      return Array.from(map.values()).sort((a,b) => {
+        const na = Number(a.label), nb = Number(b.label);
+        if(Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+        return String(a.label).localeCompare(String(b.label), 'es', { numeric:true, sensitivity:'base' });
+      });
+    }
+
+    function productMatchesActiveFilter(product){
+      if(!activeFilter || !activeFilter.key) return true;
+      const field = getFilterField(activeFilter.key);
+      if(!field) return true;
+      const value = field.getValue(product) || '__empty__';
+      return value === activeFilter.value;
+    }
+
+    function activeFilterText(){
+      if(!activeFilter || !activeFilter.key) return 'Sin filtro activo.';
+      const field = getFilterField(activeFilter.key);
+      return `Filtro activo: ${field?.label || activeFilter.key} → ${activeFilter.label || activeFilter.value}`;
+    }
+
+    function openFilterSelector(fieldKey=null, anchorId='filterBtn'){
+      currentFilterAnchorId = anchorId || currentFilterAnchorId || 'filterBtn';
+      let title = 'Filtrar inventario';
+      let html = `<div class="filterStatus">${escapeHtml(activeFilterText())}</div>`;
+
+      if(!fieldKey){
+        html += '<div class="filterMenu">';
+        if(activeFilter && activeFilter.key){
+          html += '<button class="filterOption clear" type="button" data-filter-clear="1"><span>Limpiar filtro</span><span class="filterCount">ver todo</span></button>';
+        }
+        FILTER_FIELDS.forEach(field => {
+          const options = getFilterOptions(field.key).filter(option => option.value !== '__empty__' || field.key === 'expires' || field.key === 'modifiedAt');
+          const active = activeFilter?.key === field.key ? ' active' : '';
+          html += `<button class="filterOption${active}" type="button" data-filter-field="${field.key}"><span>${escapeHtml(field.label)}</span><span class="filterCount">${options.length} opciones</span></button>`;
+        });
+        html += '</div>';
+      }else{
+        const field = getFilterField(fieldKey);
+        title = field ? `Filtrar por ${field.label}` : 'Filtrar';
+        html += `<div class="filterMenu">`;
+        html += '<button class="filterOption back" type="button" data-filter-back="1"><span>← Volver a categorías</span></button>';
+        html += '<button class="filterOption clear" type="button" data-filter-clear="1"><span>Limpiar filtro</span><span class="filterCount">ver todo</span></button>';
+        const options = getFilterOptions(fieldKey);
+        if(!options.length){
+          html += '<div class="filterEmpty">No hay valores disponibles para esta categoría.</div>';
+        }else{
+          options.forEach(option => {
+            const active = activeFilter?.key === fieldKey && activeFilter?.value === option.value ? ' active' : '';
+            html += `<button class="filterOption${active}" type="button" data-filter-value="${escapeHtml(option.value)}" data-filter-label="${escapeHtml(option.label)}" data-filter-key="${fieldKey}"><span>${escapeHtml(option.label)}</span><span class="filterCount">${option.count}</span></button>`;
+          });
+        }
+        html += '</div>';
+      }
+
+      openDropdownModal(currentFilterAnchorId, title, html, 'filter');
+      bindFilterSelectorButtons();
+    }
+
+    function bindFilterSelectorButtons(){
+      document.querySelectorAll('[data-filter-field]').forEach(btn => {
+        btn.addEventListener('click', () => openFilterSelector(btn.dataset.filterField, currentFilterAnchorId));
+      });
+      document.querySelectorAll('[data-filter-value]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const field = getFilterField(btn.dataset.filterKey);
+          activeFilter = { key:btn.dataset.filterKey, value:btn.dataset.filterValue, label:btn.dataset.filterLabel || '' };
+          closeModal();
+          render();
+          showMessage(`Filtro aplicado: ${field?.label || activeFilter.key} → ${activeFilter.label}`);
+        });
+      });
+      document.querySelectorAll('[data-filter-clear]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeFilter = { key:null, value:null, label:'' };
+          closeModal();
+          render();
+          showMessage('Filtro limpio. Mostrando inventario base.');
+        });
+      });
+      document.querySelectorAll('[data-filter-back]').forEach(btn => {
+        btn.addEventListener('click', () => openFilterSelector(null, currentFilterAnchorId));
+      });
+    }
+
+    function getSortOption(key){
+      return SORT_OPTIONS.find(option => option.key === key) || SORT_OPTIONS.find(option => option.key === 'modifiedDesc') || SORT_OPTIONS[0];
+    }
+
+    function activeSortText(){
+      const option = getSortOption(sortState.key);
+      return `Orden activo: ${option?.label || 'Sin orden'}`;
+    }
+
+    function compareText(a, b, dir='asc'){
+      const aa = String(a ?? '').trim();
+      const bb = String(b ?? '').trim();
+      const result = aa.localeCompare(bb, 'es', { numeric:true, sensitivity:'base' });
+      return dir === 'desc' ? -result : result;
+    }
+
+    function normalizeComparableNumber(value){
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function compareNumber(a, b, dir='asc'){
+      const aa = normalizeComparableNumber(a);
+      const bb = normalizeComparableNumber(b);
+      if(aa === null && bb === null) return 0;
+      if(aa === null) return 1;
+      if(bb === null) return -1;
+      return dir === 'desc' ? bb - aa : aa - bb;
+    }
+
+    function compareDate(a, b, dir='asc'){
+      const aa = parseDateValue(a);
+      const bb = parseDateValue(b);
+      if(aa === null && bb === null) return 0;
+      if(aa === null) return 1;
+      if(bb === null) return -1;
+      return dir === 'desc' ? bb - aa : aa - bb;
+    }
+
+    function parseDateValue(value){
+      if(!value) return null;
+      const d = new Date(value);
+      const t = d.getTime();
+      return Number.isFinite(t) ? t : null;
+    }
+
+    function getComparableAmount(product){
+      const qty = Number(product?.presentation || 0);
+      const unit = String(product?.unit || product?.modoDeCalculo || product?.unitOfMeasure || '').toLowerCase();
+      const factor = unitToBase[unit]?.factor;
+      if(!qty || !Number.isFinite(qty)) return null;
+      if(!factor) return qty;
+      return qty * factor;
+    }
+
+    function getExpirationSortWeight(product){
+      const status = getExpirationFilterStatus(product).value;
+      if(status === 'vencido') return 0;
+      if(status === 'por_vencer') return 1;
+      if(status === 'vigente') return 2;
+      return 3;
+    }
+
+    function openSortSelector(anchorId='sortBtn'){
+      let html = `<div class="filterStatus">${escapeHtml(activeSortText())}</div>`;
+      html += '<div class="filterMenu">';
+      SORT_OPTIONS.forEach(option => {
+        const active = sortState.key === option.key ? ' active' : '';
+        html += `<button class="filterOption${active}" type="button" data-sort-key="${escapeHtml(option.key)}"><span>${escapeHtml(option.label)}</span></button>`;
+      });
+      html += '</div>';
+      openDropdownModal(anchorId || 'sortBtn', 'Organizar inventario', html, 'sort');
+      bindSortSelectorButtons();
+    }
+
+    function bindSortSelectorButtons(){
+      document.querySelectorAll('[data-sort-key]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const option = getSortOption(btn.dataset.sortKey);
+          sortState = { key: option.key, label: option.label };
+          closeModal();
+          render();
+          showMessage('Orden aplicado: ' + option.label);
+        });
+      });
+    }
+
     function getBaseUnit(unit){
       const value = String(unit || '').trim().toLowerCase();
       return unitToBase[value]?.base || value || '';
@@ -944,7 +2035,7 @@
       if(!qty || !cost || !rule) return {value:0, label:''};
       const baseQty = qty * rule.factor;
       const value = cost / baseQty;
-      return {value, label: fmtMoney(value) + ' / ' + rule.base};
+      return {value, label: fmtMoney(value) + ' / ' + getUnitLabel(rule.base)};
     }
     function calculateUnitCost(){
       const c = calcCost($('presentation').value, $('unit').value, $('totalCost').value);
@@ -964,6 +2055,7 @@
         presentation: Number($('presentation').value),
         unit,
         unitOfMeasure: unit,
+        modoDeCalculo: unit,
         unidadCosto: unitToBase[unit]?.base || getBaseUnit(unit),
         baseUnit: unitToBase[unit]?.base || getBaseUnit(unit),
         stock: Number($('stock').value),
@@ -983,7 +2075,7 @@
       if(!product.supplier) return 'Falta el proveedor.';
       if(!product.productName) return 'Falta el nombre del producto.';
       if(!product.presentation || product.presentation <= 0) return 'La presentación debe ser mayor que cero.';
-      if(!product.unit) return 'Selecciona una unidad de medida.';
+      if(!product.unit) return 'Selecciona un modo de cálculo.';
       if(product.totalCost < 0 || Number.isNaN(product.totalCost)) return 'El costo total debe ser válido.';
       if(product.stock < 0 || Number.isNaN(product.stock)) return 'El stock debe ser válido.';
       return '';
@@ -994,7 +2086,7 @@
       $('supplier').value = product.supplier || '';
       $('productName').value = product.productName || '';
       $('presentation').value = product.presentation || '';
-      $('unit').value = product.unit || product.unitOfMeasure || '';
+      setUnitSelection('desktop', product.unit || product.modoDeCalculo || product.unitOfMeasure || '');
       $('stock').value = product.stock ?? product.maxStock ?? '';
       $('totalCost').value = product.totalCost ?? '';
       $('expires').value = product.expires || dateToInput(product.expira) || '';
@@ -1003,7 +2095,43 @@
 
     function clearForm(){
       selectedId = null;
-      fields.forEach(id => $(id).value = '');
+      fields.forEach(id => { const el = $(id); if(el) el.value = ''; });
+      setUnitSelection('desktop', '');
+      setEditorMode('add', null, false);
+      render();
+    }
+
+    function setEditorMode(mode='add', targetId=null, announce=true){
+      editorMode = mode === 'update' ? 'update' : 'add';
+      editorTargetId = editorMode === 'update' ? (targetId || selectedId) : null;
+      document.body.classList.toggle('desktopEditing', editorMode === 'update');
+
+      const addBtn = $('addToInventory');
+      const hubBtn = $('desktopInventoryActionsBtn');
+      const listBtn = $('exportBtn');
+      const editBtn = $('modifyItem');
+
+      if(editorMode === 'update'){
+        if(addBtn) addBtn.innerHTML = '<span>Guardar cambios</span>'+iconMarkup('edit');
+        if(hubBtn) hubBtn.innerHTML = '<span>Acciones inventario</span>'+iconMarkup('action');
+        if(listBtn) listBtn.innerHTML = '<span>Guardar cambios</span>'+iconMarkup('edit');
+        if(editBtn) editBtn.innerHTML = '<span>Editando item</span>'+iconMarkup('edit');
+        if(announce) showMessage('Modo edición activo. Ajusta los datos arriba y presiona Guardar cambios.');
+      }else{
+        if(addBtn) addBtn.innerHTML = '<span>Añadir a inventario</span>'+iconMarkup('add');
+        if(hubBtn) hubBtn.innerHTML = '<span>Acciones inventario</span>'+iconMarkup('action');
+        if(listBtn) listBtn.innerHTML = '<span>Agregar a lista</span>'+iconMarkup('add');
+        if(editBtn) editBtn.innerHTML = '<span>Modificar item</span>'+iconMarkup('edit');
+      }
+    }
+
+    function startDesktopEdit(){
+      if(!selectedId){ showMessage('Selecciona un producto para modificar.'); return; }
+      const selected = products.find(p => p.id === selectedId);
+      if(!selected){ showMessage('No encuentro el producto seleccionado. Recarga el inventario.'); return; }
+      fillForm(selected);
+      setEditorMode('update', selected.id, true);
+      pendingFoilId = selected.id;
       render();
     }
 
@@ -1024,8 +2152,8 @@
     }
 
     function requestWixData(){
-      sendToWix('NEXO_HTML_READY', { from: 'nexo_inventory_mvp_v11_RESPONSIVE', at: new Date().toISOString() });
-      sendToWix('PING_WIX', { from: 'nexo_inventory_mvp_v11_RESPONSIVE' });
+      sendToWix('NEXO_HTML_READY', { from: 'nexo_inventory_mvp_v15_BOTONES_PRODUCTO', at: new Date().toISOString() });
+      sendToWix('PING_WIX', { from: 'nexo_inventory_mvp_v15_BOTONES_PRODUCTO' });
       sendToWix('LOAD_INVENTORIES', {});
       sendToWix('LOAD_EXPIRATION_ALERTS', { inventoryId: ACTIVE_INVENTORY_ID });
       sendToWix('LOAD_INVENTORY_ITEMS', { inventoryId: ACTIVE_INVENTORY_ID });
@@ -1056,7 +2184,10 @@
           hasLoadedFromWix = true;
           products = Array.isArray(message.payload?.items) ? message.payload.items.map(normalizeIncomingItem) : [];
           cacheCurrentState();
-          if(selectedId && !products.some(p => p.id === selectedId)) selectedId = null;
+          if(selectedId && !products.some(p => p.id === selectedId)){
+            selectedId = null;
+            setEditorMode('add', null, false);
+          }
           render();
           showMessage(`Inventario cargado desde Wix: ${products.length} producto${products.length === 1 ? '' : 's'}.`);
           break;
@@ -1080,7 +2211,9 @@
           const item = normalizeIncomingItem(message.payload?.item || {});
           selectedId = item.id || selectedId;
           pendingFoilId = selectedId;
+          setEditorMode('add', null, false);
           showMessage('Producto guardado en Wix.');
+          showConfirmSuccess('Operación exitosa');
           break;
         }
 
@@ -1088,7 +2221,9 @@
           const item = normalizeIncomingItem(message.payload?.item || {});
           selectedId = item.id || selectedId;
           pendingFoilId = selectedId;
+          setEditorMode('add', null, false);
           showMessage('Producto modificado en Wix.');
+          showConfirmSuccess('Operación exitosa');
           break;
         }
 
@@ -1097,13 +2232,14 @@
           selectedId = item.id || selectedId;
           pendingFoilId = selectedId;
           showMessage('Producto duplicado en Wix.');
+          showConfirmSuccess('Operación exitosa');
           break;
         }
 
         case 'ITEM_DELETED':
-          selectedId = null;
-          fields.forEach(id => $(id).value = '');
+          clearForm();
           showMessage('Producto eliminado de Wix.');
+          showConfirmSuccess('Operación exitosa');
           break;
 
         case 'EXPIRATION_ALERT_SAVED':
@@ -1122,7 +2258,7 @@
     });
 
     function normalizeIncomingItem(item = {}){
-      const unit = item.unit || item.unitOfMeasure || item.unidadDeMedida || '';
+      const unit = item.modoDeCalculo || item.unit || item.unitOfMeasure || item.unidadDeMedida || '';
       const baseUnit = item.baseUnit || item.unidadCosto || getBaseUnit(unit);
       const totalCost = cleanNumber(item.totalCost);
       const presentation = cleanNumber(item.presentation);
@@ -1139,6 +2275,7 @@
         presentation,
         unit,
         unitOfMeasure: unit,
+        modoDeCalculo: unit,
         unidadCosto: baseUnit,
         baseUnit,
         stock: cleanNumber(item.stock ?? item.maxStock),
@@ -1164,6 +2301,7 @@
         presentation: product.presentation,
         unidadCosto: product.baseUnit || product.unidadCosto || getBaseUnit(product.unit),
         unitOfMeasure: product.unit,
+        modoDeCalculo: product.unit,
         costPerUnit: product.unitCost,
         totalCost: product.totalCost,
         stock: product.stock,
@@ -1193,15 +2331,22 @@
     function filteredProducts(){
       const q = $('searchInput').value.trim().toLowerCase();
       let list = [...products];
-      if(q){ list = list.filter(p => [p.supplier,p.productName,p.unit,p.expires,p.modifiedAt].join(' ').toLowerCase().includes(q)); }
-      if(activeFilter === 'lowStock') list = list.filter(p => Number(p.stock) <= 2);
-      if(activeFilter === 'expires') list = list.filter(p => p.expires);
-      list.sort((a,b)=>{
-        const fa = a[sortState.field] ?? '';
-        const fb = b[sortState.field] ?? '';
-        if(typeof fa === 'number' || typeof fb === 'number') return sortState.dir === 'asc' ? Number(fa)-Number(fb) : Number(fb)-Number(fa);
-        return sortState.dir === 'asc' ? String(fa).localeCompare(String(fb)) : String(fb).localeCompare(String(fa));
-      });
+      if(q){
+        list = list.filter(p => [
+          p.supplier,
+          p.productName,
+          p.presentation,
+          getUnitLabel(p.unit) || p.unit,
+          p.stock,
+          p.totalCost,
+          p.unitCost,
+          p.expires,
+          p.modifiedAt
+        ].join(' ').toLowerCase().includes(q));
+      }
+      list = list.filter(productMatchesActiveFilter);
+      const sortOption = getSortOption(sortState.key);
+      list.sort((a,b) => sortOption.compare(a,b));
       return list;
     }
 
@@ -1209,7 +2354,7 @@
       const wrap = $('inventoryRows');
       const list = filteredProducts();
       if(!list.length){
-        wrap.innerHTML = '<div class="empty">No hay productos para mostrar. Si estás conectado a Wix, revisa que la colección tenga datos y que el puente Velo esté pegado en la página.</div>';
+        wrap.innerHTML = '<div class="empty">No hay productos para mostrar con la búsqueda o filtro actual. Limpia el filtro o revisa la colección en Wix.</div>';
         updateSidePanel();
         return;
       }
@@ -1218,16 +2363,19 @@
           <div class="cell" title="${escapeHtml(p.supplier)}">${escapeHtml(p.supplier)}</div>
           <div class="cell" title="${escapeHtml(p.productName)}">${escapeHtml(p.productName)}</div>
           <div class="cell">${p.presentation || ''}</div>
-          <div class="cell">${escapeHtml(p.unit || '')}</div>
+          <div class="cell">${escapeHtml(getUnitLabel(p.unit) || '')}</div>
           <div class="cell">${p.stock ?? ''}</div>
           <div class="cell">${fmtMoney(p.totalCost)}</div>
-          <div class="cell">${fmtMoney(p.unitCost)} / ${escapeHtml(p.baseUnit || '')}</div>
+          <div class="cell">${fmtMoney(p.unitCost)} / ${escapeHtml(getUnitLabel(p.baseUnit) || '')}</div>
           <div class="cell">${escapeHtml(p.expires || '')}</div>
           <div class="cell">${escapeHtml(p.modifiedAt || '')}</div>
         </div>`).join('');
       wrap.querySelectorAll('.row').forEach(row => row.addEventListener('click', () => {
         const p = products.find(x => x.id === row.dataset.id);
-        if(p) fillForm(p);
+        if(p){
+          fillForm(p);
+          setEditorMode('add', null, false);
+        }
         render();
       }));
       if(pendingFoilId){
@@ -1328,10 +2476,11 @@
       const visibleIds = filteredProducts().map(p => p.id);
       if(!visibleIds.includes(product.id)){
         $('searchInput').value = '';
-        activeFilter = 'all';
+        activeFilter = { key:null, value:null, label:'' };
       }
       selectedId = product.id;
       fillForm(product);
+      setEditorMode('add', null, false);
       pendingFoilId = product.id;
       render();
       showMessage('Producto seleccionado desde comparación: ' + product.productName + ' / ' + product.supplier);
@@ -1382,43 +2531,66 @@
        ACCIONES DE BOTONES
     ========================================================= */
 
-    function addProductToWix(){
+    function saveDesktopProduct(){
+      const isUpdate = editorMode === 'update';
+      if(isUpdate){
+        if(!editorTargetId && !selectedId){ showMessage('Selecciona un producto y presiona Modificar item antes de guardar cambios.'); return; }
+        selectedId = editorTargetId || selectedId;
+        const product = readForm(false);
+        const error = validate(product);
+        if(error){ showMessage(error); return; }
+        if(!product._id){ showMessage('Este producto no tiene _id de Wix. Recarga el inventario antes de modificarlo.'); return; }
+        askConfirm('update', {
+          onConfirm: () => {
+            sendToWix('UPDATE_INVENTORY_ITEM', { item: toWixItemPayload(product) });
+            showMessage('Guardando cambios del producto en Wix...');
+          }
+        });
+        return;
+      }
+
       const product = readForm(true);
       const error = validate(product);
       if(error){ showMessage(error); return; }
       selectedId = product.id;
-      sendToWix('SAVE_INVENTORY_ITEM', { item: toWixItemPayload(product) });
-      showMessage('Guardando producto nuevo en Wix...');
+      askConfirm('add', {
+        onConfirm: () => {
+          sendToWix('SAVE_INVENTORY_ITEM', { item: toWixItemPayload(product) });
+          showMessage('Guardando producto nuevo en Wix...');
+        }
+      });
+    }
+
+    function addProductToWix(){
+      saveDesktopProduct();
     }
 
     function updateProductInWix(){
-      if(!selectedId){ showMessage('Selecciona un producto para modificar.'); return; }
-      const product = readForm(false);
-      const error = validate(product);
-      if(error){ showMessage(error); return; }
-      if(!product._id){ showMessage('Este producto no tiene _id de Wix. Recarga el inventario antes de modificarlo.'); return; }
-      sendToWix('UPDATE_INVENTORY_ITEM', { item: toWixItemPayload(product) });
-      showMessage('Modificando producto en Wix...');
+      startDesktopEdit();
     }
 
     function duplicateSelected(){
       if(!selectedId){ showMessage('Selecciona un producto para duplicar.'); return; }
       const p = products.find(x => x.id === selectedId);
       if(!p || !p._id){ showMessage('No se puede duplicar porque el producto no tiene _id de Wix.'); return; }
-      const ok = confirm('¿Deseas duplicar este item?');
-      if(!ok) return;
-      sendToWix('DUPLICATE_INVENTORY_ITEM', { itemId: p._id });
-      showMessage('Duplicando producto en Wix...');
+      askConfirm('duplicate', {
+        onConfirm: () => {
+          sendToWix('DUPLICATE_INVENTORY_ITEM', { itemId: p._id });
+          showMessage('Duplicando producto en Wix...');
+        }
+      });
     }
 
     function deleteSelected(){
       if(!selectedId){ showMessage('Selecciona un producto para eliminar.'); return; }
       const p = products.find(x => x.id === selectedId);
       if(!p || !p._id){ showMessage('No se puede eliminar porque el producto no tiene _id de Wix.'); return; }
-      const ok = confirm('¿Deseas eliminar este item? Esta acción no se puede deshacer.');
-      if(!ok) return;
-      sendToWix('DELETE_INVENTORY_ITEM', { itemId: p._id });
-      showMessage('Eliminando producto en Wix...');
+      askConfirm('delete', {
+        onConfirm: () => {
+          sendToWix('DELETE_INVENTORY_ITEM', { itemId: p._id });
+          showMessage('Eliminando producto en Wix...');
+        }
+      });
     }
 
     function reloadFromWix(){
@@ -1428,7 +2600,7 @@
     }
 
     function exportJSON(){
-      const blob = new Blob([JSON.stringify({version:11, mode:'wix-bridge', exportedAt:new Date().toISOString(), products, avisoSettings}, null, 2)], {type:'application/json'});
+      const blob = new Blob([JSON.stringify({version:12, mode:'wix-bridge', exportedAt:new Date().toISOString(), products, avisoSettings}, null, 2)], {type:'application/json'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -1438,13 +2610,91 @@
       showMessage('Respaldo JSON exportado localmente. Esto no guarda en Wix; para guardar usa Añadir a inventario.');
     }
 
-    function openModal(title, html){ $('modalTitle').textContent = title; $('modalContent').innerHTML = html; $('modal').classList.add('show'); }
-    function closeModal(){ $('modal').classList.remove('show'); }
+    function openModal(title, html){
+      const modal = $('modal');
+      const card = modal.querySelector('.modalCard');
+      modal.classList.remove('dropdownMode');
+      card.style.left = '';
+      card.style.top = '';
+      card.style.width = '';
+      $('modalTitle').textContent = title;
+      $('modalContent').innerHTML = html;
+      modal.classList.add('show');
+    }
+
+    function closeModal(){
+      const modal = $('modal');
+      const card = modal.querySelector('.modalCard');
+      modal.classList.remove('show','dropdownMode');
+      card.style.left = '';
+      card.style.top = '';
+      card.style.width = '';
+    }
+
+    function openDropdownModal(anchorId, title, html, mode='generic'){
+      const modal = $('modal');
+      const card = modal.querySelector('.modalCard');
+      const anchor = $(anchorId) || $('sortBtn') || $('filterBtn');
+      $('modalTitle').textContent = title;
+      $('modalContent').innerHTML = html;
+      modal.classList.add('dropdownMode','show');
+
+      const sortBtn = $('sortBtn');
+      const filterBtn = $('filterBtn');
+      const anchorRect = anchor.getBoundingClientRect();
+      let left = anchorRect.left;
+      let top = anchorRect.bottom;
+      let width = Math.max(anchorRect.width, 220);
+
+      if(window.innerWidth > 1180 && sortBtn && filterBtn && (anchorId === 'sortBtn' || anchorId === 'filterBtn')){
+        const sortRect = sortBtn.getBoundingClientRect();
+        const filterRect = filterBtn.getBoundingClientRect();
+        const groupWidth = Math.max(220, filterRect.right - sortRect.left);
+        width = groupWidth;
+        left = sortRect.left;
+        top = Math.max(sortRect.bottom, filterRect.bottom);
+      }
+
+      const maxWidth = Math.max(220, window.innerWidth - left - 8);
+      if(width > maxWidth){
+        width = maxWidth;
+      }
+      if(left + width > window.innerWidth - 8){
+        left = Math.max(6, window.innerWidth - width - 8);
+      }
+
+      card.style.left = `${Math.round(left)}px`;
+      card.style.top = `${Math.round(top)}px`;
+      card.style.width = `${Math.round(width)}px`;
+    }
+
+    function openDesktopInventoryActions(){
+      const mainLabel = editorMode === 'update' ? 'Guardar cambios' : 'Añadir a inventario';
+      const html = `
+        <div class="inventoryActionMenu">
+          <button class="inventoryAction" type="button" data-inventory-action="saveProduct"><span>${mainLabel}</span>${iconMarkup('add')}</button>
+          <button class="ftAction pendingAction" type="button" data-inventory-action="addToFT"><span>Agregar a FT</span>${iconMarkup('ft')}</button>
+          <button class="inventoryAction" type="button" data-inventory-action="reload"><span>Guardar / recargar inventario</span>${iconMarkup('action')}</button>
+          <button class="ftAction pendingAction" type="button" data-inventory-action="viewFT"><span>Ver FT</span>${iconMarkup('ft')}</button>
+          <button class="inventoryAction pendingAction" type="button" data-inventory-action="changeInventory"><span>Cambiar inventario</span>${iconMarkup('organize')}</button>
+        </div>
+      `;
+      openModal('Acciones de inventario', html);
+    }
+
+    function handleInventoryAction(action){
+      closeModal();
+      if(action === 'saveProduct') saveDesktopProduct();
+      if(action === 'reload') reloadFromWix();
+      if(action === 'addToFT') openModal('Agregar a FT', '<p>Reservado para la siguiente fase: aquí se enviará el producto seleccionado a una ficha técnica.</p>');
+      if(action === 'viewFT') openModal('Fichas Técnicas', '<p>Módulo pendiente. La ficha técnica tomará productos del inventario, cantidad usada, unidad usada, merma, rendimiento, costo total y precio sugerido.</p>');
+      if(action === 'changeInventory') openModal('Cambiar inventario', '<p>Módulo pendiente. Aquí se mostrará el selector de inventarios creados.</p>');
+    }
 
 
 
     /* =========================================================
-       v11 RESPONSIVE: menús compactos, drawer de producto y acciones móviles
+       v16 GRUPO ACCIONES INVENTARIO: menús compactos, drawer de producto y acciones móviles
     ========================================================= */
     let mobileDrawerMode = 'add';
     let mobileProductMenuOpen = false;
@@ -1481,7 +2731,7 @@
       $('mSupplier').value = product?.supplier || '';
       $('mProductName').value = product?.productName || '';
       $('mPresentation').value = product?.presentation || '';
-      $('mUnit').value = product?.unit || product?.unitOfMeasure || '';
+      setUnitSelection('mobile', product?.unit || product?.modoDeCalculo || product?.unitOfMeasure || '');
       $('mStock').value = product?.stock ?? product?.maxStock ?? '';
       $('mTotalCost').value = product?.totalCost ?? '';
       $('mExpires').value = product?.expires || dateToInput(product?.expira) || '';
@@ -1515,6 +2765,7 @@
         presentation: Number($('mPresentation').value),
         unit,
         unitOfMeasure: unit,
+        modoDeCalculo: unit,
         unidadCosto: unitToBase[unit]?.base || getBaseUnit(unit),
         baseUnit: unitToBase[unit]?.base || getBaseUnit(unit),
         stock: Number($('mStock').value),
@@ -1538,12 +2789,24 @@
       if(error){ showMessage(error); return; }
       if(isUpdate){
         if(!product._id){ showMessage('Este producto no tiene _id de Wix. Recarga el inventario antes de modificarlo.'); return; }
-        sendToWix('UPDATE_INVENTORY_ITEM', { item: toWixItemPayload(product) });
-        showMessage('Modificando producto en Wix...');
+        askConfirm('update', {
+          onConfirm: () => {
+            sendToWix('UPDATE_INVENTORY_ITEM', { item: toWixItemPayload(product) });
+            showMessage('Modificando producto en Wix...');
+            closeMobileProductDrawer();
+          }
+        });
+        return;
       }else{
         selectedId = product.id;
-        sendToWix('SAVE_INVENTORY_ITEM', { item: toWixItemPayload(product) });
-        showMessage('Guardando producto nuevo en Wix...');
+        askConfirm('add', {
+          onConfirm: () => {
+            sendToWix('SAVE_INVENTORY_ITEM', { item: toWixItemPayload(product) });
+            showMessage('Guardando producto nuevo en Wix...');
+            closeMobileProductDrawer();
+          }
+        });
+        return;
       }
       closeMobileProductDrawer();
     }
@@ -1573,27 +2836,20 @@
       }
     }
 
-    function sortCycle(){
-      const options = ['productName','supplier','totalCost','unitCost','stock','modifiedAt'];
-      const current = options.indexOf(sortState.field);
-      sortState.field = options[(current + 1) % options.length];
-      sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
-      render();
-      showMessage('Ordenando por: ' + sortState.field + ' / ' + sortState.dir);
+    function sortCycle(anchorId='sortBtn'){
+      openSortSelector(anchorId);
     }
 
-    function filterCycle(){
-      const next = activeFilter === 'all' ? 'lowStock' : activeFilter === 'lowStock' ? 'expires' : 'all';
-      activeFilter = next;
-      render();
-      showMessage('Filtro activo: ' + (activeFilter === 'all' ? 'todos' : activeFilter === 'lowStock' ? 'stock bajo' : 'con vencimiento'));
+    function filterCycle(anchorId='filterBtn'){
+      openFilterSelector(null, anchorId);
     }
 
     function bind(){
-      ['presentation','unit','totalCost'].forEach(id => $(id).addEventListener('input', calculateUnitCost));
-      $('addToInventory').addEventListener('click', addProductToWix);
+      ['presentation','totalCost'].forEach(id => $(id).addEventListener('input', calculateUnitCost));
+      $('unitSelectBtn')?.addEventListener('click', () => openMeasureSelector('desktop')); 
+      $('addToInventory').addEventListener('click', saveDesktopProduct);
       $('saveInventory').addEventListener('click', reloadFromWix);
-      $('modifyItem').addEventListener('click', updateProductInWix);
+      $('modifyItem').addEventListener('click', startDesktopEdit);
       $('duplicateProduct').addEventListener('click', duplicateSelected);
       $('deleteProduct').addEventListener('click', deleteSelected);
       $('clearEditor').addEventListener('click', () => { clearForm(); showMessage('Editor limpio.'); });
@@ -1607,12 +2863,17 @@
       $('inputAviso').addEventListener('keydown', e => { if(e.key === 'Enter') saveAvisoValue(); });
       $('inputAviso').addEventListener('blur', () => { if($('precionarEnter').classList.contains('show')) saveAvisoValue(); });
       $('searchInput').addEventListener('input', render);
-      $('exportBtn').addEventListener('click', addProductToWix);
+      $('exportBtn').addEventListener('click', saveDesktopProduct);
+      $('desktopInventoryActionsBtn')?.addEventListener('click', openDesktopInventoryActions);
+      document.addEventListener('click', (event) => {
+        const actionBtn = event.target.closest('[data-inventory-action]');
+        if(actionBtn) handleInventoryAction(actionBtn.dataset.inventoryAction);
+      });
       $('closeModal').addEventListener('click', closeModal);
       $('toggleDebug').addEventListener('click', () => {
         const panel = $('debugPanel');
         panel.classList.toggle('open');
-        $('toggleDebug').textContent = panel.classList.contains('open') ? 'Ocultar' : 'Ver debug';
+        $('toggleDebug').textContent = panel.classList.contains('open') ? '×' : '🐞';
       });
       $('copyDebug').addEventListener('click', copyDebugLog);
       $('clearDebug').addEventListener('click', () => {
@@ -1620,53 +2881,57 @@
         $('debugText').value = '';
         showMessage('Debug limpio.');
       });
-      $('modal').addEventListener('click', e => { if(e.target.id === 'modal') closeModal(); });
+      $('confirmYes')?.addEventListener('click', confirmYesAction);
+      $('confirmNo')?.addEventListener('click', closeConfirmModal);
+      $('confirmModal')?.addEventListener('click', e => { if(e.target.id === 'confirmModal') closeConfirmModal(); });
+            $('modal').addEventListener('click', e => { if(e.target.id === 'modal') closeModal(); });
+      window.addEventListener('resize', () => { if($('modal')?.classList.contains('dropdownMode')) closeModal(); });
       $('addToFT').addEventListener('click', () => openModal('Agregar a FT', '<p>Reservado para la siguiente fase: aquí se enviará el producto seleccionado a una ficha técnica.</p>'));
-      $('viewFT').addEventListener('click', () => openModal('Fichas Técnicas', '<p>Módulo pendiente. La ficha técnica tomará productos del inventario, cantidad usada, unidad usada, merma, rendimiento, costo total y precio sugerido.</p>'));
-      $('changeInv').addEventListener('click', () => openModal('Cambiar inventario', '<p>Módulo pendiente. Primero estamos conectando la colección Inventario Usuario como inventario base.</p>'));
-      $('calcMode').addEventListener('click', () => openModal('Modo de cálculo', '<p>Modo actual: costo por unidad base. Las conversiones activas son kg/g, lb/g, oz/g, l/ml, unidad y docena.</p>'));
-      $('filterBtn').addEventListener('click', filterCycle);
-      $('sortBtn').addEventListener('click', sortCycle);
+      $('viewFT')?.addEventListener('click', () => openModal('Fichas Técnicas', '<p>Módulo pendiente. La ficha técnica tomará productos del inventario, cantidad usada, unidad usada, merma, rendimiento, costo total y precio sugerido.</p>'));
+      $('changeInv')?.addEventListener('click', () => openModal('Cambiar inventario', '<p>Módulo pendiente. Primero estamos conectando la colección Inventario Usuario como inventario base.</p>'));
+      $('filterBtn').addEventListener('click', () => filterCycle('filterBtn'));
+      $('sortBtn').addEventListener('click', () => sortCycle('sortBtn'));
       $('mobileInventoryMenuBtn')?.addEventListener('click', () => toggleMobileDropdown('mobileInventoryMenu'));
       $('mobileViewMenuBtn')?.addEventListener('click', () => toggleMobileDropdown('mobileViewMenu'));
       $('mobileAddProductBtn')?.addEventListener('click', () => openMobileProductDrawer('add'));
       $('mobileCloseProductDrawer')?.addEventListener('click', closeMobileProductDrawer);
       $('mobileCancelProduct')?.addEventListener('click', closeMobileProductDrawer);
       $('mobileSaveProduct')?.addEventListener('click', saveMobileProduct);
-      ['mPresentation','mUnit','mTotalCost'].forEach(id => $(id)?.addEventListener('input', calculateMobileUnitCost));
+      ['mPresentation','mTotalCost'].forEach(id => $(id)?.addEventListener('input', calculateMobileUnitCost));
+      $('mUnitSelectBtn')?.addEventListener('click', () => openMeasureSelector('mobile')); 
       $('mobileSearchInput')?.addEventListener('input', () => { $('searchInput').value = $('mobileSearchInput').value; render(); });
       $('mobileAddToFT')?.addEventListener('click', () => { closeMobileDropdowns(); $('addToFT').click(); });
       $('mobileReloadInventory')?.addEventListener('click', () => { closeMobileDropdowns(); reloadFromWix(); });
-      $('mobileViewFT')?.addEventListener('click', () => { closeMobileDropdowns(); $('viewFT').click(); });
-      $('mobileChangeInv')?.addEventListener('click', () => { closeMobileDropdowns(); $('changeInv').click(); });
-      $('mobileCalcMode')?.addEventListener('click', () => { closeMobileDropdowns(); $('calcMode').click(); });
-      $('mobileSortBtn')?.addEventListener('click', () => { sortCycle(); closeMobileDropdowns(); });
-      $('mobileFilterBtn')?.addEventListener('click', () => { filterCycle(); closeMobileDropdowns(); });
+      $('mobileViewFT')?.addEventListener('click', () => { closeMobileDropdowns(); openModal('Fichas Técnicas', '<p>Módulo pendiente. La ficha técnica tomará productos del inventario, cantidad usada, unidad usada, merma, rendimiento, costo total y precio sugerido.</p>'); });
+      $('mobileChangeInv')?.addEventListener('click', () => { closeMobileDropdowns(); openModal('Cambiar inventario', '<p>Módulo pendiente. Aquí se mostrará el selector de inventarios creados.</p>'); });
+      $('mobileSortBtn')?.addEventListener('click', () => { sortCycle('mobileSortBtn'); closeMobileDropdowns(); });
+      $('mobileFilterBtn')?.addEventListener('click', () => { filterCycle('mobileFilterBtn'); closeMobileDropdowns(); });
       $('mobileProductToggle')?.addEventListener('click', toggleMobileProductActions);
-      $('mobileDuplicateProduct')?.addEventListener('click', () => { duplicateSelected(); });
-      $('mobileDeleteProduct')?.addEventListener('click', () => { deleteSelected(); });
+      $('mobileDuplicateProduct')?.addEventListener('click', () => { duplicateSelected(); toggleMobileProductActions(); });
+      $('mobileDeleteProduct')?.addEventListener('click', () => { deleteSelected(); if(mobileProductMenuOpen) toggleMobileProductActions(); });
       $('mobileModifyProduct')?.addEventListener('click', () => {
         const selected = products.find(p => p.id === selectedId);
         if(!selected){ showMessage('Selecciona un producto para modificar.'); return; }
         openMobileProductDrawer('update', selected);
+        if(mobileProductMenuOpen) toggleMobileProductActions();
       });
       document.addEventListener('keydown', e => {
-        if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addProductToWix();
-        if(e.key === 'Escape') closeModal();
+        if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveDesktopProduct();
+        if(e.key === 'Escape'){ closeModal(); closeConfirmModal(); }
       });
     }
 
     function boot(){
       bind();
       loadCacheFallback();
-      debugLog('HTML', 'Boot v11 RESPONSIVE iniciado', { componentIdEsperado:'inventoryHtml', collectionEsperada:'UserInventory' });
+      debugLog('HTML', 'Boot v21 CONFIRMACIONES + ICONOS iniciado', { componentIdEsperado:'inventoryHtml', collectionEsperada:'UserInventory' });
       showMessage('Iniciando conexión con Wix...');
       setTimeout(requestWixData, 150);
       setTimeout(requestWixData, 1400);
       setTimeout(requestWixData, 3200);
       setTimeout(() => {
         if(!hasLoadedFromWix){
-          showMessage('Todavía no llegan datos de Wix. HTML v11 RESPONSIVE cargado. Revisa: ID #inventoryHtml, Velo FINAL v5 y colección UserInventory.');
+          showMessage('Todavía no llegan datos de Wix. HTML v18 PANEL ANCLADO + DEBUG COMPACTO cargado. Revisa: ID #inventoryHtml, Velo FINAL v5 y colección UserInventory.');
         }
       }, 5000);
     }
