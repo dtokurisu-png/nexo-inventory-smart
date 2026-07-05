@@ -1,9 +1,8 @@
-# Nexo Inventory GitHub Pages v29
+# Nexo Inventory GitHub Pages v36
 
-Cambios de esta versión:
-- Recolorización de iconos por contexto visual para armonizar con la paleta.
-- Botones azules usan iconos en variante fría.
-- Acciones de inventario usan iconos en variante verde.
-- Acciones FT usan iconos en variante naranja.
-
-Sube el contenido del folder o reemplaza `index.html` y `assets/icons/` en tu repo.
+Cambios:
+- Acciones de inventario salen del modal y quedan como pestañas/botones inline sobre la lista de productos.
+- El botón superior de Acciones inventario fue reemplazado por Acciones FT.
+- Acciones FT contiene Ver FT y Agregar a FT.
+- Crear inventario, Cambiar inventario y Guardar/recargar quedan visibles junto al inventario activo.
+- Agregar producto existente y Mover a otro inventario se mantienen como acciones contextuales.

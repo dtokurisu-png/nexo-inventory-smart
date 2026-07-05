@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexo Inventory MVP v29 Iconos armonizados con paleta</title>
+  <title>Nexo Inventory MVP v33 Pestaña inventario activo</title>
   <style>
     :root{
       --blue:#2f4f93;
@@ -29,6 +29,7 @@
       --field-h:46px;
       --line-w:1px;
       --tool-cell:178px;
+      --currency-cell:52px;
     }
     *{box-sizing:border-box}
     button,input,select,textarea{font-family:var(--ui-font)}
@@ -122,13 +123,13 @@
     .toolbarRow{
       width:var(--work-width);
       display:grid;
-      grid-template-columns:calc(var(--tool-cell) * 2) 1fr calc((var(--tool-cell) * 2) + 52px);
+      grid-template-columns:calc((var(--tool-cell) * 2) + var(--currency-cell)) 1fr calc((var(--tool-cell) * 2) + 52px);
       align-items:end;
       gap:0;
       margin-left:2px;
       margin-bottom:0;
     }
-    .toolGroup{display:grid;grid-template-columns:repeat(2, var(--tool-cell));align-items:stretch;border:var(--line-w) solid #0e1737;border-bottom:0;border-radius:17px 17px 0 0;overflow:hidden;box-shadow:0 8px 18px rgba(0,0,0,.2)}
+    .toolGroup{display:grid;grid-template-columns:repeat(2, var(--tool-cell)) var(--currency-cell);align-items:stretch;border:var(--line-w) solid #0e1737;border-bottom:0;border-radius:17px 17px 0 0;overflow:hidden;box-shadow:0 8px 18px rgba(0,0,0,.2)}
     .toolBtn{
       height:var(--cell-h);
       min-width:0;
@@ -150,6 +151,19 @@
     }
     .toolBtn:last-child{border-right:0}
     .toolBtn span:last-child{font-size:24px;line-height:1;flex:0 0 auto}
+    .currencyBtn{
+      width:var(--currency-cell);
+      justify-content:center;
+      padding:0;
+      font-size:20px;
+      font-weight:800;
+      letter-spacing:.01em;
+    }
+    .currencyBtn span:last-child,
+    .currencyBtn span:first-child{font-size:20px;line-height:1}
+    .currencyOption{grid-template-columns:52px 1fr!important;align-items:center;}
+    .currencySymbolChoice{font-size:20px;font-weight:900;text-align:center;white-space:nowrap;}
+    .currencyLabelChoice{font-size:calc(var(--body-size) - 1px);text-align:left;white-space:normal;line-height:1.08;}
     .searchWrap{grid-column:3;display:grid;grid-template-columns:calc(var(--tool-cell) * 2) 52px;align-items:end;gap:0;justify-self:end;width:calc((var(--tool-cell) * 2) + 52px);position:relative}
     .magnifier{width:52px;height:var(--cell-h);border-radius:0 15px 0 0;background:var(--dark);display:grid;place-items:center;font-size:27px;border:var(--line-w) solid var(--line);border-left:0;margin-right:0;z-index:2}
     .search{height:var(--cell-h);width:calc(var(--tool-cell) * 2);border:var(--line-w) solid var(--line);border-right:0;border-radius:15px 0 0 0;background:#d8e3f8;padding:0 14px;color:#34405f;font-size:var(--body-size);font-weight:400;outline:none}
@@ -235,7 +249,8 @@
       white-space:normal;
       line-height:1.12;
     }
-    .actionBar button.actionHub{background:var(--green)}
+    .actionBar button.ftHub{background:#2f4f93;color:#ffffff}
+    .actionBar button.ftHub:hover{filter:brightness(1.13)}
     .legacyActionHidden{display:none!important}
     .actionBar button:hover,.toolBtn:hover{filter:brightness(1.13)}
 
@@ -248,15 +263,16 @@
       grid-template-columns:repeat(2, minmax(0, 1fr));
       gap:10px;
       margin-top:10px;
+      background:rgba(31,35,58,.98);
     }
     .inventoryActionMenu button{
       min-height:48px;
-      border:2px solid #172755;
+      border:2px solid rgba(216,227,248,.26);
       border-radius:12px;
-      background:#e9f2ff;
-      color:#111827;
+      background:#264C8F;
+      color:#ffffff;
       font-size:var(--body-size);
-      font-weight:700;
+      font-weight:800;
       cursor:pointer;
       display:flex;
       align-items:center;
@@ -266,12 +282,312 @@
       text-align:left;
       white-space:normal;
       line-height:1.12;
+      transition:transform .14s ease, filter .14s ease, background .14s ease, box-shadow .14s ease, border-color .14s ease;
     }
     .inventoryActionMenu button.primary,
-    .inventoryActionMenu button.inventoryAction{background:var(--green);color:#eaf6ec}
-    .inventoryActionMenu button.ftAction{background:var(--orange);color:#111827}
-    .inventoryActionMenu button.pendingAction{opacity:.88}
+    .inventoryActionMenu button.inventoryAction{background:#264C8F;color:#ffffff}
+    .inventoryActionMenu button.ftAction{background:#2f4f93;color:#ffffff}
+    .inventoryActionMenu.ftOnlyMenu{grid-template-columns:repeat(2, minmax(0, 1fr));}
+    .inventoryActionMenu button.pendingAction{opacity:.94}
+    .inventoryActionMenu button:hover,
+    .inventoryActionMenu button:focus-visible{
+      background:#F1994A!important;
+      color:#111827!important;
+      border-color:#172755;
+      filter:brightness(1.04);
+      transform:translateY(-1px);
+      box-shadow:0 9px 18px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.16);
+      outline:none;
+    }
+    .inventoryActionMenu button:active{transform:translateY(0) scale(.99);}
     .inventoryActionMenu .menuIcon{font-size:20px;line-height:1;flex:0 0 auto}
+
+
+    .inventoryTabsRow{
+      width:100%;
+      display:flex;
+      align-items:stretch;
+      gap:0;
+      margin:0;
+      overflow:hidden;
+    }
+    .activeInventoryTab{
+      width:calc(100% * 2 / 9);
+      min-width:calc(100% * 2 / 9);
+      max-width:calc(100% * 2 / 9);
+      min-height:var(--cell-h);
+      margin:0;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border:var(--line-w) solid #0e1737;
+      border-bottom:0;
+      border-radius:17px 17px 0 0;
+      background:linear-gradient(180deg, rgba(38,76,143,.98), rgba(31,35,58,.96));
+      color:#fff;
+      box-shadow:0 8px 18px rgba(0,0,0,.20);
+      font-size:var(--body-size);
+      line-height:1.12;
+      overflow:hidden;
+    }
+    .activeInventoryThumb{
+      width:40px;
+      height:40px;
+      flex:0 0 40px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.42);
+      background:radial-gradient(circle at 35% 28%, rgba(255,255,255,.36), transparent 28%), linear-gradient(135deg,#2f4f93,#1f233a 58%,#246b36);
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.18), 0 5px 12px rgba(0,0,0,.22);
+      position:relative;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+    }
+    .activeInventoryThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .activeInventoryInitial{font-size:18px;font-weight:900;color:#F8F2E8;text-shadow:0 1px 2px rgba(0,0,0,.35);}
+    .activeInventoryMiniIcon{
+      position:absolute;
+      right:-1px;
+      bottom:-1px;
+      width:17px;
+      height:17px;
+      border-radius:6px;
+      display:grid;
+      place-items:center;
+      background:#F1994A;
+      color:#111827;
+      border:1px solid rgba(17,24,39,.55);
+      font-size:10px;
+      line-height:1;
+      font-weight:900;
+      box-shadow:0 2px 5px rgba(0,0,0,.28);
+      overflow:hidden;
+    }
+    .activeInventoryMiniIcon img{width:100%;height:100%;object-fit:cover;display:block;}
+    .activeInventoryText{
+      min-width:0;
+      display:grid;
+      gap:2px;
+    }
+    .activeInventoryLabel{
+      font-size:calc(var(--small-size) - 1px);
+      font-weight:700;
+      color:rgba(255,255,255,.72);
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      white-space:nowrap;
+    }
+    .activeInventoryName{
+      color:#8BE6B5;
+      font-weight:900;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .inventoryInlineActionTab{
+      width:calc(100% * 1.15 / 9);
+      min-width:calc(100% * 1.15 / 9);
+      max-width:calc(100% * 1.15 / 9);
+      min-height:var(--cell-h);
+      border:var(--line-w) solid #0e1737;
+      border-left:0;
+      border-bottom:0;
+      border-radius:17px 17px 0 0;
+      background:#264C8F;
+      color:#ffffff;
+      font-size:calc(var(--body-size) - 1px);
+      font-weight:900;
+      padding:6px 8px;
+      line-height:1.08;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      box-shadow:0 8px 18px rgba(0,0,0,.20);
+      transition:background .14s ease, filter .14s ease, transform .14s ease, color .14s ease;
+    }
+    .inventoryInlineActionTab.createInventory{background:#246b36;color:#eaf6ec;}
+    .inventoryInlineActionTab.changeInventory{background:#264C8F;color:#ffffff;}
+    .inventoryInlineActionTab.reloadInventory{background:#2f4f93;color:#ffffff;}
+    .inventoryInlineActionTab:hover,
+    .inventoryInlineActionTab:focus-visible{
+      background:#F1994A!important;
+      color:#111827!important;
+      filter:brightness(1.04);
+      transform:translateY(-1px);
+      outline:none;
+    }
+    .addExistingInventoryTab,
+    .moveInventoryTab{
+      width:calc(100% * 1.75 / 9);
+      min-width:calc(100% * 1.75 / 9);
+      max-width:calc(100% * 1.75 / 9);
+      min-height:var(--cell-h);
+      border:var(--line-w) solid #0e1737;
+      border-left:0;
+      border-bottom:0;
+      border-radius:17px 17px 0 0;
+      background:var(--green);
+      color:#eaf6ec;
+      font-size:calc(var(--body-size) - 1px);
+      font-weight:900;
+      padding:6px 8px;
+      line-height:1.12;
+      cursor:pointer;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      box-shadow:0 8px 18px rgba(0,0,0,.20);
+      transition:background .14s ease, filter .14s ease, transform .14s ease;
+    }
+    .moveInventoryTab{background:#264C8F;color:#ffffff;}
+    .addExistingInventoryTab.show,.moveInventoryTab.show{display:flex;}
+    .addExistingInventoryTab.active,.moveInventoryTab.active{background:var(--orange);color:#111827;}
+    .addExistingInventoryTab.ready,.moveInventoryTab.ready{background:#F1994A;color:#111827;}
+    .addExistingInventoryTab:hover,.moveInventoryTab:hover{filter:brightness(1.08);transform:translateY(-1px);}
+    .existingProductSelector{
+      display:none;
+      width:100%;
+      border:var(--line-w) solid var(--line);
+      border-bottom:0;
+      background:rgba(31,35,58,.96);
+      box-shadow:0 16px 28px rgba(0,0,0,.20);
+      padding:10px;
+    }
+    .existingProductSelector.open{display:block;}
+    .existingSelectorTop{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:8px;
+      margin-bottom:8px;
+    }
+    .existingSelectorSearch{
+      min-height:42px;
+      border:var(--line-w) solid var(--line);
+      border-radius:12px;
+      background:#d8e3f8;
+      color:#111827;
+      padding:0 12px;
+      font-size:var(--body-size);
+      outline:none;
+    }
+    .existingSelectorClose,.saveExistingProductBtn{
+      border:var(--line-w) solid #0e1737;
+      border-radius:12px;
+      min-height:42px;
+      padding:0 14px;
+      font-size:var(--body-size);
+      font-weight:900;
+      cursor:pointer;
+    }
+    .existingSelectorClose{background:#d8e3f8;color:#111827;}
+    .existingSelectorFooter{display:flex;justify-content:flex-end;margin-top:8px;}
+    .saveExistingProductBtn{background:#1f233a;color:#fff;}
+    .saveExistingProductBtn.ready{background:var(--green);color:#fff;}
+    .saveExistingProductBtn:disabled{opacity:.68;cursor:not-allowed;}
+    .existingSelectorGrid{border-radius:12px 12px 0 0!important;}
+    .existingSelectorRows{min-height:190px;max-height:300px;overflow:auto;border-radius:0 0 12px 12px!important;}
+    .existingSelectorRows .row{cursor:pointer;}
+    .existingSelectorRows .row:hover{filter:brightness(1.08);}
+    .existingSelectorRows .row.existingSelected{background:#F1994A!important;color:#111827!important;}
+    .existingSelectorRows .row.existingSelected .cell{color:#111827!important;}
+    .inventoryCreateForm{display:grid;gap:10px;margin-top:8px;}
+    .inventoryCreateForm label{font-size:var(--body-size);font-weight:800;color:#fff;}
+    .inventoryCreateForm input{
+      width:100%;
+      min-height:44px;
+      border:2px solid #172755;
+      border-radius:12px;
+      background:#d8e3f8;
+      color:#111827;
+      padding:8px 12px;
+      font-size:var(--body-size);
+      outline:none;
+    }
+    .inventoryCreateActions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+    .inventoryCreateActions button,
+    .inventoryList button,
+    .existingProductList button{
+      border:2px solid #172755;
+      border-radius:12px;
+      min-height:42px;
+      padding:8px 12px;
+      font-size:var(--body-size);
+      font-weight:800;
+      cursor:pointer;
+    }
+    .inventoryCreateActions .save{background:var(--green);color:#fff;}
+    .inventoryCreateActions .cancel{background:#e9f2ff;color:#111827;}
+    .inventoryVisualPreview{
+      min-height:96px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      border:2px solid rgba(216,227,248,.26);
+      border-radius:14px;
+      background:#264C8F;
+      color:#fff;
+      padding:10px;
+    }
+    .inventoryPreviewImage{
+      width:78px;height:78px;flex:0 0 78px;border-radius:16px;
+      display:grid;place-items:center;position:relative;overflow:hidden;
+      background:radial-gradient(circle at 32% 25%, rgba(255,255,255,.26), transparent 28%), linear-gradient(135deg,#3b579a,#1f233a 70%);
+      border:1px solid rgba(255,255,255,.28);
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.20),0 8px 18px rgba(0,0,0,.20);
+      font-size:38px;
+    }
+        .inventoryPreviewImage img{width:100%;height:100%;object-fit:cover;display:block;}
+    .inventoryPreviewIcon{
+      position:absolute;right:4px;bottom:4px;width:28px;height:28px;border-radius:9px;
+      display:grid;place-items:center;background:#F1994A;color:#111827;
+      border:1px solid rgba(17,24,39,.55);font-size:17px;font-weight:900;
+      box-shadow:0 2px 5px rgba(0,0,0,.28);
+    }
+    .inventoryPreviewText{display:grid;gap:4px;min-width:0;}
+    .inventoryPreviewText strong{font-size:calc(var(--body-size) + 2px);color:#8BE6B5;line-height:1.1;}
+    .inventoryPreviewText span{font-size:var(--small-size);color:rgba(255,255,255,.76);line-height:1.2;}
+    .inventoryVisualSection{display:grid;gap:8px;}
+    .inventoryVisualSectionTitle{font-size:var(--body-size);font-weight:900;color:#fff;line-height:1.1;}
+    .inventoryVisualGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;max-height:240px;overflow:auto;scrollbar-width:none;}
+    .inventoryVisualGrid::-webkit-scrollbar{display:none;}
+    .inventoryVisualOption{
+      min-height:66px;border:2px solid rgba(216,227,248,.26);border-radius:13px;
+      background:#d8e3f8;color:#111827;cursor:pointer;padding:7px;
+      display:grid;place-items:center;text-align:center;gap:4px;font-weight:900;
+      transition:background .14s ease, transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+    }
+    .inventoryVisualOption:hover{background:#F1994A;transform:translateY(-1px);box-shadow:0 8px 15px rgba(0,0,0,.22);}
+    .inventoryVisualOption.active{background:#F1994A;color:#111827;border-color:#172755;}
+    .inventoryVisualEmoji{font-size:26px;line-height:1;}
+    .inventoryVisualImage{width:100%;height:38px;border-radius:9px;overflow:hidden;display:block;}
+    .inventoryVisualImage img{width:100%;height:100%;object-fit:cover;display:block;}
+    .inventoryVisualLabel{font-size:calc(var(--small-size) - 1px);line-height:1.05;}
+    .inventoryIconGrid .inventoryVisualOption{min-height:48px;}
+    .inventoryIconGrid .inventoryVisualEmoji{font-size:22px;}
+    .inventoryIconGrid .inventoryVisualLabel{display:none;}
+    .inventoryList,.existingProductList{display:grid;gap:8px;margin-top:8px;max-height:430px;overflow:auto;scrollbar-width:none;}
+    .inventoryList::-webkit-scrollbar,.existingProductList::-webkit-scrollbar{display:none;}
+    .inventoryOptionBtn,.existingProductRow{
+      width:100%;
+      display:grid;
+      grid-template-columns:1fr auto;
+      align-items:center;
+      gap:10px;
+      background:#e9f2ff;
+      color:#111827;
+      text-align:left;
+    }
+    .inventoryOptionBtn:hover,.existingProductRow:hover{background:#9fd1e3;filter:brightness(1.04);}
+    .inventoryOptionBtn.active{background:#F1994A;color:#111827;}
+    .inventoryOptionName,.existingProductName{font-weight:900;line-height:1.1;}
+    .inventoryOptionKey,.existingProductMeta{font-size:calc(var(--body-size) - 2px);opacity:.78;line-height:1.1;margin-top:3px;}
+    .inventoryOptionTag{font-size:calc(var(--body-size) - 2px);font-weight:900;color:#264C8F;}
+    .existingProductRow .addExistingBtn{background:var(--green);color:#fff;white-space:nowrap;}
+    .inventoryNote{font-size:var(--body-size);color:#fff;background:rgba(255,255,255,.12);border-radius:10px;padding:8px 10px;line-height:1.2;}
 
     .message{
       max-width:var(--work-width);
@@ -487,17 +803,17 @@
 
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
     .modal.show{display:flex}
-    .modalCard{width:min(920px,96vw);max-height:88vh;overflow:auto;background:#f4f7ff;color:#111827;border:3px solid #111b45;border-radius:18px;box-shadow:var(--shadow);padding:22px}
-    .modalCard h2{margin:0 0 14px;color:#243d7e;font-size:18px}
-    .modalCard p{line-height:1.5;color:#243047;font-size:14px}
+    .modalCard{width:min(920px,96vw);max-height:88vh;overflow:auto;background:rgba(31,35,58,.98);color:#ffffff;border:3px solid #111b45;border-radius:18px;box-shadow:var(--shadow);padding:22px}
+    .modalCard h2{margin:0 0 14px;color:#ffffff;font-size:18px}
+    .modalCard p{line-height:1.5;color:#e8efff;font-size:14px}
     .modalGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
-    .modalCard label{font-size:13px;color:#23345e;font-weight:800;display:block;margin-bottom:5px}
-    .modalCard input,.modalCard select,.modalCard textarea{width:100%;padding:10px;border:1px solid #9badcf;border-radius:8px;font-size:15px}
+    .modalCard label{font-size:13px;color:#ffffff;font-weight:800;display:block;margin-bottom:5px}
+    .modalCard input,.modalCard select,.modalCard textarea{width:100%;padding:10px;border:1px solid #172755;border-radius:8px;font-size:15px;background:#d8e3f8;color:#111827}
     .measureMenu{display:grid;gap:8px;margin-top:8px}.measureOption{width:100%;min-height:38px;border:1px solid #19284f;border-radius:10px;background:#eef4ff;color:#102047;font-size:14px;font-weight:800;cursor:pointer;text-align:left;padding:8px 10px}.measureOption:hover{background:#9fd1e3}.measureCrumb{font-size:13px;color:#2f3a55;margin:4px 0 10px}.measureBack{background:#1c2b57!important;color:white!important}
     .filterStatus{font-size:13px;line-height:1.25;background:rgba(255,255,255,.68);border:1px solid rgba(25,40,79,.24);border-radius:10px;padding:8px 10px;margin-bottom:10px;color:#243047}
     .filterMenu{display:grid;gap:8px;margin-top:8px}
     .filterOption{width:100%;min-height:38px;border:1px solid #19284f;border-radius:10px;background:#eef4ff;color:#102047;font-size:14px;font-weight:800;cursor:pointer;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .filterOption:hover{background:#9fd1e3}.filterOption.active{background:#91f0e6;color:#051827}.filterOption.clear{background:#1f233a;color:white}.filterOption.back{background:#1c2b57;color:white}
+    .filterOption:hover{background:#9fd1e3}.filterOption.active{background:#F1994A;color:#111827}.filterOption.clear{background:#1f233a;color:white}.filterOption.back{background:#1c2b57;color:white}
     .filterCount{font-size:12px;font-weight:700;opacity:.78;white-space:nowrap}
     .filterEmpty{font-size:13px;color:#4b5563;background:rgba(255,255,255,.65);border:1px dashed rgba(25,40,79,.32);border-radius:10px;padding:10px}
     .modalActions{display:flex;justify-content:flex-end;gap:12px;margin-top:18px}
@@ -507,7 +823,7 @@
 
     @media(max-width:900px){
       .app{min-width:0;padding:0 8px 40px}.topbar{padding:0 18px;gap:20px}.nav{display:none}.brand{font-size:28px;min-width:200px}.user{font-size:16px}
-      .switcher button{min-width:150px;font-size:14px}.toolbarRow{display:block;width:100%}.searchWrap{margin:12px 0}.app{padding-right:8px}.editorShell,.inventoryShell{width:100%;overflow-x:auto}.editorGrid,.inventoryGrid,.row{min-width:1100px}.actionBar{min-width:825px}.sidePanel{display:none}
+      .switcher button{min-width:150px;font-size:14px}.toolbarRow{display:block;width:100%}.searchWrap{margin:12px 0}.app{padding-right:8px}.inventoryTabsRow{min-width:1100px}.activeInventoryTab,.addExistingInventoryTab,.moveInventoryTab{width:calc(1100px * 2 / 9);min-width:calc(1100px * 2 / 9);max-width:calc(1100px * 2 / 9);margin:0;border-radius:14px 14px 0 0}.activeInventoryThumb{width:34px;height:34px;flex-basis:34px;border-radius:10px}.activeInventoryMiniIcon{width:15px;height:15px;border-radius:5px;font-size:9px}.editorShell,.inventoryShell{width:100%;overflow-x:auto}.editorGrid,.inventoryGrid,.row{min-width:1100px}.actionBar{min-width:825px}.sidePanel{display:none}
     }
 
 
@@ -1128,6 +1444,7 @@
         --cell-h:36px;
         --field-h:34px;
       }
+      .inventoryTabsRow{min-width:980px}.activeInventoryTab,.addExistingInventoryTab,.moveInventoryTab{width:calc(980px * 2 / 9);min-width:calc(980px * 2 / 9);max-width:calc(980px * 2 / 9);min-height:38px;padding:5px 8px;border-radius:12px 12px 0 0;margin:0}.activeInventoryThumb{width:28px;height:28px;flex-basis:28px;border-radius:8px}.activeInventoryInitial{font-size:12px}.activeInventoryMiniIcon{width:12px;height:12px;border-radius:4px;font-size:7px}.activeInventoryLabel{font-size:8px}.activeInventoryName{font-size:10px}
       .mobileCommandBar{gap:6px;margin:8px 0 6px}
       .mobileCommandBar button,
       .mobileDropdown button,
@@ -1191,8 +1508,10 @@
     /* v24: estado activo para desplegables + panel lateral más legible */
     #sortBtn.dropdownActive,
     #filterBtn.dropdownActive,
+    #currencyBtn.dropdownActive,
     #mobileSortBtn.dropdownActive,
-    #mobileFilterBtn.dropdownActive{
+    #mobileFilterBtn.dropdownActive,
+    #mobileCurrencyBtn.dropdownActive{
       background:var(--orange)!important;
       color:#17151a!important;
       border-color:rgba(20,20,25,.55)!important;
@@ -1251,9 +1570,11 @@
       <div class="toolGroup">
         <button class="toolBtn" id="sortBtn"><span>Organizar</span><span class="ico svgIcon"><img src="assets/icons/organize-blue.svg" alt="" aria-hidden="true"></span></button>
         <button class="toolBtn" id="filterBtn"><span>Filtrar</span><span class="ico svgIcon"><img src="assets/icons/filter-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button class="toolBtn currencyBtn" id="currencyBtn" type="button" title="Moneda"><span id="currencyBtnSymbol">$</span></button>
       </div>
       <div class="searchWrap"><input id="searchInput" class="search" type="search" placeholder="buscar un producto" autocomplete="off"><div class="magnifier">🔎</div><div id="searchSuggestions" class="searchSuggestions" aria-label="Sugerencias de productos"></div></div>
     </section>
+
 
     <section class="editorShell">
       <div class="editorGrid">
@@ -1261,7 +1582,7 @@
         <input id="supplier" placeholder="Proveedor" autocomplete="off"><input id="productName" placeholder="Nombre de producto" autocomplete="off"><input id="presentation" type="number" min="0" step="any" placeholder="Presentacion"><button id="unitSelectBtn" class="unitPickerBtn" type="button">Seleccionar modo</button><input id="unit" type="hidden"><input id="stock" type="number" min="0" step="any" placeholder="En Stock"><input id="totalCost" type="number" min="0" step="any" placeholder="CostoTotal"><input id="unitCost" class="calculated" readonly placeholder="Costo por Unidad"><input id="expires" type="date" placeholder="Expira">
       </div>
       <div class="actionBar">
-        <button id="desktopInventoryActionsBtn" class="actionHub" type="button"><span>Acciones inventario</span><span class="ico svgIcon"><img src="assets/icons/action-hub-green.svg" alt="" aria-hidden="true"></span></button>
+        <button id="desktopInventoryActionsBtn" class="ftHub" type="button"><span>Acciones FT</span><span class="ico svgIcon"><img src="assets/icons/ft-orange.svg" alt="" aria-hidden="true"></span></button>
         <button id="duplicateProduct" type="button"><span>Duplicar producto</span><span class="ico svgIcon"><img src="assets/icons/copy-blue.svg" alt="" aria-hidden="true"></span></button>
         <button id="deleteProduct" type="button"><span>Eliminar producto</span><span class="ico svgIcon"><img src="assets/icons/delete-blue.svg" alt="" aria-hidden="true"></span></button>
         <button id="clearEditor" type="button"><span>Limpiar editor</span><span class="ico svgIcon"><img src="assets/icons/clean-blue.svg" alt="" aria-hidden="true"></span></button>
@@ -1270,7 +1591,7 @@
 
         <!-- Botones legado ocultos: mantienen compatibilidad con funciones/eventos existentes. -->
         <button id="addToFT" class="legacyActionHidden" type="button"><span>Agregar a FT</span><span class="ico svgIcon"><img src="assets/icons/ft-orange.svg" alt="" aria-hidden="true"></span></button>
-        <button id="addToInventory" class="legacyActionHidden" type="button"><span>Añadir a inventario</span><span class="ico svgIcon"><img src="assets/icons/add-inventory-green.svg" alt="" aria-hidden="true"></span></button>
+        <button id="addToInventory" class="legacyActionHidden" type="button"><span>Guardar producto</span><span class="ico svgIcon"><img src="assets/icons/add-inventory-green.svg" alt="" aria-hidden="true"></span></button>
         <button id="saveInventory" class="legacyActionHidden" type="button"><span>Guardar inventario</span><span class="ico svgIcon"><img src="assets/icons/action-hub-green.svg" alt="" aria-hidden="true"></span></button>
       </div>
     </section>
@@ -1280,20 +1601,24 @@
 
     <section id="mobileControls" class="mobileControls" aria-label="Controles compactos responsive">
       <div class="mobileCommandBar">
-        <button id="mobileInventoryMenuBtn" type="button">Acciones inventario</button>
+        <button id="mobileInventoryMenuBtn" type="button">Inventario</button>
         <button id="mobileViewMenuBtn" type="button">Vista y filtros</button>
         <button id="mobileAddProductBtn" class="primary" type="button">Añadir producto</button>
       </div>
       <div id="mobileInventoryMenu" class="mobileDropdown" aria-label="Menú de acciones de inventario">
         <div class="mobileSearchBox"><input id="mobileSearchInput" type="search" placeholder="buscar producto" autocomplete="off"><div id="mobileSearchSuggestions" class="searchSuggestions" aria-label="Sugerencias de productos móvil"></div></div>
-        <button id="mobileAddToFT" type="button"><span>Agregar FT</span><span class="ico svgIcon"><img src="assets/icons/ft-orange.svg" alt="" aria-hidden="true"></span></button>
-        <button id="mobileReloadInventory" type="button"><span>Guardar/recargar</span><span class="ico svgIcon"><img src="assets/icons/action-hub-green.svg" alt="" aria-hidden="true"></span></button>
-        <button id="mobileViewFT" type="button"><span>Ver FT</span><span class="ico svgIcon"><img src="assets/icons/ft-orange.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileCreateInv" type="button"><span>Crear inventario</span><span class="ico svgIcon"><img src="assets/icons/add-inventory-green.svg" alt="" aria-hidden="true"></span></button>
         <button id="mobileChangeInv" type="button"><span>Cambiar inventario</span><span class="ico svgIcon"><img src="assets/icons/organize-green.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileMoveInv" type="button"><span>Mover inventario</span><span class="ico svgIcon"><img src="assets/icons/add-inventory-green.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileAddExistingInv" type="button"><span>Agregar existente</span><span class="ico svgIcon"><img src="assets/icons/add-inventory-green.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileReloadInventory" type="button"><span>Guardar/recargar</span><span class="ico svgIcon"><img src="assets/icons/action-hub-green.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileAddToFT" type="button"><span>Agregar FT</span><span class="ico svgIcon"><img src="assets/icons/ft-orange.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileViewFT" type="button"><span>Ver FT</span><span class="ico svgIcon"><img src="assets/icons/ft-orange.svg" alt="" aria-hidden="true"></span></button>
       </div>
       <div id="mobileViewMenu" class="mobileDropdown" aria-label="Menú de vista y filtros">
         <button id="mobileSortBtn" type="button"><span>Organizar</span><span class="ico svgIcon"><img src="assets/icons/organize-blue.svg" alt="" aria-hidden="true"></span></button>
         <button id="mobileFilterBtn" type="button"><span>Filtrar</span><span class="ico svgIcon"><img src="assets/icons/filter-blue.svg" alt="" aria-hidden="true"></span></button>
+        <button id="mobileCurrencyBtn" type="button"><span>Moneda</span><span id="mobileCurrencySymbol">$</span></button>
       </div>
     </section>
 
@@ -1335,6 +1660,35 @@
     </div>
 
     <section class="inventoryShell">
+      <div class="inventoryTabsRow" aria-label="Estado y acciones del inventario activo">
+        <div id="activeInventoryBar" class="activeInventoryTab" aria-label="Inventario activo">
+          <div id="activeInventoryThumb" class="activeInventoryThumb"><span class="activeInventoryInitial">IG</span><span id="activeInventoryMiniIcon" class="activeInventoryMiniIcon">▣</span></div>
+          <div class="activeInventoryText">
+            <span class="activeInventoryLabel">Inventario activo</span>
+            <strong id="activeInventoryName" class="activeInventoryName">Inventario General</strong>
+          </div>
+        </div>
+        <button id="createInventoryInlineBtn" class="inventoryInlineActionTab createInventory" type="button">Crear inventario</button>
+        <button id="changeInventoryInlineBtn" class="inventoryInlineActionTab changeInventory" type="button">Cambiar inventario</button>
+        <button id="reloadInventoryInlineBtn" class="inventoryInlineActionTab reloadInventory" type="button">Guardar / recargar</button>
+        <button id="addExistingInlineBtn" class="addExistingInventoryTab" type="button">Agregar producto existente</button>
+        <button id="moveInventoryInlineBtn" class="moveInventoryTab" type="button">Mover a otro inventario</button>
+      </div>
+
+      <section id="existingProductSelector" class="existingProductSelector" aria-label="Seleccionar producto del inventario general">
+        <div class="existingSelectorTop">
+          <input id="existingProductSearch" class="existingSelectorSearch" type="search" placeholder="buscar producto del inventario general" autocomplete="off">
+          <button id="closeExistingSelector" class="existingSelectorClose" type="button">Cerrar</button>
+        </div>
+        <div class="inventoryGrid existingSelectorGrid" aria-label="Encabezado de selector de productos existentes">
+          <div class="head">Proveedor</div><div class="head">Producto</div><div class="head">Presentacion</div><div class="head">Modo de cálculo</div><div class="head">En Stock</div><div class="head">CostoTotal</div><div class="head">Costo por Unidad</div><div class="head">Expira</div><div class="head">Fecha mod</div>
+        </div>
+        <div id="existingProductRows" class="inventoryRows existingSelectorRows" aria-label="Productos del inventario general disponibles"></div>
+        <div class="existingSelectorFooter">
+          <button id="saveExistingProductToInventory" class="saveExistingProductBtn" type="button" disabled>Selecciona un producto</button>
+        </div>
+      </section>
+
       <div class="inventoryGrid" aria-label="Encabezado de inventario">
         <div class="head">Proveedor</div><div class="head">Producto</div><div class="head">Presentacion</div><div class="head">Modo de cálculo</div><div class="head">En Stock</div><div class="head">CostoTotal</div><div class="head">Costo por Unidad</div><div class="head">Expira</div><div class="head">Fecha mod</div>
       </div>
@@ -1603,7 +1957,7 @@
       if(!modal || !box) return;
       clearTimeout(confirmSuccessTimer);
       box.className = 'confirmBox confirm-success';
-      $('confirmIcon').innerHTML = `<img src="${ICON_PATHS.action}" alt="" aria-hidden="true">`;
+      $('confirmIcon').innerHTML = `<img src="${getIconPath('action','green')}" alt="" aria-hidden="true">`;
       $('confirmSuccessText').textContent = message;
       modal.classList.add('show');
       modal.setAttribute('aria-hidden','false');
@@ -1625,6 +1979,90 @@
     let hasLoadedFromWix = false;
     const debugLines = [];
     const MAX_DEBUG_LINES = 350;
+
+    const CURRENCY_STORAGE_KEY = 'nexo_inventory_currency_v31';
+    const CURRENCY_OPTIONS = [
+      { code:'DOLLAR', symbol:'$', label:'Dólar / peso' },
+      { code:'EUR', symbol:'€', label:'Euro' },
+      { code:'CRC', symbol:'₡', label:'Colón' },
+      { code:'GTQ', symbol:'Q', label:'Quetzal' },
+      { code:'HNL', symbol:'L', label:'Lempira' },
+      { code:'PAB', symbol:'B/.', label:'Balboa' },
+      { code:'PEN', symbol:'S/', label:'Sol' },
+      { code:'PYG', symbol:'₲', label:'Guaraní' },
+      { code:'BOLIVAR_BOLIVIANO', symbol:'Bs', label:'Boliviano / bolívar' },
+      { code:'GBP', symbol:'£', label:'Libra' },
+      { code:'YEN_YUAN', symbol:'¥', label:'Yen / yuan' },
+      { code:'INR', symbol:'₹', label:'Rupia' },
+      { code:'KRW', symbol:'₩', label:'Won' }
+    ];
+
+    function loadCurrency(){
+      try{
+        const saved = JSON.parse(localStorage.getItem(CURRENCY_STORAGE_KEY) || 'null');
+        if(saved && saved.code){
+          return CURRENCY_OPTIONS.find(c => c.code === saved.code) || saved;
+        }
+      }catch(error){}
+      return CURRENCY_OPTIONS[0];
+    }
+
+    let activeCurrency = loadCurrency();
+
+    const INVENTORY_ACTIVE_STORAGE_KEY = 'nexo_inventory_active_inventory_v32';
+    const INVENTORY_LIST_STORAGE_KEY = 'nexo_inventory_saved_inventories_v32';
+    const BASE_INVENTORY = { key:'base', name:'Inventario General', isBase:true, image:'emoji:📦', icon:'emoji:▣' };
+
+    const INVENTORY_VISUAL_PRESETS = [
+      { key:'base-01', label:'Estantería tienda', image:'assets/inventory/base/inventory_base_01.png' },
+      { key:'base-02', label:'Walking cooler', image:'assets/inventory/base/inventory_base_02.png' },
+      { key:'base-03', label:'Bodega alimentos', image:'assets/inventory/base/inventory_base_03.png' },
+      { key:'base-04', label:'Almacén seco', image:'assets/inventory/base/inventory_base_04.png' },
+      { key:'base-05', label:'Cocina organizada', image:'assets/inventory/base/inventory_base_05.png' },
+      { key:'base-06', label:'Inventario mixto', image:'assets/inventory/base/inventory_base_06.png' },
+      { key:'base-07', label:'Despensa producción', image:'assets/inventory/base/inventory_base_07.png' },
+      { key:'base-08', label:'Bodega general', image:'assets/inventory/base/inventory_base_08.png' },
+      { key:'cleaning', label:'Limpieza', image:'emoji:🧴' },
+      { key:'textile', label:'Textiles', image:'emoji:🧵' },
+      { key:'hardware', label:'Ferretería', image:'emoji:🛠️' },
+      { key:'care', label:'Cuidado', image:'emoji:🧼' }
+    ];
+
+    const INVENTORY_ICON_PRESETS = [
+      { label:'Leche', icon:'emoji:🥛' },{ label:'Condimentos', icon:'emoji:🧂' },{ label:'Vegetal', icon:'emoji:🥕' },{ label:'Pan', icon:'emoji:🍞' },
+      { label:'Pastel', icon:'emoji:🍰' },{ label:'Dona', icon:'emoji:🍩' },{ label:'Galleta', icon:'emoji:🍪' },{ label:'Pasta', icon:'emoji:🍝' },
+      { label:'Taco', icon:'emoji:🌮' },{ label:'Pollo', icon:'emoji:🍗' },{ label:'Carne', icon:'emoji:🥩' },{ label:'Pescado', icon:'emoji:🐟' },
+      { label:'Café', icon:'emoji:☕' },{ label:'Botella', icon:'emoji:🧴' },{ label:'Jabón', icon:'emoji:🧼' },{ label:'Esponja', icon:'emoji:🧽' },
+      { label:'Hilo', icon:'emoji:🧵' },{ label:'Tela', icon:'emoji:🧶' },{ label:'Caja', icon:'emoji:📦' },{ label:'Herramienta', icon:'emoji:🔧' }
+    ];
+
+    let createInventoryDraftVisual = { image:INVENTORY_VISUAL_PRESETS[0].image, icon:INVENTORY_ICON_PRESETS[0].icon };
+
+    function loadLocalInventories(){
+      try{
+        const list = JSON.parse(localStorage.getItem(INVENTORY_LIST_STORAGE_KEY) || '[]');
+        return Array.isArray(list) ? list.filter(item => item && item.key && item.name) : [];
+      }catch(error){ return []; }
+    }
+
+    function saveLocalInventories(){
+      try{ localStorage.setItem(INVENTORY_LIST_STORAGE_KEY, JSON.stringify(localInventoryOptions.filter(item => item.key !== 'base'))); }catch(error){}
+    }
+
+    function loadActiveInventory(){
+      try{
+        const saved = JSON.parse(localStorage.getItem(INVENTORY_ACTIVE_STORAGE_KEY) || 'null');
+        if(saved && saved.key && saved.name) return saved;
+      }catch(error){}
+      return { ...BASE_INVENTORY };
+    }
+
+    let localInventoryOptions = loadLocalInventories();
+    let activeInventory = loadActiveInventory();
+    let existingPickerOpen = false;
+    let existingPickerSelectedId = null;
+    let existingPickerSearch = '';
+
 
     function safeJson(value){
       try{ return JSON.stringify(value, null, 2); }
@@ -2001,8 +2439,18 @@
 
     function uid(){ return 'px_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
     function nowDate(){ return new Date().toISOString().slice(0,10); }
-    function fmtMoney(v){ const n = Number(v); return Number.isFinite(n) ? n.toFixed(4).replace(/\.0000$/,'') : ''; }
-    function fmtUnitCost(v){ const n = Number(v); return Number.isFinite(n) ? n.toFixed(2) : ''; }
+    function activeCurrencySymbol(){
+      return activeCurrency?.symbol || '$';
+    }
+    function formatCurrencyNumber(value, decimals=2, trimZeros=false){
+      const n = Number(value);
+      if(!Number.isFinite(n)) return '';
+      let out = n.toFixed(decimals);
+      if(trimZeros) out = out.replace(/\.00$/,'').replace(/(\.\d)0$/,'$1');
+      return `${activeCurrencySymbol()}${out}`;
+    }
+    function fmtMoney(v){ return formatCurrencyNumber(v, 2, true); }
+    function fmtUnitCost(v){ return formatCurrencyNumber(v, 2, false); }
     function escapeHtml(str){ return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
     function showMessage(text){
@@ -2222,6 +2670,542 @@
       });
     }
 
+    function openCurrencySelector(anchorId='currencyBtn'){
+      const html = `
+        <div class="filterStatus">Moneda activa: ${escapeHtml(activeCurrency.symbol)} · ${escapeHtml(activeCurrency.label)}</div>
+        <div class="filterMenu currencyMenu">
+          ${CURRENCY_OPTIONS.map(option => {
+            const active = activeCurrency.code === option.code ? ' active' : '';
+            return `<button class="filterOption currencyOption${active}" type="button" data-currency-code="${escapeHtml(option.code)}"><span class="currencySymbolChoice">${escapeHtml(option.symbol)}</span><span class="filterCount currencyLabelChoice">${escapeHtml(option.label)}</span></button>`;
+          }).join('')}
+        </div>`;
+      openDropdownModal(anchorId || 'currencyBtn', 'Moneda', html, 'currency');
+      bindCurrencyButtons();
+    }
+
+    function bindCurrencyButtons(){
+      document.querySelectorAll('[data-currency-code]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const next = CURRENCY_OPTIONS.find(option => option.code === btn.dataset.currencyCode);
+          if(!next) return;
+          activeCurrency = next;
+          try{ localStorage.setItem(CURRENCY_STORAGE_KEY, JSON.stringify(activeCurrency)); }catch(error){}
+          updateCurrencyButtons();
+          closeModal();
+          calculateUnitCost();
+          calculateMobileUnitCost();
+          render();
+          showMessage(`Moneda activa: ${activeCurrency.symbol} ${activeCurrency.code}`);
+        });
+      });
+    }
+
+    function updateCurrencyButtons(){
+      if($('currencyBtnSymbol')) $('currencyBtnSymbol').textContent = activeCurrencySymbol();
+      if($('mobileCurrencySymbol')) $('mobileCurrencySymbol').textContent = activeCurrencySymbol();
+    }
+
+    function normalizeInventoryKey(value){
+      return String(value || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g,'-')
+        .replace(/^-+|-+$/g,'') || 'inventario';
+    }
+
+    function splitInventoryText(value){
+      return String(value || '')
+        .split(/[,;|]+/)
+        .map(part => part.trim())
+        .filter(Boolean);
+    }
+
+    function uniqueInventoryKeys(keys){
+      const output = [];
+      keys.forEach(key => {
+        const cleaned = normalizeInventoryKey(key);
+        if(cleaned && !output.includes(cleaned)) output.push(cleaned);
+      });
+      return output;
+    }
+
+    function prettyInventoryNameFromKey(key){
+      if(key === 'base') return BASE_INVENTORY.name;
+      return String(key || '')
+        .split('-')
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ') || 'Inventario';
+    }
+
+    function getProductInventoryKeys(product){
+      const keys = uniqueInventoryKeys(splitInventoryText(product?.inventoryKey));
+      return keys.length ? keys : ['base'];
+    }
+
+    function getProductInventoryNameMap(product){
+      const keys = getProductInventoryKeys(product);
+      const names = splitInventoryText(product?.inventoryName);
+      const map = {};
+      keys.forEach((key, index) => {
+        const local = localInventoryOptions.find(item => item.key === key);
+        map[key] = names[index] || local?.name || prettyInventoryNameFromKey(key);
+      });
+      map.base = map.base || BASE_INVENTORY.name;
+      return map;
+    }
+
+    function getInventoryNameForKey(key){
+      const cleaned = normalizeInventoryKey(key);
+      if(cleaned === 'base') return BASE_INVENTORY.name;
+      const local = localInventoryOptions.find(item => item.key === cleaned);
+      if(local) return local.name;
+      for(const product of products){
+        const map = getProductInventoryNameMap(product);
+        if(map[cleaned]) return map[cleaned];
+      }
+      return prettyInventoryNameFromKey(cleaned);
+    }
+
+    function mergeInventoryOption(option){
+      if(!option || !option.key) return;
+      const key = normalizeInventoryKey(option.key);
+      if(key === 'base') return;
+      const name = String(option.name || option.title || option.inventoryName || prettyInventoryNameFromKey(key)).trim();
+      const image = option.image || option.inventoryImage || '';
+      const icon = option.icon || option.inventoryIcon || '';
+      const existing = localInventoryOptions.find(item => item.key === key);
+      if(existing){
+        existing.name = existing.name || name;
+        if(image) existing.image = image;
+        if(icon) existing.icon = icon;
+        saveLocalInventories();
+        return;
+      }
+      localInventoryOptions.push({ key, name, image, icon });
+      saveLocalInventories();
+    }
+
+    function getAllInventories(){
+      const map = new Map();
+      map.set('base', { ...BASE_INVENTORY });
+      localInventoryOptions.forEach(option => map.set(option.key, { key:option.key, name:option.name, isBase:false, image:option.image || '', icon:option.icon || '' }));
+      products.forEach(product => {
+        const keys = getProductInventoryKeys(product);
+        const nameMap = getProductInventoryNameMap(product);
+        keys.forEach(key => {
+          if(!map.has(key)) map.set(key, { key, name:nameMap[key] || prettyInventoryNameFromKey(key), isBase:key === 'base' });
+        });
+      });
+      return Array.from(map.values()).sort((a,b) => {
+        if(a.key === 'base') return -1;
+        if(b.key === 'base') return 1;
+        return String(a.name).localeCompare(String(b.name), 'es', { numeric:true, sensitivity:'base' });
+      });
+    }
+
+    function saveActiveInventory(){
+      try{ localStorage.setItem(INVENTORY_ACTIVE_STORAGE_KEY, JSON.stringify(activeInventory)); }catch(error){}
+    }
+
+    function setActiveInventory(option, announce=true){
+      const key = normalizeInventoryKey(option?.key || 'base');
+      activeInventory = { key, name: option?.name || option?.title || getInventoryNameForKey(key), isBase:key === 'base', image: option?.image || option?.inventoryImage || '', icon: option?.icon || option?.inventoryIcon || '' };
+      saveActiveInventory();
+      activeFilter = { key:null, value:null, label:'' };
+      hideSearchSuggestions('all');
+      if(selectedId && activeInventory.key !== 'base'){
+        const selected = products.find(p => p.id === selectedId);
+        if(selected && !productMatchesActiveInventory(selected)) selectedId = null;
+      }
+      updateInventoryBadge();
+      updateInlineInventoryControls();
+      render();
+      if(announce) showMessage('Inventario activo: ' + activeInventory.name);
+    }
+
+    function isEmojiVisual(value){ return String(value || '').startsWith('emoji:'); }
+    function emojiVisualValue(value, fallback=''){
+      return isEmojiVisual(value) ? String(value).slice(6) : fallback;
+    }
+
+    function renderInventoryVisualBadge(imageValue, iconValue, name='Inventario'){
+      const imageContent = isEmojiVisual(imageValue) ? `<span>${escapeHtml(emojiVisualValue(imageValue, '📦'))}</span>` : `<img src="${escapeHtml(imageValue || '')}" alt="" aria-hidden="true">`;
+      const iconEmoji = emojiVisualValue(iconValue, '▣');
+      return `<span class="inventoryPreviewImage">${imageContent}<span class="inventoryPreviewIcon">${escapeHtml(iconEmoji)}</span></span>`;
+    }
+
+    function updateInventoryBadge(){
+      const name = activeInventory?.name || BASE_INVENTORY.name;
+      const label = $('activeInventoryName');
+      if(label) label.textContent = name;
+
+      const thumb = $('activeInventoryThumb');
+      const mini = $('activeInventoryMiniIcon');
+      if(thumb){
+        const image = activeInventory?.image || activeInventory?.inventoryImage || '';
+        const letters = name.split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]).join('').toUpperCase() || 'IG';
+        const oldMini = mini || document.createElement('span');
+        oldMini.id = 'activeInventoryMiniIcon';
+        oldMini.className = 'activeInventoryMiniIcon';
+        oldMini.innerHTML = '';
+        const icon = activeInventory?.icon || activeInventory?.inventoryIcon || '';
+        if(icon){
+          if(isEmojiVisual(icon)) oldMini.textContent = emojiVisualValue(icon, '◆');
+          else oldMini.innerHTML = `<img src="${escapeHtml(icon)}" alt="" aria-hidden="true">`;
+        }else{
+          oldMini.textContent = activeInventory?.key === 'base' ? '▣' : '◆';
+        }
+        if(image){
+          if(isEmojiVisual(image)) thumb.innerHTML = `<span class="activeInventoryInitial">${escapeHtml(emojiVisualValue(image, '📦'))}</span>`;
+          else thumb.innerHTML = `<img src="${escapeHtml(image)}" alt="" aria-hidden="true">`;
+          thumb.appendChild(oldMini);
+        }else{
+          thumb.innerHTML = `<span class="activeInventoryInitial">${escapeHtml(letters)}</span>`;
+          thumb.appendChild(oldMini);
+        }
+      }
+    }
+
+    function productMatchesActiveInventory(product){
+      if(!product) return false;
+      if(!activeInventory || activeInventory.key === 'base') return true;
+      return getProductInventoryKeys(product).includes(activeInventory.key);
+    }
+
+    function inventoryFieldsForProduct(existing=null){
+      const keys = getProductInventoryKeys(existing || {});
+      if(!keys.includes('base')) keys.unshift('base');
+      if(activeInventory?.key && activeInventory.key !== 'base' && !keys.includes(activeInventory.key)) keys.push(activeInventory.key);
+      const cleanKeys = uniqueInventoryKeys(keys);
+      const names = cleanKeys.map(key => key === activeInventory?.key ? activeInventory.name : getInventoryNameForKey(key));
+      return { inventoryKey: cleanKeys.join(','), inventoryName: names.join(',') };
+    }
+
+    function addInventoryToProduct(product, inventory=activeInventory){
+      const keys = getProductInventoryKeys(product);
+      if(!keys.includes('base')) keys.unshift('base');
+      if(inventory?.key && inventory.key !== 'base' && !keys.includes(inventory.key)) keys.push(inventory.key);
+      const cleanKeys = uniqueInventoryKeys(keys);
+      const names = cleanKeys.map(key => key === inventory?.key ? inventory.name : getInventoryNameForKey(key));
+      return { ...product, inventoryKey: cleanKeys.join(','), inventoryName: names.join(',') };
+    }
+
+    function inventoryVisualButton(option, type){
+      const value = type === 'image' ? option.image : option.icon;
+      const active = value === createInventoryDraftVisual[type] ? ' active' : '';
+      const emoji = emojiVisualValue(value, type === 'image' ? '📦' : '◆');
+      const visual = isEmojiVisual(value) ? `<span class="inventoryVisualEmoji">${escapeHtml(emoji)}</span>` : `<span class="inventoryVisualImage"><img src="${escapeHtml(value)}" alt="" aria-hidden="true"></span>`;
+      return `<button class="inventoryVisualOption${active}" type="button" data-visual-type="${type}" data-visual-value="${escapeHtml(value)}" title="${escapeHtml(option.label)}">${visual}<span class="inventoryVisualLabel">${escapeHtml(option.label)}</span></button>`;
+    }
+
+    function renderCreateInventoryVisuals(){
+      const gallery = $('inventoryImageGallery');
+      const icons = $('inventoryIconGallery');
+      if(gallery) gallery.innerHTML = INVENTORY_VISUAL_PRESETS.map(option => inventoryVisualButton(option, 'image')).join('');
+      if(icons) icons.innerHTML = INVENTORY_ICON_PRESETS.map(option => inventoryVisualButton(option, 'icon')).join('');
+      const preview = $('inventoryVisualPreviewBox');
+      const name = String($('newInventoryName')?.value || '').trim() || 'Nuevo inventario';
+      if(preview){
+        preview.innerHTML = `${renderInventoryVisualBadge(createInventoryDraftVisual.image, createInventoryDraftVisual.icon, name)}<span class="inventoryPreviewText"><strong>${escapeHtml(name)}</strong><span>Imagen base + iconito del inventario. Luego usaremos el iconito para fichas técnicas.</span></span>`;
+      }
+      document.querySelectorAll('[data-visual-type]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const type = btn.dataset.visualType;
+          createInventoryDraftVisual[type] = btn.dataset.visualValue;
+          renderCreateInventoryVisuals();
+        });
+      });
+    }
+
+    function openCreateInventoryModal(){
+      createInventoryDraftVisual = { image:INVENTORY_VISUAL_PRESETS[0].image, icon:INVENTORY_ICON_PRESETS[0].icon };
+      const html = `
+        <div class="inventoryNote">Crea una etiqueta visual de inventario. No duplica productos: solo sirve para llamar productos por este nombre.</div>
+        <div class="inventoryCreateForm">
+          <label for="newInventoryName">Nombre del inventario</label>
+          <input id="newInventoryName" type="text" placeholder="Ej: Cocina principal" autocomplete="off">
+          <div id="inventoryVisualPreviewBox" class="inventoryVisualPreview"></div>
+          <div class="inventoryVisualSection">
+            <div class="inventoryVisualSectionTitle">Imagen base del inventario</div>
+            <div id="inventoryImageGallery" class="inventoryVisualGrid"></div>
+          </div>
+          <div class="inventoryVisualSection">
+            <div class="inventoryVisualSectionTitle">Iconito descriptivo</div>
+            <div id="inventoryIconGallery" class="inventoryVisualGrid inventoryIconGrid"></div>
+          </div>
+          <div class="inventoryCreateActions">
+            <button class="cancel" type="button" data-inventory-cancel>Cancelar</button>
+            <button class="save" type="button" data-inventory-create>Crear inventario</button>
+          </div>
+        </div>`;
+      openModal('Crear inventario', html);
+      renderCreateInventoryVisuals();
+      setTimeout(() => $('newInventoryName')?.focus(), 60);
+      bindCreateInventoryModal();
+    }
+
+    function bindCreateInventoryModal(){
+      document.querySelector('[data-inventory-cancel]')?.addEventListener('click', closeModal);
+      document.querySelector('[data-inventory-create]')?.addEventListener('click', createInventoryFromModal);
+      $('newInventoryName')?.addEventListener('input', renderCreateInventoryVisuals);
+      $('newInventoryName')?.addEventListener('keydown', event => {
+        if(event.key === 'Enter') createInventoryFromModal();
+      });
+    }
+
+    function createInventoryFromModal(){
+      const input = $('newInventoryName');
+      const name = String(input?.value || '').trim();
+      if(!name){ showMessage('Escribe el nombre del inventario.'); return; }
+      const key = normalizeInventoryKey(name);
+      const option = { key, name, image:createInventoryDraftVisual.image, icon:createInventoryDraftVisual.icon };
+      mergeInventoryOption(option);
+      closeModal();
+      setActiveInventory(option, true);
+    }
+
+    function openInventorySwitcher(){
+      const inventories = getAllInventories();
+      const html = `
+        <div class="inventoryNote">Esto funciona como filtro guardado: muestra productos que tengan ese inventario en <strong>inventoryKey</strong>.</div>
+        <div class="inventoryList">
+          ${inventories.map(option => {
+            const active = option.key === activeInventory.key ? ' active' : '';
+            return `<button class="inventoryOptionBtn${active}" type="button" data-inventory-select="${escapeHtml(option.key)}"><span><span class="inventoryOptionName">${escapeHtml(option.name)}</span><span class="inventoryOptionKey">${escapeHtml(option.key)}</span></span><span class="inventoryOptionTag">${option.key === 'base' ? 'General' : 'Filtro'}</span></button>`;
+          }).join('')}
+        </div>`;
+      openModal('Cambiar inventario', html);
+      bindInventorySwitcher();
+    }
+
+    function bindInventorySwitcher(){
+      document.querySelectorAll('[data-inventory-select]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.inventorySelect;
+          const option = getAllInventories().find(item => item.key === key) || { key, name:getInventoryNameForKey(key) };
+          closeModal();
+          setActiveInventory(option, true);
+        });
+      });
+    }
+
+    function isCustomInventoryActive(){
+      return !!(activeInventory && activeInventory.key && activeInventory.key !== 'base');
+    }
+
+    function updateInlineInventoryControls(){
+      const btn = $('addExistingInlineBtn');
+      const moveBtn = $('moveInventoryInlineBtn');
+      const show = isCustomInventoryActive();
+      if(btn){
+        btn.classList.toggle('show', show);
+        btn.classList.toggle('active', existingPickerOpen && show);
+      }
+      if(moveBtn){
+        const product = products.find(item => item.id === selectedId);
+        const canMove = Boolean(product && getAllInventories().some(inv => inv.key !== (activeInventory?.key || 'base')));
+        moveBtn.classList.toggle('show', canMove);
+        moveBtn.classList.remove('active','ready');
+      }
+      if(!show) closeExistingProductSelector(false);
+      if(existingPickerOpen) renderExistingProductSelector();
+    }
+
+    function openExistingProductSelector(){
+      if(!isCustomInventoryActive()){
+        showMessage('Primero cambia o crea un inventario personalizado. En el inventario general ya aparecen todos los productos.');
+        return;
+      }
+      existingPickerOpen = true;
+      existingPickerSelectedId = null;
+      const panel = $('existingProductSelector');
+      if(panel) panel.classList.add('open');
+      const btn = $('addExistingInlineBtn');
+      if(btn){
+        btn.classList.add('active');
+        btn.textContent = 'Selecciona producto';
+      }
+      renderExistingProductSelector();
+      setTimeout(() => $('existingProductSearch')?.focus(), 60);
+      panel?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
+
+    function closeExistingProductSelector(reset=true){
+      existingPickerOpen = false;
+      if(reset){
+        existingPickerSelectedId = null;
+        existingPickerSearch = '';
+        if($('existingProductSearch')) $('existingProductSearch').value = '';
+      }
+      $('existingProductSelector')?.classList.remove('open');
+      const btn = $('addExistingInlineBtn');
+      if(btn){
+        btn.classList.remove('active','ready');
+        btn.textContent = 'Agregar producto existente';
+      }
+    }
+
+    function toggleExistingProductSelector(){
+      if(existingPickerOpen && existingPickerSelectedId){
+        saveExistingSelectedProductToInventory();
+        return;
+      }
+      if(existingPickerOpen) closeExistingProductSelector(true);
+      else openExistingProductSelector();
+    }
+
+    function existingProductCandidates(){
+      if(!isCustomInventoryActive()) return [];
+      const query = normalizeText(existingPickerSearch);
+      return products
+        .filter(product => !getProductInventoryKeys(product).includes(activeInventory.key))
+        .filter(product => {
+          if(!query) return true;
+          return [product.productName, product.supplier, product.unit, product.presentation, product.expires]
+            .some(value => normalizeText(value).includes(query));
+        })
+        .sort((a,b) => String(a.productName).localeCompare(String(b.productName), 'es', { numeric:true, sensitivity:'base' }));
+    }
+
+    function renderExistingProductSelector(){
+      const wrap = $('existingProductRows');
+      if(!wrap) return;
+      const candidates = existingProductCandidates();
+      if(existingPickerSelectedId && !candidates.some(product => product.id === existingPickerSelectedId)) existingPickerSelectedId = null;
+      if(!candidates.length){
+        wrap.innerHTML = '<div class="empty">No hay productos del inventario general pendientes para agregar aquí.</div>';
+      }else{
+        wrap.innerHTML = candidates.slice(0,160).map(p => `
+          <div class="row ${p.id===existingPickerSelectedId?'existingSelected':''}" data-existing-id="${escapeHtml(p.id)}">
+            <div class="cell" title="${escapeHtml(p.supplier)}">${escapeHtml(p.supplier)}</div>
+            <div class="cell" title="${escapeHtml(p.productName)}">${escapeHtml(p.productName)}</div>
+            <div class="cell">${p.presentation || ''}</div>
+            <div class="cell">${escapeHtml(getUnitLabel(p.unit) || '')}</div>
+            <div class="cell">${p.stock ?? ''}</div>
+            <div class="cell">${fmtMoney(p.totalCost)}</div>
+            <div class="cell">${fmtUnitCost(p.unitCost)} / ${escapeHtml(getUnitShortLabel(p.baseUnit) || '')}</div>
+            <div class="cell">${escapeHtml(p.expires || '')}</div>
+            <div class="cell">${escapeHtml(p.modifiedAt || '')}</div>
+          </div>`).join('');
+      }
+      wrap.querySelectorAll('[data-existing-id]').forEach(row => {
+        row.addEventListener('click', () => selectExistingProductForInventory(row.dataset.existingId));
+      });
+      updateExistingSaveButton();
+    }
+
+    function selectExistingProductForInventory(productId){
+      existingPickerSelectedId = productId;
+      renderExistingProductSelector();
+    }
+
+    function updateExistingSaveButton(){
+      const save = $('saveExistingProductToInventory');
+      const tab = $('addExistingInlineBtn');
+      if(!save) return;
+      const selected = products.find(product => product.id === existingPickerSelectedId);
+      if(selected){
+        save.disabled = false;
+        save.classList.add('ready');
+        save.textContent = 'Agregar y guardar cambios';
+        if(tab){
+          tab.classList.add('ready');
+          tab.textContent = 'Agregar y guardar cambios';
+        }
+      }else{
+        save.disabled = true;
+        save.classList.remove('ready');
+        save.textContent = 'Selecciona un producto';
+        if(tab){
+          tab.classList.remove('ready');
+          tab.textContent = existingPickerOpen ? 'Selecciona producto' : 'Agregar producto existente';
+        }
+      }
+    }
+
+    function saveExistingSelectedProductToInventory(){
+      if(!existingPickerSelectedId){ showMessage('Selecciona un producto del inventario general.'); return; }
+      addExistingProductToActiveInventory(existingPickerSelectedId, { keepOpen:true });
+      existingPickerSelectedId = null;
+      renderExistingProductSelector();
+    }
+
+    function openMoveInventoryModal(){
+      const product = products.find(item => item.id === selectedId);
+      if(!product){ showMessage('Selecciona primero un producto para moverlo.'); return; }
+      if(!product._id){ showMessage('Ese producto no tiene _id de Wix. Recarga antes de moverlo.'); return; }
+      const currentKey = activeInventory?.key || 'base';
+      const targets = getAllInventories().filter(option => option.key !== currentKey);
+      if(!targets.length){ showMessage('Crea otro inventario antes de mover productos.'); return; }
+      const html = `
+        <div class="inventoryNote">Moverás <strong>${escapeHtml(product.productName)}</strong> desde <strong>${escapeHtml(activeInventory.name)}</strong> hacia otro inventario. El inventario general se conserva como base.</div>
+        <div class="inventoryList">
+          ${targets.map(option => `<button class="inventoryOptionBtn" type="button" data-move-inventory="${escapeHtml(option.key)}"><span><span class="inventoryOptionName">${escapeHtml(option.name)}</span><span class="inventoryOptionKey">${escapeHtml(option.key)}</span></span><span class="inventoryOptionTag">Mover</span></button>`).join('')}
+        </div>`;
+      openModal('Mover a otro inventario', html);
+      bindMoveInventoryModal();
+    }
+
+    function bindMoveInventoryModal(){
+      document.querySelectorAll('[data-move-inventory]').forEach(btn => {
+        btn.addEventListener('click', () => moveSelectedProductToInventory(btn.dataset.moveInventory));
+      });
+    }
+
+    function moveSelectedProductToInventory(targetKey){
+      const product = products.find(item => item.id === selectedId);
+      if(!product){ showMessage('Selecciona un producto.'); return; }
+      const target = getAllInventories().find(option => option.key === targetKey) || { key:targetKey, name:getInventoryNameForKey(targetKey) };
+      let keys = getProductInventoryKeys(product).filter(key => key !== target.key);
+      if(!keys.includes('base')) keys.unshift('base');
+      if(activeInventory?.key && activeInventory.key !== 'base') keys = keys.filter(key => key !== activeInventory.key || key === 'base');
+      if(target.key !== 'base') keys.push(target.key);
+      keys = uniqueInventoryKeys(keys);
+      const updated = {
+        ...product,
+        inventoryKey: keys.join(','),
+        inventoryName: keys.map(key => key === target.key ? target.name : getInventoryNameForKey(key)).join(',')
+      };
+      Object.assign(product, updated);
+      closeModal();
+      sendToWix('UPDATE_INVENTORY_ITEM', { item: toWixItemPayload(updated) });
+      showMessage('Moviendo producto a ' + target.name + '...');
+      render();
+    }
+
+    function openAddExistingInventoryModal(){
+      openExistingProductSelector();
+    }
+
+    function bindAddExistingInventoryButtons(){
+      document.querySelectorAll('[data-add-existing-id]').forEach(btn => {
+        btn.addEventListener('click', () => addExistingProductToActiveInventory(btn.dataset.addExistingId));
+      });
+    }
+
+    function addExistingProductToActiveInventory(productId, options={}){
+      const product = products.find(item => item.id === productId);
+      if(!product){ showMessage('No encontré ese producto.'); return; }
+      if(!product._id){ showMessage('Ese producto no tiene _id de Wix. Recarga el inventario antes de agregarlo.'); return; }
+      const updated = addInventoryToProduct(product, activeInventory);
+      Object.assign(product, updated);
+      sendToWix('UPDATE_INVENTORY_ITEM', { item: toWixItemPayload(updated) });
+      showMessage('Agregando producto a ' + activeInventory.name + '...');
+      render();
+      if(existingPickerOpen) renderExistingProductSelector();
+      if(!options.keepOpen) closeExistingProductSelector(true);
+    }
+
+    function mergeInventoriesFromWix(items=[]){
+      (items || []).forEach(item => {
+        const keys = splitInventoryText(item.inventoryKey || item.key);
+        const names = splitInventoryText(item.inventoryName || item.title || item.name);
+        keys.forEach((key, index) => mergeInventoryOption({ key, name:names[index] || item.title || item.name, image:item.inventoryImage || item.image || '', icon:item.inventoryIcon || item.icon || '' }));
+      });
+      updateInventoryBadge();
+    }
+
     function getBaseUnit(unit){
       const value = String(unit || '').trim().toLowerCase();
       return unitToBase[value]?.base || value || '';
@@ -2261,6 +3245,7 @@
       const calc = calculateUnitCost();
       const unit = $('unit').value;
       const existing = !forceNew && selectedId ? products.find(p => p.id === selectedId) : null;
+      const inventoryFields = inventoryFieldsForProduct(existing);
       return {
         id: forceNew ? uid() : (selectedId || uid()),
         _id: forceNew ? undefined : existing?._id,
@@ -2281,6 +3266,8 @@
         expira: $('expires').value,
         modifiedAt: nowDate(),
         fechaMod: new Date().toISOString(),
+        inventoryKey: inventoryFields.inventoryKey,
+        inventoryName: inventoryFields.inventoryName,
         itemType: existing?.itemType || 'INSUMO'
       };
     }
@@ -2327,13 +3314,13 @@
 
       if(editorMode === 'update'){
         if(addBtn) addBtn.innerHTML = '<span>Guardar cambios</span>'+iconMarkup('edit','blue');
-        if(hubBtn) hubBtn.innerHTML = '<span>Acciones inventario</span>'+iconMarkup('action','green');
+        if(hubBtn) hubBtn.innerHTML = '<span>Acciones FT</span>'+iconMarkup('ft','orange');
         if(listBtn) listBtn.innerHTML = '<span>Guardar cambios</span>'+iconMarkup('edit','blue');
         if(editBtn) editBtn.innerHTML = '<span>Editando item</span>'+iconMarkup('edit','blue');
         if(announce) showMessage('Modo edición activo. Ajusta los datos arriba y presiona Guardar cambios.');
       }else{
-        if(addBtn) addBtn.innerHTML = '<span>Añadir a inventario</span>'+iconMarkup('add','green');
-        if(hubBtn) hubBtn.innerHTML = '<span>Acciones inventario</span>'+iconMarkup('action','green');
+        if(addBtn) addBtn.innerHTML = '<span>Guardar producto</span>'+iconMarkup('add','green');
+        if(hubBtn) hubBtn.innerHTML = '<span>Acciones FT</span>'+iconMarkup('ft','orange');
         if(listBtn) listBtn.innerHTML = '<span>Agregar a lista</span>'+iconMarkup('add','blue');
         if(editBtn) editBtn.innerHTML = '<span>Modificar item</span>'+iconMarkup('edit','blue');
       }
@@ -2381,8 +3368,8 @@
     }
 
     function requestWixData(){
-      sendToWix('NEXO_HTML_READY', { from: 'nexo_inventory_mvp_v26_BUSCADOR_SUGERENCIAS', at: new Date().toISOString() });
-      sendToWix('PING_WIX', { from: 'nexo_inventory_mvp_v26_BUSCADOR_SUGERENCIAS' });
+      sendToWix('NEXO_HTML_READY', { from: 'nexo_inventory_mvp_v34_AGREGAR_EXISTENTE_INLINE', at: new Date().toISOString() });
+      sendToWix('PING_WIX', { from: 'nexo_inventory_mvp_v34_AGREGAR_EXISTENTE_INLINE' });
       sendToWix('LOAD_INVENTORIES', {});
       sendToWix('LOAD_EXPIRATION_ALERTS', { inventoryId: ACTIVE_INVENTORY_ID });
       sendToWix('LOAD_INVENTORY_ITEMS', { inventoryId: ACTIVE_INVENTORY_ID });
@@ -2406,6 +3393,7 @@
 
         case 'INVENTORIES_LOADED':
           bridgeReady = true;
+          mergeInventoriesFromWix(message.payload?.items || []);
           break;
 
         case 'INVENTORY_ITEMS_LOADED':
@@ -2518,6 +3506,10 @@
         fechaMod: item.fechaMod || item.modifiedAt || '',
         itemType: item.itemType || item.tipoDeItem || 'INSUMO',
         productImage: item.productImage || item.image || null,
+        inventoryKey: item.inventoryKey || item.inventoryKeys || 'base',
+        inventoryName: item.inventoryName || '',
+        inventoryImage: item.inventoryImage || item.image || '',
+        inventoryIcon: item.inventoryIcon || item.icon || '',
         inventoryId: item.inventoryId || ACTIVE_INVENTORY_ID
       };
     }
@@ -2538,6 +3530,8 @@
         itemType: product.itemType || 'INSUMO',
         expira: product.expires || null,
         fechaMod: new Date().toISOString(),
+        inventoryKey: product.inventoryKey || 'base',
+        inventoryName: product.inventoryName || BASE_INVENTORY.name,
         inventoryId: ACTIVE_INVENTORY_ID
       };
     }
@@ -2567,6 +3561,7 @@
       const q = normalizeText(query);
       if(q.length < 2) return [];
       return products
+        .filter(product => productMatchesActiveInventory(product))
         .filter(product => searchMatchesProduct(product, q))
         .sort((a,b) => String(a.productName).localeCompare(String(b.productName), 'es', { numeric:true, sensitivity:'base' }))
         .slice(0, 10);
@@ -2630,7 +3625,7 @@
     ========================================================= */
 
     function filteredProducts(){
-      let list = [...products];
+      let list = products.filter(productMatchesActiveInventory);
       list = list.filter(productMatchesActiveFilter);
       const sortOption = getSortOption(sortState.key);
       list.sort((a,b) => sortOption.compare(a,b));
@@ -2648,8 +3643,10 @@
     function render(){
       const wrap = $('inventoryRows');
       const list = filteredProducts();
+      updateInlineInventoryControls();
       if(!list.length){
-        wrap.innerHTML = '<div class="empty">No hay productos para mostrar con la búsqueda o filtro actual. Limpia el filtro o revisa la colección en Wix.</div>';
+        wrap.innerHTML = '<div class="empty">No hay productos para mostrar en el inventario activo. Cambia de inventario, limpia el filtro o agrega productos existentes.</div>';
+        if(existingPickerOpen) renderExistingProductSelector();
         updateSidePanel();
         return;
       }
@@ -2684,6 +3681,7 @@
         }
         pendingFoilId = null;
       }
+      if(existingPickerOpen) renderExistingProductSelector();
       updateSidePanel();
     }
 
@@ -2902,13 +3900,13 @@
       a.download = 'nexo_inventory_wix_backup.json';
       a.click();
       URL.revokeObjectURL(url);
-      showMessage('Respaldo JSON exportado localmente. Esto no guarda en Wix; para guardar usa Añadir a inventario.');
+      showMessage('Respaldo JSON exportado localmente. Esto no guarda en Wix; para guardar usa Guardar producto.');
     }
 
     function openModal(title, html){
       const modal = $('modal');
       const card = modal.querySelector('.modalCard');
-      modal.classList.remove('dropdownMode','sortDropdown','filterDropdown','measureDropdown','genericDropdown');
+      modal.classList.remove('dropdownMode','sortDropdown','filterDropdown','measureDropdown','currencyDropdown','genericDropdown');
       card.style.left = '';
       card.style.top = '';
       card.style.width = '';
@@ -2918,7 +3916,7 @@
     }
 
     function clearDropdownActiveButtons(){
-      ['sortBtn','filterBtn','mobileSortBtn','mobileFilterBtn','unitSelectBtn','mUnitSelectBtn'].forEach(id => {
+      ['sortBtn','filterBtn','currencyBtn','mobileSortBtn','mobileFilterBtn','mobileCurrencyBtn','unitSelectBtn','mUnitSelectBtn'].forEach(id => {
         const btn = $(id);
         if(btn) btn.classList.remove('dropdownActive');
       });
@@ -2927,7 +3925,7 @@
     function closeModal(){
       const modal = $('modal');
       const card = modal.querySelector('.modalCard');
-      modal.classList.remove('show','dropdownMode','sortDropdown','filterDropdown','measureDropdown','genericDropdown');
+      modal.classList.remove('show','dropdownMode','sortDropdown','filterDropdown','measureDropdown','currencyDropdown','genericDropdown');
       clearDropdownActiveButtons();
       card.style.left = '';
       card.style.top = '';
@@ -2940,7 +3938,7 @@
       const anchor = $(anchorId) || $('sortBtn') || $('filterBtn');
       $('modalTitle').textContent = title;
       $('modalContent').innerHTML = html;
-      modal.classList.remove('sortDropdown','filterDropdown','measureDropdown','genericDropdown');
+      modal.classList.remove('sortDropdown','filterDropdown','measureDropdown','currencyDropdown','genericDropdown');
       modal.classList.add('dropdownMode','show', `${mode || 'generic'}Dropdown`);
       clearDropdownActiveButtons();
       if(anchorId === 'sortBtn' || anchorId === 'mobileSortBtn'){
@@ -2951,13 +3949,14 @@
         const btn = $(anchorId);
         if(btn) btn.classList.add('dropdownActive');
       }
-      if(mode === 'measure'){
+      if(mode === 'measure' || mode === 'currency'){
         const btn = $(anchorId);
         if(btn) btn.classList.add('dropdownActive');
       }
 
       const sortBtn = $('sortBtn');
       const filterBtn = $('filterBtn');
+      const currencyBtn = $('currencyBtn');
       const anchorRect = anchor.getBoundingClientRect();
       let left = anchorRect.left;
       let top = anchorRect.bottom;
@@ -2970,6 +3969,14 @@
         width = groupWidth;
         left = sortRect.left;
         top = Math.max(sortRect.bottom, filterRect.bottom);
+      }
+
+      if(window.innerWidth > 1180 && filterBtn && currencyBtn && mode === 'currency'){
+        const filterRect = filterBtn.getBoundingClientRect();
+        const currencyRect = currencyBtn.getBoundingClientRect();
+        width = Math.max(220, currencyRect.right - filterRect.left);
+        left = filterRect.left;
+        top = Math.max(filterRect.bottom, currencyRect.bottom);
       }
 
       if(mode === 'measure'){
@@ -2992,26 +3999,26 @@
     }
 
     function openDesktopInventoryActions(){
-      const mainLabel = editorMode === 'update' ? 'Guardar cambios' : 'Añadir a inventario';
       const html = `
-        <div class="inventoryActionMenu">
-          <button class="inventoryAction" type="button" data-inventory-action="saveProduct"><span>${mainLabel}</span>${iconMarkup('add','green')}</button>
+        <div class="inventoryNote">Acciones de ficha técnica. El módulo completo se conecta en la siguiente fase.</div>
+        <div class="inventoryActionMenu ftOnlyMenu">
           <button class="ftAction pendingAction" type="button" data-inventory-action="addToFT"><span>Agregar a FT</span>${iconMarkup('ft','orange')}</button>
-          <button class="inventoryAction" type="button" data-inventory-action="reload"><span>Guardar / recargar inventario</span>${iconMarkup('action','green')}</button>
           <button class="ftAction pendingAction" type="button" data-inventory-action="viewFT"><span>Ver FT</span>${iconMarkup('ft','orange')}</button>
-          <button class="inventoryAction pendingAction" type="button" data-inventory-action="changeInventory"><span>Cambiar inventario</span>${iconMarkup('organize','green')}</button>
         </div>
       `;
-      openModal('Acciones de inventario', html);
+      openModal('Acciones FT', html);
     }
 
     function handleInventoryAction(action){
       closeModal();
       if(action === 'saveProduct') saveDesktopProduct();
       if(action === 'reload') reloadFromWix();
+      if(action === 'createInventory') openCreateInventoryModal();
+      if(action === 'changeInventory') openInventorySwitcher();
+      if(action === 'addExisting') openAddExistingInventoryModal();
+      if(action === 'moveInventory') openMoveInventoryModal();
       if(action === 'addToFT') openModal('Agregar a FT', '<p>Reservado para la siguiente fase: aquí se enviará el producto seleccionado a una ficha técnica.</p>');
       if(action === 'viewFT') openModal('Fichas Técnicas', '<p>Módulo pendiente. La ficha técnica tomará productos del inventario, cantidad usada, unidad usada, merma, rendimiento, costo total y precio sugerido.</p>');
-      if(action === 'changeInventory') openModal('Cambiar inventario', '<p>Módulo pendiente. Aquí se mostrará el selector de inventarios creados.</p>');
     }
 
 
@@ -3080,6 +4087,7 @@
       const calc = calculateMobileUnitCost();
       const unit = $('mUnit').value;
       const existing = !forceNew && selectedId ? products.find(p => p.id === selectedId) : null;
+      const inventoryFields = inventoryFieldsForProduct(existing);
       return {
         id: forceNew ? uid() : (selectedId || uid()),
         _id: forceNew ? undefined : existing?._id,
@@ -3100,6 +4108,8 @@
         expira: $('mExpires').value,
         modifiedAt: nowDate(),
         fechaMod: new Date().toISOString(),
+        inventoryKey: inventoryFields.inventoryKey,
+        inventoryName: inventoryFields.inventoryName,
         itemType: existing?.itemType || 'INSUMO'
       };
     }
@@ -3189,6 +4199,14 @@
       $('searchInput').addEventListener('focus', () => renderSearchSuggestions('desktop'));
       $('exportBtn').addEventListener('click', saveDesktopProduct);
       $('desktopInventoryActionsBtn')?.addEventListener('click', openDesktopInventoryActions);
+      $('createInventoryInlineBtn')?.addEventListener('click', openCreateInventoryModal);
+      $('changeInventoryInlineBtn')?.addEventListener('click', openInventorySwitcher);
+      $('reloadInventoryInlineBtn')?.addEventListener('click', reloadFromWix);
+      $('addExistingInlineBtn')?.addEventListener('click', toggleExistingProductSelector);
+      $('moveInventoryInlineBtn')?.addEventListener('click', openMoveInventoryModal);
+      $('existingProductSearch')?.addEventListener('input', event => { existingPickerSearch = event.target.value || ''; renderExistingProductSelector(); });
+      $('closeExistingSelector')?.addEventListener('click', () => closeExistingProductSelector(true));
+      $('saveExistingProductToInventory')?.addEventListener('click', saveExistingSelectedProductToInventory);
       document.addEventListener('click', (event) => {
         const actionBtn = event.target.closest('[data-inventory-action]');
         if(actionBtn) handleInventoryAction(actionBtn.dataset.inventoryAction);
@@ -3215,9 +4233,10 @@
       window.addEventListener('resize', () => { if($('modal')?.classList.contains('dropdownMode')) closeModal(); });
       $('addToFT').addEventListener('click', () => openModal('Agregar a FT', '<p>Reservado para la siguiente fase: aquí se enviará el producto seleccionado a una ficha técnica.</p>'));
       $('viewFT')?.addEventListener('click', () => openModal('Fichas Técnicas', '<p>Módulo pendiente. La ficha técnica tomará productos del inventario, cantidad usada, unidad usada, merma, rendimiento, costo total y precio sugerido.</p>'));
-      $('changeInv')?.addEventListener('click', () => openModal('Cambiar inventario', '<p>Módulo pendiente. Primero estamos conectando la colección Inventario Usuario como inventario base.</p>'));
+      $('changeInv')?.addEventListener('click', openInventorySwitcher);
       $('filterBtn').addEventListener('click', () => filterCycle('filterBtn'));
       $('sortBtn').addEventListener('click', () => sortCycle('sortBtn'));
+      $('currencyBtn')?.addEventListener('click', () => openCurrencySelector('currencyBtn'));
       $('mobileInventoryMenuBtn')?.addEventListener('click', () => toggleMobileDropdown('mobileInventoryMenu'));
       $('mobileViewMenuBtn')?.addEventListener('click', () => toggleMobileDropdown('mobileViewMenu'));
       $('mobileAddProductBtn')?.addEventListener('click', () => openMobileProductDrawer('add'));
@@ -3231,9 +4250,13 @@
       $('mobileAddToFT')?.addEventListener('click', () => { closeMobileDropdowns(); $('addToFT').click(); });
       $('mobileReloadInventory')?.addEventListener('click', () => { closeMobileDropdowns(); reloadFromWix(); });
       $('mobileViewFT')?.addEventListener('click', () => { closeMobileDropdowns(); openModal('Fichas Técnicas', '<p>Módulo pendiente. La ficha técnica tomará productos del inventario, cantidad usada, unidad usada, merma, rendimiento, costo total y precio sugerido.</p>'); });
-      $('mobileChangeInv')?.addEventListener('click', () => { closeMobileDropdowns(); openModal('Cambiar inventario', '<p>Módulo pendiente. Aquí se mostrará el selector de inventarios creados.</p>'); });
+      $('mobileCreateInv')?.addEventListener('click', () => { closeMobileDropdowns(); openCreateInventoryModal(); });
+      $('mobileChangeInv')?.addEventListener('click', () => { closeMobileDropdowns(); openInventorySwitcher(); });
+      $('mobileMoveInv')?.addEventListener('click', () => { closeMobileDropdowns(); openMoveInventoryModal(); });
+      $('mobileAddExistingInv')?.addEventListener('click', () => { closeMobileDropdowns(); openExistingProductSelector(); });
       $('mobileSortBtn')?.addEventListener('click', () => { sortCycle('mobileSortBtn'); closeMobileDropdowns(); });
       $('mobileFilterBtn')?.addEventListener('click', () => { filterCycle('mobileFilterBtn'); closeMobileDropdowns(); });
+      $('mobileCurrencyBtn')?.addEventListener('click', () => { openCurrencySelector('mobileCurrencyBtn'); closeMobileDropdowns(); });
       $('mobileProductToggle')?.addEventListener('click', toggleMobileProductActions);
       $('mobileDuplicateProduct')?.addEventListener('click', () => { duplicateSelected(); toggleMobileProductActions(); });
       $('mobileDeleteProduct')?.addEventListener('click', () => { deleteSelected(); if(mobileProductMenuOpen) toggleMobileProductActions(); });
@@ -3251,15 +4274,17 @@
 
     function boot(){
       bind();
+      updateCurrencyButtons();
+      updateInventoryBadge();
       loadCacheFallback();
-      debugLog('HTML', 'Boot v25 VENCIMIENTO + MODO DROPDOWN iniciado', { componentIdEsperado:'inventoryHtml', collectionEsperada:'UserInventory' });
+      debugLog('HTML', 'Boot v34 AGREGAR EXISTENTE INLINE iniciado', { componentIdEsperado:'inventoryHtml', collectionEsperada:'UserInventory' });
       showMessage('Iniciando conexión con Wix...');
       setTimeout(requestWixData, 150);
       setTimeout(requestWixData, 1400);
       setTimeout(requestWixData, 3200);
       setTimeout(() => {
         if(!hasLoadedFromWix){
-          showMessage('Todavía no llegan datos de Wix. HTML v25 VENCIMIENTO + MODO DROPDOWN cargado. Revisa: ID #inventoryHtml, Velo FINAL v5 y colección UserInventory.');
+          showMessage('Todavía no llegan datos de Wix. HTML v34 AGREGAR EXISTENTE INLINE cargado. Revisa: ID #inventoryHtml, Velo FINAL v5 y colección UserInventory.');
         }
       }, 5000);
     }

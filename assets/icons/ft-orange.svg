@@ -1,15 +1,2 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg data-bbox="0 0 355 300" viewBox="0 0 355 300" xmlns="http://www.w3.org/2000/svg" data-type="ugc">
-    <g>
-        <path fill="#F6E7D2" d="M240 24v252c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V24C0 10.745 10.745 0 24 0h192c13.255 0 24 10.745 24 24"/>
-        <path fill="#2D785E" d="M240 24v22c0 13.255-10.745 24-24 24H24C10.745 70 0 59.255 0 46V24C0 10.745 10.745 0 24 0h192c13.255 0 24 10.745 24 24"/>
-        <path d="M39 110h162a9 9 0 0 1 0 18H39a9 9 0 0 1 0-18" fill="#2D785E"/>
-        <path d="M37 140h136c3.87 0 7 3.13 7 7s-3.13 7-7 7H37c-3.87 0-7-3.13-7-7s3.13-7 7-7" fill="#2D785E"/>
-        <path d="M37 165h106c3.87 0 7 3.13 7 7s-3.13 7-7 7H37c-3.87 0-7-3.13-7-7s3.13-7 7-7" fill="#2D785E"/>
-        <path fill="#2E536D" d="M100 214v42c0 7.732-6.268 14-14 14H44c-7.732 0-14-6.268-14-14v-42c0-7.732 6.268-14 14-14h42c7.732 0 14 6.268 14 14"/>
-        <path d="m50 235 20 20 25-30" fill="none"/>
-        <path fill="#e94e1b" d="M355 200c0 46.944-38.056 85-85 85s-85-38.056-85-85 38.056-85 85-85 85 38.056 85 85"/>
-        <path fill="#2E536D" d="M285 145v110h-30V145z"/>
-        <path fill="#2E536D" d="M325 185v30H215v-30z"/>
-    </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-hidden="true"><rect x="14" y="8" width="36" height="48" rx="5" fill="#FFF7ED"/><path d="M14 8h36v12H14z" fill="#145F56"/><path d="M21 29h22M21 38h22M21 47h14" stroke="#145F56" stroke-width="4" stroke-linecap="round"/></svg>
