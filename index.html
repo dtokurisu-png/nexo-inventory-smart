@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexo Inventory MVP v23 Dropdown activo + panel</title>
+  <title>Nexo Inventory MVP v25 Vencimiento + modo desplegable</title>
   <style>
     :root{
       --blue:#2f4f93;
@@ -150,9 +150,18 @@
     }
     .toolBtn:last-child{border-right:0}
     .toolBtn span:last-child{font-size:24px;line-height:1;flex:0 0 auto}
-    .searchWrap{grid-column:3;display:grid;grid-template-columns:calc(var(--tool-cell) * 2) 52px;align-items:end;gap:0;justify-self:end;width:calc((var(--tool-cell) * 2) + 52px)}
+    .searchWrap{grid-column:3;display:grid;grid-template-columns:calc(var(--tool-cell) * 2) 52px;align-items:end;gap:0;justify-self:end;width:calc((var(--tool-cell) * 2) + 52px);position:relative}
     .magnifier{width:52px;height:var(--cell-h);border-radius:0 15px 0 0;background:var(--dark);display:grid;place-items:center;font-size:27px;border:var(--line-w) solid var(--line);border-left:0;margin-right:0;z-index:2}
     .search{height:var(--cell-h);width:calc(var(--tool-cell) * 2);border:var(--line-w) solid var(--line);border-right:0;border-radius:15px 0 0 0;background:#d8e3f8;padding:0 14px;color:#34405f;font-size:var(--body-size);font-weight:400;outline:none}
+    .searchSuggestions{position:absolute;top:calc(100% + 0px);left:0;right:0;z-index:90;display:none;background:rgba(38,76,143,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:var(--line-w) solid #0e1737;border-top:0;border-radius:0 0 16px 16px;box-shadow:0 18px 30px rgba(0,0,0,.35);overflow:hidden;max-height:360px;overflow-y:auto;scrollbar-width:none}
+    .searchSuggestions::-webkit-scrollbar{display:none}
+    .searchSuggestions.show{display:block}
+    .searchSuggestionItem{width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.16);background:rgba(246,238,218,.10);color:#fff;display:grid;grid-template-columns:1fr auto;gap:10px;text-align:left;padding:10px 12px;cursor:pointer;align-items:center;font-family:inherit}
+    .searchSuggestionItem:last-child{border-bottom:0}
+    .searchSuggestionItem:hover,.searchSuggestionItem:focus{background:#F1994A;color:#111827;outline:none}
+    .searchSugName{font-size:var(--body-size);font-weight:700;line-height:1.15;overflow-wrap:anywhere}
+    .searchSugCost{font-size:calc(var(--body-size) - 1px);font-weight:400;opacity:.92;white-space:nowrap}
+    .searchSugEmpty{padding:11px 12px;color:#e7eefc;font-size:var(--body-size);background:rgba(246,238,218,.08)}
 
     .editorShell{width:var(--work-width);margin-left:2px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.20))}
     .editorGrid{
@@ -197,7 +206,7 @@
     }
     .editorGrid select{font-size:var(--body-size);font-weight:400;padding:0 8px;background:#b9cbed}
     .unitPickerBtn{cursor:pointer;text-align:left;white-space:normal;line-height:1.08;background:#b9cbed!important;color:#111827!important;font-size:var(--body-size);font-weight:400;border:0}
-    .unitPickerBtn.hasValue{background:#9fd1e3!important;font-weight:700}
+    .unitPickerBtn.hasValue{background:var(--orange)!important;color:#111827!important;font-weight:700}
     .editorGrid input.calculated{background:#73a0ed;color:#102047;font-weight:400}
     .actionBar{
       display:grid;
@@ -880,6 +889,75 @@
     }
 
 
+
+
+    /* v25: selección con alerta de vencimiento en la fila */
+    .row.selected.expireWarn,
+    .row.selected.expireWarn:hover{
+      background:#fff3a9!important;
+      color:#4c3500!important;
+      outline-color:#d79a20!important;
+      position:relative;
+      overflow:hidden;
+      isolation:isolate;
+      animation:vencimientoLatidoWarn 2.6s ease-in-out infinite;
+    }
+    .row.selected.expireDanger,
+    .row.selected.expireDanger:hover{
+      background:#ffd4d4!important;
+      color:#6b0e0e!important;
+      outline-color:#8F1D2C!important;
+      position:relative;
+      overflow:hidden;
+      isolation:isolate;
+      animation:vencimientoLatidoDanger 1.45s ease-in-out infinite;
+    }
+    .row.selected.expireWarn .cell,
+    .row.selected.expireDanger .cell{position:relative;z-index:1;color:inherit!important;}
+    .row.selected.expireWarn:before,
+    .row.selected.expireDanger:before{
+      content:"";
+      position:absolute;
+      inset:-80% -45%;
+      pointer-events:none;
+      z-index:0;
+      transform:translateX(-90%);
+      background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.16) 43%, rgba(255,255,255,.78) 50%, rgba(141,178,255,.34) 57%, transparent 68%);
+    }
+    .row.selected.expireWarn:before{animation:vencimientoFoilWarn 2.9s ease-in-out infinite;}
+    .row.selected.expireDanger:before{animation:vencimientoFoilDanger 1.55s ease-in-out infinite;background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.18) 43%, rgba(255,255,255,.82) 50%, rgba(255,120,120,.42) 57%, transparent 68%);}
+
+    /* v25: modo de cálculo como desplegable compacto */
+    .modal.dropdownMode.measureDropdown .modalCard{
+      background:rgba(47,79,147,.96);
+      color:#f7f8ff;
+      border-color:#111b45;
+      box-shadow:0 14px 34px rgba(0,0,0,.26);
+      backdrop-filter:blur(9px);
+    }
+    .modal.dropdownMode.measureDropdown .modalCard h2{color:#ffffff;}
+    .modal.dropdownMode.measureDropdown .measureCrumb{
+      color:#ffffff;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.24);
+      border-radius:10px;
+      padding:7px 9px;
+      margin:0 0 8px;
+    }
+    .modal.dropdownMode.measureDropdown .measureMenu{gap:6px;}
+    .modal.dropdownMode.measureDropdown .measureOption{
+      background:#b9cbed;
+      color:#102047;
+      border-color:#172755;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      min-height:38px;
+    }
+    .modal.dropdownMode.measureDropdown .measureOption:hover{background:var(--orange);color:#111827;}
+    .modal.dropdownMode.measureDropdown .measureOption.active{background:var(--orange)!important;color:#111827!important;border-color:#172755;}
+    .modal.dropdownMode.measureDropdown .measureBack{background:#1f233a!important;color:#fff!important;}
+
     /* v21: iconos del sitio y modales de confirmación */
     .svgIcon{
       display:inline-flex;
@@ -906,7 +984,9 @@
     .confirmModal{
       position:fixed;
       inset:0;
-      z-index:80;
+      width:100vw;
+      height:100dvh;
+      z-index:99999;
       display:none;
       align-items:center;
       justify-content:center;
@@ -962,10 +1042,10 @@
       color:#101827;
       box-shadow:0 5px 12px rgba(0,0,0,.16);
     }
-    .confirmBtnGreen{background:#61B584;}
-    .confirmBtnYellow{background:#FFF3A9;}
-    .confirmBtnRed{background:#D85757;color:#fff!important;}
-    .confirmBtnBlue{background:#264C8F;color:#fff!important;}
+    .confirmBtnGreen{background:#1F7A46;color:#fff!important;}
+    .confirmBtnYellow{background:#B7791F;color:#fff!important;}
+    .confirmBtnRed{background:#8F1D2C;color:#fff!important;}
+    .confirmBtnBlue{background:#1A3567;color:#fff!important;}
     .confirmSuccessText{display:none;font-size:19px;font-weight:900;position:relative;z-index:2;}
     .confirmBox.confirm-success .confirmText,.confirmBox.confirm-success .confirmActions{display:none;}
     .confirmBox.confirm-success .confirmSuccessText{display:block;}
@@ -1108,7 +1188,7 @@
 
   
 
-    /* v23: estado activo para desplegables + panel lateral más legible */
+    /* v24: estado activo para desplegables + panel lateral más legible */
     #sortBtn.dropdownActive,
     #filterBtn.dropdownActive,
     #mobileSortBtn.dropdownActive,
@@ -1118,12 +1198,7 @@
       border-color:rgba(20,20,25,.55)!important;
       box-shadow:inset 0 0 0 1px rgba(0,0,0,.18), 0 0 14px rgba(231,144,105,.18);
     }
-    #sortBtn.dropdownActive .svgIcon img,
-    #filterBtn.dropdownActive .svgIcon img,
-    #mobileSortBtn.dropdownActive .svgIcon img,
-    #mobileFilterBtn.dropdownActive .svgIcon img{
-      filter:brightness(.2) saturate(1.2);
-    }
+    /* v24: los iconos conservan sus colores originales, sin recolorear por estado activo. */
 
     @media (min-width:1181px){
       .sidePanel h3{
@@ -1156,6 +1231,17 @@
       }
     }
 
+
+    .mobileSearchBox{position:relative;width:100%}
+    .mobileSearchBox .searchSuggestions{top:calc(100% + 4px);left:0;right:0;z-index:140;max-height:280px;border-top:var(--line-w) solid #0e1737;border-radius:14px;background:rgba(38,76,143,.97)}
+
+    @media (max-width:1000px){
+      .searchSugName{font-size:15px}.searchSugCost{font-size:14px}.searchSuggestionItem{padding:11px 12px}
+    }
+    @media (max-width:750px){
+      .searchSugName{font-size:12px}.searchSugCost{font-size:10px}.searchSuggestionItem{padding:9px 10px}
+    }
+
   </style>
 </head>
 <body>
@@ -1166,7 +1252,7 @@
         <button class="toolBtn" id="sortBtn"><span>Organizar</span><span class="ico svgIcon"><img src="assets/icons/organize.svg" alt="" aria-hidden="true"></span></button>
         <button class="toolBtn" id="filterBtn"><span>Filtrar</span><span class="ico svgIcon"><img src="assets/icons/filter.svg" alt="" aria-hidden="true"></span></button>
       </div>
-      <div class="searchWrap"><input id="searchInput" class="search" type="search" placeholder="buscar un producto"><div class="magnifier">🔎</div></div>
+      <div class="searchWrap"><input id="searchInput" class="search" type="search" placeholder="buscar un producto" autocomplete="off"><div class="magnifier">🔎</div><div id="searchSuggestions" class="searchSuggestions" aria-label="Sugerencias de productos"></div></div>
     </section>
 
     <section class="editorShell">
@@ -1199,7 +1285,7 @@
         <button id="mobileAddProductBtn" class="primary" type="button">Añadir producto</button>
       </div>
       <div id="mobileInventoryMenu" class="mobileDropdown" aria-label="Menú de acciones de inventario">
-        <input id="mobileSearchInput" type="search" placeholder="buscar producto">
+        <div class="mobileSearchBox"><input id="mobileSearchInput" type="search" placeholder="buscar producto" autocomplete="off"><div id="mobileSearchSuggestions" class="searchSuggestions" aria-label="Sugerencias de productos móvil"></div></div>
         <button id="mobileAddToFT" type="button"><span>Agregar FT</span><span class="ico svgIcon"><img src="assets/icons/ft.svg" alt="" aria-hidden="true"></span></button>
         <button id="mobileReloadInventory" type="button"><span>Guardar/recargar</span><span class="ico svgIcon"><img src="assets/icons/action-hub.svg" alt="" aria-hidden="true"></span></button>
         <button id="mobileViewFT" type="button"><span>Ver FT</span><span class="ico svgIcon"><img src="assets/icons/ft.svg" alt="" aria-hidden="true"></span></button>
@@ -1582,6 +1668,14 @@
       cm2:'centímetro²', m2:'metro²', in2:'pulgada²', ft2:'pie²', yd2:'yarda²'
     };
 
+    const UNIT_SHORT_LABELS = {
+      mg:'mg', g:'g', kg:'kg', oz:'oz', lb:'lb',
+      ml:'ml', l:'L', lt:'L', litro:'L', fl_oz:'fl oz', tsp:'tsp', tbsp:'tbsp', cup:'cup', qt:'qt', gal:'gal',
+      unit:'u', unidad:'u', piece:'pz', pieza:'pz', pack_2:'pack 2', pack_4:'pack 4', pack_6:'pack 6', pack_8:'pack 8', pack_10:'pack 10', pack_12:'pack 12', pack_24:'pack 24', pack_32:'pack 32', pack_48:'pack 48',
+      mm:'mm', cm:'cm', m:'m', in:'in', ft:'ft', yd:'yd',
+      cm2:'cm²', m2:'m²', in2:'in²', ft2:'ft²', yd2:'yd²'
+    };
+
     const MEASURE_TREE = {
       mass:{ label:'Masa', families:{ metric:{ label:'Gramos / sistema métrico', units:[['mg','miligramo'],['g','gramo'],['kg','kilogramo']] }, ounces:{ label:'Onzas', units:[['oz','onza']] }, pounds:{ label:'Libras', units:[['lb','libra']] } } },
       volume:{ label:'Volumen', families:{ liters:{ label:'Litros', units:[['ml','mililitro'],['l','litro']] }, fluidOunces:{ label:'Onzas líquidas', units:[['fl_oz','onza líquida']] }, kitchen:{ label:'Cocina', units:[['tsp','cucharadita'],['tbsp','cucharada'],['cup','copa / taza']] }, gallons:{ label:'Galones y cuartos', units:[['qt','cuarto'],['gal','galón']] } } },
@@ -1632,7 +1726,7 @@
         key:'unitCost',
         label:'Costo por unidad',
         getValue:p => `${Number(p.unitCost || 0).toFixed(6)}|${cleanFilterValue(p.baseUnit)}`,
-        getLabel:p => `${fmtMoney(p.unitCost)} / ${getUnitLabel(p.baseUnit) || p.baseUnit || ''}`.trim()
+        getLabel:p => `${fmtMoney(p.unitCost)} / ${getUnitShortLabel(p.baseUnit) || p.baseUnit || ''}`.trim()
       },
       {
         key:'expires',
@@ -1758,6 +1852,11 @@
       return UNIT_LABELS[key] || value || '';
     }
 
+    function getUnitShortLabel(value){
+      const key = String(value || '').toLowerCase();
+      return UNIT_SHORT_LABELS[key] || value || '';
+    }
+
     function setUnitSelection(target='desktop', value=''){
       const inputId = target === 'mobile' ? 'mUnit' : 'unit';
       const btnId = target === 'mobile' ? 'mUnitSelectBtn' : 'unitSelectBtn';
@@ -1774,19 +1873,21 @@
     function openMeasureSelector(target='desktop', categoryKey=null, familyKey=null){
       let title = 'Modo de cálculo';
       let html = '';
+      const currentValue = target === 'mobile' ? $('mUnit')?.value : $('unit')?.value;
       if(!categoryKey){
         html += '<div class="measureCrumb">Elige la categoría principal.</div><div class="measureMenu">';
         Object.entries(MEASURE_TREE).forEach(([key, category]) => {
-          html += `<button class="measureOption" type="button" data-measure-category="${key}" data-target="${target}">${category.label}</button>`;
+          html += `<button class="measureOption" type="button" data-measure-category="${key}" data-target="${target}"><span>${category.label}</span><span>›</span></button>`;
         });
         html += '</div>';
       }else if(!familyKey){
         const category = MEASURE_TREE[categoryKey];
         title = category.label;
         html += `<div class="measureCrumb">${category.label} → elige la familia lógica.</div><div class="measureMenu">`;
-        html += `<button class="measureOption measureBack" type="button" data-measure-back="root" data-target="${target}">← Volver</button>`;
+        html += `<button class="measureOption measureBack" type="button" data-measure-back="root" data-target="${target}"><span>← Volver</span></button>`;
         Object.entries(category.families).forEach(([key, family]) => {
-          html += `<button class="measureOption" type="button" data-measure-family="${key}" data-category="${categoryKey}" data-target="${target}">${family.label}</button>`;
+          const endsHere = family.units.length === 1;
+          html += `<button class="measureOption" type="button" data-measure-family="${key}" data-category="${categoryKey}" data-target="${target}"><span>${family.label}</span><span>${endsHere ? '✓' : '›'}</span></button>`;
         });
         html += '</div>';
       }else{
@@ -1794,13 +1895,14 @@
         const family = category.families[familyKey];
         title = family.label;
         html += `<div class="measureCrumb">${category.label} → ${family.label} → unidad final.</div><div class="measureMenu">`;
-        html += `<button class="measureOption measureBack" type="button" data-measure-back="family" data-category="${categoryKey}" data-target="${target}">← Volver</button>`;
+        html += `<button class="measureOption measureBack" type="button" data-measure-back="family" data-category="${categoryKey}" data-target="${target}"><span>← Volver</span></button>`;
         family.units.forEach(([value, label]) => {
-          html += `<button class="measureOption" type="button" data-measure-value="${value}" data-target="${target}">${label}</button>`;
+          const active = String(currentValue || '') === String(value) ? ' active' : '';
+          html += `<button class="measureOption${active}" type="button" data-measure-value="${value}" data-target="${target}"><span>${label}</span><span>${getUnitShortLabel(value)}</span></button>`;
         });
         html += '</div>';
       }
-      openModal(title, html);
+      openDropdownModal(target === 'mobile' ? 'mUnitSelectBtn' : 'unitSelectBtn', title, html, 'measure');
       bindMeasureSelectorButtons();
     }
 
@@ -2085,7 +2187,7 @@
       if(!qty || !cost || !rule) return {value:0, label:''};
       const baseQty = qty * rule.factor;
       const value = cost / baseQty;
-      return {value, label: fmtMoney(value) + ' / ' + getUnitLabel(rule.base)};
+      return {value, label: fmtMoney(value) + ' / ' + getUnitShortLabel(rule.base)};
     }
     function calculateUnitCost(){
       const c = calcCost($('presentation').value, $('unit').value, $('totalCost').value);
@@ -2202,8 +2304,8 @@
     }
 
     function requestWixData(){
-      sendToWix('NEXO_HTML_READY', { from: 'nexo_inventory_mvp_v15_BOTONES_PRODUCTO', at: new Date().toISOString() });
-      sendToWix('PING_WIX', { from: 'nexo_inventory_mvp_v15_BOTONES_PRODUCTO' });
+      sendToWix('NEXO_HTML_READY', { from: 'nexo_inventory_mvp_v26_BUSCADOR_SUGERENCIAS', at: new Date().toISOString() });
+      sendToWix('PING_WIX', { from: 'nexo_inventory_mvp_v26_BUSCADOR_SUGERENCIAS' });
       sendToWix('LOAD_INVENTORIES', {});
       sendToWix('LOAD_EXPIRATION_ALERTS', { inventoryId: ACTIVE_INVENTORY_ID });
       sendToWix('LOAD_INVENTORY_ITEMS', { inventoryId: ACTIVE_INVENTORY_ID });
@@ -2375,29 +2477,95 @@
     }
 
     /* =========================================================
+       BUSCADOR CON SUGERENCIAS
+    ========================================================= */
+
+    function searchMatchesProduct(product, query){
+      const q = normalizeText(query);
+      if(q.length < 2) return false;
+      return normalizeText(product.productName).includes(q);
+    }
+
+    function getSearchSuggestions(query){
+      const q = normalizeText(query);
+      if(q.length < 2) return [];
+      return products
+        .filter(product => searchMatchesProduct(product, q))
+        .sort((a,b) => String(a.productName).localeCompare(String(b.productName), 'es', { numeric:true, sensitivity:'base' }))
+        .slice(0, 10);
+    }
+
+    function renderSearchSuggestions(target='desktop'){
+      const input = target === 'mobile' ? $('mobileSearchInput') : $('searchInput');
+      const box = target === 'mobile' ? $('mobileSearchSuggestions') : $('searchSuggestions');
+      if(!input || !box) return;
+      const query = input.value.trim();
+      if(query.length < 2){
+        hideSearchSuggestions(target);
+        return;
+      }
+      const suggestions = getSearchSuggestions(query);
+      if(!suggestions.length){
+        box.innerHTML = '<div class="searchSugEmpty">Sin sugerencias.</div>';
+        box.classList.add('show');
+        return;
+      }
+      box.innerHTML = suggestions.map(product => `
+        <button type="button" class="searchSuggestionItem" data-search-id="${escapeHtml(product.id)}">
+          <span class="searchSugName">${escapeHtml(product.productName)}</span>
+          <span class="searchSugCost">${fmtMoney(product.unitCost)} / ${escapeHtml(getUnitShortLabel(product.baseUnit) || '')}</span>
+        </button>`).join('');
+      box.classList.add('show');
+      box.querySelectorAll('[data-search-id]').forEach(btn => {
+        btn.addEventListener('click', () => selectProductFromSearch(btn.dataset.searchId, target));
+      });
+    }
+
+    function hideSearchSuggestions(target='all'){
+      if(target === 'all' || target === 'desktop') $('searchSuggestions')?.classList.remove('show');
+      if(target === 'all' || target === 'mobile') $('mobileSearchSuggestions')?.classList.remove('show');
+    }
+
+    function selectProductFromSearch(productId, target='desktop'){
+      const product = products.find(p => p.id === productId);
+      if(!product) return;
+      hideSearchSuggestions('all');
+      selectedId = product.id;
+      pendingFoilId = product.id;
+      activeFilter = { key:null, value:null, label:'' };
+      fillForm(product);
+      setEditorMode('add', null, false);
+      if($('searchInput')) $('searchInput').value = product.productName;
+      if($('mobileSearchInput')) $('mobileSearchInput').value = product.productName;
+      render();
+      showMessage('Producto seleccionado: ' + product.productName + ' / ' + product.supplier);
+      if(target === 'mobile') closeMobileDropdowns();
+    }
+
+    function handleSearchInput(target='desktop'){
+      closeModal();
+      closeConfirmModal();
+      renderSearchSuggestions(target);
+    }
+
+    /* =========================================================
        RENDER Y PANEL LATERAL
     ========================================================= */
 
     function filteredProducts(){
-      const q = $('searchInput').value.trim().toLowerCase();
       let list = [...products];
-      if(q){
-        list = list.filter(p => [
-          p.supplier,
-          p.productName,
-          p.presentation,
-          getUnitLabel(p.unit) || p.unit,
-          p.stock,
-          p.totalCost,
-          p.unitCost,
-          p.expires,
-          p.modifiedAt
-        ].join(' ').toLowerCase().includes(q));
-      }
       list = list.filter(productMatchesActiveFilter);
       const sortOption = getSortOption(sortState.key);
       list.sort((a,b) => sortOption.compare(a,b));
       return list;
+    }
+
+    function getRowStateClasses(product){
+      if(!product || product.id !== selectedId) return '';
+      const info = getExpirationInfo(product);
+      if(info.type === 'danger') return ' expireDanger';
+      if(info.type === 'warn') return ' expireWarn';
+      return '';
     }
 
     function render(){
@@ -2409,14 +2577,14 @@
         return;
       }
       wrap.innerHTML = list.map(p => `
-        <div class="row ${p.id===selectedId?'selected':''}" data-id="${escapeHtml(p.id)}">
+        <div class="row ${p.id===selectedId?'selected':''}${getRowStateClasses(p)}" data-id="${escapeHtml(p.id)}">
           <div class="cell" title="${escapeHtml(p.supplier)}">${escapeHtml(p.supplier)}</div>
           <div class="cell" title="${escapeHtml(p.productName)}">${escapeHtml(p.productName)}</div>
           <div class="cell">${p.presentation || ''}</div>
           <div class="cell">${escapeHtml(getUnitLabel(p.unit) || '')}</div>
           <div class="cell">${p.stock ?? ''}</div>
           <div class="cell">${fmtMoney(p.totalCost)}</div>
-          <div class="cell">${fmtMoney(p.unitCost)} / ${escapeHtml(getUnitLabel(p.baseUnit) || '')}</div>
+          <div class="cell">${fmtMoney(p.unitCost)} / ${escapeHtml(getUnitShortLabel(p.baseUnit) || '')}</div>
           <div class="cell">${escapeHtml(p.expires || '')}</div>
           <div class="cell">${escapeHtml(p.modifiedAt || '')}</div>
         </div>`).join('');
@@ -2473,7 +2641,7 @@
         <div class="pair"><span class="k">Proveedor</span><span class="v">${escapeHtml(product.supplier)}</span></div>
         <div class="pair"><span class="k">Producto</span><span class="v">${escapeHtml(product.productName)}</span></div>
         <div class="pair"><span class="k">Presentación</span><span class="v">${escapeHtml(product.presentation)} ${escapeHtml(product.unit)}</span></div>
-        <div class="pair"><span class="k">Costo unidad</span><span class="v priceValue ${colorClass}">${fmtMoney(product.unitCost)} / ${escapeHtml(product.baseUnit || '')}</span></div>`;
+        <div class="pair"><span class="k">Costo unidad</span><span class="v priceValue ${colorClass}">${fmtMoney(product.unitCost)} / ${escapeHtml(getUnitShortLabel(product.baseUnit) || '')}</span></div>`;
     }
 
     function updateSidePanel(){
@@ -2663,7 +2831,7 @@
     function openModal(title, html){
       const modal = $('modal');
       const card = modal.querySelector('.modalCard');
-      modal.classList.remove('dropdownMode');
+      modal.classList.remove('dropdownMode','sortDropdown','filterDropdown','measureDropdown','genericDropdown');
       card.style.left = '';
       card.style.top = '';
       card.style.width = '';
@@ -2673,7 +2841,7 @@
     }
 
     function clearDropdownActiveButtons(){
-      ['sortBtn','filterBtn','mobileSortBtn','mobileFilterBtn'].forEach(id => {
+      ['sortBtn','filterBtn','mobileSortBtn','mobileFilterBtn','unitSelectBtn','mUnitSelectBtn'].forEach(id => {
         const btn = $(id);
         if(btn) btn.classList.remove('dropdownActive');
       });
@@ -2682,7 +2850,7 @@
     function closeModal(){
       const modal = $('modal');
       const card = modal.querySelector('.modalCard');
-      modal.classList.remove('show','dropdownMode');
+      modal.classList.remove('show','dropdownMode','sortDropdown','filterDropdown','measureDropdown','genericDropdown');
       clearDropdownActiveButtons();
       card.style.left = '';
       card.style.top = '';
@@ -2695,13 +2863,18 @@
       const anchor = $(anchorId) || $('sortBtn') || $('filterBtn');
       $('modalTitle').textContent = title;
       $('modalContent').innerHTML = html;
-      modal.classList.add('dropdownMode','show');
+      modal.classList.remove('sortDropdown','filterDropdown','measureDropdown','genericDropdown');
+      modal.classList.add('dropdownMode','show', `${mode || 'generic'}Dropdown`);
       clearDropdownActiveButtons();
       if(anchorId === 'sortBtn' || anchorId === 'mobileSortBtn'){
         const btn = $(anchorId);
         if(btn) btn.classList.add('dropdownActive');
       }
       if(anchorId === 'filterBtn' || anchorId === 'mobileFilterBtn'){
+        const btn = $(anchorId);
+        if(btn) btn.classList.add('dropdownActive');
+      }
+      if(mode === 'measure'){
         const btn = $(anchorId);
         if(btn) btn.classList.add('dropdownActive');
       }
@@ -2720,6 +2893,12 @@
         width = groupWidth;
         left = sortRect.left;
         top = Math.max(sortRect.bottom, filterRect.bottom);
+      }
+
+      if(mode === 'measure'){
+        width = Math.max(anchorRect.width * 2, 260);
+        left = anchorRect.left;
+        top = anchorRect.bottom;
       }
 
       const maxWidth = Math.max(220, window.innerWidth - left - 8);
@@ -2929,12 +3108,16 @@
       $('inputAviso').addEventListener('input', () => $('precionarEnter').classList.add('show'));
       $('inputAviso').addEventListener('keydown', e => { if(e.key === 'Enter') saveAvisoValue(); });
       $('inputAviso').addEventListener('blur', () => { if($('precionarEnter').classList.contains('show')) saveAvisoValue(); });
-      $('searchInput').addEventListener('input', render);
+      $('searchInput').addEventListener('input', () => handleSearchInput('desktop'));
+      $('searchInput').addEventListener('focus', () => renderSearchSuggestions('desktop'));
       $('exportBtn').addEventListener('click', saveDesktopProduct);
       $('desktopInventoryActionsBtn')?.addEventListener('click', openDesktopInventoryActions);
       document.addEventListener('click', (event) => {
         const actionBtn = event.target.closest('[data-inventory-action]');
         if(actionBtn) handleInventoryAction(actionBtn.dataset.inventoryAction);
+        if(!event.target.closest('.searchWrap') && !event.target.closest('.mobileSearchBox')){
+          hideSearchSuggestions('all');
+        }
       });
       $('closeModal').addEventListener('click', closeModal);
       $('toggleDebug').addEventListener('click', () => {
@@ -2966,7 +3149,8 @@
       $('mobileSaveProduct')?.addEventListener('click', saveMobileProduct);
       ['mPresentation','mTotalCost'].forEach(id => $(id)?.addEventListener('input', calculateMobileUnitCost));
       $('mUnitSelectBtn')?.addEventListener('click', () => openMeasureSelector('mobile')); 
-      $('mobileSearchInput')?.addEventListener('input', () => { $('searchInput').value = $('mobileSearchInput').value; render(); });
+      $('mobileSearchInput')?.addEventListener('input', () => handleSearchInput('mobile'));
+      $('mobileSearchInput')?.addEventListener('focus', () => renderSearchSuggestions('mobile'));
       $('mobileAddToFT')?.addEventListener('click', () => { closeMobileDropdowns(); $('addToFT').click(); });
       $('mobileReloadInventory')?.addEventListener('click', () => { closeMobileDropdowns(); reloadFromWix(); });
       $('mobileViewFT')?.addEventListener('click', () => { closeMobileDropdowns(); openModal('Fichas Técnicas', '<p>Módulo pendiente. La ficha técnica tomará productos del inventario, cantidad usada, unidad usada, merma, rendimiento, costo total y precio sugerido.</p>'); });
@@ -2984,21 +3168,21 @@
       });
       document.addEventListener('keydown', e => {
         if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveDesktopProduct();
-        if(e.key === 'Escape'){ closeModal(); closeConfirmModal(); }
+        if(e.key === 'Escape'){ closeModal(); closeConfirmModal(); hideSearchSuggestions('all'); }
       });
     }
 
     function boot(){
       bind();
       loadCacheFallback();
-      debugLog('HTML', 'Boot v21 CONFIRMACIONES + ICONOS iniciado', { componentIdEsperado:'inventoryHtml', collectionEsperada:'UserInventory' });
+      debugLog('HTML', 'Boot v25 VENCIMIENTO + MODO DROPDOWN iniciado', { componentIdEsperado:'inventoryHtml', collectionEsperada:'UserInventory' });
       showMessage('Iniciando conexión con Wix...');
       setTimeout(requestWixData, 150);
       setTimeout(requestWixData, 1400);
       setTimeout(requestWixData, 3200);
       setTimeout(() => {
         if(!hasLoadedFromWix){
-          showMessage('Todavía no llegan datos de Wix. HTML v18 PANEL ANCLADO + DEBUG COMPACTO cargado. Revisa: ID #inventoryHtml, Velo FINAL v5 y colección UserInventory.');
+          showMessage('Todavía no llegan datos de Wix. HTML v25 VENCIMIENTO + MODO DROPDOWN cargado. Revisa: ID #inventoryHtml, Velo FINAL v5 y colección UserInventory.');
         }
       }, 5000);
     }
