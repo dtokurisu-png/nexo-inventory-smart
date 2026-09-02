@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#11100d" />
+<title>Nexo Group · Menú Dinámico</title>
+<style>
+:root{
+  --bg:#f4f1ea;--panel:#fffdf8;--ink:#191813;--muted:#777267;--line:#ded8cc;
+  --accent:#8b5a2b;--accent2:#c98b4a;--ok:#28784d;--warn:#a66018;--danger:#a33b32;
+  --shadow:0 16px 40px rgba(34,29,21,.11);--radius:18px;--header:66px;
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+.app{min-height:100vh;padding-top:var(--header)}
+.topbar{position:fixed;z-index:50;top:0;left:0;right:0;height:var(--header);display:flex;align-items:center;gap:10px;padding:10px max(14px,env(safe-area-inset-left));background:rgba(255,253,248,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{display:flex;min-width:0;align-items:center;gap:9px;font-weight:800;letter-spacing:.02em}.mark{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--ink);color:#fff;font-size:15px}.brandText{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.spacer{flex:1}
+.iconBtn,.langBtn{border:1px solid var(--line);background:#fff;border-radius:11px;min-height:40px;padding:0 12px;color:var(--ink)}.iconBtn{min-width:42px;padding:0}.iconBtn:active,.langBtn:active{transform:translateY(1px)}
+.langBtn{display:flex;align-items:center;gap:6px;font-weight:700}.langBtn span{opacity:.45}.langBtn b{font-weight:850}.langBtn[data-lang="en"] .en,.langBtn[data-lang="es"] .es{opacity:1;color:var(--accent)}
+main{max-width:1050px;margin:0 auto;padding:22px 16px 70px}.pageTitle{font-size:clamp(29px,6vw,48px);line-height:1.02;margin:4px 0 8px;font-weight:900;letter-spacing:-.035em}.subTitle{margin:0 0 20px;color:var(--muted)}
+.searchRow{display:grid;grid-template-columns:1fr auto;gap:10px;margin:18px 0}.search{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:13px 15px;outline:none}.search:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(201,139,74,.13)}
+.chips{display:flex;gap:8px;overflow:auto;padding:2px 0 12px;scrollbar-width:none}.chip{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px}.chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px}.card{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);overflow:hidden;box-shadow:0 8px 22px rgba(34,29,21,.05)}
+.recipeCard{appearance:none;width:100%;text-align:left;color:inherit;padding:0}.recipeThumb{aspect-ratio:16/10;background:#e9e4da;display:grid;place-items:center;overflow:hidden}.recipeThumb img{width:100%;height:100%;object-fit:cover}.placeholder{color:#8c8679;font-weight:750;font-size:13px;display:flex;align-items:center;gap:8px}.recipeMeta{padding:14px}.recipeMeta h3{margin:0 0 5px;font-size:19px}.recipeMeta p{margin:0;color:var(--muted);font-size:13px}.tag{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;background:#fff}
+.empty{border:1px dashed #cfc7b7;background:rgba(255,255,255,.46);border-radius:var(--radius);padding:34px 20px;text-align:center;color:var(--muted)}.empty strong{display:block;color:var(--ink);margin-bottom:5px}
+.status{position:fixed;z-index:90;left:50%;bottom:18px;transform:translateX(-50%);max-width:min(92vw,560px);padding:11px 14px;border-radius:12px;background:#1c1a16;color:#fff;box-shadow:var(--shadow);font-size:13px}.status.ok{background:#1d6841}.status.err{background:#8a322b}.status.warn{background:#835014}
+.breadcrumb{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13px;margin:2px 0 12px;flex-wrap:wrap}.breadcrumb button{border:0;background:none;color:var(--accent);padding:0;font-weight:750}.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:18px;align-items:start}.heroPhoto{border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:#e8e2d6;min-height:280px}.heroPhoto img{display:block;width:100%;height:100%;max-height:520px;object-fit:cover}.heroPhoto .noPhoto{min-height:280px;display:grid;place-items:center;padding:20px;text-align:center}.heroInfo{padding:6px 0}.heroInfo h1{font-size:clamp(34px,6vw,58px);letter-spacing:-.045em;line-height:.98;margin:0 0 12px}.heroInfo .type{color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.yield{display:inline-flex;gap:7px;align-items:center;border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 11px;margin-top:8px;font-size:13px}.photoActions{margin-top:11px;display:flex;gap:8px;flex-wrap:wrap}.primary,.secondary{border-radius:12px;padding:10px 13px;font-weight:800}.primary{border:1px solid var(--ink);background:var(--ink);color:#fff}.secondary{border:1px solid var(--line);background:#fff;color:var(--ink)}
+.sections{display:grid;gap:16px;margin-top:24px}.section{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:18px}.sectionHead{display:flex;align-items:end;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}.sectionHead h2{font-size:20px;margin:0}.sectionType{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:850}.items{display:grid}.component{width:100%;border:0;border-bottom:1px solid #ebe6dc;background:transparent;color:inherit;display:grid;grid-template-columns:minmax(92px,130px) 1fr auto;gap:10px;align-items:center;text-align:left;padding:12px 4px}.component:last-child{border-bottom:0}.qty{font-variant-numeric:tabular-nums;font-weight:820}.componentName{font-weight:720}.componentNote{display:block;color:var(--muted);font-size:12px;font-weight:500;margin-top:2px}.chev{font-size:22px;color:var(--accent)}.component.clickable:hover{background:#faf6ee}.mop{white-space:pre-wrap;line-height:1.62;color:#39362f}.mop p{margin:.6em 0}
+.modalWrap{position:fixed;z-index:100;inset:0;background:rgba(20,18,14,.64);display:flex;align-items:flex-end;justify-content:center;padding:0}.modal{width:min(720px,100%);max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;background:var(--panel);box-shadow:0 -20px 60px rgba(0,0,0,.2);padding:15px 16px max(24px,env(safe-area-inset-bottom))}.modalBar{display:flex;align-items:center;gap:8px;position:sticky;top:-15px;margin:-15px -16px 12px;padding:12px 16px;background:rgba(255,253,248,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);z-index:3}.modalBar h2{margin:0;font-size:18px;flex:1}.modalClose{border:1px solid var(--line);background:#fff;width:38px;height:38px;border-radius:11px}.photoGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.photoPanel{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}.photoPanel .pic{aspect-ratio:4/3;background:#eee8dd;display:grid;place-items:center;overflow:hidden}.photoPanel .pic img{width:100%;height:100%;object-fit:cover}.photoPanel .body{padding:12px}.photoPanel h3{font-size:14px;margin:0 0 5px}.photoPanel p{font-size:12px;color:var(--muted);margin:0 0 10px}.prepList{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}.prep{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px}.prep.active{border-color:var(--accent);color:var(--accent);font-weight:800;background:#fff8ef}
+.loader{display:inline-block;width:17px;height:17px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:720px){.brandText{max-width:150px}.hero{grid-template-columns:1fr}.heroInfo{order:-1}.heroPhoto{min-height:220px}.heroPhoto .noPhoto{min-height:220px}.photoGrid{grid-template-columns:1fr}.component{grid-template-columns:88px 1fr auto}main{padding-left:12px;padding-right:12px}.section{padding:14px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <button id="backBtn" class="iconBtn hidden" aria-label="Back">←</button>
+    <div class="brand"><div class="mark">NG</div><div class="brandText" id="brandText">Menú Dinámico</div></div>
+    <div class="spacer"></div>
+    <button id="homeBtn" class="iconBtn" aria-label="Home">⌂</button>
+    <button id="langBtn" class="langBtn" data-lang="es" aria-label="Cambiar idioma"><b class="en">EN</b><span>/</span><b class="es">ES</b></button>
+  </header>
+  <main id="view"></main>
+</div>
+<div id="modalRoot"></div>
+<div id="status" class="status hidden"></div>
+<script>
+(() => {
+  'use strict';
+
+  const i18n = {
+    es:{
+      library:'Recetario dinámico',subtitle:'Fichas técnicas, preparaciones e ingredientes conectados.',search:'Buscar receta o preparación…',all:'Todo',dishes:'Platos',preps:'Preparaciones',
+      noRecipes:'Todavía no hay recetas cargadas',noRecipesBody:'La arquitectura está conectada. Agrega fichas a las colecciones de Menú Dinámico para verlas aquí.',
+      dish:'Plato',subrecipe:'Preparación',yield:'Rendimiento',method:'Método / MOP',ingredients:'Ingredientes',noPhoto:'Sin foto de referencia',addPhoto:'Agregar foto',replacePhoto:'Cambiar foto',
+      ingredient:'Ingrediente',whole:'Producto entero / base',preparation:'Preparación / corte',noPrep:'Sin corte específico',photoSaved:'Foto guardada y vinculada globalmente.',uploading:'Subiendo foto…',saving:'Guardando referencia…',
+      waiting:'Esperando conexión con Wix…',connected:'Menú conectado con Wix.',loadError:'No se pudo cargar el recetario.',uploadError:'No se pudo subir la foto.',close:'Cerrar',
+      originalMissing:'Traducción pendiente',home:'Recetario',section:'Sección',emptySection:'No hay componentes en esta sección.'
+    },
+    en:{
+      library:'Dynamic recipe book',subtitle:'Connected technical sheets, preparations, and ingredients.',search:'Search recipe or preparation…',all:'All',dishes:'Dishes',preps:'Preparations',
+      noRecipes:'No recipes have been added yet',noRecipesBody:'The architecture is connected. Add records to the Dynamic Menu collections to see them here.',
+      dish:'Dish',subrecipe:'Preparation',yield:'Yield',method:'Method / MOP',ingredients:'Ingredients',noPhoto:'No reference photo',addPhoto:'Add photo',replacePhoto:'Replace photo',
+      ingredient:'Ingredient',whole:'Whole / base product',preparation:'Preparation / cut',noPrep:'No specific cut',photoSaved:'Photo saved and linked globally.',uploading:'Uploading photo…',saving:'Saving reference…',
+      waiting:'Waiting for Wix connection…',connected:'Menu connected to Wix.',loadError:'Could not load the recipe book.',uploadError:'Could not upload the photo.',close:'Close',
+      originalMissing:'Translation pending',home:'Recipe book',section:'Section',emptySection:'No components in this section.'
+    }
+  };
+
+  const state = {
+    lang: localStorage.getItem('nexo_dynamic_menu_lang') || 'es',
+    recipes:[],sections:[],components:[],ingredients:[],preparations:[],
+    route:[],filter:'ALL',query:'',connected:false,loaded:false,
+    modal:null,pendingUploads:new Map()
+  };
+
+  const $ = s => document.querySelector(s);
+  const view = $('#view'), modalRoot=$('#modalRoot'), statusEl=$('#status');
+  const langBtn=$('#langBtn'), backBtn=$('#backBtn');
+  const t = key => (i18n[state.lang] && i18n[state.lang][key]) || key;
+  const esc = v => String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const byOrder = (a,b) => Number(a.sortOrder||0)-Number(b.sortOrder||0);
+  const txt = (obj,enKey,esKey) => {
+    const primary = state.lang==='es' ? obj?.[esKey] : obj?.[enKey];
+    const fallback = state.lang==='es' ? obj?.[enKey] : obj?.[esKey];
+    return primary || fallback || '';
+  };
+  const recipeName = r => txt(r,'titleEn','titleEs') || '—';
+  const ingredientName = x => txt(x,'nameEn','nameEs') || '—';
+  const prepName = x => txt(x,'nameEn','nameEs') || '—';
+  const imageUrl = img => img && (img.url || img.image?.url || img.src) || '';
+
+  function send(type,payload={}){
+    try{ window.parent.postMessage({type,payload},'*'); }catch(e){ console.warn(e); }
+  }
+  function showStatus(message,kind='',ms=2600){
+    statusEl.textContent=message;statusEl.className='status '+kind;statusEl.classList.remove('hidden');
+    clearTimeout(showStatus.timer);if(ms)showStatus.timer=setTimeout(()=>statusEl.classList.add('hidden'),ms);
+  }
+  function setLanguage(lang){
+    state.lang=lang==='en'?'en':'es';localStorage.setItem('nexo_dynamic_menu_lang',state.lang);langBtn.dataset.lang=state.lang;
+    document.documentElement.lang=state.lang;render();if(state.modal)renderModal();
+  }
+  langBtn.addEventListener('click',()=>setLanguage(state.lang==='es'?'en':'es'));
+  $('#homeBtn').addEventListener('click',()=>goHome());
+  backBtn.addEventListener('click',()=>goBack());
+
+  function goHome(){ state.route=[];state.modal=null;modalRoot.innerHTML='';render(); }
+  function openRecipe(id){ if(!id)return;state.route.push({type:'recipe',id});state.modal=null;modalRoot.innerHTML='';render();scrollTo({top:0,behavior:'smooth'}); }
+  function goBack(){ if(state.modal){state.modal=null;renderModal();return;} if(state.route.length){state.route.pop();render();scrollTo({top:0,behavior:'smooth'});} }
+
+  function render(){
+    langBtn.dataset.lang=state.lang;
+    backBtn.classList.toggle('hidden',state.route.length===0 && !state.modal);
+    if(!state.loaded){ renderLoading(); return; }
+    const current=state.route[state.route.length-1];
+    if(current?.type==='recipe') renderRecipe(current.id); else renderHome();
+  }
+
+  function renderLoading(){
+    view.innerHTML=`<div class="empty"><strong>${esc(t('waiting'))}</strong><div style="margin-top:12px"><span class="loader" style="border-color:#bbb;border-top-color:#333"></span></div></div>`;
+  }
+
+  function renderHome(){
+    const q=state.query.trim().toLowerCase();
+    let list=[...state.recipes].filter(r=>r.active!==false);
+    if(state.filter==='DISH') list=list.filter(r=>String(r.recipeType).toUpperCase()==='DISH');
+    if(state.filter==='SUBRECIPE') list=list.filter(r=>String(r.recipeType).toUpperCase()!=='DISH');
+    if(q) list=list.filter(r=>[r.titleEn,r.titleEs,r.category].some(v=>String(v||'').toLowerCase().includes(q)));
+    list.sort(byOrder);
+    view.innerHTML=`
+      <h1 class="pageTitle">${esc(t('library'))}</h1><p class="subTitle">${esc(t('subtitle'))}</p>
+      <div class="searchRow"><input id="searchInput" class="search" value="${esc(state.query)}" placeholder="${esc(t('search'))}" /></div>
+      <div class="chips">
+        ${chip('ALL',t('all'))}${chip('DISH',t('dishes'))}${chip('SUBRECIPE',t('preps'))}
+      </div>
+      <div class="grid">${list.length?list.map(recipeCard).join(''):`<div class="empty" style="grid-column:1/-1"><strong>${esc(t('noRecipes'))}</strong>${esc(t('noRecipesBody'))}</div>`}</div>`;
+    $('#searchInput')?.addEventListener('input',e=>{state.query=e.target.value;renderHome();requestAnimationFrame(()=>{const x=$('#searchInput');if(x){x.focus();x.setSelectionRange(x.value.length,x.value.length)}})});
+    view.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{state.filter=b.dataset.filter;renderHome()}));
+    view.querySelectorAll('[data-recipe]').forEach(b=>b.addEventListener('click',()=>openRecipe(b.dataset.recipe)));
+  }
+  function chip(value,label){return `<button class="chip ${state.filter===value?'active':''}" data-filter="${value}">${esc(label)}</button>`}
+  function recipeCard(r){
+    const url=imageUrl(r.heroImage),type=String(r.recipeType||'SUBRECIPE').toUpperCase()==='DISH'?t('dish'):t('subrecipe');
+    return `<button class="card recipeCard" data-recipe="${esc(r._id)}"><div class="recipeThumb">${url?`<img src="${esc(url)}" alt="${esc(recipeName(r))}">`:`<div class="placeholder">▧ ${esc(t('noPhoto'))}</div>`}</div><div class="recipeMeta"><span class="tag">${esc(type)}</span><h3>${esc(recipeName(r))}</h3><p>${esc(r.category||'')}</p></div></button>`;
+  }
+
+  function renderRecipe(id){
+    const r=state.recipes.find(x=>x._id===id);if(!r){goHome();return;}
+    const sections=state.sections.filter(x=>x.recipeId===id).sort(byOrder);
+    const isDish=String(r.recipeType||'').toUpperCase()==='DISH';
+    const trail=state.route.map(x=>state.recipes.find(r=>r._id===x.id)).filter(Boolean);
+    const hero=imageUrl(r.heroImage);
+    const yieldText=r.yieldQty?`${r.yieldQty} ${txt(r,'yieldUnitEn','yieldUnitEs')}`:'';
+    const method=txt(r,'methodEn','methodEs');
+    view.innerHTML=`
+      <div class="breadcrumb"><button id="crumbHome">${esc(t('home'))}</button>${trail.map((x,i)=>`<span>›</span>${i<trail.length-1?`<button data-crumb="${i}">${esc(recipeName(x))}</button>`:`<span>${esc(recipeName(x))}</span>`}`).join('')}</div>
+      <div class="hero">
+        <div class="heroPhoto">${hero?`<img src="${esc(hero)}" alt="${esc(recipeName(r))}">`:`<div class="noPhoto"><div><div class="placeholder">▧ ${esc(t('noPhoto'))}</div>${!isDish?`<div class="photoActions"><button class="primary" data-photo-type="recipe" data-photo-id="${esc(r._id)}">＋ ${esc(t('addPhoto'))}</button></div>`:''}</div></div>`}</div>
+        <div class="heroInfo"><div class="type">${esc(isDish?t('dish'):t('subrecipe'))}</div><h1>${esc(recipeName(r))}</h1>${yieldText?`<div class="yield"><b>${esc(t('yield'))}:</b> ${esc(yieldText)}</div>`:''}${hero?`<div class="photoActions"><button class="secondary" data-photo-type="recipe" data-photo-id="${esc(r._id)}">↻ ${esc(t('replacePhoto'))}</button></div>`:''}</div>
+      </div>
+      <div class="sections">
+        ${sections.map(sectionCard).join('')}
+        ${method?`<section class="section"><div class="sectionHead"><h2>${esc(t('method'))}</h2></div><div class="mop">${method}</div></section>`:''}
+      </div>`;
+    $('#crumbHome')?.addEventListener('click',goHome);
+    view.querySelectorAll('[data-crumb]').forEach(b=>b.addEventListener('click',()=>{state.route=state.route.slice(0,Number(b.dataset.crumb)+1);render()}));
+    bindComponents();bindPhotoButtons(view);
+  }
+  function sectionCard(s){
+    const items=state.components.filter(c=>c.sectionId===s._id).sort(byOrder);
+    return `<section class="section"><div class="sectionHead"><h2>${esc(txt(s,'titleEn','titleEs')||t('section'))}</h2><span class="sectionType">${esc(s.sectionType||'')}</span></div><div class="items">${items.length?items.map(componentRow).join(''):`<div style="padding:14px 3px;color:var(--muted)">${esc(t('emptySection'))}</div>`}</div></section>`;
+  }
+  function componentRow(c){
+    const type=String(c.componentType||'TEXT').toUpperCase();
+    const clickable=['SUBRECIPE','INGREDIENT','PREPARATION'].includes(type) && (c.targetRecipeId||c.targetIngredientId);
+    const unit=state.lang==='es'?(c.unitEs||c.unitEn):(c.unitEn||c.unitEs);
+    let name=txt(c,'displayEn','displayEs');
+    if(!name && c.targetRecipeId) name=recipeName(state.recipes.find(x=>x._id===c.targetRecipeId)||{});
+    if(!name && c.targetIngredientId) name=ingredientName(state.ingredients.find(x=>x._id===c.targetIngredientId)||{});
+    const note=txt(c,'noteEn','noteEs');
+    return `<button class="component ${clickable?'clickable':''}" ${clickable?`data-component="${esc(c._id)}"`:''}><div class="qty">${c.quantity??''} ${esc(unit||'')}</div><div class="componentName">${esc(name||'—')}${note?`<span class="componentNote">${esc(note)}</span>`:''}</div><div class="chev">${clickable?'›':''}</div></button>`;
+  }
+  function bindComponents(){
+    view.querySelectorAll('[data-component]').forEach(btn=>btn.addEventListener('click',()=>{
+      const c=state.components.find(x=>x._id===btn.dataset.component);if(!c)return;
+      const type=String(c.componentType||'').toUpperCase();
+      if(type==='SUBRECIPE' && c.targetRecipeId) openRecipe(c.targetRecipeId);
+      else if(c.targetIngredientId) openIngredient(c.targetIngredientId,c.targetPreparationId||'');
+    }));
+  }
+
+  function openIngredient(ingredientId,prepId=''){state.modal={type:'ingredient',ingredientId,prepId};renderModal();}
+  function closeModal(){state.modal=null;renderModal();}
+  function renderModal(){
+    if(!state.modal){modalRoot.innerHTML='';backBtn.classList.toggle('hidden',state.route.length===0);return;}
+    backBtn.classList.remove('hidden');
+    if(state.modal.type==='ingredient') renderIngredientModal();
+  }
+  function renderIngredientModal(){
+    const ing=state.ingredients.find(x=>x._id===state.modal.ingredientId);if(!ing){closeModal();return;}
+    const preps=state.preparations.filter(x=>x.ingredientId===ing._id).sort(byOrder);
+    let selected=preps.find(x=>x._id===state.modal.prepId) || null;
+    const baseUrl=imageUrl(ing.baseImage),prepUrl=imageUrl(selected?.image);
+    modalRoot.innerHTML=`<div class="modalWrap" id="modalShade"><div class="modal" role="dialog" aria-modal="true"><div class="modalBar"><h2>${esc(ingredientName(ing))}</h2><button class="modalClose" id="modalClose">×</button></div>
+      ${preps.length?`<div class="prepList">${preps.map(p=>`<button class="prep ${selected?._id===p._id?'active':''}" data-prep="${esc(p._id)}">${esc(prepName(p))}</button>`).join('')}</div>`:''}
+      <div class="photoGrid">
+        <article class="photoPanel"><div class="pic">${baseUrl?`<img src="${esc(baseUrl)}" alt="${esc(ingredientName(ing))}">`:`<span class="placeholder">▧ ${esc(t('noPhoto'))}</span>`}</div><div class="body"><h3>${esc(t('whole'))}</h3><p>${esc(ingredientName(ing))}</p><button class="${baseUrl?'secondary':'primary'}" data-photo-type="ingredient" data-photo-id="${esc(ing._id)}">${baseUrl?'↻ '+esc(t('replacePhoto')):'＋ '+esc(t('addPhoto'))}</button></div></article>
+        <article class="photoPanel"><div class="pic">${selected?(prepUrl?`<img src="${esc(prepUrl)}" alt="${esc(prepName(selected))}">`:`<span class="placeholder">▧ ${esc(t('noPhoto'))}</span>`):`<span class="placeholder">${esc(t('noPrep'))}</span>`}</div><div class="body"><h3>${esc(t('preparation'))}</h3><p>${esc(selected?prepName(selected):t('noPrep'))}</p>${selected?`<button class="${prepUrl?'secondary':'primary'}" data-photo-type="preparation" data-photo-id="${esc(selected._id)}">${prepUrl?'↻ '+esc(t('replacePhoto')):'＋ '+esc(t('addPhoto'))}</button>`:''}</div></article>
+      </div>
+    </div></div>`;
+    $('#modalClose')?.addEventListener('click',closeModal);$('#modalShade')?.addEventListener('click',e=>{if(e.target.id==='modalShade')closeModal()});
+    modalRoot.querySelectorAll('[data-prep]').forEach(b=>b.addEventListener('click',()=>{state.modal.prepId=b.dataset.prep;renderModal()}));
+    bindPhotoButtons(modalRoot);
+  }
+
+  function bindPhotoButtons(root){root.querySelectorAll('[data-photo-type]').forEach(b=>b.addEventListener('click',()=>pickPhoto(b.dataset.photoType,b.dataset.photoId)))}
+  function pickPhoto(entityType,entityId){
+    const input=document.createElement('input');input.type='file';input.accept='image/*';input.capture='environment';
+    input.onchange=()=>{const file=input.files?.[0];if(file)beginUpload(file,entityType,entityId)};input.click();
+  }
+  function beginUpload(file,entityType,entityId){
+    const requestId='up_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+    state.pendingUploads.set(requestId,{file,entityType,entityId});showStatus(t('uploading'),'',0);
+    send('REQUEST_MEDIA_UPLOAD_URL',{requestId,fileName:file.name||`photo-${Date.now()}.jpg`,mimeType:file.type||'image/jpeg',sizeInBytes:file.size,entityType,entityId});
+  }
+  async function handleUploadUrl(payload){
+    const pending=state.pendingUploads.get(payload.requestId);if(!pending)return;
+    try{
+      const res=await fetch(payload.uploadUrl,{method:'PUT',headers:{'Content-Type':pending.file.type||'image/jpeg'},body:pending.file});
+      if(!res.ok)throw new Error('Upload HTTP '+res.status);
+      const data=await res.json();const f=data.file||{};const im=f.media?.image?.image||{};
+      const mediaImage={id:im.id||f.id,url:im.url||f.url,height:im.height||0,width:im.width||0,altText:''};
+      showStatus(t('saving'),'',0);
+      send('SAVE_ENTITY_IMAGE',{requestId:payload.requestId,entityType:pending.entityType,entityId:pending.entityId,image:mediaImage});
+    }catch(err){console.error(err);state.pendingUploads.delete(payload.requestId);showStatus(t('uploadError'),'err',4500)}
+  }
+  function handleImageSaved(payload){
+    const pending=state.pendingUploads.get(payload.requestId);state.pendingUploads.delete(payload.requestId);
+    const type=payload.entityType||pending?.entityType,id=payload.entityId||pending?.entityId,img=payload.image;
+    if(type==='recipe'){const x=state.recipes.find(i=>i._id===id);if(x)x.heroImage=img;}
+    if(type==='ingredient'){const x=state.ingredients.find(i=>i._id===id);if(x)x.baseImage=img;}
+    if(type==='preparation'){const x=state.preparations.find(i=>i._id===id);if(x)x.image=img;}
+    showStatus(t('photoSaved'),'ok',3000);render();if(state.modal)renderModal();
+  }
+
+  function acceptData(payload){
+    state.recipes=payload.recipes||[];state.sections=payload.sections||[];state.components=payload.components||[];state.ingredients=payload.ingredients||[];state.preparations=payload.preparations||[];
+    state.loaded=true;state.connected=true;showStatus(t('connected'),'ok',1600);render();
+  }
+
+  window.addEventListener('message',event=>{
+    let msg=event.data;if(typeof msg==='string'){try{msg=JSON.parse(msg)}catch(_){return}}
+    if(!msg||!msg.type)return;const p=msg.payload||{};
+    switch(msg.type){
+      case 'WIX_READY':state.connected=true;send('LOAD_MENU_DATA');break;
+      case 'MENU_DATA_LOADED':acceptData(p);break;
+      case 'MEDIA_UPLOAD_URL':handleUploadUrl(p);break;
+      case 'ENTITY_IMAGE_SAVED':handleImageSaved(p);break;
+      case 'ERROR':console.error('[MENU/WIX]',p);showStatus(p.message||t('loadError'),'err',5000);break;
+      case 'DEBUG_LOG':console.log('[MENU/DEBUG]',p);break;
+    }
+  });
+
+  setLanguage(state.lang);
+  send('MENU_HTML_READY',{version:'1.0.0'});
+  setTimeout(()=>{if(!state.loaded)showStatus(t('waiting'),'warn',3500)},1600);
+  setTimeout(()=>send('MENU_HTML_READY',{version:'1.0.0',retry:true}),2300);
+})();
+</script>
+</body>
+</html>
