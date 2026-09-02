@@ -1,0 +1,211 @@
+/*
+  NEXO GROUP - MENÚ DINÁMICO
+  Velo page bridge v1
+
+  Wix page requirements:
+  - Add ONE HTML Embed component to the page.
+  - Component ID: #dynamicMenuHtml
+  - Embed the GitHub Pages URL for /menu-dinamico/
+  - Paste this file into the page's Velo code.
+
+  CMS collections already created:
+  - DMRecipes
+  - DMSections
+  - DMComponents
+  - DMIngredients
+  - DMPreparations
+
+  Permissions created for v1:
+  - read / insert / update: SITE_MEMBER
+  - remove: ADMIN
+
+  Image behavior:
+  - Main dish: heroImage is its guide photo.
+  - Subrecipes: heroImage starts empty and can be added/replaced from the HTML UI.
+  - Base ingredients: baseImage.
+  - Ingredient preparations/cuts: image.
+  - Images are stored once on the entity and therefore reused everywhere that entity appears.
+
+  SDK packages used by this page code:
+  - @wix/media
+  - @wix/essentials
+*/
+
+import wixData from 'wix-data';
+import { files } from '@wix/media';
+import { auth } from '@wix/essentials';
+
+const HTML_ID = '#dynamicMenuHtml';
+const elevatedGenerateFileUploadUrl = auth.elevate(files.generateFileUploadUrl);
+
+const COLLECTIONS = {
+  recipes: 'DMRecipes',
+  sections: 'DMSections',
+  components: 'DMComponents',
+  ingredients: 'DMIngredients',
+  preparations: 'DMPreparations'
+};
+
+const IMAGE_TARGETS = {
+  recipe: { collection: COLLECTIONS.recipes, field: 'heroImage' },
+  ingredient: { collection: COLLECTIONS.ingredients, field: 'baseImage' },
+  preparation: { collection: COLLECTIONS.preparations, field: 'image' }
+};
+
+$w.onReady(function () {
+  console.log('[NEXO/MENU] Menú Dinámico bridge v1 ready.');
+
+  $w(HTML_ID).onMessage(async (event) => {
+    let message = event.data;
+
+    if (typeof message === 'string') {
+      try { message = JSON.parse(message); } catch (_) { return; }
+    }
+
+    if (!message || !message.type) return;
+
+    try {
+      switch (message.type) {
+        case 'MENU_HTML_READY':
+          sendToHtml('WIX_READY', {
+            ok: true,
+            version: '1.0.0'
+          });
+          await loadAllMenuData();
+          break;
+
+        case 'LOAD_MENU_DATA':
+          await loadAllMenuData();
+          break;
+
+        case 'REQUEST_MEDIA_UPLOAD_URL':
+          await createMediaUploadUrl(message.payload || {});
+          break;
+
+        case 'SAVE_ENTITY_IMAGE':
+          await saveEntityImage(message.payload || {});
+          break;
+
+        case 'PING_WIX':
+          sendToHtml('PONG_WIX', { ok: true, version: '1.0.0' });
+          break;
+
+        default:
+          sendError(message.type, `Unknown message type: ${message.type}`);
+      }
+    } catch (error) {
+      console.error('[NEXO/MENU] Bridge error:', error);
+      sendError(message.type, error?.message || 'Unknown Wix error');
+    }
+  });
+
+  sendToHtml('WIX_READY', { ok: true, version: '1.0.0' });
+  setTimeout(() => sendToHtml('WIX_READY', { ok: true, version: '1.0.0', retry: true }), 1000);
+});
+
+function sendToHtml(type, payload = {}) {
+  $w(HTML_ID).postMessage({ type, payload });
+}
+
+function sendError(sourceType, message, details = {}) {
+  sendToHtml('ERROR', {
+    sourceType,
+    message,
+    details
+  });
+}
+
+async function loadAll(collectionId) {
+  let result = await wixData.query(collectionId).limit(1000).find();
+  const items = [...result.items];
+
+  while (result.hasNext()) {
+    result = await result.next();
+    items.push(...result.items);
+  }
+
+  return items;
+}
+
+async function loadAllMenuData() {
+  const [recipes, sections, components, ingredients, preparations] = await Promise.all([
+    loadAll(COLLECTIONS.recipes),
+    loadAll(COLLECTIONS.sections),
+    loadAll(COLLECTIONS.components),
+    loadAll(COLLECTIONS.ingredients),
+    loadAll(COLLECTIONS.preparations)
+  ]);
+
+  sendToHtml('MENU_DATA_LOADED', {
+    recipes,
+    sections,
+    components,
+    ingredients,
+    preparations
+  });
+}
+
+async function createMediaUploadUrl(payload) {
+  const {
+    requestId,
+    fileName,
+    mimeType,
+    entityType,
+    entityId
+  } = payload;
+
+  if (!requestId || !fileName || !mimeType || !entityType || !entityId) {
+    throw new Error('Incomplete media upload request.');
+  }
+
+  if (!IMAGE_TARGETS[entityType]) {
+    throw new Error(`Unsupported image target: ${entityType}`);
+  }
+
+  const result = await elevatedGenerateFileUploadUrl(mimeType, {
+    fileName,
+    private: false,
+    labels: ['nexo-dynamic-menu', entityType]
+  });
+
+  sendToHtml('MEDIA_UPLOAD_URL', {
+    requestId,
+    uploadUrl: result.uploadUrl,
+    entityType,
+    entityId
+  });
+}
+
+async function saveEntityImage(payload) {
+  const {
+    requestId,
+    entityType,
+    entityId,
+    image
+  } = payload;
+
+  const target = IMAGE_TARGETS[entityType];
+  if (!target) throw new Error(`Unsupported image target: ${entityType}`);
+  if (!entityId || !image?.id || !image?.url) throw new Error('Incomplete image data.');
+
+  const item = await wixData.get(target.collection, entityId);
+  if (!item?._id) throw new Error('Entity not found.');
+
+  item[target.field] = {
+    id: image.id,
+    url: image.url,
+    height: Number(image.height || 0),
+    width: Number(image.width || 0),
+    altText: image.altText || ''
+  };
+  item.imageUpdatedAt = new Date();
+
+  const saved = await wixData.update(target.collection, item);
+
+  sendToHtml('ENTITY_IMAGE_SAVED', {
+    requestId,
+    entityType,
+    entityId,
+    image: saved[target.field]
+  });
+}
