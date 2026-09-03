@@ -12,9 +12,9 @@
   "lang": "es",
   "icons": [
     {
-      "src": "./nexo-app-logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "https://static.wixstatic.com/media/8b64a8_9aaf5cc2adbb41d484291557d6024f08~mv2.png",
+      "sizes": "1536x1536",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
