@@ -7,7 +7,6 @@ const modalRoot=document.getElementById('modal');
 if(!view||!modalRoot)return;
 
 const norm=v=>String(v||'').trim().toLocaleLowerCase();
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const lang=()=>document.documentElement.lang==='en'?'en':'es';
 const tr=(es,en)=>lang()==='en'?en:es;
 const text=(o,enKey,esKey)=>lang()==='en'?(o?.[enKey]||o?.[esKey]||''):(o?.[esKey]||o?.[enKey]||'');
@@ -27,12 +26,14 @@ function reviewish(v){return /review|revisi[oó]n|pending|pendiente|inconsisten|
 
 function installReviewNote(recipe){
   const hero=view.querySelector('.recipeView .heroText');if(!hero)return;
-  hero.querySelectorAll('.reviewAlert[data-workflow]').forEach(x=>x.remove());
   let note='';
   if(recipe.reviewNote)note=recipe.reviewNote;
   else {const candidate=text(recipe,'notesEn','notesEs');if(reviewish(candidate))note=candidate}
-  if(!note)return;
-  const box=document.createElement('div');box.className='reviewAlert';box.dataset.workflow='1';box.textContent=`⚠ ${note}`;hero.appendChild(box);
+  const existing=hero.querySelector('.reviewAlert[data-workflow]');
+  if(!note){if(existing)existing.remove();return}
+  const wanted=`⚠ ${note}`;
+  if(existing){if(existing.textContent!==wanted)existing.textContent=wanted;return}
+  const box=document.createElement('div');box.className='reviewAlert';box.dataset.workflow='1';box.textContent=wanted;hero.appendChild(box);
 }
 function markReviewNotes(){
   view.querySelectorAll('.recipeView .note').forEach(n=>n.classList.toggle('nexoReviewNote',reviewish(n.textContent)));
@@ -47,7 +48,7 @@ function installMise(recipe){
     const s=secs[i];if(!s)return;
     const rows=(D.components||[]).filter(c=>c.sectionId===s._id).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
     const h=sectionEl.querySelector('h2');
-    if(h&&!h.querySelector('.progressLegend')){const l=document.createElement('span');l.className='progressLegend';l.textContent=tr('Mise en place','Mise en place');h.appendChild(l)}
+    if(h&&!h.querySelector('.progressLegend')){const l=document.createElement('span');l.className='progressLegend';l.textContent='Mise en place';h.appendChild(l)}
     [...sectionEl.querySelectorAll(':scope>.row')].forEach((rowEl,j)=>{
       const c=rows[j];if(!c)return;
       rowEl.dataset.componentId=c._id;
@@ -57,7 +58,7 @@ function installMise(recipe){
         const toggle=e=>{e.preventDefault();e.stopPropagation();const next=check.getAttribute('aria-checked')!=='true';check.setAttribute('aria-checked',String(next));rowEl.classList.toggle('is-mise-done',next);setProgress(recipe._id,'mise',c._id,next)};
         check.addEventListener('click',toggle);check.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter')toggle(e)});
       }
-      const done=!!state.mise[c._id];check.setAttribute('aria-checked',String(done));check.setAttribute('aria-label',tr(`Mise en place: ${text(c,'displayEn','displayEs')||''}`,`Mise en place: ${text(c,'displayEn','displayEs')||''}`));rowEl.classList.toggle('is-mise-done',done);
+      const done=!!state.mise[c._id];check.setAttribute('aria-checked',String(done));check.setAttribute('aria-label',`Mise en place: ${text(c,'displayEn','displayEs')||''}`);rowEl.classList.toggle('is-mise-done',done);
     });
   });
 }
@@ -86,7 +87,7 @@ function installMop(recipe){
 
 function updateNaming(){
   const brand=document.querySelector('.brandText');if(brand&&brand.textContent!=='Recetario Dinámico')brand.textContent='Recetario Dinámico';
-  const root=view.querySelector('[data-taxonomy-view="root"] .taxonomyIntro .subtitle');if(root){root.textContent=tr('Menú 9:26 a 12:26 · Platos, preparaciones y productos organizados por categoría.','Menu 9:26 to 12:26 · Dishes, preparations and products organized by category.')}
+  const root=view.querySelector('[data-taxonomy-view="root"] .taxonomyIntro .subtitle');if(root){const wanted=tr('Menú 9:26 a 12:26 · Platos, preparaciones y productos organizados por categoría.','Menu 9:26 to 12:26 · Dishes, preparations and products organized by category.');if(root.textContent!==wanted)root.textContent=wanted}
 }
 
 function applyRecipe(){const r=currentRecipe();if(!r)return;installReviewNote(r);markReviewNotes();installMise(r);installMop(r)}
@@ -110,7 +111,7 @@ function attachSwipe(){
   const tax=modalRoot.querySelector('.taxonomyImageShade');if(tax){const card=tax.querySelector('.taxonomyImageViewer');if(card)bindSwipe(card,tax)}
 }
 
-let timer=0;const observer=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(apply,20)});observer.observe(document.body,{childList:true,subtree:true});
+let timer=0;const observer=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(apply,24)});observer.observe(document.body,{childList:true,subtree:true});
 window.addEventListener('message',()=>setTimeout(apply,30));
 setTimeout(apply,50);setTimeout(apply,500);
 })();
