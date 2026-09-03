@@ -1,23 +1,20 @@
 (()=>{'use strict';
 if(window.__NEXO_DETAIL_STRIPES_V1__)return;
 window.__NEXO_DETAIL_STRIPES_V1__=true;
-const norm=s=>String(s||'').trim().toLowerCase();
-function markRecipe(){
+function apply(){
   const rv=document.querySelector('.recipeView');
   if(!rv)return;
-  rv.classList.remove('nexoDetailDish','nexoDetailPrep');
-  const title=norm(rv.querySelector('.heroText h1')?.textContent||rv.querySelector('h1')?.textContent);
-  const data=window.__NEXO_DM_DATA__||{};
-  const recipes=data.recipes||[];
-  const r=recipes.find(x=>[x.titleEn,x.titleEs].some(v=>norm(v)===title))||recipes.find(x=>[x.titleEn,x.titleEs].some(v=>title&&norm(v).includes(title)));
-  if(!r)return;
-  rv.classList.add(String(r.recipeType||'').toUpperCase()==='DISH'?'nexoDetailDish':'nexoDetailPrep');
+  const dish=!!rv.querySelector('.heroText .tagDish,.tagDish');
+  const prep=!!rv.querySelector('.heroText .tagPrep,.tagPrep');
+  const wanted=dish?'nexoDetailDish':prep?'nexoDetailPrep':'';
+  if(!wanted)return;
+  if(!rv.classList.contains(wanted)||rv.classList.contains(wanted==='nexoDetailDish'?'nexoDetailPrep':'nexoDetailDish')){
+    rv.classList.remove('nexoDetailDish','nexoDetailPrep');
+    rv.classList.add(wanted);
+  }
 }
-function apply(){
-  markRecipe();
-}
-const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(apply,0)});
+let timer=0;
+const obs=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(apply,16)});
 obs.observe(document.documentElement,{subtree:true,childList:true});
-window.addEventListener('languagechange',apply);
-setTimeout(apply,0);
+setTimeout(apply,20);
 })();
