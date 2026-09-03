@@ -1,10 +1,18 @@
 .row>.qty{
-  display:flex!important;
+  display:grid!important;
+  grid-template-columns:auto auto!important;
   align-items:center!important;
   justify-content:center!important;
+  justify-items:center!important;
+  align-self:stretch!important;
+  justify-self:stretch!important;
+  place-content:center!important;
   gap:7px!important;
   width:100%!important;
+  height:100%!important;
   min-width:0!important;
+  margin:0!important;
+  padding:0!important;
   text-align:center!important;
   line-height:1!important;
   white-space:nowrap!important;
@@ -15,11 +23,23 @@
   justify-content:center!important;
   min-width:42px!important;
   height:28px!important;
+  margin:0!important;
   padding:0 9px!important;
   line-height:1!important;
   flex:0 0 auto!important;
 }
 @media(max-width:720px){
-  .row>.qty{gap:6px!important;font-size:14px!important}
-  .row>.qty .unitBtn{min-width:40px!important;height:27px!important;padding:0 8px!important;font-size:11px!important}
+  .row>.qty{
+    gap:6px!important;
+    font-size:14px!important;
+    align-self:stretch!important;
+    justify-self:stretch!important;
+    place-content:center!important;
+  }
+  .row>.qty .unitBtn{
+    min-width:40px!important;
+    height:27px!important;
+    padding:0 8px!important;
+    font-size:11px!important;
+  }
 }
