@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Nexo Group">
+  <rect width="512" height="512" rx="92" fill="#f7f7f5"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M109 374 L250 112 L407 374" stroke="#050505" stroke-width="31"/>
+    <path d="M117 373 L238 287" stroke="#050505" stroke-width="31"/>
+    <path d="M238 287 L330 373" stroke="#050505" stroke-width="31"/>
+    <path d="M121 374 L183 374" stroke="#050505" stroke-width="31"/>
+    <path d="M206 340 C232 318 264 318 289 340 C315 362 346 362 373 340" stroke="#178de0" stroke-width="13"/>
+    <path d="M191 366 C222 343 257 344 284 367 C312 390 348 390 380 366" stroke="#178de0" stroke-width="13"/>
+  </g>
+</svg>
