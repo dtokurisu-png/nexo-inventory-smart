@@ -1,0 +1,149 @@
+:root{
+  --dm-dish:#b45440;
+  --dm-prep:#2f7767;
+  --dm-product:#b9852e;
+  --dm-cut:#d66f9f;
+  --dm-unit-count:#22b8c7;
+  --cut:var(--dm-cut);
+  --count:var(--dm-unit-count);
+}
+
+/*
+  UNIFIED STRIPE SYSTEM V2
+  Every classification stripe is a real bottom border so it sits on the
+  outside edge of the card, with the same rounded/behind appearance.
+*/
+.recipeCard,
+.taxonomyMaster,
+.taxonomyProductBase,
+.taxonomyProductPrep,
+.modal .photos>.photo,
+.recipeView.nexoDetailDish .hero,
+.recipeView.nexoDetailPrep .hero{
+  box-sizing:border-box!important;
+  position:relative!important;
+}
+
+/* Disable all previous internal/pseudo stripes. */
+.recipeCard::after,
+.recipeCard::before,
+.taxonomyMaster::after,
+.taxonomyProductBase::after,
+.taxonomyProductPrep::after,
+.modal .photos>.photo::after,
+.recipeView.nexoDetailDish .hero::after,
+.recipeView.nexoDetailPrep .hero::after{
+  content:none!important;
+  display:none!important;
+}
+
+/* Library cards */
+.recipeCard{
+  border-bottom-width:11px!important;
+  border-bottom-style:solid!important;
+  border-radius:18px!important;
+  overflow:hidden!important;
+}
+.recipeCard.cardDish{border-bottom-color:var(--dm-dish)!important}
+.recipeCard.cardPrep{border-bottom-color:var(--dm-prep)!important}
+.recipeCard.cardProduct{border-bottom-color:var(--dm-product)!important}
+.recipeCard>.meta{padding-bottom:16px!important}
+
+/* Master category cards */
+.taxonomyMaster{
+  border-bottom-width:12px!important;
+  border-bottom-style:solid!important;
+  border-radius:18px!important;
+  overflow:hidden!important;
+  padding-bottom:22px!important;
+}
+.taxonomyMaster.dish{border-bottom-color:var(--dm-dish)!important}
+.taxonomyMaster.prep{border-bottom-color:var(--dm-prep)!important}
+.taxonomyMaster.product{border-bottom-color:var(--dm-product)!important}
+
+/* Opened recipe / preparation sheets */
+.recipeView.nexoDetailDish .hero{
+  border-bottom:11px solid var(--dm-dish)!important;
+  border-radius:0 0 18px 18px!important;
+  overflow:hidden!important;
+  padding-bottom:0!important;
+}
+.recipeView.nexoDetailPrep .hero{
+  border-bottom:11px solid var(--dm-prep)!important;
+  border-radius:0 0 18px 18px!important;
+  overflow:hidden!important;
+  padding-bottom:0!important;
+}
+
+/* Ingredient modal cards: base product = mustard; preparation/cut = pink. */
+.modal .photos>.photo{
+  border-bottom-width:11px!important;
+  border-bottom-style:solid!important;
+  border-radius:16px!important;
+  overflow:hidden!important;
+  padding-bottom:0!important;
+}
+.modal .photos>.photo:first-child{
+  border-bottom-color:var(--dm-product)!important;
+}
+.modal .photos>.photo:nth-child(n+2){
+  border-bottom-color:var(--dm-cut)!important;
+}
+.modal .photos>.photo .photoBody{
+  padding-bottom:14px!important;
+}
+
+/* Product browser modal cards. */
+.taxonomyProductBase{
+  border-bottom:11px solid var(--dm-product)!important;
+  border-radius:16px!important;
+  overflow:hidden!important;
+  padding-bottom:0!important;
+}
+.taxonomyProductPrep{
+  border-bottom:11px solid var(--dm-cut)!important;
+  border-radius:14px!important;
+  overflow:hidden!important;
+  padding-bottom:0!important;
+}
+.taxonomyProductBaseBody,
+.taxonomyProductPrepBody{
+  padding-bottom:13px!important;
+}
+
+/* Preparation/cut chips also get their own identity color. */
+.modal .prep,
+.modal .prep.active{
+  border-color:var(--dm-cut)!important;
+  color:var(--dm-cut)!important;
+}
+
+/* Category labels keep the same semantic colors as their stripes. */
+.tagDish,.taxonomyMaster.dish .taxonomyLabel{color:var(--dm-dish)!important}
+.tagPrep,.taxonomyMaster.prep .taxonomyLabel{color:var(--dm-prep)!important}
+.tagProduct,.taxonomyMaster.product .taxonomyLabel{color:var(--dm-product)!important}
+
+/* Unit colors: grams/mass remain blue; count/unit moves to cyan. */
+.unitMetricMass{background:var(--metricMass)!important}
+.unitCount{background:var(--dm-unit-count)!important}
+
+@media(max-width:720px){
+  .recipeCard{
+    border-bottom-width:8px!important;
+    border-radius:15px!important;
+  }
+  .taxonomyMaster{
+    border-bottom-width:9px!important;
+    border-radius:15px!important;
+  }
+  .modal .photos>.photo,
+  .taxonomyProductBase,
+  .taxonomyProductPrep{
+    border-bottom-width:9px!important;
+  }
+  .recipeView.nexoDetailDish .hero,
+  .recipeView.nexoDetailPrep .hero{
+    border-bottom-width:9px!important;
+    border-radius:0!important;
+  }
+}
