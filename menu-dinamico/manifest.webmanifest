@@ -1,17 +1,18 @@
 {
+  "id": "./pwa.html",
   "name": "Recetario dinámico · Menú 9:26 a 12:26",
-  "short_name": "Recetario",
+  "short_name": "Recetario Nexo",
   "description": "Recetario dinámico de Nexo Group con platos, preparaciones y productos.",
   "start_url": "./pwa.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#fffdfa",
-  "theme_color": "#171511",
+  "background_color": "#f7f7f5",
+  "theme_color": "#f7f7f5",
   "lang": "es",
   "icons": [
     {
-      "src": "./pwa-icon.svg",
+      "src": "./nexo-app-logo.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
