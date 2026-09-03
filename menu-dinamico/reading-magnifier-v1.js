@@ -1,6 +1,6 @@
 (()=>{'use strict';
 if(window.__NEXO_READING_MAGNIFIER_V1__)return;window.__NEXO_READING_MAGNIFIER_V1__=true;
-const BUILD='Prueba 5';
+const BUILD='Prueba 6';
 function markBuild(){const b=document.getElementById('nexoBuildIndicator');if(b){b.textContent=BUILD;return}setTimeout(markBuild,80)}markBuild();
 const ua=navigator.userAgent||'';
 const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(navigator.maxTouchPoints>0&&Math.min(screen.width||9999,screen.height||9999)<=900);
@@ -23,7 +23,7 @@ function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
 function caretAt(x,y){try{if(document.caretPositionFromPoint){const p=document.caretPositionFromPoint(x,y);if(p&&p.offsetNode)return{node:p.offsetNode,offset:p.offset}}if(document.caretRangeFromPoint){const r=document.caretRangeFromPoint(x,y);if(r)return{node:r.startContainer,offset:r.startOffset}}}catch(_){}return null}
 function excerptFromPoint(x,y){const c=caretAt(x,y);if(c&&c.node&&c.node.nodeType===3){const raw=String(c.node.nodeValue||'');if(raw.trim()){let s=Math.max(0,c.offset-34),e=Math.min(raw.length,c.offset+46);while(s>0&&!/\s/.test(raw[s-1])&&c.offset-s<48)s--;while(e<raw.length&&!/\s/.test(raw[e])&&e-c.offset<60)e++;let out=raw.slice(s,e).replace(/\s+/g,' ').trim();if(out){if(s>0)out='…'+out;if(e<raw.length)out+='…';return out}}}
 const el=document.elementFromPoint(x,y);if(!eligible(el))return'';let cur=el;while(cur&&cur!==document.body){const t=(cur.textContent||'').replace(/\s+/g,' ').trim();if(t&&t.length<=180)return t;cur=cur.parentElement}const full=(el.textContent||'').replace(/\s+/g,' ').trim();return full.length>150?full.slice(0,147)+'…':full}
-function place(x,y){const half=Math.min(innerWidth*.42,195);const px=clamp(x,half+8,innerWidth-half-8);const above=y>150;bubble.dataset.below=above?'0':'1';bubble.style.left=px+'px';bubble.style.top=(above?Math.max(62,y-58):Math.min(innerHeight-122,y+24))+'px'}
+function place(x,y){const half=Math.min(innerWidth*.42,195);const px=clamp(x,half+8,innerWidth-half-8);const above=y>150;bubble.dataset.below=above?'0':'1';bubble.style.left=px+'px';bubble.style.top=(above?Math.max(27,y-93):Math.min(innerHeight-157,y-11))+'px'}
 function update(x,y){const text=excerptFromPoint(x,y);if(text)bubble.textContent=text;place(x,y)}
 function activate(){timer=null;if(!pendingTarget||!eligible(pendingTarget))return;active=true;document.documentElement.classList.add('nexoMagnifierActive');update(lastX,lastY);if(!bubble.textContent){active=false;document.documentElement.classList.remove('nexoMagnifierActive');return}bubble.dataset.show='1';if(navigator.vibrate)try{navigator.vibrate(18)}catch(_){} }
 function clearTimer(){if(timer){clearTimeout(timer);timer=null}}
