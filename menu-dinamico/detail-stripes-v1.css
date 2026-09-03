@@ -1,0 +1,68 @@
+.recipeView.nexoDetailDish .hero,
+.recipeView.nexoDetailPrep .hero{
+  position:relative!important;
+  padding-bottom:9px!important;
+}
+.recipeView.nexoDetailDish .hero::after,
+.recipeView.nexoDetailPrep .hero::after{
+  content:""!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  height:9px!important;
+  z-index:6!important;
+  pointer-events:none!important;
+}
+.recipeView.nexoDetailDish .hero::after{background:var(--dish)!important}
+.recipeView.nexoDetailPrep .hero::after{background:var(--prep)!important}
+
+.photos>.photo{
+  position:relative!important;
+  overflow:hidden!important;
+  padding-bottom:8px!important;
+}
+.photos>.photo::after{
+  content:""!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  height:8px!important;
+  z-index:7!important;
+  pointer-events:none!important;
+}
+.photos>.photo:first-child::after{background:var(--product)!important}
+.photos>.photo:nth-child(n+2)::after{background:var(--prep)!important}
+
+.taxonomyProductBase,
+.taxonomyProductPrep{
+  position:relative!important;
+  overflow:hidden!important;
+}
+.taxonomyProductBase::after,
+.taxonomyProductPrep::after{
+  content:""!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  height:8px!important;
+  z-index:7!important;
+  pointer-events:none!important;
+}
+.taxonomyProductBase::after{background:var(--product)!important}
+.taxonomyProductPrep::after{background:var(--prep)!important}
+.taxonomyProductBaseBody,
+.taxonomyProductPrepBody{padding-bottom:18px!important}
+
+@media(max-width:720px){
+  .recipeView.nexoDetailDish .hero,
+  .recipeView.nexoDetailPrep .hero{padding-bottom:7px!important}
+  .recipeView.nexoDetailDish .hero::after,
+  .recipeView.nexoDetailPrep .hero::after,
+  .photos>.photo::after,
+  .taxonomyProductBase::after,
+  .taxonomyProductPrep::after{height:7px!important}
+  .photos>.photo{padding-bottom:7px!important}
+}
