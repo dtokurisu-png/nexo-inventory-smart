@@ -12,9 +12,10 @@ function ensureResponsive(){
 function standalone(){return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
 function addInstall(){
   if(!MOBILE.matches||standalone())return;
-  const bar=document.querySelector('.topbar');if(!bar||document.getElementById('nexoInstallApp'))return;
-  const b=document.createElement('button');b.id='nexoInstallApp';b.className='lang';b.type='button';b.textContent=document.documentElement.lang==='en'?'Install':'Instalar';b.style.cssText='white-space:nowrap;min-width:auto;padding:0 10px;font-size:15px';
-  const legend=document.getElementById('legendBtn');bar.insertBefore(b,legend||null);
+  if(document.getElementById('nexoInstallApp'))return;
+  const b=document.createElement('button');b.id='nexoInstallApp';b.type='button';b.textContent=document.documentElement.lang==='en'?'Install app':'Instalar app';
+  b.style.cssText='position:fixed;z-index:95;right:max(12px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));min-height:46px;padding:0 15px;border:0;border-radius:999px;background:#171511;color:#fff;font:850 15px system-ui,-apple-system,Segoe UI,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.24);white-space:nowrap';
+  document.body.appendChild(b);
   b.addEventListener('click',()=>{
     try{
       const u=new URL(window.top.location.href);
