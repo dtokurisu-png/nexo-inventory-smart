@@ -55,6 +55,30 @@
   line-height:1!important;
   pointer-events:none!important;
 }
+
+/* Product identity stripe also appears inside the opened product sheet. */
+.taxonomyProductBase,
+.taxonomyProductPrep{
+  position:relative!important;
+  overflow:hidden!important;
+}
+.taxonomyProductBase::after,
+.taxonomyProductPrep::after{
+  content:""!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  height:8px!important;
+  background:var(--product)!important;
+  z-index:5!important;
+  pointer-events:none!important;
+}
+.taxonomyProductBaseBody,
+.taxonomyProductPrepBody{
+  padding-bottom:18px!important;
+}
+
 @media(max-width:720px){
   .row>.qty{
     grid-template-columns:minmax(0,1fr) 1px auto!important;
@@ -72,4 +96,8 @@
     font-size:11px!important;
   }
   .row>.qty .unitBtn>.unitGlyph{top:44%!important}
+  .taxonomyProductBase::after,
+  .taxonomyProductPrep::after{height:7px!important}
+  .taxonomyProductBaseBody,
+  .taxonomyProductPrepBody{padding-bottom:17px!important}
 }
