@@ -1,0 +1,7 @@
+(()=>{'use strict';
+if(window.__NEXO_TAXONOMY_COUNT_SYNC_V1__)return;window.__NEXO_TAXONOMY_COUNT_SYNC_V1__=true;
+function current(){return window.__NEXO_DM_DATA__||{recipes:[],ingredients:[]}}
+function counts(){const d=current(),recipes=(d.recipes||[]).filter(r=>r&&r.active!==false),products=(d.ingredients||[]).filter(i=>i&&i.active!==false);return{dish:recipes.filter(r=>String(r.recipeType||'').toUpperCase()==='DISH').length,prep:recipes.filter(r=>String(r.recipeType||'').toUpperCase()!=='DISH').length,product:products.length}}
+function apply(){try{const c=counts();[['dish',c.dish],['prep',c.prep],['product',c.product]].forEach(([k,n])=>{const el=document.querySelector(`.taxonomyMaster.${k} .taxonomyCount`);if(el&&el.textContent!==String(n))el.textContent=String(n)});const cat=document.querySelector('[data-taxonomy-view]');if(cat){const mode=cat.getAttribute('data-taxonomy-view');if(mode&&mode!=='root'&&c[mode]!=null){const p=cat.querySelector('.taxonomyCategoryHead p');if(p){const en=document.documentElement.lang==='en';const value=en?`${c[mode]} items`:`${c[mode]} elementos`;if(p.textContent.trim()!==value)p.textContent=value}}}}catch(_){}}
+const obs=new MutationObserver(()=>requestAnimationFrame(apply));obs.observe(document.documentElement,{childList:true,subtree:true});setInterval(apply,500);apply();
+})();
