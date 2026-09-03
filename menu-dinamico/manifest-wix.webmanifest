@@ -1,0 +1,13 @@
+{
+  "name": "Recetario dinámico · Menú 9:26 a 12:26",
+  "short_name": "Recetario",
+  "description": "Recetario dinámico de Nexo Group.",
+  "start_url": "https://dtokurisu.wixstudio.com/my-site-1/blank-4",
+  "scope": "https://dtokurisu.wixstudio.com/my-site-1/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fffdfa",
+  "theme_color": "#171511",
+  "lang": "es",
+  "icons": [{"src":"https://dtokurisu-png.github.io/nexo-inventory-smart/menu-dinamico/pwa-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
