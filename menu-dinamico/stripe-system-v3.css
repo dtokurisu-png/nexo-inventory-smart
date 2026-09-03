@@ -1,0 +1,144 @@
+:root{
+  --dm-dish:#b45440;
+  --dm-prep:#2f7767;
+  --dm-product:#b9852e;
+  --dm-cut:#d66f9f;
+  --dm-unit-count:#22b8c7;
+  --cut:var(--dm-cut);
+  --count:var(--dm-unit-count);
+}
+
+/*
+  UNIFIED STRIPE SYSTEM V3
+  The colored stripe is rendered as a zero-blur shadow shifted downward.
+  This makes it sit BEHIND the card instead of consuming space inside it.
+*/
+.recipeCard::before,
+.recipeCard::after,
+.taxonomyMaster::after,
+.taxonomyProductBase::after,
+.taxonomyProductPrep::after,
+.modal .photos>.photo::after,
+.recipeView.nexoDetailDish .hero::after,
+.recipeView.nexoDetailPrep .hero::after{
+  content:none!important;
+  display:none!important;
+}
+
+/* Category/library cards: stripe behind the bottom edge. */
+.recipeCard{
+  --dm-stripe:var(--dm-product);
+  border-bottom:1px solid var(--line)!important;
+  border-radius:18px!important;
+  overflow:hidden!important;
+  margin-bottom:11px!important;
+  box-shadow:0 10px 0 var(--dm-stripe),0 17px 28px rgba(25,20,14,.08)!important;
+}
+.recipeCard.cardDish{--dm-stripe:var(--dm-dish)}
+.recipeCard.cardPrep{--dm-stripe:var(--dm-prep)}
+.recipeCard.cardProduct{--dm-stripe:var(--dm-product)}
+.recipeCard>.meta{padding-bottom:14px!important}
+
+/* Main category cards. */
+.taxonomyMaster{
+  --dm-stripe:var(--dm-product);
+  border-bottom:1px solid var(--line)!important;
+  border-radius:18px!important;
+  overflow:hidden!important;
+  margin-bottom:11px!important;
+  padding-bottom:24px!important;
+  box-shadow:0 10px 0 var(--dm-stripe),0 17px 28px rgba(25,20,14,.08)!important;
+}
+.taxonomyMaster.dish{--dm-stripe:var(--dm-dish)}
+.taxonomyMaster.prep{--dm-stripe:var(--dm-prep)}
+.taxonomyMaster.product{--dm-stripe:var(--dm-product)}
+
+/* Opened dish/preparation: make the identity stripe clearly visible below the hero image. */
+.recipeView.nexoDetailDish .hero,
+.recipeView.nexoDetailPrep .hero{
+  border-bottom:0!important;
+  padding-bottom:0!important;
+  overflow:visible!important;
+}
+.recipeView.nexoDetailDish .heroImage,
+.recipeView.nexoDetailPrep .heroImage{
+  margin-bottom:11px!important;
+  box-shadow:0 10px 0 var(--dm-prep),0 16px 24px rgba(25,20,14,.07)!important;
+}
+.recipeView.nexoDetailDish .heroImage{
+  box-shadow:0 10px 0 var(--dm-dish),0 16px 24px rgba(25,20,14,.07)!important;
+}
+
+/* Ingredient modal: base product mustard, preparation/cut pink. */
+.modal .photos>.photo{
+  --dm-stripe:var(--dm-product);
+  border-bottom:1px solid var(--line)!important;
+  border-radius:16px!important;
+  overflow:hidden!important;
+  margin-bottom:11px!important;
+  padding-bottom:0!important;
+  box-shadow:0 10px 0 var(--dm-stripe),0 15px 22px rgba(25,20,14,.07)!important;
+}
+.modal .photos>.photo:first-child{--dm-stripe:var(--dm-product)}
+.modal .photos>.photo:nth-child(n+2){--dm-stripe:var(--dm-cut)}
+.modal .photos>.photo .photoBody{padding-bottom:14px!important}
+
+/* Product browser modal cards. */
+.taxonomyProductBase,
+.taxonomyProductPrep{
+  border-bottom:1px solid var(--line)!important;
+  overflow:hidden!important;
+  margin-bottom:11px!important;
+  padding-bottom:0!important;
+  box-shadow:0 10px 0 var(--dm-product),0 15px 22px rgba(25,20,14,.07)!important;
+}
+.taxonomyProductBase{border-radius:16px!important}
+.taxonomyProductPrep{
+  border-radius:14px!important;
+  box-shadow:0 10px 0 var(--dm-cut),0 15px 22px rgba(25,20,14,.07)!important;
+}
+.taxonomyProductBaseBody,
+.taxonomyProductPrepBody{padding-bottom:13px!important}
+
+/* Preparation/cut is its own pink semantic type. */
+.modal .prep,
+.modal .prep.active{
+  border-color:var(--dm-cut)!important;
+  color:var(--dm-cut)!important;
+}
+
+/* Semantic text colors. */
+.tagDish,.taxonomyMaster.dish .taxonomyLabel{color:var(--dm-dish)!important}
+.tagPrep,.taxonomyMaster.prep .taxonomyLabel{color:var(--dm-prep)!important}
+.tagProduct,.taxonomyMaster.product .taxonomyLabel{color:var(--dm-product)!important}
+
+/* Unit colors. */
+.unitMetricMass{background:var(--metricMass)!important}
+.unitCount{background:var(--dm-unit-count)!important}
+
+@media(max-width:720px){
+  .recipeCard{
+    border-radius:15px!important;
+    margin-bottom:9px!important;
+    box-shadow:0 8px 0 var(--dm-stripe),0 12px 18px rgba(25,20,14,.06)!important;
+  }
+  .taxonomyMaster{
+    border-radius:15px!important;
+    margin-bottom:9px!important;
+    box-shadow:0 8px 0 var(--dm-stripe),0 12px 18px rgba(25,20,14,.06)!important;
+  }
+  .recipeView.nexoDetailDish .heroImage,
+  .recipeView.nexoDetailPrep .heroImage{
+    margin-bottom:9px!important;
+    box-shadow:0 8px 0 var(--dm-prep)!important;
+  }
+  .recipeView.nexoDetailDish .heroImage{box-shadow:0 8px 0 var(--dm-dish)!important}
+  .modal .photos>.photo,
+  .taxonomyProductBase,
+  .taxonomyProductPrep{
+    margin-bottom:9px!important;
+  }
+  .modal .photos>.photo{box-shadow:0 8px 0 var(--dm-stripe)!important}
+  .taxonomyProductBase{box-shadow:0 8px 0 var(--dm-product)!important}
+  .taxonomyProductPrep{box-shadow:0 8px 0 var(--dm-cut)!important}
+}
