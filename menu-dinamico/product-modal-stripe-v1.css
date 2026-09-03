@@ -1,0 +1,27 @@
+.taxonomyProductBase,
+.taxonomyProductPrep{
+  position:relative!important;
+  overflow:hidden!important;
+}
+.taxonomyProductBase::after,
+.taxonomyProductPrep::after{
+  content:""!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  height:8px!important;
+  background:var(--product)!important;
+  z-index:5!important;
+  pointer-events:none!important;
+}
+.taxonomyProductBaseBody,
+.taxonomyProductPrepBody{
+  padding-bottom:18px!important;
+}
+@media(max-width:720px){
+  .taxonomyProductBase::after,
+  .taxonomyProductPrep::after{height:7px!important}
+  .taxonomyProductBaseBody,
+  .taxonomyProductPrepBody{padding-bottom:17px!important}
+}
