@@ -1,0 +1,9 @@
+(()=>{'use strict';if(window.__NEXO_NAV_CLIENT_V1__)return;window.__NEXO_NAV_CLIENT_V1__=true;
+let hardware=false;
+const tell=(type,payload={})=>{try{window.top.postMessage({type,payload},'*')}catch(_){}};
+function opensDepth(el){if(!el)return false;if(el.matches('[data-taxonomy-open]'))return true;if(el.matches('.recipeCard[data-r]'))return true;if(el.matches('[data-c]'))return true;if(el.matches('[data-unit]'))return true;if(el.id==='legendBtn')return true;if(el.matches('.taxonomyProductCard[data-product-id]:not(.taxonomyNoPhoto)'))return true;return false}
+function closesDepth(el){if(!el)return false;if(el.id==='back'||el.id==='close'||el.id==='taxonomyClose'||el.id==='modalCloseBtn')return true;if(el.dataset?.taxRoot!==undefined)return true;return false}
+document.addEventListener('click',e=>{const el=e.target.closest?.('button,[data-c],[data-unit],[data-r],[data-taxonomy-open],[data-product-id]');if(!el)return;if(el.id==='home'){if(!hardware)setTimeout(()=>tell('NEXO_APP_RESET'),0);return}if(hardware)return;if(opensDepth(el)){setTimeout(()=>tell('NEXO_APP_PUSH',{kind:el.id||el.dataset.taxonomyOpen||el.dataset.r||el.dataset.c||'view'}),0);return}if(closesDepth(el)){setTimeout(()=>tell('NEXO_APP_INTERNAL_BACK'),0)}},true);
+document.addEventListener('click',e=>{if(hardware)return;const shade=e.target;if(shade?.id==='shade'||shade?.id==='taxonomyShade')setTimeout(()=>tell('NEXO_APP_INTERNAL_BACK'),0)},true);
+addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(m?.type!=='NEXO_BACK')return;hardware=true;const b=document.getElementById('back');if(b&&!b.classList.contains('hidden'))b.click();else{const c=document.getElementById('close')||document.getElementById('taxonomyClose')||document.getElementById('modalCloseBtn');if(c)c.click();else tell('NEXO_APP_AT_ROOT')}setTimeout(()=>hardware=false,80)});
+tell('NEXO_APP_READY');})();
