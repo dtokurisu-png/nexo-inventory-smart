@@ -1,6 +1,6 @@
 (()=>{'use strict';
 if(window.__NEXO_READING_MAGNIFIER_V1__)return;window.__NEXO_READING_MAGNIFIER_V1__=true;
-const BUILD='Prueba 6';
+const BUILD='Prueba 7';
 function markBuild(){const b=document.getElementById('nexoBuildIndicator');if(b){b.textContent=BUILD;return}setTimeout(markBuild,80)}markBuild();
 const ua=navigator.userAgent||'';
 const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(navigator.maxTouchPoints>0&&Math.min(screen.width||9999,screen.height||9999)<=900);
