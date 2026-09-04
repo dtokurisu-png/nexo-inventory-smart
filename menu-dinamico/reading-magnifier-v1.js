@@ -1,6 +1,6 @@
 (()=>{'use strict';
 if(window.__NEXO_READING_MAGNIFIER_V1__)return;window.__NEXO_READING_MAGNIFIER_V1__=true;
-const BUILD='Prueba 7';
+const BUILD='Prueba 8';
 function markBuild(){const b=document.getElementById('nexoBuildIndicator');if(b){b.textContent=BUILD;return}setTimeout(markBuild,80)}markBuild();
 const ua=navigator.userAgent||'';
 const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(navigator.maxTouchPoints>0&&Math.min(screen.width||9999,screen.height||9999)<=900);
@@ -17,7 +17,7 @@ html.nexoMagnifierActive,html.nexoMagnifierActive body{overscroll-behavior:none}
 document.head.appendChild(style);
 const bubble=document.createElement('div');bubble.id='nexoReadingMagnifier';bubble.setAttribute('aria-hidden','true');document.body.appendChild(bubble);
 let timer=null,active=false,startX=0,startY=0,lastX=0,lastY=0,suppressClickUntil=0,pendingTarget=null;
-const blocked='input,textarea,select,[contenteditable="true"],.miseCheck,.mopCheck,.icon,.lang,.installBtn,.taxonomyImageClose,.photoAction,.photoBtn';
+const blocked='input,textarea,select,[contenteditable="true"],.miseCheck,.mopCheck,.icon,.lang,.installBtn,.taxonomyImageClose,.taxonomyProductPhotoBtn,.heroPhotoBtn,[data-photo-target],#nexoPhotoLayer,.photoAction,.photoBtn';
 function eligible(el){if(!el||el.nodeType!==1)return false;if(el.closest(blocked))return false;const t=(el.textContent||'').replace(/\s+/g,' ').trim();return t.length>0}
 function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
 function caretAt(x,y){try{if(document.caretPositionFromPoint){const p=document.caretPositionFromPoint(x,y);if(p&&p.offsetNode)return{node:p.offsetNode,offset:p.offset}}if(document.caretRangeFromPoint){const r=document.caretRangeFromPoint(x,y);if(r)return{node:r.startContainer,offset:r.startOffset}}}catch(_){}return null}
