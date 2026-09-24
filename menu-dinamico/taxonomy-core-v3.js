@@ -1,6 +1,6 @@
 (()=>{'use strict';
 if(window.__NEXO_TAXONOMY_CORE_V3__)return;window.__NEXO_TAXONOMY_CORE_V3__=true;
-const BUILD='Prueba 15';
+const BUILD='Prueba 16';
 const view=document.getElementById('view'),back=document.getElementById('back'),home=document.getElementById('home'),modal=document.getElementById('modal');
 if(!view||!back||!home||!modal)return;
 const mobileDevice=()=>{const ua=navigator.userAgent||'';return navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||Math.min(screen.width||9999,screen.height||9999)<=900};
@@ -83,6 +83,11 @@ html.nexoMobile .legend{gap:4px!important}
 html.nexoMobile .legendRow{grid-template-columns:8px 1fr!important;gap:4px!important}
 html.nexoMobile .swatch{width:8px!important;height:8px!important;border-radius:2px!important;margin-top:1px!important}
 html.nexoMobile .status{padding:5px 6px!important;border-radius:5px!important;bottom:max(6px,env(safe-area-inset-bottom))!important}
+html.nexoMobile .recipeCard .thumb,html.nexoMobile .taxonomyCategory .recipeCard .thumb{aspect-ratio:1/1!important}
+html.nexoMobile .recipeCard .thumb img,html.nexoMobile .taxonomyCategory .recipeCard .thumb img{width:100%!important;height:100%!important;object-fit:contain!important;background:#111!important}
+html.nexoMobile .heroPhotoBtn{right:4px!important;bottom:4px!important;width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;padding:0!important;border-radius:999px!important;font-size:0!important;line-height:1!important;display:grid!important;place-items:center!important}
+html.nexoMobile .heroPhotoBtn::before{content:"📷";font-size:11px!important;line-height:1!important}
+
 
 `;
 document.head.appendChild(style);
