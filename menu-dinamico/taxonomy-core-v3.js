@@ -1,6 +1,6 @@
 (()=>{'use strict';
 if(window.__NEXO_TAXONOMY_CORE_V3__)return;window.__NEXO_TAXONOMY_CORE_V3__=true;
-const BUILD='Prueba 13';
+const BUILD='Prueba 14';
 const view=document.getElementById('view'),back=document.getElementById('back'),home=document.getElementById('home'),modal=document.getElementById('modal');
 if(!view||!back||!home||!modal)return;
 const mobileDevice=()=>{const ua=navigator.userAgent||'';return navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||Math.min(screen.width||9999,screen.height||9999)<=900};
@@ -17,6 +17,73 @@ html.nexoMobile,html.nexoMobile body{font-size:10px!important;background:var(--p
 html.nexoMobile .taxonomyHome,html.nexoMobile .taxonomyCategory{padding:18px 12px 30px!important}html.nexoMobile .taxonomyGrid{grid-template-columns:1fr!important;gap:20px!important}html.nexoMobile .taxonomyMaster{width:100%!important;min-height:190px!important;padding:24px 21px 30px!important;border-radius:20px!important;margin-bottom:13px!important;box-shadow:0 11px 0 var(--masterStripe),0 19px 29px rgba(25,20,14,.09)!important}html.nexoMobile .taxonomyMaster h2{margin:40px 0 8px!important;font-size:14px!important;line-height:1.08!important}html.nexoMobile .taxonomyMaster p{font-size:11px!important;line-height:1.42!important}html.nexoMobile .taxonomyLabel{font-size:10px!important}html.nexoMobile .taxonomyMaster.dish .taxonomyLabel{font-size:9px!important}html.nexoMobile .taxonomyCount{right:18px!important;top:18px!important;min-width:49px!important;height:49px!important;font-size:11px!important}html.nexoMobile .taxonomyCategoryHead{align-items:center!important}html.nexoMobile .taxonomyCategoryHead h1{font-size:15px!important}html.nexoMobile .taxonomyCategoryHead p{font-size:11px!important}html.nexoMobile .taxonomyBackHint,html.nexoMobile .taxonomyCategory .search{font-size:11px!important}html.nexoMobile .taxonomyBackHint{padding:12px 13px!important}html.nexoMobile .taxonomyCategory .grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}html.nexoMobile .taxonomyCategory .recipeCard{display:block!important;width:100%!important;min-height:0!important;border-radius:17px!important;overflow:hidden!important}html.nexoMobile .nexoNewStar{right:9px!important;top:9px!important;width:45px!important;height:45px!important;font-size:18px!important}html.nexoMobile .taxonomyCategory .recipeCard .thumb{width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:4/3!important}html.nexoMobile .taxonomyCategory .recipeCard .meta{display:block!important;padding:14px 12px 18px!important}html.nexoMobile .taxonomyCategory .recipeCard .tag{font-size:10px!important;margin-bottom:8px!important}html.nexoMobile .taxonomyCategory .recipeCard .tagDish{font-size:9px!important}html.nexoMobile .taxonomyCategory .recipeCard .meta h3{font-size:11px!important;line-height:1.2!important;margin:0!important;overflow-wrap:anywhere!important}html.nexoMobile .taxonomyCategory .recipeCard .muted{font-size:11px!important;line-height:1.3!important}html.nexoMobile .taxonomyProductPhotoBtn{width:calc(100% - 20px)!important;margin:0 10px 20px!important;min-height:56px!important;border-radius:14px!important;font-size:10px!important;padding:9px 10px!important}
 html.nexoMobile .recipeView{position:relative!important;min-height:calc(100dvh - 64px)!important;background:var(--panel)!important;padding:0 0 34px!important}html.nexoMobile .crumbs{display:none!important}html.nexoMobile .hero{display:flex!important;flex-direction:column!important;gap:0!important}html.nexoMobile .heroText{order:-1!important;padding:20px 14px 16px!important;border-bottom:1px solid var(--line)!important}html.nexoMobile .heroText h1{font-size:16px!important;margin:4px 0 10px!important;line-height:1.02!important}html.nexoMobile .heroText .tag{font-size:10px!important}html.nexoMobile .heroText .tagDish{font-size:9px!important}html.nexoMobile .yield{font-size:10px!important;padding:10px 12px!important}html.nexoMobile .heroImage{width:100%!important;min-height:0!important;aspect-ratio:16/9!important;border:0!important;border-radius:0!important}html.nexoMobile .sections{margin:0!important;gap:0!important}html.nexoMobile .section{padding:18px 14px!important;border:0!important;border-bottom:8px solid var(--bg)!important;border-radius:0!important}html.nexoMobile .section h2{font-size:12px!important;line-height:1.25!important}html.nexoMobile .row{padding:17px 1px!important;min-height:72px!important;gap:8px!important}html.nexoMobile .qty{font-size:10px!important}html.nexoMobile .unitBtn{font-size:11px!important}html.nexoMobile .name{font-size:10px!important;line-height:1.42!important}html.nexoMobile .nameSubrecipe,html.nexoMobile .nameProduct{font-size:12px!important}html.nexoMobile .note{font-size:11px!important;line-height:1.42!important;margin-top:5px!important}html.nexoMobile .mop,html.nexoMobile .mopStepText{font-size:11px!important;line-height:1.7!important}html.nexoMobile .progressLegend{font-size:10px!important}html.nexoMobile .reviewAlert{font-size:9px!important}html.nexoMobile .miseCheck,html.nexoMobile .mopCheck{width:39px!important;height:39px!important;min-width:39px!important;border-radius:11px!important;font-size:18px!important}
 html.nexoMobile .modalShade{align-items:center!important;justify-content:center!important;padding:14px!important}html.nexoMobile .modal{width:calc(100vw - 28px)!important;height:auto!important;max-height:82dvh!important;border-radius:22px!important}html.nexoMobile .modalHead h2{font-size:12px!important}html.nexoMobile .modalText{font-size:11px!important}html.nexoMobile .photoBody p,html.nexoMobile .prep,html.nexoMobile .secondary{font-size:10px!important}html.nexoMobile .primary{font-size:11px!important}html.nexoMobile .legendRow small{font-size:11px!important}html.nexoMobile .legendRow b{font-size:10px!important}html.nexoMobile .photos{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}html.nexoMobile .photoBody h3{font-size:10px!important}html.nexoMobile .status{font-size:11px!important}
+html.nexoMobile .topbar{padding:4px 5px!important;gap:3px!important}
+html.nexoMobile .icon,html.nexoMobile .lang,html.nexoMobile .installBtn{height:23px!important;min-height:23px!important;border-radius:5px!important}
+html.nexoMobile .icon{width:23px!important;min-width:23px!important}
+html.nexoMobile .lang,html.nexoMobile .installBtn{padding:0 5px!important}
+html.nexoMobile .brand{gap:4px!important}
+html.nexoMobile main{padding:0 0 max(37px,env(safe-area-inset-bottom))!important}
+html.nexoMobile .homeView{padding:8px 5px 13px!important}
+html.nexoMobile .subtitle{margin-bottom:8px!important}
+html.nexoMobile .search{padding:7px 7px!important;border-radius:6px!important}
+html.nexoMobile .chips{gap:4px!important;padding:5px 0!important}
+html.nexoMobile .chip{padding:4px 6px!important;border-radius:999px!important}
+
+html.nexoMobile .taxonomyHome,html.nexoMobile .taxonomyCategory{padding:8px 5px 14px!important}
+html.nexoMobile .taxonomyIntro{margin-bottom:8px!important}
+html.nexoMobile .taxonomyGrid{gap:9px!important}
+html.nexoMobile .taxonomyMaster{min-height:86px!important;padding:11px 9px 14px!important;border-radius:9px!important;margin-bottom:6px!important;box-shadow:0 5px 0 var(--masterStripe),0 8px 13px rgba(25,20,14,.09)!important}
+html.nexoMobile .taxonomyMaster h2{margin:18px 0 4px!important}
+html.nexoMobile .taxonomyLabel{padding:2px 4px!important}
+html.nexoMobile .taxonomyCount{right:8px!important;top:8px!important;min-width:22px!important;height:22px!important;padding:0 4px!important}
+html.nexoMobile .taxonomyCategoryHead{gap:5px!important;margin-bottom:5px!important}
+html.nexoMobile .taxonomyCategoryHead p{margin-top:2px!important}
+html.nexoMobile .taxonomyBackHint{padding:5px 6px!important;border-radius:6px!important}
+html.nexoMobile .taxonomyCategory .search{margin-bottom:7px!important}
+html.nexoMobile .taxonomyCategory .grid{gap:6px!important}
+html.nexoMobile .taxonomyCategory .recipeCard{border-radius:8px!important}
+html.nexoMobile .nexoNewStar{right:4px!important;top:4px!important;width:20px!important;height:20px!important}
+html.nexoMobile .taxonomyCategory .recipeCard .meta{padding:6px 5px 8px!important}
+html.nexoMobile .taxonomyCategory .recipeCard .tag{padding:2px 4px!important;margin-bottom:3px!important}
+html.nexoMobile .taxonomyProductPhotoBtn{width:calc(100% - 10px)!important;margin:0 5px 9px!important;min-height:25px!important;border-radius:6px!important;padding:4px 5px!important}
+
+html.nexoMobile .recipeView{min-height:calc(100dvh - 29px)!important;padding:0 0 15px!important}
+html.nexoMobile .heroText{padding:9px 6px 7px!important}
+html.nexoMobile .heroText h1{margin:2px 0 5px!important}
+html.nexoMobile .yield{padding:4px 5px!important;border-radius:5px!important}
+html.nexoMobile .sections{gap:0!important}
+html.nexoMobile .section{padding:8px 6px!important;border-bottom-width:4px!important}
+html.nexoMobile .section h2{margin:0 0 5px!important}
+html.nexoMobile .row{grid-template-columns:minmax(42px,56px) minmax(0,1fr) 18px 10px!important;gap:4px!important;padding:7px 1px!important;min-height:32px!important}
+html.nexoMobile .row>.qty{column-gap:2px!important;font-size:10px!important}
+html.nexoMobile .row>.qty::before{min-height:15px!important;margin:2px 0!important}
+html.nexoMobile .row>.qty .unitBtn{min-width:19px!important;width:auto!important;height:14px!important;min-height:14px!important;padding:0 4px!important;border-radius:999px!important;font-size:8px!important}
+html.nexoMobile .row>.qty .unitBtn>.unitGlyph{font-size:8px!important}
+html.nexoMobile .unitBtn{padding:2px 4px!important;border-radius:999px!important}
+html.nexoMobile .chev{font-size:11px!important}
+html.nexoMobile .miseCheck,html.nexoMobile .mopCheck{width:18px!important;height:18px!important;min-width:18px!important;border-width:1px!important;border-radius:5px!important;font-size:10px!important}
+html.nexoMobile .mopSteps{gap:2px!important}
+html.nexoMobile .mopStep{grid-template-columns:18px minmax(0,1fr)!important;gap:4px!important;padding:5px 0!important}
+html.nexoMobile .progressLegend{padding:2px 4px!important;border-radius:999px!important}
+html.nexoMobile .sectionHeader{gap:4px!important}
+
+html.nexoMobile .modalShade{padding:6px!important}
+html.nexoMobile .modal{width:calc(100vw - 12px)!important;max-height:90dvh!important;border-radius:10px!important;padding:6px 7px 9px!important}
+html.nexoMobile .modalHead{top:-6px!important;margin:-6px -7px 5px!important;padding:5px 7px!important;gap:4px!important;border-radius:10px 10px 0 0!important}
+html.nexoMobile .modalActions{gap:4px!important;margin-top:7px!important}
+html.nexoMobile .primary,html.nexoMobile .secondary{padding:5px 6px!important;border-radius:5px!important}
+html.nexoMobile .prepList{gap:3px!important;margin-bottom:6px!important}
+html.nexoMobile .prep{padding:4px 5px!important}
+html.nexoMobile .photos{gap:5px!important}
+html.nexoMobile .photo{border-radius:7px!important}
+html.nexoMobile .photoBody{padding:5px!important}
+html.nexoMobile .photoBody h3{margin-bottom:2px!important}
+html.nexoMobile .photoBody p{margin:2px 0 5px!important}
+html.nexoMobile .legend{gap:4px!important}
+html.nexoMobile .legendRow{grid-template-columns:8px 1fr!important;gap:4px!important}
+html.nexoMobile .swatch{width:8px!important;height:8px!important;border-radius:2px!important;margin-top:1px!important}
+html.nexoMobile .status{padding:5px 6px!important;border-radius:5px!important;bottom:max(6px,env(safe-area-inset-bottom))!important}
+
 `;
 document.head.appendChild(style);
 const lang=()=>document.documentElement.lang==='en'?'en':'es';const tr=(es,en)=>lang()==='en'?en:es;const text=(o,enKey,esKey)=>lang()==='en'?(o?.[enKey]||o?.[esKey]||''):(o?.[esKey]||o?.[enKey]||'');const img=x=>x&&(x.url||x.image?.url||x.src)||'';const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
