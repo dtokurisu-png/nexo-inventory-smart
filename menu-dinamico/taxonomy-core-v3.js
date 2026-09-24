@@ -1,6 +1,6 @@
 (()=>{'use strict';
 if(window.__NEXO_TAXONOMY_CORE_V3__)return;window.__NEXO_TAXONOMY_CORE_V3__=true;
-const BUILD='Prueba 14';
+const BUILD='Prueba 15';
 const view=document.getElementById('view'),back=document.getElementById('back'),home=document.getElementById('home'),modal=document.getElementById('modal');
 if(!view||!back||!home||!modal)return;
 const mobileDevice=()=>{const ua=navigator.userAgent||'';return navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||Math.min(screen.width||9999,screen.height||9999)<=900};
@@ -94,8 +94,9 @@ function renderRoot(){state.applying=true;const recipes=activeRecipes(),dishes=r
 function productCard(p){const u=img(p.baseImage),name=text(p,'nameEn','nameEs'),photoLabel=u?tr('Cambiar foto','Change photo'):tr('Tomar foto','Take photo');const body=`<div class="thumb">${u?`<img src="${esc(u)}" alt="${esc(name)}">`:`<span class="muted">${esc(tr('Sin foto','No photo'))}</span>`}</div><div class="meta"><span class="tag tagProduct">${esc(tr('Productos','Products'))}</span><h3>${esc(name)}</h3><span class="muted">${esc(tr('Producto base','Base product'))}</span></div>`;return`<article class="card recipeCard cardProduct taxonomyProductCard ${u?'':'taxonomyNoPhoto'}" data-product-id="${esc(p._id)}">${u?`<button class="taxonomyProductOpen" data-product-open="${esc(p._id)}">${body}</button>`:`<div class="taxonomyProductOpen">${body}</div>`}<button class="taxonomyProductPhotoBtn" data-product-photo="${esc(p._id)}" type="button">📷 ${esc(photoLabel)}</button></article>`}
 function recipeCardsFor(mode){const all=[...state.nativeCards.dish,...state.nativeCards.prep];if(!all.length)captureCards();return mode==='dish'?state.nativeCards.dish:state.nativeCards.prep}
 const NEW_RECIPE_MS=30*24*60*60*1000;
+const NEW_BADGE_START_MS=Date.parse('2026-09-24T22:31:04.000Z');
 function createdMs(r){let v=r?._createdDate||r?.createdDate||0;if(v&&typeof v==='object'&&v.$date)v=v.$date;const n=Date.parse(v);return Number.isFinite(n)?n:0}
-function isNewRecipe(r){const n=createdMs(r);if(!n)return false;const age=Date.now()-n;return age>=0&&age<NEW_RECIPE_MS}
+function isNewRecipe(r){const n=createdMs(r);if(!n||n<NEW_BADGE_START_MS)return false;const age=Date.now()-n;return age>=0&&age<NEW_RECIPE_MS}
 function recipeForCard(card){const id=card?.dataset?.r;return id?(data().recipes||[]).find(r=>r._id===id):null}
 function decorateNewCard(card){if(!card)return card;const r=recipeForCard(card),fresh=isNewRecipe(r),old=card.querySelector(':scope > .nexoNewStar');if(fresh&&!old){const b=document.createElement('span');b.className='nexoNewStar';b.textContent='★';b.title=tr('Nueva · menos de 30 días','New · less than 30 days');b.setAttribute('aria-label',b.title);card.appendChild(b)}else if(!fresh&&old)old.remove();return card}
 function sortedRecipeCards(mode){const cards=[...recipeCardsFor(mode)];cards.forEach(decorateNewCard);return cards.sort((a,b)=>{const ra=recipeForCard(a),rb=recipeForCard(b),na=isNewRecipe(ra),nb=isNewRecipe(rb);if(na!==nb)return na?-1:1;if(na&&nb){const d=createdMs(rb)-createdMs(ra);if(d)return d}return Number(ra?.sortOrder||0)-Number(rb?.sortOrder||0)})}
