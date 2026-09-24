@@ -1,6 +1,6 @@
 (()=>{'use strict';
 if(window.__NEXO_TAXONOMY_CORE_V3__)return;window.__NEXO_TAXONOMY_CORE_V3__=true;
-const BUILD='Prueba 16';
+const BUILD='Prueba 17';
 const view=document.getElementById('view'),back=document.getElementById('back'),home=document.getElementById('home'),modal=document.getElementById('modal');
 if(!view||!back||!home||!modal)return;
 const mobileDevice=()=>{const ua=navigator.userAgent||'';return navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||Math.min(screen.width||9999,screen.height||9999)<=900};
@@ -87,6 +87,56 @@ html.nexoMobile .recipeCard .thumb,html.nexoMobile .taxonomyCategory .recipeCard
 html.nexoMobile .recipeCard .thumb img,html.nexoMobile .taxonomyCategory .recipeCard .thumb img{width:100%!important;height:100%!important;object-fit:contain!important;background:#111!important}
 html.nexoMobile .heroPhotoBtn{right:4px!important;bottom:4px!important;width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;padding:0!important;border-radius:999px!important;font-size:0!important;line-height:1!important;display:grid!important;place-items:center!important}
 html.nexoMobile .heroPhotoBtn::before{content:"📷";font-size:11px!important;line-height:1!important}
+html.nexoMobile .taxonomyProductCard .thumb,
+html.nexoMobile .cardProduct .thumb,
+html.nexoMobile .cardDish .thumb,
+html.nexoMobile .cardPrep .thumb{
+  aspect-ratio:1/1!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important
+}
+html.nexoMobile .taxonomyProductCard .thumb img,
+html.nexoMobile .cardProduct .thumb img,
+html.nexoMobile .cardDish .thumb img,
+html.nexoMobile .cardPrep .thumb img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  background:#111!important
+}
+html.nexoMobile .heroImage{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:1/1!important;
+  border:0!important;
+  border-radius:0!important;
+  background:#111!important
+}
+html.nexoMobile .heroImage img{
+  width:100%!important;
+  height:100%!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  background:#111!important
+}
+html.nexoMobile .photos .photo .pic,
+html.nexoMobile .photo .pic{
+  aspect-ratio:1/1!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  background:#111!important
+}
+html.nexoMobile .photos .photo .pic img,
+html.nexoMobile .photo .pic img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  background:#111!important
+}
+
 
 
 `;
