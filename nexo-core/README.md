@@ -56,3 +56,9 @@ Esta carpeta documenta el núcleo común de identidad y espacios de Nexo Group.
 7. Al volver a “Mi espacio”, el contexto vuelve a `personal`.
 
 La Etapa 1 no define todavía suscripciones, cobros ni planes. Eso se conectará después mediante entitlements sin cambiar el modelo de identidad.
+
+## Etapa 2
+
+La interfaz **Mi espacio** y el servicio autenticado están en `stage-2/` y `wix/`.
+
+Etapa 2 añade la colección `NexoToolCatalog` para que las herramientas se definan desde datos y no queden hardcodeadas en la interfaz. El aprovisionamiento de cuentas nuevas es perezoso e idempotente: el primer acceso autenticado a Mi espacio crea cualquier registro Core faltante.
