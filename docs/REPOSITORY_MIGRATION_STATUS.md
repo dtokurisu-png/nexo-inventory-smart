@@ -1,3 +1,5 @@
+> **Moved:** The canonical Nexo Group monorepo is now `dtokurisu-png/Nexo-group`. This document is retained here only as migration history/compatibility context.
+
 # Nexo Group — Repository Migration Ledger
 
 Last review: 2026-09-25
