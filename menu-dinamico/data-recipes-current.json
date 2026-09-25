@@ -451,11 +451,8 @@
       "active": true,
       "sortOrder": 28,
       "originalLanguage": "en",
-      "yieldQty": 3.5,
-      "yieldUnitEn": "oz",
-      "yieldUnitEs": "oz",
-      "notesEn": "Assembly in the master uses 3.5 oz raw diced salmon, 30 g Miso Sauce, and 3 g sliced green onions.",
-      "notesEs": "El montaje del master usa 3.5 oz de salmón crudo en dados, 30 g de salsa de miso y 3 g de cebolla verde rebanada.",
+      "notesEn": "The master provides an Assembly (3.5 oz raw diced salmon + 30 g Miso Sauce + 3 g sliced green onions) but does not state a yield for the finished tartar.",
+      "notesEs": "El master proporciona un montaje (3.5 oz de salmón crudo en dados + 30 g de salsa de miso + 3 g de cebolla verde rebanada), pero no indica un rendimiento para el tartar terminado.",
       "_createdDate": "2026-09-24T22:31:05.000Z"
     },
     {
