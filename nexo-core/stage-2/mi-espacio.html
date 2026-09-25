@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Nexo · Mi espacio</title>
+  <link rel="stylesheet" href="./mi-espacio.css?v=20260925-1">
+</head>
+<body>
+  <main class="appShell" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brandMark">N</span>
+        <div>
+          <strong>NEXO</strong>
+          <small id="contextLabel">Mi espacio</small>
+        </div>
+      </div>
+      <div class="topActions">
+        <button class="ghostBtn hidden" id="backPersonalBtn">← Mi espacio</button>
+        <button class="avatarBtn" id="profileBtn" aria-label="Perfil">
+          <span id="avatarInitial">N</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="loadingState" id="loadingState">
+      <div class="spinner"></div>
+      <p>Cargando tu espacio…</p>
+    </section>
+
+    <section class="errorState hidden" id="errorState">
+      <div class="errorIcon">!</div>
+      <h2>No pudimos cargar Nexo</h2>
+      <p id="errorText">Intenta nuevamente.</p>
+      <button class="primaryBtn" id="retryBtn">Reintentar</button>
+    </section>
+
+    <section class="personalView hidden" id="personalView">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">MI ESPACIO</p>
+          <h1 id="welcomeTitle">Hola</h1>
+          <p class="heroText">Tus herramientas, invitaciones y espacios de trabajo en un solo lugar.</p>
+        </div>
+        <div class="contextPill">Personal</div>
+      </div>
+
+      <section class="sectionBlock">
+        <div class="sectionHead">
+          <div>
+            <p class="eyebrow">PERSONAL</p>
+            <h2>Tus herramientas</h2>
+          </div>
+        </div>
+        <div class="cardGrid" id="toolGrid"></div>
+        <div class="emptyCard hidden" id="toolEmpty">
+          <span class="emptyIcon">◇</span>
+          <strong>No hay herramientas personales activas</strong>
+          <p>Cuando una herramienta esté disponible para tu cuenta aparecerá aquí.</p>
+        </div>
+      </section>
+
+      <section class="sectionBlock" id="invitationSection">
+        <div class="sectionHead">
+          <div>
+            <p class="eyebrow">INVITACIONES</p>
+            <h2>Pendientes</h2>
+          </div>
+          <span class="countBadge" id="invitationCount">0</span>
+        </div>
+        <div class="stack" id="invitationList"></div>
+        <div class="emptyLine hidden" id="invitationEmpty">No tienes invitaciones pendientes.</div>
+      </section>
+
+      <section class="sectionBlock">
+        <div class="sectionHead">
+          <div>
+            <p class="eyebrow">TRABAJO</p>
+            <h2>Espacios de trabajo</h2>
+          </div>
+          <span class="countBadge" id="workspaceCount">0</span>
+        </div>
+        <div class="workspaceGrid" id="workspaceGrid"></div>
+        <div class="emptyCard hidden" id="workspaceEmpty">
+          <span class="emptyIcon">⌂</span>
+          <strong>Aún no perteneces a un espacio de trabajo</strong>
+          <p>Cuando un administrador te invite, aparecerá aquí.</p>
+        </div>
+      </section>
+    </section>
+
+    <section class="workspaceView hidden" id="workspaceView">
+      <div class="hero workspaceHero">
+        <div>
+          <p class="eyebrow">ESPACIO DE TRABAJO</p>
+          <h1 id="workspaceTitle">Workspace</h1>
+          <p class="heroText" id="workspaceDescription"></p>
+        </div>
+        <div class="contextPill workspacePill" id="workspaceRole">Colaborador</div>
+      </div>
+
+      <section class="sectionBlock">
+        <div class="sectionHead">
+          <div>
+            <p class="eyebrow">HERRAMIENTAS</p>
+            <h2>Disponibles en este espacio</h2>
+          </div>
+        </div>
+        <div class="cardGrid" id="workspaceToolGrid"></div>
+      </section>
+
+      <section class="stageNotice">
+        <span>ETAPA 2</span>
+        <div>
+          <strong>El cambio de contexto ya está funcionando.</strong>
+          <p>La administración de miembros, horarios y tareas se construirá sobre este Workspace en las siguientes etapas.</p>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script src="./mi-espacio.js?v=20260925-1"></script>
+</body>
+</html>
