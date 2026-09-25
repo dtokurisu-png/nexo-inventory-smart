@@ -864,7 +864,7 @@
       "displayEn": "Shallots, sliced",
       "displayEs": "Chalotas, rebanadas",
       "targetRecipeId": "",
-      "targetIngredientId": "shallot",
+      "targetIngredientId": "c3149107-d25b-46ea-8914-a1c929d802c9",
       "targetPreparationId": "shallot-sliced",
       "sortOrder": 8,
       "noteEn": "",
@@ -2240,7 +2240,7 @@
       "displayEn": "Shallot (about 90g), finely chopped",
       "displayEs": "Chalota (aprox. 90g), finamente picada",
       "targetRecipeId": "",
-      "targetIngredientId": "shallot",
+      "targetIngredientId": "c3149107-d25b-46ea-8914-a1c929d802c9",
       "targetPreparationId": "shallot-finely-chopped",
       "sortOrder": 1,
       "noteEn": "",
@@ -2256,7 +2256,7 @@
       "displayEn": "Garlic clove (about 30g), minced",
       "displayEs": "Diente de ajo (aprox. 30g), picado fino",
       "targetRecipeId": "",
-      "targetIngredientId": "garlic",
+      "targetIngredientId": "garlic-cloves",
       "targetPreparationId": "garlic-minced",
       "sortOrder": 2,
       "noteEn": "",
@@ -3136,7 +3136,7 @@
       "displayEn": "Garlic, Crushed",
       "displayEs": "Ajo, machacado",
       "targetRecipeId": "",
-      "targetIngredientId": "garlic",
+      "targetIngredientId": "garlic-cloves",
       "targetPreparationId": "garlic-crushed",
       "sortOrder": 4,
       "noteEn": "",
@@ -3712,7 +3712,7 @@
       "displayEn": "Shallot, roughly chopped",
       "displayEs": "Chalota, picada en trozos grandes",
       "targetRecipeId": "",
-      "targetIngredientId": "shallot",
+      "targetIngredientId": "c3149107-d25b-46ea-8914-a1c929d802c9",
       "targetPreparationId": "shallot-roughly-chopped",
       "sortOrder": 6,
       "noteEn": "",
@@ -4016,7 +4016,7 @@
       "displayEn": "Shallots, brunoised",
       "displayEs": "Chalotas, brunoise",
       "targetRecipeId": "",
-      "targetIngredientId": "shallot",
+      "targetIngredientId": "c3149107-d25b-46ea-8914-a1c929d802c9",
       "targetPreparationId": "shallot-brunoise",
       "sortOrder": 6,
       "noteEn": "",
@@ -4176,7 +4176,7 @@
       "displayEn": "Garlic clove (lightly crushed)",
       "displayEs": "Diente de ajo (ligeramente machacado)",
       "targetRecipeId": "",
-      "targetIngredientId": "garlic",
+      "targetIngredientId": "garlic-cloves",
       "targetPreparationId": "garlic-light-crushed",
       "sortOrder": 4,
       "noteEn": "",
@@ -4896,7 +4896,7 @@
       "displayEn": "Garlic cloves",
       "displayEs": "Dientes de ajo",
       "targetRecipeId": "",
-      "targetIngredientId": "garlic",
+      "targetIngredientId": "garlic-cloves",
       "targetPreparationId": "",
       "sortOrder": 5,
       "noteEn": "",
@@ -5731,13 +5731,6 @@
       "sortOrder": 353
     },
     {
-      "_id": "sugar",
-      "nameEn": "Granulated Sugar",
-      "nameEs": "Azúcar granulada",
-      "active": true,
-      "sortOrder": 354
-    },
-    {
       "_id": "fresh-lime-juice",
       "nameEn": "Fresh Lime Juice",
       "nameEs": "Jugo de lima fresco",
@@ -5771,26 +5764,47 @@
       "nameEs": "Clavos de olor",
       "active": true,
       "sortOrder": 359
+    },
+    {
+      "_id": "salt",
+      "nameEn": "Salt",
+      "nameEs": "Sal",
+      "active": true,
+      "sortOrder": 360
+    },
+    {
+      "_id": "sumac",
+      "nameEn": "Sumac",
+      "nameEs": "Zumaque",
+      "active": true,
+      "sortOrder": 361
+    },
+    {
+      "_id": "evoo",
+      "nameEn": "Extra Virgin Olive Oil",
+      "nameEs": "Aceite de oliva extra virgen",
+      "active": true,
+      "sortOrder": 362
     }
   ],
   "preparations": [
     {
       "_id": "garlic-crushed",
-      "ingredientId": "garlic",
+      "ingredientId": "garlic-cloves",
       "nameEn": "Crushed",
       "nameEs": "Machacado",
       "sortOrder": 301
     },
     {
       "_id": "shallot-finely-chopped",
-      "ingredientId": "shallot",
+      "ingredientId": "c3149107-d25b-46ea-8914-a1c929d802c9",
       "nameEn": "Finely chopped",
       "nameEs": "Finamente picada",
       "sortOrder": 302
     },
     {
       "_id": "garlic-minced",
-      "ingredientId": "garlic",
+      "ingredientId": "garlic-cloves",
       "nameEn": "Minced",
       "nameEs": "Picado fino",
       "sortOrder": 303
@@ -5804,7 +5818,7 @@
     },
     {
       "_id": "shallot-roughly-chopped",
-      "ingredientId": "shallot",
+      "ingredientId": "c3149107-d25b-46ea-8914-a1c929d802c9",
       "nameEn": "Roughly chopped",
       "nameEs": "Picada en trozos grandes",
       "sortOrder": 305
@@ -5888,7 +5902,7 @@
     },
     {
       "_id": "garlic-light-crushed",
-      "ingredientId": "garlic",
+      "ingredientId": "garlic-cloves",
       "nameEn": "Lightly crushed",
       "nameEs": "Ligeramente machacado",
       "sortOrder": 1
@@ -5944,7 +5958,7 @@
     },
     {
       "_id": "shallot-sliced",
-      "ingredientId": "shallot",
+      "ingredientId": "c3149107-d25b-46ea-8914-a1c929d802c9",
       "nameEn": "Sliced",
       "nameEs": "Rebanada",
       "sortOrder": 201
@@ -6007,7 +6021,7 @@
     },
     {
       "_id": "shallot-brunoise",
-      "ingredientId": "shallot",
+      "ingredientId": "c3149107-d25b-46ea-8914-a1c929d802c9",
       "nameEn": "Brunoise",
       "nameEs": "Brunoise",
       "sortOrder": 210
@@ -6032,13 +6046,6 @@
       "nameEn": "Chile curls",
       "nameEs": "Rizos de chile",
       "sortOrder": 213
-    },
-    {
-      "_id": "garlic-crushed",
-      "ingredientId": "garlic-cloves",
-      "nameEn": "Crushed",
-      "nameEs": "Machacado",
-      "sortOrder": 309
     },
     {
       "_id": "celery-quartered",
