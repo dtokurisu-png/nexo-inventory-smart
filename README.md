@@ -1,18 +1,15 @@
-# Nexo Group — Master Repository (migration phase)
+# Nexo Inventory Smart — Compatibility / Live Deployment Repository
 
-This repository is now the canonical master repository for the Nexo Group platform while consolidation is in progress.
+The canonical Nexo Group source repository is now **`dtokurisu-png/Nexo-group`**.
 
-> The GitHub repository name remains `nexo-inventory-smart` temporarily so existing GitHub Pages and Wix integrations do not break. After legacy URLs and embeds are migrated, it can be renamed to `nexo-group`.
+This repository remains active temporarily because existing GitHub Pages URLs and Wix integrations depend on its current paths. Do not rename, delete, or restructure live public paths until the corresponding modules have been migrated and verified in the Nexo Group monorepo.
 
-See:
-- `docs/NEXO_MONOREPO.md`
-- `docs/REPOSITORY_MIGRATION_STATUS.md`
-- `apps/`
-- `nexo-core/`
+Current responsibilities kept here during migration:
+- Inventory Smart live GitHub Pages
+- Dynamic Menu live paths
+- compatibility copies of early Nexo Core work
 
-## Active compatibility surface
-
-The existing Inventory Smart and Dynamic Menu paths remain live and must not be moved or removed until their replacements are verified.
+New cross-platform Nexo architecture work should be committed to **`Nexo-group`**.
 
 ---
 
