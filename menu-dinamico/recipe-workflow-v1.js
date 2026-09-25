@@ -70,8 +70,8 @@ function attachSwipe(){const shade=modalRoot.querySelector('.modalShade');if(sha
 function apply(){applyRecipe();attachSwipe()}
 if(backButton)backButton.addEventListener('click',e=>{if(document.getElementById('nexoBatchLayer')){e.preventDefault();e.stopImmediatePropagation();closeBatchLayer()}},true);
 let timer=0;const schedule=()=>{clearTimeout(timer);timer=setTimeout(apply,32)};
-new MutationObserver(schedule).observe(view,{childList:true,subtree:false});
-new MutationObserver(schedule).observe(modalRoot,{childList:true,subtree:false});
-window.addEventListener('message',()=>setTimeout(apply,40));window.addEventListener('NEXO_NATIVE_RENDERED',schedule);
+new MutationObserver(()=>setTimeout(attachSwipe,0)).observe(modalRoot,{childList:true,subtree:false});
+window.addEventListener('NEXO_NATIVE_RENDERED',schedule);
+window.addEventListener('NEXO_PHOTO_CHANGED',schedule);
 setTimeout(apply,60);setTimeout(apply,500);
 })();
