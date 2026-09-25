@@ -1,0 +1,102 @@
+{
+  "version": "nexo-core-v1",
+  "identity": {
+    "provider": "Wix Members",
+    "key": "memberId"
+  },
+  "contexts": [
+    "personal",
+    "workspace"
+  ],
+  "collections": {
+    "NexoUserProfiles": [
+      "memberId",
+      "displayName",
+      "status",
+      "onboardingStatus",
+      "locale",
+      "personalSpaceId",
+      "lastContextType",
+      "lastContextId",
+      "active",
+      "schemaVersion",
+      "createdSource"
+    ],
+    "NexoPersonalSpaces": [
+      "ownerMemberId",
+      "name",
+      "status",
+      "active",
+      "schemaVersion"
+    ],
+    "NexoWorkspaces": [
+      "ownerMemberId",
+      "name",
+      "slug",
+      "description",
+      "status",
+      "active",
+      "schemaVersion"
+    ],
+    "NexoWorkspaceMembers": [
+      "workspaceId",
+      "memberId",
+      "roleKey",
+      "status",
+      "permissions",
+      "invitedByMemberId",
+      "joinedAt",
+      "active",
+      "schemaVersion"
+    ],
+    "NexoInvitations": [
+      "workspaceId",
+      "invitedByMemberId",
+      "inviteeEmail",
+      "inviteeMemberId",
+      "roleKey",
+      "status",
+      "tokenHash",
+      "expiresAt",
+      "acceptedAt",
+      "active",
+      "schemaVersion"
+    ],
+    "NexoContextState": [
+      "memberId",
+      "contextType",
+      "contextId",
+      "workspaceId",
+      "switchedAt",
+      "schemaVersion"
+    ],
+    "NexoCoreRoles": [
+      "roleKey",
+      "nameEs",
+      "nameEn",
+      "rank",
+      "permissions",
+      "canManageMembers",
+      "canManageWorkspace",
+      "active",
+      "schemaVersion"
+    ],
+    "NexoCoreConfig": [
+      "configKey",
+      "value",
+      "values",
+      "active",
+      "schemaVersion"
+    ]
+  },
+  "stableIds": {
+    "userProfile": "<memberId>",
+    "personalSpace": "personal-<memberId>",
+    "contextState": "context-<memberId>",
+    "workspaceMembership": "membership-<workspaceId>-<memberId>"
+  },
+  "security": {
+    "rawCmsPermissions": "ADMIN",
+    "memberAccess": "backend-authorized"
+  }
+}
