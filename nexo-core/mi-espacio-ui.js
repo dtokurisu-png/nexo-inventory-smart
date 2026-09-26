@@ -14,7 +14,7 @@ function toast(msg){let x=document.querySelector('.nxo-toast');if(x)x.remove();x
 async function api(action,payload={}){const h={'Content-Type':'application/json','Accept':'application/json'};if(sessionToken)h.Authorization='Bearer '+sessionToken;const r=await fetch(API,{method:'POST',cache:'no-store',headers:h,body:JSON.stringify({action,...payload})});let d={};try{d=await r.json()}catch(_){throw new Error('Respuesta inválida del servidor')}if(!r.ok||d.ok===false)throw new Error(d.error||'Operación no disponible');return d.data??d}
 function bootToken(){return new URLSearchParams(location.search).get('nxm')||''}
 function stripBoot(){try{const u=new URL(location.href);u.searchParams.delete('nxm');history.replaceState(history.state||{},'',u.pathname+(u.search||'')+(u.hash||''))}catch(_){}}
-async function waitBoot(){for(let i=0;i<180;i++){const t=bootToken();if(t)return t;await new Promise(r=>setTimeout(r,75))}throw new Error('No se recibió la sesión segura de Mi espacio. Recarga la página.')}
+async function waitBoot(){for(let i=0;i<4000;i++){const t=bootToken();if(t)return t;if(i===40)loading('Completa el inicio de sesión…');await new Promise(r=>setTimeout(r,75))}throw new Error('No se recibió la sesión segura. Recarga la página e inicia sesión.')}
 function siteBase(){const p=location.pathname.replace(/\/+$/,'');return (location.origin+p.replace(/\/blank-8$/,'')).replace(/\/$/,'')}
 function routeUrl(path){const p=String(path||'').trim();return p?siteBase()+(p.startsWith('/')?p:'/'+p):''}
 function statusText(s){return s==='ACTIVE'?'Activo':s==='BUILDING'?'En desarrollo':s==='PLANNED'?'Próximamente':s||''}
