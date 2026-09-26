@@ -1,7 +1,14 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/fichas-ui.css?v=20260926-1';
-const API='/_functions/nexoFichasUi';
+const ACCESS_REVISION='access-20260926-1';
+const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
+const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
+const API=apiBase+'/_functions/nexoFichasUi';
+let accessStage='WAITING_PAGE';
+function accessError(code){return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.')}
+function loginVisible(visible){const r=document.getElementById('nx-fichas-app');if(r)r.style.display=visible?'none':'';document.body.classList.toggle('nx-fichas-lock',!visible)}
+function retryAccess(){const u=new URL(location.href);['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',boot=null,activeTab='collections',search='',selectedSheet=null,bootstrap=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const money=v=>Number.isFinite(Number(v))?'$'+Number(v).toFixed(2):'—';
@@ -11,12 +18,36 @@ function mount(){addCss();document.body.classList.add('nx-fichas-lock');let r=do
 function html(v){mount().innerHTML=v}
 function loading(t='Preparando Fichas Técnicas…'){html('<div class="nx-loading"><div><div class="nx-spinner"></div><strong>'+esc(t)+'</strong><p style="color:#93a0b4">Conectando con tu espacio Nexo.</p></div></div>')}
 function toast(t){let x=document.querySelector('.nx-toast');if(x)x.remove();x=document.createElement('div');x.className='nx-toast';x.textContent=t;document.body.appendChild(x);setTimeout(()=>x.remove(),3200)}
-function err(e){const m=String(e&&e.message?e.message:e||'Error');html('<div class="nx-loading"><div class="nx-error"><h2>No se pudo abrir Fichas Técnicas</h2><p>'+esc(m)+'</p><button class="nx-btn nx-btn-accent" id="nx-retry">Reintentar</button></div></div>');document.getElementById('nx-retry')?.addEventListener('click',()=>location.reload())}
-async function api(action,payload={}){const h={'Content-Type':'application/json','Accept':'application/json'};if(sessionToken)h.Authorization='Bearer '+sessionToken;const r=await fetch(API,{method:'POST',cache:'no-store',headers:h,body:JSON.stringify({action,...payload})});let d={};try{d=await r.json()}catch(_){throw new Error('Respuesta inválida del servidor')}if(!r.ok||d.ok===false)throw new Error(d.error||'Operación no disponible');return d.data??d}
-function bootToken(){return new URLSearchParams(location.search).get('nxb')||''}
-function stripBoot(){try{const u=new URL(location.href);u.searchParams.delete('nxb');history.replaceState(history.state||{},'',u.pathname+(u.search||'')+(u.hash||''))}catch(_){}}
-async function waitBoot(){for(let i=0;i<4000;i++){const q=new URLSearchParams(location.search),t=q.get('nxb')||'',e=q.get('nxbe')||'';if(t)return t;if(e==='LOGIN_REQUIRED')throw new Error('Debes iniciar sesión para abrir Fichas Técnicas.');if(e==='BOOT_FAILED')throw new Error('Wix reconoció la sesión, pero no pudo crear la sesión segura de Fichas Técnicas.');if(e==='NO_BOOT_TOKEN')throw new Error('El servidor no devolvió el token de sesión de Fichas Técnicas.');if(e==='MEMBER_CHECK_FAILED')throw new Error('Wix no pudo comprobar la cuenta iniciada. Recarga la página.');if(i===40)loading('Completa el inicio de sesión…');await new Promise(r=>setTimeout(r,75))}throw new Error('No se recibió la sesión segura. Recarga la página e inicia sesión.')}
-async function start(){loading();const b=await waitBoot();const ex=await api('exchange',{bootToken:b});sessionToken=ex.sessionToken||'';stripBoot();bootstrap=await api('bootstrap');renderHome()}
+function err(e){const m=String(e&&e.message?e.message:e||'Error');html('<div class="nx-loading"><div class="nx-error"><h2>No se pudo abrir Fichas Técnicas</h2><p>'+esc(m)+'</p><button class="nx-btn nx-btn-accent" id="nx-retry">Reintentar</button></div></div>');document.getElementById('nx-retry')?.addEventListener('click',retryAccess)}
+async function api(action,payload={}){
+ const h={'Content-Type':'application/json','Accept':'application/json'};
+ if(sessionToken)h.Authorization='Bearer '+sessionToken;
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+ try{
+  const r=await fetch(API,{method:'POST',cache:'no-store',signal:controller.signal,headers:h,body:JSON.stringify({action,...payload})});
+  if(!r.ok)throw accessError('HTTP_'+r.status);
+  let d;try{d=await r.json()}catch(_){throw accessError('INVALID_RESPONSE')}
+  if(d.ok===false)throw new Error(d.error||'Operación no disponible');
+  return d.data??d;
+ }catch(e){if(e.name==='AbortError')throw accessError('REQUEST_TIMEOUT');throw e}
+ finally{clearTimeout(timer)}
+}
+function stripBoot(){try{const u=new URL(location.href);['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
+async function waitBoot(){
+ let previous='',deadline=Date.now()+30000;
+ try{
+  while(Date.now()<deadline){
+   const q=new URLSearchParams(location.search),t=q.get('nxb'),e=q.get('nxbe'),state=q.get('nxbs')||'WAITING_PAGE';
+   if(state!==previous){previous=state;accessStage=state;deadline=Date.now()+(state==='LOGIN'?310000:30000);loginVisible(state==='LOGIN')}
+   if(e)throw accessError(e);
+   if(t && (state==='READY'||state==='WAITING_PAGE'))return t;
+   await new Promise(r=>setTimeout(r,100));
+  }
+  throw accessError('PAGE_TIMEOUT');
+ }finally{loginVisible(false)}
+}
+
+async function start(){loading();const b=await waitBoot();accessStage='EXCHANGE';stripBoot();const ex=await api('exchange',{bootToken:b});sessionToken=ex.sessionToken||'';if(!sessionToken)throw accessError('NO_SESSION_TOKEN');accessStage='BOOTSTRAP';bootstrap=await api('bootstrap');renderHome()}
 function ctxLabel(){const c=bootstrap?.context||{};return c.type==='workspace'?(c.workspaceName||'Workspace'):'Mi espacio'}
 function visibleSheets(){let list=[...(bootstrap?.sheets||[])];if(search){const q=search.toLowerCase();list=list.filter(x=>((x.titleEs||'')+' '+(x.titleEn||'')+' '+(x.category||'')).toLowerCase().includes(q))}return list}
 function collectionSheets(c){const ids=new Set(c.sheetIds||[]);return visibleSheets().filter(s=>ids.has(s.id))}
