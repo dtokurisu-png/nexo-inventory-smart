@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260927-4';
-const ENGINE_REVISION='workspace-layout-20260927-1';
+const ACCESS_REVISION='fichas-engine-20260927-5';
+const ENGINE_REVISION='workspace-preview-20260927-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -127,7 +127,20 @@ async function pushEngineData(){
 async function previewPackage(code){
   const normalized=String(code||'').trim();
   if(!normalized)throw new Error('Escribe el código de importación.');
-  const preview=await api('import.preview',{code:normalized});
+
+  postToEngine('NEXO_DM_IMPORT_PREVIEW_ACK',{
+    stage:'received',
+    message:'Código recibido. Cargando resumen del paquete…'
+  });
+
+  const preview=await Promise.race([
+    api('import.preview',{code:normalized}),
+    new Promise((_,reject)=>setTimeout(
+      ()=>reject(new Error('La validación del paquete tardó demasiado. Reintenta; no se modificaron datos.')),
+      15000
+    ))
+  ]);
+
   importPreview=preview;
   importCode=normalized;
   postToEngine('NEXO_DM_IMPORT_PREVIEW',preview);
