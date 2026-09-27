@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260927-2';
-const ENGINE_REVISION='workspace-library-20260927-1';
+const ACCESS_REVISION='fichas-engine-20260927-3';
+const ENGINE_REVISION='workspace-library-20260927-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -13,6 +13,8 @@ let sessionToken='';
 let frame=null;
 let loadingData=false;
 let importing=false;
+let importPreview=null;
+let importCode='';
 
 function accessError(code){
   return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.');
@@ -122,23 +124,73 @@ async function pushEngineData(){
     loadingData=false;
   }
 }
+async function previewPackage(code){
+  const normalized=String(code||'').trim();
+  if(!normalized)throw new Error('Escribe el código de importación.');
+  const preview=await api('import.preview',{code:normalized});
+  importPreview=preview;
+  importCode=normalized;
+  postToEngine('NEXO_DM_IMPORT_PREVIEW',preview);
+  return preview;
+}
+
+function pendingPreviewItem(preview){
+  return (preview?.items||[]).find(item=>item?.complete!==true)||null;
+}
+
 async function importPackage(code){
   if(importing)return;
   importing=true;
+  let currentItem=null;
   try{
+    const normalized=String(code||importCode||'').trim();
+    let preview=(importPreview&&importCode===normalized)?importPreview:await api('import.preview',{code:normalized});
+    importPreview=preview;
+    importCode=normalized;
+
+    postToEngine('NEXO_DM_IMPORT_BEGIN',{
+      packageName:preview?.packageName||'Paquete Nexo',
+      processedCount:Number(preview?.alreadyCompleteCount||0),
+      totalCount:Number(preview?.totalCount||0)
+    });
+
     let result=null;
-    let lastProcessed=-1;
+    let lastProcessed=Number(preview?.alreadyCompleteCount||0);
     let stagnantRounds=0;
-    for(let step=0;step<80;step++){
-      result=await api('import.code',{code});
+
+    for(let step=0;step<120;step++){
+      currentItem=pendingPreviewItem(preview);
+      if(currentItem){
+        postToEngine('NEXO_DM_IMPORT_ITEM_START',{
+          ...currentItem,
+          processedCount:lastProcessed,
+          totalCount:Number(preview?.totalCount||0)
+        });
+      }
+
+      result=await api('import.code',{code:normalized});
       const processed=Number(result?.processedCount||0);
-      const total=Number(result?.totalCount||0);
+      const total=Number(result?.totalCount||preview?.totalCount||0);
+      const items=Array.isArray(result?.processedItems)?result.processedItems:[];
+
+      for(const item of items){
+        const match=(preview?.items||[]).find(row=>row?.id===item?.id);
+        if(match)match.complete=true;
+        postToEngine('NEXO_DM_IMPORT_ITEM_DONE',{
+          ...item,
+          processedCount:processed,
+          totalCount:total
+        });
+      }
+
       postToEngine('NEXO_DM_IMPORT_PROGRESS',{
         processedCount:processed,
         totalCount:total,
         remainingCount:Number(result?.remainingCount||0),
+        percent:total?Math.round((processed/total)*100):0,
         complete:result?.complete===true
       });
+
       if(result?.complete===true)break;
 
       if(processed===lastProcessed)stagnantRounds+=1;
@@ -146,19 +198,24 @@ async function importPackage(code){
       lastProcessed=processed;
 
       if(stagnantRounds>=3){
-        throw new Error('La importación no está avanzando. El código sigue disponible; revisa el paquete antes de continuar.');
+        throw new Error('La importación no está avanzando. El código sigue disponible; revisa el elemento indicado antes de continuar.');
       }
 
       await new Promise(resolve=>setTimeout(resolve,450));
     }
+
     if(result?.complete!==true){
       throw new Error('La importación quedó incompleta. Puedes continuar con el mismo código.');
     }
+
     await pushEngineData();
     postToEngine('NEXO_DM_IMPORT_DONE',result);
+    importPreview=null;
+    importCode='';
   }catch(error){
     postToEngine('NEXO_DM_IMPORT_ERROR',{
-      message:String(error?.message||error||'No se pudo importar el paquete.')
+      message:String(error?.message||error||'No se pudo importar el paquete.'),
+      item:currentItem||null
     });
   }finally{
     importing=false;
@@ -176,8 +233,24 @@ function handleEngineMessage(event){
     pushEngineData().catch(showError);
     return;
   }
+  if(message.type==='NEXO_DM_IMPORT_PREVIEW_CODE'){
+    previewPackage(String(payload.code||'').trim()).catch(error=>{
+      postToEngine('NEXO_DM_IMPORT_PREVIEW_ERROR',{
+        message:String(error?.message||error||'No se pudo validar el paquete.')
+      });
+    });
+    return;
+  }
+  if(message.type==='NEXO_DM_IMPORT_CONFIRM'){
+    importPackage(String(payload.code||importCode||'').trim());
+    return;
+  }
   if(message.type==='NEXO_DM_IMPORT_CODE'){
-    importPackage(String(payload.code||'').trim());
+    previewPackage(String(payload.code||'').trim()).catch(error=>{
+      postToEngine('NEXO_DM_IMPORT_PREVIEW_ERROR',{
+        message:String(error?.message||error||'No se pudo validar el paquete.')
+      });
+    });
     return;
   }
   if(message.type==='DM_SAVE_PHOTO_FILE'){
