@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260927-5';
-const ENGINE_REVISION='workspace-preview-20260927-1';
+const ACCESS_REVISION='fichas-engine-20260927-6';
+const ENGINE_REVISION='workspace-import-host-20260927-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -124,116 +124,182 @@ async function pushEngineData(){
     loadingData=false;
   }
 }
-async function previewPackage(code){
-  const normalized=String(code||'').trim();
-  if(!normalized)throw new Error('Escribe el código de importación.');
-
-  postToEngine('NEXO_DM_IMPORT_PREVIEW_ACK',{
-    stage:'received',
-    message:'Código recibido. Cargando resumen del paquete…'
-  });
-
-  const preview=await Promise.race([
-    api('import.preview',{code:normalized}),
-    new Promise((_,reject)=>setTimeout(
-      ()=>reject(new Error('La validación del paquete tardó demasiado. Reintenta; no se modificaron datos.')),
-      15000
-    ))
-  ]);
-
-  importPreview=preview;
-  importCode=normalized;
-  postToEngine('NEXO_DM_IMPORT_PREVIEW',preview);
-  return preview;
+function ensureImportHostStyles(){
+  if(document.getElementById('nx-import-host-style'))return;
+  const style=document.createElement('style');
+  style.id='nx-import-host-style';
+  style.textContent=
+    '#nx-import-host{position:fixed;inset:0;z-index:2147483646;background:rgba(10,13,18,.72);display:grid;place-items:center;padding:18px;font-family:Inter,Arial,sans-serif}'+
+    '#nx-import-host .box{width:min(660px,calc(100vw - 36px));max-height:88vh;overflow:auto;background:#fffdfa;color:#191713;border:1px solid #d8d1c4;border-radius:20px;box-shadow:0 28px 90px rgba(0,0,0,.35)}'+
+    '#nx-import-host .head{display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border-bottom:1px solid #e5dfd4;position:sticky;top:0;background:#fffdfa;z-index:2}'+
+    '#nx-import-host .head strong{font-size:17px}#nx-import-host .close{width:36px;height:36px;border:1px solid #d8d1c4;border-radius:10px;background:#fff;font-size:22px}'+
+    '#nx-import-host .body{padding:17px}#nx-import-host p{color:#6f6a61;line-height:1.5}'+
+    '#nx-import-host input{width:100%;box-sizing:border-box;border:1px solid #d7d0c4;border-radius:11px;padding:12px 13px;font:inherit;background:#fff;margin:6px 0 12px}'+
+    '#nx-import-host .btn{border:1px solid #d1c9bc;background:#fff;color:#191713;border-radius:11px;padding:10px 13px;font-weight:850;cursor:pointer}'+
+    '#nx-import-host .btn.primary{background:#191713;color:#fff;border-color:#191713}#nx-import-host .btn:disabled{opacity:.55;cursor:default}'+
+    '#nx-import-host .wide{width:100%}.nx-imp-spin{display:flex;align-items:center;gap:9px;color:#6f6a61;font-size:12px;min-height:24px;margin-bottom:10px}'+
+    '.nx-imp-spin:before{content:"";width:15px;height:15px;border:2px solid #d9d1c4;border-top-color:#191713;border-radius:50%;animation:nxImpSpin .8s linear infinite}@keyframes nxImpSpin{to{transform:rotate(360deg)}}'+
+    '.nx-imp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.nx-imp-stat{background:#f7f3ec;border:1px solid #e0d9cc;border-radius:12px;padding:11px}.nx-imp-stat strong{display:block;font-size:20px}.nx-imp-stat span{font-size:10px;color:#756e63}'+
+    '.nx-imp-group{display:flex;justify-content:space-between;gap:12px;padding:10px 11px;border:1px solid #e1dacf;border-radius:11px;margin:7px 0;background:#fff}.nx-imp-group span{color:#6f6a61;font-size:11px}'+
+    '.nx-imp-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.nx-imp-resume{padding:10px 11px;border:1px solid #d8c589;background:#fff8da;border-radius:11px;color:#665526;font-size:11px;line-height:1.45;margin:12px 0}'+
+    '.nx-imp-bar{height:10px;background:#e5ded3;border-radius:999px;overflow:hidden;margin:14px 0 5px}.nx-imp-bar span{display:block;height:100%;background:#191713;border-radius:999px;transition:width .2s ease}'+
+    '.nx-imp-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.nx-imp-current{border:1px solid #e0d9cc;background:#faf7f1;border-radius:11px;padding:10px 11px;margin:11px 0;font-size:12px}'+
+    '.nx-imp-log{max-height:250px;overflow:auto;border:1px solid #e0d9cc;border-radius:12px;background:#fff;padding:7px}.nx-imp-row{padding:7px 8px;border-bottom:1px solid #eee8de;font-size:11px;line-height:1.4}.nx-imp-row:last-child{border-bottom:0}.nx-imp-row.ok{color:#315e3d}.nx-imp-row.err{color:#9b332c;background:#fff5f3}'+
+    '.nx-imp-error{color:#9b332c;font-size:12px;line-height:1.45;margin:8px 0}.nx-imp-success{color:#315e3d;font-weight:850}'+
+    '@media(max-width:560px){.nx-imp-stats{grid-template-columns:1fr 1fr}.nx-imp-actions{display:grid;grid-template-columns:1fr 1fr}.nx-imp-actions .btn{width:100%}}';
+  document.head.appendChild(style);
 }
 
-function pendingPreviewItem(preview){
-  return (preview?.items||[]).find(item=>item?.complete!==true)||null;
+function closeImportHost(){
+  document.getElementById('nx-import-host')?.remove();
 }
 
-async function importPackage(code){
+function importHostShell(){
+  ensureImportHostStyles();
+  closeImportHost();
+  const host=document.createElement('div');
+  host.id='nx-import-host';
+  host.innerHTML='<div class="box"><div class="head"><strong>Importar paquete</strong><button class="close" type="button">×</button></div><div class="body"></div></div>';
+  host.querySelector('.close').onclick=closeImportHost;
+  host.onclick=e=>{if(e.target===host)closeImportHost()};
+  document.body.appendChild(host);
+  return host.querySelector('.body');
+}
+
+function countWord(n,singular,plural){return Number(n)===1?singular:plural}
+
+function renderImportCodeStage(){
+  const body=importHostShell();
+  body.innerHTML='<p>Ingresa el código entregado por Nexo Group. Primero revisaremos el paquete; no se modificará ningún dato hasta que confirmes.</p>'+
+    '<input id="nx-import-code-input" placeholder="NEXO-…" autocomplete="off" autocapitalize="characters">'+
+    '<div id="nx-import-host-status"></div>'+
+    '<button id="nx-import-review" class="btn primary wide" type="button">Revisar paquete</button>';
+  const input=body.querySelector('#nx-import-code-input');
+  const button=body.querySelector('#nx-import-review');
+  input.focus();
+  button.onclick=async()=>{
+    const code=String(input.value||'').trim();
+    if(!code)return;
+    importCode=code;
+    button.disabled=true;
+    const status=body.querySelector('#nx-import-host-status');
+    status.innerHTML='<div class="nx-imp-spin">Validando código y cargando resumen…</div>';
+    try{
+      const preview=await Promise.race([
+        api('import.preview',{code}),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error('La validación tardó demasiado. No se modificaron datos.')),15000))
+      ]);
+      importPreview=preview;
+      renderImportPreviewStage(preview);
+    }catch(error){
+      status.innerHTML='<div class="nx-imp-error">⚠ '+esc(error?.message||error)+'</div>';
+      button.disabled=false;
+      button.textContent='Revisar paquete';
+    }
+  };
+}
+
+function renderImportPreviewStage(preview){
+  const body=document.querySelector('#nx-import-host .body');
+  if(!body)return;
+  const groups=Array.isArray(preview?.collections)?preview.collections:[];
+  const total=Number(preview?.totalCount||0);
+  const done=Number(preview?.alreadyCompleteCount||0);
+  const itemSingular=preview?.itemLabelSingular||'elemento';
+  const itemPlural=preview?.itemLabelPlural||'elementos';
+  const containerSingular=preview?.containerLabelSingular||'colección';
+  const containerPlural=preview?.containerLabelPlural||'colecciones';
+  const rows=groups.map(g=>{
+    const n=Number(g?.count||0);
+    return '<div class="nx-imp-group"><strong>'+esc(g?.name||'—')+'</strong><span>'+n+' '+esc(countWord(n,g?.itemLabelSingular||itemSingular,g?.itemLabelPlural||itemPlural))+(g?.importMode==='linked'?' · vinculados':'')+'</span></div>';
+  }).join('');
+  const resume=done?'<div class="nx-imp-resume">↻ Se detectó progreso anterior: '+done+' de '+total+' '+esc(itemPlural)+' ya están completas. Se continuará desde ahí.</div>':'';
+  body.innerHTML='<div class="nx-imp-top"><div><small>PAQUETE VERIFICADO</small><h2 style="margin:3px 0 0">'+esc(preview?.packageName||'Paquete Nexo')+'</h2></div></div>'+
+    (preview?.packageDescription?'<p>'+esc(preview.packageDescription)+'</p>':'')+
+    '<div class="nx-imp-stats"><div class="nx-imp-stat"><strong>'+groups.length+'</strong><span>'+esc(countWord(groups.length,containerSingular,containerPlural))+'</span></div><div class="nx-imp-stat"><strong>'+total+'</strong><span>'+esc(countWord(total,itemSingular,itemPlural))+'</span></div>'+(done?'<div class="nx-imp-stat"><strong>'+Math.max(0,total-done)+'</strong><span>pendientes</span></div>':'')+'</div>'+
+    rows+resume+'<p><strong>¿Deseas continuar con la importación?</strong></p>'+
+    '<div class="nx-imp-actions"><button id="nx-import-cancel" class="btn" type="button">No, cancelar</button><button id="nx-import-confirm" class="btn primary" type="button">Sí, importar</button></div>';
+  body.querySelector('#nx-import-cancel').onclick=closeImportHost;
+  body.querySelector('#nx-import-confirm').onclick=()=>runImportHost();
+}
+
+function pendingImportItem(){
+  return (importPreview?.items||[]).find(item=>item?.complete!==true)||null;
+}
+
+function itemLine(item,done=false){
+  const label=item?.itemLabelSingular||importPreview?.itemLabelSingular||'elemento';
+  const title=item?.title||item?.titleEs||item?.titleEn||item?.id||'—';
+  const container=importPreview?.containerLabelSingular||'colección';
+  const group=item?.collectionName||'Sin colección';
+  return (done?'✓ ':'Cargando ')+label+' «'+title+'» '+(done?'· ':'en ')+container+' «'+group+'»'+(done?'':'…');
+}
+
+async function runImportHost(){
   if(importing)return;
   importing=true;
-  let currentItem=null;
+  const body=document.querySelector('#nx-import-host .body');
+  if(!body){importing=false;return}
+  const total=Number(importPreview?.totalCount||0);
+  let done=Number(importPreview?.alreadyCompleteCount||0);
+  let percent=total?Math.round((done/total)*100):0;
+  body.innerHTML='<div class="nx-imp-top"><div><small>IMPORTANDO PAQUETE</small><h2 style="margin:3px 0 0">'+esc(importPreview?.packageName||'')+'</h2></div><strong id="nx-import-pct">'+percent+'%</strong></div>'+
+    '<div class="nx-imp-bar"><span id="nx-import-bar" style="width:'+percent+'%"></span></div><div id="nx-import-count" style="text-align:right;color:#756e63;font-size:11px">'+done+' / '+total+'</div>'+
+    '<div id="nx-import-current" class="nx-imp-current"><div class="nx-imp-spin">Preparando importación…</div></div>'+
+    '<div id="nx-import-log" class="nx-imp-log"></div><div id="nx-import-footer" class="nx-imp-actions"></div>';
+  const current=body.querySelector('#nx-import-current');
+  const log=body.querySelector('#nx-import-log');
+  const bar=body.querySelector('#nx-import-bar');
+  const pct=body.querySelector('#nx-import-pct');
+  const count=body.querySelector('#nx-import-count');
+  const footer=body.querySelector('#nx-import-footer');
+  let stagnant=0,lastDone=done;
   try{
-    const normalized=String(code||importCode||'').trim();
-    let preview=(importPreview&&importCode===normalized)?importPreview:await api('import.preview',{code:normalized});
-    importPreview=preview;
-    importCode=normalized;
-
-    postToEngine('NEXO_DM_IMPORT_BEGIN',{
-      packageName:preview?.packageName||'Paquete Nexo',
-      processedCount:Number(preview?.alreadyCompleteCount||0),
-      totalCount:Number(preview?.totalCount||0)
-    });
-
     let result=null;
-    let lastProcessed=Number(preview?.alreadyCompleteCount||0);
-    let stagnantRounds=0;
-
     for(let step=0;step<120;step++){
-      currentItem=pendingPreviewItem(preview);
-      if(currentItem){
-        postToEngine('NEXO_DM_IMPORT_ITEM_START',{
-          ...currentItem,
-          processedCount:lastProcessed,
-          totalCount:Number(preview?.totalCount||0)
-        });
-      }
-
-      result=await api('import.code',{code:normalized});
-      const processed=Number(result?.processedCount||0);
-      const total=Number(result?.totalCount||preview?.totalCount||0);
-      const items=Array.isArray(result?.processedItems)?result.processedItems:[];
-
-      for(const item of items){
-        const match=(preview?.items||[]).find(row=>row?.id===item?.id);
+      const item=pendingImportItem();
+      if(item)current.innerHTML='<div class="nx-imp-spin">'+esc(itemLine(item,false))+'</div>';
+      result=await api('import.code',{code:importCode});
+      done=Number(result?.processedCount||0);
+      percent=total?Math.round((done/total)*100):0;
+      bar.style.width=percent+'%';pct.textContent=percent+'%';count.textContent=done+' / '+total;
+      const processed=Array.isArray(result?.processedItems)?result.processedItems:[];
+      for(const finished of processed){
+        const match=(importPreview?.items||[]).find(x=>x?.id===finished?.id);
         if(match)match.complete=true;
-        postToEngine('NEXO_DM_IMPORT_ITEM_DONE',{
-          ...item,
-          processedCount:processed,
-          totalCount:total
-        });
+        const row=document.createElement('div');
+        row.className='nx-imp-row ok';
+        row.textContent=itemLine(finished,true);
+        log.appendChild(row);log.scrollTop=log.scrollHeight;
       }
-
-      postToEngine('NEXO_DM_IMPORT_PROGRESS',{
-        processedCount:processed,
-        totalCount:total,
-        remainingCount:Number(result?.remainingCount||0),
-        percent:total?Math.round((processed/total)*100):0,
-        complete:result?.complete===true
-      });
-
-      if(result?.complete===true)break;
-
-      if(processed===lastProcessed)stagnantRounds+=1;
-      else stagnantRounds=0;
-      lastProcessed=processed;
-
-      if(stagnantRounds>=3){
-        throw new Error('La importación no está avanzando. El código sigue disponible; revisa el elemento indicado antes de continuar.');
+      if(result?.complete===true){
+        current.innerHTML='<div class="nx-imp-success">✓ Importación completada. Actualizando biblioteca…</div>';
+        await pushEngineData();
+        setTimeout(closeImportHost,1200);
+        importPreview=null;importCode='';
+        break;
       }
-
+      stagnant=done===lastDone?stagnant+1:0;
+      lastDone=done;
+      if(stagnant>=3)throw new Error('La importación no está avanzando. Se conservó el progreso y el código sigue disponible.');
       await new Promise(resolve=>setTimeout(resolve,450));
     }
-
-    if(result?.complete!==true){
-      throw new Error('La importación quedó incompleta. Puedes continuar con el mismo código.');
-    }
-
-    await pushEngineData();
-    postToEngine('NEXO_DM_IMPORT_DONE',result);
-    importPreview=null;
-    importCode='';
   }catch(error){
-    postToEngine('NEXO_DM_IMPORT_ERROR',{
-      message:String(error?.message||error||'No se pudo importar el paquete.'),
-      item:currentItem||null
-    });
+    current.innerHTML='<div class="nx-imp-error">⚠ '+esc(error?.message||error)+'</div>';
+    const item=pendingImportItem();
+    if(item){
+      const row=document.createElement('div');row.className='nx-imp-row err';
+      row.textContent='✕ '+itemLine(item,false).replace(/^Cargando /,'')+' — '+String(error?.message||error);
+      log.appendChild(row);
+    }
+    footer.innerHTML='<button id="nx-import-close" class="btn" type="button">Cerrar</button><button id="nx-import-resume" class="btn primary" type="button">Continuar importación</button>';
+    footer.querySelector('#nx-import-close').onclick=closeImportHost;
+    footer.querySelector('#nx-import-resume').onclick=()=>{importing=false;runImportHost()};
   }finally{
     importing=false;
   }
 }
+
 function handleEngineMessage(event){
   if(!frame||event.source!==frame.contentWindow)return;
   let message=event.data;
@@ -246,24 +312,8 @@ function handleEngineMessage(event){
     pushEngineData().catch(showError);
     return;
   }
-  if(message.type==='NEXO_DM_IMPORT_PREVIEW_CODE'){
-    previewPackage(String(payload.code||'').trim()).catch(error=>{
-      postToEngine('NEXO_DM_IMPORT_PREVIEW_ERROR',{
-        message:String(error?.message||error||'No se pudo validar el paquete.')
-      });
-    });
-    return;
-  }
-  if(message.type==='NEXO_DM_IMPORT_CONFIRM'){
-    importPackage(String(payload.code||importCode||'').trim());
-    return;
-  }
-  if(message.type==='NEXO_DM_IMPORT_CODE'){
-    previewPackage(String(payload.code||'').trim()).catch(error=>{
-      postToEngine('NEXO_DM_IMPORT_PREVIEW_ERROR',{
-        message:String(error?.message||error||'No se pudo validar el paquete.')
-      });
-    });
+  if(message.type==='NEXO_DM_OPEN_IMPORT'){
+    renderImportCodeStage();
     return;
   }
   if(message.type==='DM_SAVE_PHOTO_FILE'){
