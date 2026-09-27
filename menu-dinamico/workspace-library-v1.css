@@ -17,3 +17,46 @@
 .nexoImportRunningHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.nexoImportRunningHead>strong{font-size:22px}.nexoImportBar{height:10px;background:#e6e0d5;border-radius:999px;overflow:hidden;margin:14px 0 5px}.nexoImportBar>span{display:block;height:100%;background:#191713;border-radius:999px;transition:width .25s ease}.nexoImportCounter{font-size:10px;color:#777064;text-align:right;margin-bottom:11px}
 .nexoImportCurrent{min-height:38px;border:1px solid #dfd8cb;background:#faf7f1;border-radius:11px;padding:10px 11px;margin-bottom:10px}.nexoImportLog{max-height:250px;overflow:auto;border:1px solid #e0d9cc;border-radius:12px;background:#fff;padding:7px}.nexoImportLogRow{padding:7px 8px;border-bottom:1px solid #eee8de;font-size:11px;line-height:1.4}.nexoImportLogRow:last-child{border-bottom:0}.nexoImportLogRow.done{color:#315e3d}.nexoImportLogRow.error{color:#9b332c;background:#fff5f3}.nexoImportLogRow.strong{font-weight:900}.nexoImportFooter{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.nexoImportComplete{color:#315e3d;font-weight:850}.nexoImportFailure{color:#9b332c;font-size:11px;line-height:1.45}
 @media(max-width:560px){.nexoImportStats{grid-template-columns:1fr 1fr}.nexoImportCollectionRow{align-items:flex-start}.nexoImportConfirmActions,.nexoImportFooter{display:grid;grid-template-columns:1fr 1fr}.nexoImportConfirmActions .nexoWorkspaceBtn,.nexoImportFooter .nexoWorkspaceBtn{width:100%}.nexoImportLog{max-height:210px}}
+
+@media(min-width:900px){
+  .nexoWorkspaceLibraryBody .taxonomyGrid,
+  html.nexoMobile .nexoWorkspaceLibraryBody .taxonomyGrid{
+    width:min(100%,1080px)!important;
+    max-width:1080px!important;
+    margin:0 auto!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:18px!important;
+    justify-content:center!important;
+    align-items:stretch!important;
+  }
+  .nexoWorkspaceLibraryBody .taxonomyMaster,
+  html.nexoMobile .nexoWorkspaceLibraryBody .taxonomyMaster{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    min-height:0!important;
+    margin:0 0 12px!important;
+    border-radius:18px!important;
+  }
+  .nexoWorkspaceLibraryBody .taxonomyMasterImage,
+  html.nexoMobile .nexoWorkspaceLibraryBody .taxonomyMasterImage{
+    width:100%!important;
+    aspect-ratio:16/9!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+  .nexoWorkspaceLibraryBody .taxonomyMasterBody,
+  html.nexoMobile .nexoWorkspaceLibraryBody .taxonomyMasterBody{
+    padding:18px 20px 10px!important;
+  }
+  .nexoWorkspaceLibraryBody .taxonomyMaster h2,
+  html.nexoMobile .nexoWorkspaceLibraryBody .taxonomyMaster h2{
+    margin:16px 0 6px!important;
+    font-size:clamp(24px,2vw,30px)!important;
+  }
+  .nexoWorkspaceLibraryBody .taxonomyMaster p,
+  html.nexoMobile .nexoWorkspaceLibraryBody .taxonomyMaster p{
+    font-size:14px!important;
+    line-height:1.45!important;
+  }
+}
