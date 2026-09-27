@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260927-6';
-const ENGINE_REVISION='workspace-import-host-20260927-1';
+const ACCESS_REVISION='fichas-engine-20260927-7';
+const ENGINE_REVISION='workspace-import-bulk-20260927-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -223,8 +223,8 @@ function renderImportPreviewStage(preview){
   body.querySelector('#nx-import-confirm').onclick=()=>runImportHost();
 }
 
-function pendingImportItem(){
-  return (importPreview?.items||[]).find(item=>item?.complete!==true)||null;
+function pendingImportItems(limit=5){
+  return (importPreview?.items||[]).filter(item=>item?.complete!==true).slice(0,limit);
 }
 
 function itemLine(item,done=false){
@@ -257,8 +257,16 @@ async function runImportHost(){
   try{
     let result=null;
     for(let step=0;step<120;step++){
-      const item=pendingImportItem();
-      if(item)current.innerHTML='<div class="nx-imp-spin">'+esc(itemLine(item,false))+'</div>';
+      const batch=pendingImportItems(5);
+      if(batch.length){
+        const batchText=batch.map(item=>{
+          const label=item?.itemLabelSingular||importPreview?.itemLabelSingular||'elemento';
+          const title=item?.title||item?.titleEs||item?.titleEn||item?.id||'—';
+          const group=item?.collectionName||'Sin colección';
+          return label+' «'+title+'» → «'+group+'»';
+        }).join(' · ');
+        current.innerHTML='<div class="nx-imp-spin">Procesando lote de '+batch.length+': '+esc(batchText)+'</div>';
+      }
       result=await api('import.code',{code:importCode});
       done=Number(result?.processedCount||0);
       percent=total?Math.round((done/total)*100):0;
@@ -286,10 +294,10 @@ async function runImportHost(){
     }
   }catch(error){
     current.innerHTML='<div class="nx-imp-error">⚠ '+esc(error?.message||error)+'</div>';
-    const item=pendingImportItem();
-    if(item){
+    const batch=pendingImportItems(5);
+    if(batch.length){
       const row=document.createElement('div');row.className='nx-imp-row err';
-      row.textContent='✕ '+itemLine(item,false).replace(/^Cargando /,'')+' — '+String(error?.message||error);
+      row.textContent='✕ Lote detenido ('+batch.map(item=>item?.title||item?.titleEs||item?.titleEn||item?.id||'—').join(', ')+') — '+String(error?.message||error);
       log.appendChild(row);
     }
     footer.innerHTML='<button id="nx-import-close" class="btn" type="button">Cerrar</button><button id="nx-import-resume" class="btn primary" type="button">Continuar importación</button>';
