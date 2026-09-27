@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260927-3';
-const ENGINE_REVISION='workspace-library-20260927-2';
+const ACCESS_REVISION='fichas-engine-20260927-4';
+const ENGINE_REVISION='workspace-layout-20260927-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
