@@ -28,17 +28,17 @@ function mountRoot(){
   if(!root){
     root=document.createElement('div');
     root.id='nx-fichas-app';
-    root.style.cssText='position:fixed;inset:0;z-index:2147483500;background:#f4f1ea;display:block;';
+    root.style.cssText='position:fixed;inset:0;z-index:2147483500;background:#eef3fb;display:block;';
     document.body.appendChild(root);
   }
   return root;
 }
 function loading(text='Preparando Fichas Técnicas Dinámicas…'){
-  mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:#0d121a;color:#f4f6f8;font:600 14px Inter,Arial,sans-serif"><div style="text-align:center"><div style="width:34px;height:34px;border:3px solid #3a4656;border-top-color:#d9b45b;border-radius:50%;margin:0 auto 14px;animation:nxspin .8s linear infinite"></div><strong>'+esc(text)+'</strong><style>@keyframes nxspin{to{transform:rotate(360deg)}}</style></div></div>';
+  mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:#eef3fb;color:#111827;font:600 14px Inter,Arial,sans-serif"><div style="text-align:center"><div style="width:34px;height:34px;border:3px solid #b9cbed;border-top-color:#2f4f93;border-radius:50%;margin:0 auto 14px;animation:nxspin .8s linear infinite"></div><strong>'+esc(text)+'</strong><style>@keyframes nxspin{to{transform:rotate(360deg)}}</style></div></div>';
 }
 function showError(error){
   const message=String(error?.message||error||'Error desconocido');
-  mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:#0d121a;color:#f4f6f8;font:14px Inter,Arial,sans-serif;padding:24px"><div style="max-width:560px;border:1px solid #344156;border-radius:18px;background:#111927;padding:22px"><h2 style="margin:0 0 10px">No se pudo abrir Fichas Técnicas Dinámicas</h2><p style="color:#aeb9c9;line-height:1.55">'+esc(message)+'</p><button id="nx-engine-retry" style="border:1px solid #d9b45b;background:#d9b45b;color:#17130b;border-radius:10px;padding:10px 14px;font-weight:800">Reintentar</button></div></div>';
+  mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:#eef3fb;color:#111827;font:14px Inter,Arial,sans-serif;padding:24px"><div style="max-width:560px;border:1px solid #b9cbed;border-radius:18px;background:#ffffff;padding:22px"><h2 style="margin:0 0 10px">No se pudo abrir Fichas Técnicas Dinámicas</h2><p style="color:#5b6780;line-height:1.55">'+esc(message)+'</p><button id="nx-engine-retry" style="border:1px solid #172755;background:#264c8f;color:#ffffff;border-radius:10px;padding:10px 14px;font-weight:800">Reintentar</button></div></div>';
   document.getElementById('nx-engine-retry')?.addEventListener('click',retryAccess);
 }
 function loginVisible(visible){
@@ -145,20 +145,20 @@ function ensureImportHostStyles(){
   const style=document.createElement('style');
   style.id='nx-import-host-style';
   style.textContent=
-    '#nx-import-host{position:fixed;inset:0;z-index:2147483646;background:rgba(10,13,18,.72);display:grid;place-items:center;padding:18px;font-family:Inter,Arial,sans-serif}'+
-    '#nx-import-host .box{width:min(660px,calc(100vw - 36px));max-height:88vh;overflow:auto;background:#fffdfa;color:#191713;border:1px solid #d8d1c4;border-radius:20px;box-shadow:0 28px 90px rgba(0,0,0,.35)}'+
-    '#nx-import-host .head{display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border-bottom:1px solid #e5dfd4;position:sticky;top:0;background:#fffdfa;z-index:2}'+
-    '#nx-import-host .head strong{font-size:17px}#nx-import-host .close{width:36px;height:36px;border:1px solid #d8d1c4;border-radius:10px;background:#fff;font-size:22px}'+
-    '#nx-import-host .body{padding:17px}#nx-import-host p{color:#6f6a61;line-height:1.5}'+
-    '#nx-import-host input{width:100%;box-sizing:border-box;border:1px solid #d7d0c4;border-radius:11px;padding:12px 13px;font:inherit;background:#fff;margin:6px 0 12px}'+
-    '#nx-import-host .btn{border:1px solid #d1c9bc;background:#fff;color:#191713;border-radius:11px;padding:10px 13px;font-weight:850;cursor:pointer}'+
-    '#nx-import-host .btn.primary{background:#191713;color:#fff;border-color:#191713}#nx-import-host .btn:disabled{opacity:.55;cursor:default}'+
+    '#nx-import-host{position:fixed;inset:0;z-index:2147483646;background:rgba(31,35,58,.62);display:grid;place-items:center;padding:18px;font-family:Inter,Arial,sans-serif}'+
+    '#nx-import-host .box{width:min(660px,calc(100vw - 36px));max-height:88vh;overflow:auto;background:#f8fbff;color:#111827;border:1px solid #172755;border-radius:20px;box-shadow:0 28px 70px rgba(23,39,85,.24)}'+
+    '#nx-import-host .head{display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border-bottom:1px solid #b9cbed;position:sticky;top:0;background:#dce7f7;z-index:2}'+
+    '#nx-import-host .head strong{font-size:17px}#nx-import-host .close{width:36px;height:36px;border:1px solid #172755;border-radius:10px;background:#1f233a;color:#fff;font-size:22px;cursor:pointer}#nx-import-host .close:hover{background:#f1994a;color:#111827}'+
+    '#nx-import-host .body{padding:17px}#nx-import-host p{color:#5b6780;line-height:1.5}'+
+    '#nx-import-host input{width:100%;box-sizing:border-box;border:1px solid #b9cbed;border-radius:11px;padding:12px 13px;font:inherit;background:#fff;margin:6px 0 12px;color:#111827;outline:none}#nx-import-host input:focus{border-color:#2f4f93;box-shadow:0 0 0 3px rgba(47,79,147,.10)}'+
+    '#nx-import-host .btn{border:1px solid #172755;background:#264c8f;color:#fff;border-radius:11px;padding:10px 13px;font-weight:850;cursor:pointer;transition:transform .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease}'+
+    '#nx-import-host .btn.primary{background:#246b36;color:#fff;border-color:#173d22}#nx-import-host .btn:hover,#nx-import-host .btn:focus-visible{background:#f1994a;color:#111827;border-color:#172755;transform:translateY(-1px);box-shadow:0 8px 16px rgba(23,39,85,.16);outline:none}#nx-import-host .btn:active{transform:translateY(0) scale(.99)}#nx-import-host .btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}'+
     '#nx-import-host .wide{width:100%}.nx-imp-spin{display:flex;align-items:center;gap:9px;color:#6f6a61;font-size:12px;min-height:24px;margin-bottom:10px}'+
     '.nx-imp-spin:before{content:"";width:15px;height:15px;border:2px solid #d9d1c4;border-top-color:#191713;border-radius:50%;animation:nxImpSpin .8s linear infinite}@keyframes nxImpSpin{to{transform:rotate(360deg)}}'+
     '.nx-imp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.nx-imp-stat{background:#f7f3ec;border:1px solid #e0d9cc;border-radius:12px;padding:11px}.nx-imp-stat strong{display:block;font-size:20px}.nx-imp-stat span{font-size:10px;color:#756e63}'+
     '.nx-imp-group{display:flex;justify-content:space-between;gap:12px;padding:10px 11px;border:1px solid #e1dacf;border-radius:11px;margin:7px 0;background:#fff}.nx-imp-group span{color:#6f6a61;font-size:11px}'+
     '.nx-imp-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.nx-imp-resume{padding:10px 11px;border:1px solid #d8c589;background:#fff8da;border-radius:11px;color:#665526;font-size:11px;line-height:1.45;margin:12px 0}'+
-    '.nx-imp-bar{height:10px;background:#e5ded3;border-radius:999px;overflow:hidden;margin:14px 0 5px}.nx-imp-bar span{display:block;height:100%;background:#191713;border-radius:999px;transition:width .2s ease}'+
+    '.nx-imp-bar{height:10px;background:#dce7f7;border-radius:999px;overflow:hidden;margin:14px 0 5px}.nx-imp-bar span{display:block;height:100%;background:#2f4f93;border-radius:999px;transition:width .2s ease}'+
     '.nx-imp-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.nx-imp-current{border:1px solid #e0d9cc;background:#faf7f1;border-radius:11px;padding:10px 11px;margin:11px 0;font-size:12px}'+
     '.nx-imp-log{max-height:250px;overflow:auto;border:1px solid #e0d9cc;border-radius:12px;background:#fff;padding:7px}.nx-imp-row{padding:7px 8px;border-bottom:1px solid #eee8de;font-size:11px;line-height:1.4}.nx-imp-row:last-child{border-bottom:0}.nx-imp-row.ok{color:#315e3d}.nx-imp-row.err{color:#9b332c;background:#fff5f3}'+
     '.nx-imp-error{color:#9b332c;font-size:12px;line-height:1.45;margin:8px 0}.nx-imp-success{color:#315e3d;font-weight:850}'+
@@ -360,7 +360,7 @@ function mountEngine(){
   frame.src=ENGINE;
   frame.title='Fichas Técnicas Dinámicas';
   frame.allow='camera';
-  frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#f4f1ea;';
+  frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#eef3fb;';
   root.appendChild(frame);
   window.addEventListener('message',handleEngineMessage);
 }
