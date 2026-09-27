@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-native-nav-20260927-1';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-native-nav-20260927-2';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -56,28 +56,61 @@ function clearWorkspaceReturnParam(){setWorkspaceReturnParam('')}
 function statusText(s){return s==='ACTIVE'?'Activo':s==='BUILDING'?'En desarrollo':s==='PLANNED'?'Próximamente':s||''}
 function roleName(roleKey,role){return role?.nameEs||({owner:'Propietario',admin:'Administrador',manager:'Manager',collaborator:'Colaborador',viewer:'Consulta'}[roleKey]||roleKey||'Miembro')}
 function hasPerm(key){const list=workspace?.role?.permissions||workspace?.membership?.permissions||[];return Array.isArray(list)&&list.includes(key)}
-function syncGlobalHeader(mode){
+function topbar(mode){
+  if(mode!=='workspace')return'';
   const name=personal?.profile?.displayName||'Usuario Nexo';
-  const detail=mode==='workspace'
-    ?{
-      title:workspace?.workspace?.name||'Workspace',
-      subtitle:'Workspace · '+roleName(workspace?.membership?.roleKey,workspace?.role),
-      backTarget:siteBase()+'/blank-8',
-      backLabel:'Mi espacio'
-    }
-    :{
-      title:'Mi espacio',
-      subtitle:'Nexo Group',
-      backTarget:'',
-      backLabel:''
-    };
-  try{
-    localStorage.setItem('nexoHeaderDisplayName',name);
-    sessionStorage.setItem('nexoHeaderContext',JSON.stringify({...detail,path:location.pathname,at:Date.now()}));
-  }catch(_){}
-  try{window.dispatchEvent(new CustomEvent('NEXO_HEADER_CONTEXT',{detail}))}catch(_){}
+  const wsName=workspace?.workspace?.name||'Workspace';
+  const role=roleName(workspace?.membership?.roleKey,workspace?.role);
+  return '<header class="nxo-topbar nxo-workspace-nav">'+
+    '<div class="nxo-nav-brand" id="nxo-nav-home"><span class="nxo-nav-mark">N</span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(wsName)+'</small></span></div>'+
+    '<nav class="nxo-nav-links" aria-label="Navegación del Workspace">'+
+      '<button type="button" class="nxo-nav-link" id="nxo-personal">Mi espacio</button>'+
+      '<button type="button" class="nxo-nav-link active" aria-current="page">'+esc(wsName)+'</button>'+
+      '<button type="button" class="nxo-nav-link" id="nxo-nav-development">Centro de desarrollo</button>'+
+    '</nav>'+
+    '<div class="nxo-nav-account-wrap">'+
+      '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
+        '<span class="nxo-avatar">'+esc(initials(name))+'</span>'+
+        '<span class="nxo-nav-account-copy"><strong>'+esc(name)+'</strong><small>'+esc(role)+'</small></span>'+
+        '<span class="nxo-nav-caret">⌄</span>'+
+      '</button>'+
+      '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
+        '<button type="button" data-account-action="switch">Cambiar cuenta</button>'+
+        '<button type="button" class="danger" data-account-action="logout">Cerrar sesión</button>'+
+      '</div>'+
+    '</div>'+
+  '</header>'
 }
-function topbar(mode){const name=personal?.profile?.displayName||'Usuario Nexo';const sub=mode==='workspace'?'NEXO / '+(workspace?.workspace?.name||'Workspace'):'NEXO / Mi espacio';return '<header class="nxo-topbar"><div class="nxo-brand"><div class="nxo-logo">N</div><div class="nxo-brand-copy"><h1>'+(mode==='workspace'?esc(workspace?.workspace?.name||'Workspace'):'Mi espacio')+'</h1><p>'+esc(sub)+'</p></div></div><div class="nxo-top-actions">'+(mode==='workspace'?'<button class="nxo-btn" id="nxo-personal">← Mi espacio</button>':'')+'<div class="nxo-avatar">'+esc(initials(name))+'</div><div class="nxo-user-copy"><div style="font-size:11px;font-weight:800">'+esc(name)+'</div><div style="font-size:10px;color:#91a0b5">'+(mode==='workspace'?esc(roleName(workspace?.membership?.roleKey,workspace?.role)):'Cuenta Nexo')+'</div></div></div></header>'}
+
+function bindWorkspaceTopbar(){
+  const account=document.getElementById('nxo-nav-account');
+  const menu=document.getElementById('nxo-nav-account-menu');
+  document.getElementById('nxo-personal')?.addEventListener('click',returnPersonal);
+  document.getElementById('nxo-nav-home')?.addEventListener('click',returnPersonal);
+  document.getElementById('nxo-nav-development')?.addEventListener('click',()=>location.assign(centerDevelopmentUrl()));
+  if(account&&menu){
+    account.addEventListener('click',e=>{
+      e.stopPropagation();
+      const open=menu.classList.toggle('open');
+      account.setAttribute('aria-expanded',open?'true':'false');
+    });
+    document.addEventListener('click',e=>{
+      if(!menu.contains(e.target)&&e.target!==account){
+        menu.classList.remove('open');
+        account.setAttribute('aria-expanded','false');
+      }
+    },{once:true});
+  }
+  document.querySelectorAll('[data-account-action]').forEach(button=>{
+    button.addEventListener('click',()=>{
+      const action=button.dataset.accountAction;
+      const u=new URL(siteBase()+'/blank-8');
+      u.searchParams.set('nxoAccountAction',action);
+      location.assign(u.href);
+    });
+  });
+}
+
 function toolCard(t){const route=toolLaunchUrl(t);const usable=!!route&&t.status!=='PLANNED';return '<article class="nxo-card '+(usable?'clickable':'')+'" '+(usable?'data-tool="'+esc(route)+'"':'')+'><div class="nxo-card-top"><div class="nxo-tool-icon">'+esc(t.icon||'◈')+'</div><span class="nxo-status '+esc(t.status||'')+'">'+esc(statusText(t.status))+'</span></div><h4>'+esc(t.nameEs||t.nameEn||t.toolKey)+'</h4><p>'+esc(t.descriptionEs||'')+'</p><div class="nxo-card-footer"><span class="nxo-role">'+(usable?'Abrir herramienta':'Aún no disponible')+'</span><span>›</span></div></article>'}
 function bindTools(){document.querySelectorAll('[data-tool]').forEach(x=>x.onclick=()=>location.assign(x.dataset.tool))}
 async function start(){loading();const b=await waitBoot();accessStage='EXCHANGE';stripBoot();const ex=await api('exchange',{bootToken:b});sessionToken=ex.sessionToken||'';if(!sessionToken)throw accessError('NO_SESSION_TOKEN');accessStage='BOOTSTRAP';personal=await api('bootstrap');const requestedWorkspace=new URLSearchParams(location.search).get('nxoWorkspace');if(requestedWorkspace){try{workspace=await api('workspace.open',{workspaceId:requestedWorkspace});workspaceTab='tools';renderWorkspace();return}catch(_){clearWorkspaceReturnParam()}}renderPersonal()}
@@ -88,7 +121,7 @@ const legacyInvites=inv.length?'<section class="nxo-section"><div class="nxo-sec
 const explore='<article class="nxo-card clickable nxo-explore-card" data-tool="'+esc(centerDevelopmentUrl())+'"><div class="nxo-card-top"><div class="nxo-tool-icon">＋</div><span class="nxo-status ACTIVE">Catálogo</span></div><h4>Explorar más herramientas</h4><p>Abre el Centro de desarrollo para conocer todas las herramientas activas de Nexo y, más adelante, probarlas o añadirlas mediante un plan.</p><div class="nxo-card-footer"><span class="nxo-role">Centro de desarrollo</span><span>›</span></div></article>';
 const personalTools='<section class="nxo-section"><div class="nxo-section-head"><div><h3>Mis herramientas</h3><p>Aquí aparecen únicamente las herramientas disponibles para tu cuenta.</p></div></div><div class="nxo-grid">'+tools.map(toolCard).join('')+explore+'</div></section>';
 const workspaceCards='<section class="nxo-section"><div class="nxo-section-head"><div><h3>Mis Workspaces</h3><p>Espacios que creaste o a los que te uniste.</p></div><div class="nxo-section-actions"><button id="nxo-join-workspace" class="nxo-btn">Unirse a un Workspace</button><button id="nxo-create-workspace" class="nxo-btn nxo-btn-gold">Nuevo Workspace</button></div></div>'+(spaces.length?'<div class="nxo-grid">'+spaces.map(w=>'<article class="nxo-card clickable" data-workspace="'+esc(w.workspaceId)+'"><div class="nxo-card-top"><div class="nxo-tool-icon">⌂</div><span class="nxo-status ACTIVE">Activo</span></div><h4>'+esc(w.name)+'</h4><p>'+esc(w.description||'Espacio de trabajo Nexo')+'</p><div class="nxo-card-footer"><span class="nxo-role">'+esc(roleName(w.roleKey,w.role))+'</span><span>›</span></div></article>').join('')+'</div>':'<div class="nxo-empty">Todavía no perteneces a ningún Workspace.</div>')+'</section>';
-html('<div class="nxo-shell"><main class="nxo-main">'+welcome+summary+legacyInvites+personalTools+workspaceCards+'</main></div>');syncGlobalHeader('personal');bindTools();document.querySelectorAll('[data-workspace]').forEach(x=>x.onclick=()=>openWorkspace(x.dataset.workspace));document.getElementById('nxo-create-workspace')?.addEventListener('click',createWorkspaceModal);document.getElementById('nxo-join-workspace')?.addEventListener('click',joinWorkspaceModal);document.getElementById('nxo-dismiss-welcome')?.addEventListener('click',()=>{try{localStorage.setItem('nexoWelcomeDismissed:v1','1')}catch(_){}renderPersonal()});document.querySelectorAll('[data-invite-accept]').forEach(b=>b.onclick=()=>respondInvite(b.dataset.inviteAccept,'accept'));document.querySelectorAll('[data-invite-decline]').forEach(b=>b.onclick=()=>respondInvite(b.dataset.inviteDecline,'decline'))}
+html('<div class="nxo-shell"><main class="nxo-main">'+welcome+summary+legacyInvites+personalTools+workspaceCards+'</main></div>');bindTools();document.querySelectorAll('[data-workspace]').forEach(x=>x.onclick=()=>openWorkspace(x.dataset.workspace));document.getElementById('nxo-create-workspace')?.addEventListener('click',createWorkspaceModal);document.getElementById('nxo-join-workspace')?.addEventListener('click',joinWorkspaceModal);document.getElementById('nxo-dismiss-welcome')?.addEventListener('click',()=>{try{localStorage.setItem('nexoWelcomeDismissed:v1','1')}catch(_){}renderPersonal()});document.querySelectorAll('[data-invite-accept]').forEach(b=>b.onclick=()=>respondInvite(b.dataset.inviteAccept,'accept'));document.querySelectorAll('[data-invite-decline]').forEach(b=>b.onclick=()=>respondInvite(b.dataset.inviteDecline,'decline'))}
 async function refreshPersonal(){personal=await api('personal.refresh');renderPersonal()}
 async function respondInvite(id,decision){try{loading(decision==='accept'?'Aceptando invitación…':'Actualizando invitación…');personal=await api('invitation.respond',{invitationId:id,decision});toast(decision==='accept'?'Invitación aceptada':'Invitación rechazada');renderPersonal()}catch(e){errorView(e)}}
 function modal(title,body,onReady){const o=document.createElement('div');o.className='nxo-overlay';o.innerHTML='<div class="nxo-modal"><div class="nxo-modal-head"><strong>'+esc(title)+'</strong><button class="nxo-btn" data-close>✕</button></div><div class="nxo-modal-body">'+body+'</div></div>';document.body.appendChild(o);o.querySelector('[data-close]').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};if(onReady)onReady(o);return o}
@@ -96,7 +129,7 @@ function createWorkspaceModal(){modal('Crear Workspace','<div class="nxo-field">
 function joinWorkspaceModal(){modal('Unirse a un Workspace','<div class="nxo-field"><label>Código de invitación</label><input id="nxo-join-code" class="nxo-input" placeholder="NEXO-ABCDE-12345" autocomplete="off" autocapitalize="characters"></div><p class="nxo-muted" style="margin:0;line-height:1.55">Pega el código que te compartió un administrador del Workspace. Los códigos son de un solo uso.</p><div class="nxo-modal-actions"><button id="nxo-join-submit" class="nxo-btn nxo-btn-gold">Unirme al Workspace</button></div>',o=>{const input=o.querySelector('#nxo-join-code'),button=o.querySelector('#nxo-join-submit');input?.focus();button.onclick=async()=>{const code=input.value.trim();if(!code){toast('Escribe el código de invitación');return}button.disabled=true;button.textContent='Validando…';try{workspace=await api('workspace.join.code',{code});o.remove();setWorkspaceReturnParam(workspace?.workspace?.id||'');workspaceTab='tools';toast('Te uniste a '+(workspace?.workspace?.name||'Workspace'));renderWorkspace()}catch(e){button.disabled=false;button.textContent='Unirme al Workspace';toast(e.message||String(e))}}})}
 async function openWorkspace(id,alreadyOpen=false){try{loading('Abriendo Workspace…');workspace=alreadyOpen&&workspace?workspace:await api('workspace.open',{workspaceId:id});setWorkspaceReturnParam(workspace?.workspace?.id||id);workspaceTab='tools';renderWorkspace()}catch(e){errorView(e)}}
 async function returnPersonal(){try{loading('Volviendo a Mi espacio…');personal=await api('workspace.return');clearWorkspaceReturnParam();renderPersonal()}catch(e){errorView(e)}}
-function renderWorkspace(){const ws=workspace?.workspace||{},role=workspace?.role||{},tools=workspace?.tools||[];const perms=role.permissions||[];const canMembers=workspace?.membership?.roleKey==='owner'||perms.some(x=>['members.view','members.manage','members.invite'].includes(x));const canTools=perms.includes('tools.configure');const tabs=['<button class="nxo-tab '+(workspaceTab==='tools'?'active':'')+'" data-wtab="tools">Herramientas</button>'];if(canMembers)tabs.push('<button class="nxo-tab '+(workspaceTab==='members'?'active':'')+'" data-wtab="members">Miembros</button>');tabs.push('<button class="nxo-tab '+(workspaceTab==='access'?'active':'')+'" data-wtab="access">Mi acceso</button>');if(canTools)tabs.push('<button class="nxo-tab '+(workspaceTab==='settings'?'active':'')+'" data-wtab="settings">Configuración</button>');let body='';if(workspaceTab==='tools')body=renderWorkspaceTools(tools);else if(workspaceTab==='members')body='<div id="nxo-members-zone"><div class="nxo-empty">Cargando miembros…</div></div>';else if(workspaceTab==='settings')body='<div id="nxo-settings-zone"><div class="nxo-empty">Cargando configuración…</div></div>';else body=renderAccess(role);html('<div class="nxo-shell"><main class="nxo-main"><div class="nxo-workspace-header"><div><div class="nxo-eyebrow">Workspace</div><h2>'+esc(ws.name||'Workspace')+'</h2><p>'+esc(ws.description||'')+'</p></div><div class="nxo-top-actions"><span class="nxo-chip">'+esc(roleName(workspace?.membership?.roleKey,role))+'</span></div></div><div class="nxo-tabs">'+tabs.join('')+'</div>'+body+'</main></div>');syncGlobalHeader('workspace');document.querySelectorAll('[data-wtab]').forEach(b=>b.onclick=()=>{workspaceTab=b.dataset.wtab;renderWorkspace()});bindTools();if(workspaceTab==='members')loadMembers();if(workspaceTab==='settings')loadWorkspaceSettings()}
+function renderWorkspace(){const ws=workspace?.workspace||{},role=workspace?.role||{},tools=workspace?.tools||[];const perms=role.permissions||[];const canMembers=workspace?.membership?.roleKey==='owner'||perms.some(x=>['members.view','members.manage','members.invite'].includes(x));const canTools=perms.includes('tools.configure');const tabs=['<button class="nxo-tab '+(workspaceTab==='tools'?'active':'')+'" data-wtab="tools">Herramientas</button>'];if(canMembers)tabs.push('<button class="nxo-tab '+(workspaceTab==='members'?'active':'')+'" data-wtab="members">Miembros</button>');tabs.push('<button class="nxo-tab '+(workspaceTab==='access'?'active':'')+'" data-wtab="access">Mi acceso</button>');if(canTools)tabs.push('<button class="nxo-tab '+(workspaceTab==='settings'?'active':'')+'" data-wtab="settings">Configuración</button>');let body='';if(workspaceTab==='tools')body=renderWorkspaceTools(tools);else if(workspaceTab==='members')body='<div id="nxo-members-zone"><div class="nxo-empty">Cargando miembros…</div></div>';else if(workspaceTab==='settings')body='<div id="nxo-settings-zone"><div class="nxo-empty">Cargando configuración…</div></div>';else body=renderAccess(role);html('<div class="nxo-shell">'+topbar('workspace')+'<main class="nxo-main"><div class="nxo-workspace-header"><div><div class="nxo-eyebrow">Workspace</div><h2>'+esc(ws.name||'Workspace')+'</h2><p>'+esc(ws.description||'')+'</p></div><div class="nxo-top-actions"><span class="nxo-chip">'+esc(roleName(workspace?.membership?.roleKey,role))+'</span></div></div><div class="nxo-tabs">'+tabs.join('')+'</div>'+body+'</main></div>');bindWorkspaceTopbar();document.querySelectorAll('[data-wtab]').forEach(b=>b.onclick=()=>{workspaceTab=b.dataset.wtab;renderWorkspace()});bindTools();if(workspaceTab==='members')loadMembers();if(workspaceTab==='settings')loadWorkspaceSettings()}
 function renderWorkspaceTools(tools){return '<section class="nxo-section" style="margin-top:0"><div class="nxo-section-head"><div><h3>Herramientas del Workspace</h3><p>Estas herramientas trabajan con el contexto y los datos de '+esc(workspace?.workspace?.name||'este Workspace')+'.</p></div></div>'+(tools.length?'<div class="nxo-grid">'+tools.map(toolCard).join('')+'</div>':'<div class="nxo-empty">No hay herramientas habilitadas para este Workspace.</div>')+'</section>'}
 function renderAccess(role){const perms=role?.permissions||[];return '<div class="nxo-panel" style="padding:18px"><div class="nxo-section-head"><div><h3>Tu acceso en este Workspace</h3><p>Los permisos se aplican en backend, no solo en la interfaz.</p></div></div><div class="nxo-chip">'+esc(roleName(workspace?.membership?.roleKey,role))+'</div><div class="nxo-perms">'+(perms.length?perms.map(p=>'<span class="nxo-perm">'+esc(p)+'</span>').join(''):'<span class="nxo-muted">Sin permisos adicionales.</span>')+'</div></div>'}
 async function loadMembers(){const zone=document.getElementById('nxo-members-zone');if(!zone)return;try{const wsid=workspace.workspace.id;workspaceMembers=await api('workspace.members',{workspaceId:wsid});const rolePerms=workspace?.role?.permissions||[];const canInvite=rolePerms.includes('members.invite')||rolePerms.includes('members.manage');const canAssign=rolePerms.includes('roles.assign');const canRemove=rolePerms.includes('members.remove')||rolePerms.includes('members.manage');if(canAssign||canInvite){try{workspaceRoles=await api('workspace.roles',{workspaceId:wsid})}catch(_){workspaceRoles=[]}}else workspaceRoles=[];zone.innerHTML='<div class="nxo-section-head"><div><h3>Miembros</h3><p>'+workspaceMembers.members.length+' miembro'+(workspaceMembers.members.length===1?'':'s')+' activo'+(workspaceMembers.members.length===1?'':'s')+'.</p></div>'+(canInvite?'<button id="nxo-invite-member" class="nxo-btn nxo-btn-gold">Invitar miembro</button>':'')+'</div><div class="nxo-member-list">'+workspaceMembers.members.map(m=>memberRow(m,canAssign,canRemove)).join('')+'</div>';document.getElementById('nxo-invite-member')?.addEventListener('click',inviteModal);document.querySelectorAll('[data-member-role]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.memberRole,sel.value));document.querySelectorAll('[data-member-remove]').forEach(btn=>btn.onclick=()=>removeMember(btn.dataset.memberRemove))}catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||e)+'</div>'}}
