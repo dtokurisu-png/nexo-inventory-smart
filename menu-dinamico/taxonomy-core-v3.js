@@ -2,8 +2,12 @@
 if(window.__NEXO_TAXONOMY_CORE_V3__)return;window.__NEXO_TAXONOMY_CORE_V3__=true;
 const view=document.getElementById('view'),back=document.getElementById('back'),home=document.getElementById('home'),modal=document.getElementById('modal');
 if(!view||!back||!home||!modal)return;
-const mobileDevice=()=>{const ua=navigator.userAgent||'';return navigator.maxTouchPoints>0||matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||Math.min(screen.width||9999,screen.height||9999)<=900};
-const root=document.documentElement;root.classList.toggle('nexoMobile',mobileDevice());
+const mobileDevice=()=>{const ua=navigator.userAgent||'',vw=Math.max(1,window.innerWidth||document.documentElement.clientWidth||9999),mobileUa=/Android|iPhone|iPad|iPod|Mobile/i.test(ua),coarse=matchMedia('(pointer:coarse)').matches;return mobileUa||vw<=720||(coarse&&vw<=900)};
+const root=document.documentElement;
+let deviceSyncFrame=0;
+function syncDeviceClass(){root.classList.toggle('nexoMobile',mobileDevice())}
+syncDeviceClass();
+addEventListener('resize',()=>{cancelAnimationFrame(deviceSyncFrame);deviceSyncFrame=requestAnimationFrame(syncDeviceClass)});
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],preparations:[]};
 const state={mode:'root',nativeCards:{dish:[],prep:[]},productModal:false,applying:false,timer:null};
 const style=document.createElement('style');style.id='nexo-taxonomy-core-v3-style';style.textContent=`
