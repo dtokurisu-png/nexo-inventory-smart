@@ -11,6 +11,7 @@ let importOpen=false;
 let importPreview=null;
 let importCode='';
 let importLog=[];
+let previewWatchdog=0;
 
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],collections:[],context:{},capabilities:{}};
 const lang=()=>document.documentElement.lang==='en'?'en':'es';
@@ -120,6 +121,8 @@ function enhanceRoot(){
 }
 
 function closeLayer(){
+  clearTimeout(previewWatchdog);
+  previewWatchdog=0;
   document.getElementById('nexoWorkspaceLibraryLayer')?.remove();
   importOpen=false;
 }
@@ -176,12 +179,23 @@ function openImport(){
     button.textContent=tr('Validando…','Validating…');
     const validation=el.querySelector('[data-nexo-import-validation]');
     if(validation)validation.innerHTML=importSpinner(tr('Validando código y leyendo paquete…','Validating code and reading package…'));
+    clearTimeout(previewWatchdog);
+    previewWatchdog=setTimeout(()=>{
+      if(importOpen&&!importPreview){
+        previewError({message:tr(
+          'No se recibió respuesta del validador. Reintenta; no se modificaron datos.',
+          'No response was received from the validator. Retry; no data was changed.'
+        )});
+      }
+    },12000);
     parent.postMessage({type:'NEXO_DM_IMPORT_PREVIEW_CODE',payload:{code}},'*');
   };
 }
 
 function renderImportPreview(payload){
   if(!importOpen)return;
+  clearTimeout(previewWatchdog);
+  previewWatchdog=0;
   importPreview=payload||{};
   const modal=document.querySelector('#nexoWorkspaceLibraryLayer .nexoWorkspaceModalBody');
   if(!modal)return;
@@ -347,8 +361,27 @@ function importError(payload){
   }
 }
 
+function previewAck(payload){
+  if(!importOpen)return;
+  const validation=document.querySelector('[data-nexo-import-validation]');
+  if(validation)validation.innerHTML=importSpinner(
+    payload?.message||tr('Código recibido. Cargando resumen del paquete…','Code received. Loading package summary…')
+  );
+  clearTimeout(previewWatchdog);
+  previewWatchdog=setTimeout(()=>{
+    if(importOpen&&!importPreview){
+      previewError({message:tr(
+        'El código llegó al servidor, pero el resumen tardó demasiado. Reintenta; no se modificaron datos.',
+        'The code reached the server, but the summary took too long. Retry; no data was changed.'
+      )});
+    }
+  },15000);
+}
+
 function previewError(payload){
   if(!importOpen)return;
+  clearTimeout(previewWatchdog);
+  previewWatchdog=0;
   const validation=document.querySelector('[data-nexo-import-validation]');
   const button=document.querySelector('[data-nexo-import-preview]');
   if(validation)validation.innerHTML='<div class="nexoImportFailure">⚠ '+esc(payload?.message||tr('No se pudo validar el paquete.','Package could not be validated.'))+'</div>';
@@ -367,6 +400,7 @@ window.addEventListener('message',e=>{
   let m=e.data;
   if(typeof m==='string')try{m=JSON.parse(m)}catch{return}
   if(!m?.type)return;
+  if(m.type==='NEXO_DM_IMPORT_PREVIEW_ACK')previewAck(m.payload||{});
   if(m.type==='NEXO_DM_IMPORT_PREVIEW')renderImportPreview(m.payload||{});
   if(m.type==='NEXO_DM_IMPORT_PREVIEW_ERROR')previewError(m.payload||{});
   if(m.type==='NEXO_DM_IMPORT_BEGIN')importBegin(m.payload||{});
