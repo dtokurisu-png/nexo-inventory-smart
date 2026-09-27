@@ -1,7 +1,7 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260927-1';
+const ACCESS_REVISION='fichas-engine-20260927-2';
 const ENGINE_REVISION='workspace-library-20260927-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -127,15 +127,29 @@ async function importPackage(code){
   importing=true;
   try{
     let result=null;
+    let lastProcessed=-1;
+    let stagnantRounds=0;
     for(let step=0;step<80;step++){
       result=await api('import.code',{code});
+      const processed=Number(result?.processedCount||0);
+      const total=Number(result?.totalCount||0);
       postToEngine('NEXO_DM_IMPORT_PROGRESS',{
-        processedCount:Number(result?.processedCount||0),
-        totalCount:Number(result?.totalCount||0),
+        processedCount:processed,
+        totalCount:total,
         remainingCount:Number(result?.remainingCount||0),
         complete:result?.complete===true
       });
       if(result?.complete===true)break;
+
+      if(processed===lastProcessed)stagnantRounds+=1;
+      else stagnantRounds=0;
+      lastProcessed=processed;
+
+      if(stagnantRounds>=3){
+        throw new Error('La importación no está avanzando. El código sigue disponible; revisa el paquete antes de continuar.');
+      }
+
+      await new Promise(resolve=>setTimeout(resolve,450));
     }
     if(result?.complete!==true){
       throw new Error('La importación quedó incompleta. Puedes continuar con el mismo código.');
