@@ -1,70 +1,201 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/fichas-ui.css?v=fichas-import-20260927-2';
-const ACCESS_REVISION='fichas-import-20260927-2';
+
+const ACCESS_REVISION='fichas-engine-20260927-1';
+const ENGINE_REVISION='workspace-library-20260927-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
+const ENGINE='https://dtokurisu-png.github.io/nexo-inventory-smart/menu-dinamico/live.html?nexo=1&v='+encodeURIComponent(ENGINE_REVISION);
+
 let accessStage='WAITING_PAGE';
-function accessError(code){return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.')}
-function loginVisible(visible){const r=document.getElementById('nx-fichas-app');if(r)r.style.display=visible?'none':'';document.body.classList.toggle('nx-fichas-lock',!visible)}
-function retryAccess(){const u=new URL(location.href);['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
-let sessionToken='',boot=null,activeTab='collections',search='',selectedSheet=null,bootstrap=null;
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const money=v=>Number.isFinite(Number(v))?'$'+Number(v).toFixed(2):'—';
-const pct=v=>Number.isFinite(Number(v))?Number(v).toFixed(1)+'%':'—';
-function addCss(){if(document.getElementById('nx-fichas-css'))return;const l=document.createElement('link');l.id='nx-fichas-css';l.rel='stylesheet';l.href=CSS;document.head.appendChild(l)}
-function mount(){addCss();document.body.classList.add('nx-fichas-lock');let r=document.getElementById('nx-fichas-app');if(!r){r=document.createElement('div');r.id='nx-fichas-app';r.className='nx-fichas-app';document.body.appendChild(r)}return r}
-function html(v){mount().innerHTML=v}
-function loading(t='Preparando Fichas Técnicas…'){html('<div class="nx-loading"><div><div class="nx-spinner"></div><strong>'+esc(t)+'</strong><p style="color:#93a0b4">Conectando con tu espacio Nexo.</p></div></div>')}
-function toast(t){let x=document.querySelector('.nx-toast');if(x)x.remove();x=document.createElement('div');x.className='nx-toast';x.textContent=t;document.body.appendChild(x);setTimeout(()=>x.remove(),3200)}
-function err(e){const m=String(e&&e.message?e.message:e||'Error');html('<div class="nx-loading"><div class="nx-error"><h2>No se pudo abrir Fichas Técnicas</h2><p>'+esc(m)+'</p><button class="nx-btn nx-btn-accent" id="nx-retry">Reintentar</button></div></div>');document.getElementById('nx-retry')?.addEventListener('click',retryAccess)}
-async function api(action,payload={}){
- const h={'Content-Type':'application/json','Accept':'application/json'};
- if(sessionToken)h.Authorization='Bearer '+sessionToken;
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
- try{
-  const r=await fetch(API,{method:'POST',cache:'no-store',signal:controller.signal,headers:h,body:JSON.stringify({action,...payload})});
-  if(!r.ok)throw accessError('HTTP_'+r.status);
-  let d;try{d=await r.json()}catch(_){throw accessError('INVALID_RESPONSE')}
-  if(d.ok===false)throw new Error(d.error||'Operación no disponible');
-  return d.data??d;
- }catch(e){if(e.name==='AbortError')throw accessError('REQUEST_TIMEOUT');throw e}
- finally{clearTimeout(timer)}
+let sessionToken='';
+let frame=null;
+let loadingData=false;
+let importing=false;
+
+function accessError(code){
+  return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.');
 }
-function stripBoot(){try{const u=new URL(location.href);['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
-async function waitBoot(){
- let previous='',deadline=Date.now()+30000;
- try{
-  while(Date.now()<deadline){
-   const q=new URLSearchParams(location.search),t=q.get('nxb'),e=q.get('nxbe'),state=q.get('nxbs')||'WAITING_PAGE';
-   if(state!==previous){previous=state;accessStage=state;deadline=Date.now()+(state==='LOGIN'?310000:30000);loginVisible(state==='LOGIN')}
-   if(e)throw accessError(e);
-   if(t && (state==='READY'||state==='WAITING_PAGE'))return t;
-   await new Promise(r=>setTimeout(r,100));
+function esc(v){
+  return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function mountRoot(){
+  document.body.style.overflow='hidden';
+  let root=document.getElementById('nx-fichas-app');
+  if(!root){
+    root=document.createElement('div');
+    root.id='nx-fichas-app';
+    root.style.cssText='position:fixed;inset:0;z-index:2147483500;background:#f4f1ea;display:block;';
+    document.body.appendChild(root);
   }
-  throw accessError('PAGE_TIMEOUT');
- }finally{loginVisible(false)}
+  return root;
 }
-
-async function start(){loading();const b=await waitBoot();accessStage='EXCHANGE';stripBoot();const ex=await api('exchange',{bootToken:b});sessionToken=ex.sessionToken||'';if(!sessionToken)throw accessError('NO_SESSION_TOKEN');accessStage='BOOTSTRAP';bootstrap=await api('bootstrap');renderHome()}
-function ctxLabel(){const c=bootstrap?.context||{};return c.type==='workspace'?(c.workspaceName||'Workspace'):'Mi espacio'}
-function visibleSheets(){let list=[...(bootstrap?.sheets||[])];if(search){const q=search.toLowerCase();list=list.filter(x=>((x.titleEs||'')+' '+(x.titleEn||'')+' '+(x.category||'')).toLowerCase().includes(q))}return list}
-function collectionSheets(c){const ids=new Set(c.sheetIds||[]);return visibleSheets().filter(s=>ids.has(s.id))}
-function top(){const canImport=bootstrap?.context?.type==='workspace'&&bootstrap?.capabilities?.canShare;return '<div class="nx-top"><div class="nx-brand"><div class="nx-logo">N</div><div class="nx-title"><h1>Fichas Técnicas Dinámicas</h1><p>NEXO / '+esc(ctxLabel())+'</p></div></div><div class="nx-actions"><span class="nx-badge">'+esc(bootstrap?.context?.roleKey||'owner')+'</span>'+(canImport?'<button class="nx-btn" id="nx-import">Importar fichas</button>':'')+(bootstrap?.capabilities?.canEdit?'<button class="nx-btn nx-btn-accent" id="nx-new-col">Nueva colección</button>':'')+'</div></div>'}
-function renderHome(){selectedSheet=null;const cols=bootstrap?.collections||[];const sheets=visibleSheets();const body=activeTab==='collections'?renderCollections(cols):renderSheets(sheets);html('<div class="nx-shell">'+top()+'<main class="nx-main"><div class="nx-toolbar"><div class="nx-tabs"><button class="nx-tab '+(activeTab==='collections'?'active':'')+'" data-tab="collections">Colecciones</button><button class="nx-tab '+(activeTab==='sheets'?'active':'')+'" data-tab="sheets">Fichas técnicas</button></div><input id="nx-search" class="nx-search" placeholder="Buscar fichas…" value="'+esc(search)+'"></div>'+body+'</main></div>');bindHome()}
-function renderCollections(cols){if(!cols.length)return '<div class="nx-empty">Todavía no tienes colecciones disponibles.</div>';return '<div class="nx-grid">'+cols.map(c=>'<article class="nx-card" data-col="'+esc(c.id)+'"><h3>'+esc(c.name)+'</h3><p>'+esc(c.description||'Colección de fichas técnicas')+'</p><div class="nx-card-meta"><span>'+((c.sheetIds||[]).length)+' fichas</span><span>'+esc(c.sourceKey||'personal')+'</span></div></article>').join('')+'</div>'}
-function renderSheets(list){if(!list.length)return '<div class="nx-empty">No hay fichas que coincidan con la búsqueda.</div>';return '<div class="nx-list">'+list.map(s=>'<article class="nx-row" data-sheet="'+esc(s.id)+'"><div><h3>'+esc(s.titleEs||s.titleEn||s.id)+'</h3><p>'+esc(s.titleEn&&s.titleEs?s.titleEn:(s.category||s.recipeType||''))+'</p></div><span class="nx-pill">'+esc(s.recipeType||'Ficha')+'</span></article>').join('')+'</div>'}
-function bindHome(){document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{activeTab=b.dataset.tab;renderHome()});const q=document.getElementById('nx-search');if(q)q.oninput=()=>{search=q.value||'';renderHome()};document.querySelectorAll('[data-sheet]').forEach(x=>x.onclick=()=>openSheet(x.dataset.sheet));document.querySelectorAll('[data-col]').forEach(x=>x.onclick=()=>openCollection(x.dataset.col));document.getElementById('nx-import')?.addEventListener('click',openImportModal);document.getElementById('nx-new-col')?.addEventListener('click',newCollection)}
-function openCollection(id){const c=(bootstrap?.collections||[]).find(x=>x.id===id);if(!c)return;const list=collectionSheets(c);html('<div class="nx-shell">'+top()+'<main class="nx-main"><div class="nx-toolbar"><button class="nx-btn" id="nx-back">← Colecciones</button><div><strong>'+esc(c.name)+'</strong><div style="color:#93a0b4;font-size:12px;margin-top:3px">'+list.length+' fichas</div></div></div>'+renderSheets(list)+'</main></div>');document.getElementById('nx-back').onclick=renderHome;document.querySelectorAll('[data-sheet]').forEach(x=>x.onclick=()=>openSheet(x.dataset.sheet))}
-async function openSheet(id){try{loading('Abriendo ficha…');selectedSheet=await api('sheet',{sheetId:id});renderSheet()}catch(e){err(e)}}
-function renderSheet(){const d=selectedSheet,s=d.sheet||{},sections=d.sections||[],comps=d.components||[],canCost=d.capabilities?.canViewCosts;const bySec=new Map;comps.forEach(c=>{if(!bySec.has(c.sectionId))bySec.set(c.sectionId,[]);bySec.get(c.sectionId).push(c)});const details=sections.map(sec=>'<div><div class="nx-section-title">'+esc(sec.titleEs||sec.titleEn||'Sección')+'</div>'+(bySec.get(sec.id)||[]).map(c=>'<div class="nx-component"><div><strong>'+esc(c.displayEs||c.displayEn||c.targetIngredientId||c.targetRecipeId||'Componente')+'</strong><small>'+esc(c.noteEs||c.noteEn||'')+'</small></div><span class="nx-qty">'+esc(c.quantity??'')+' '+esc(c.unitEs||c.unitEn||'')+'</span></div>').join('')+'</div>').join('');html('<div class="nx-shell">'+top()+'<main class="nx-main"><div class="nx-toolbar"><button class="nx-btn" id="nx-back">← Biblioteca</button><div class="nx-actions">'+(d.capabilities?.canEdit?'<button class="nx-btn" id="nx-colassign">Colecciones</button>':'')+(canCost?'<button class="nx-btn" id="nx-links">Vincular Inventory Smart</button><button class="nx-btn nx-btn-accent" id="nx-cost">Ver costos</button>':'')+'</div></div><div class="nx-sheet"><section class="nx-panel"><div class="nx-sheet-head"><div><h2>'+esc(s.titleEs||s.titleEn||s.id)+'</h2><p>'+esc(s.titleEn&&s.titleEs?s.titleEn:'')+'</p></div><span class="nx-pill">'+esc(s.recipeType||'Ficha')+'</span></div>'+details+'</section><aside class="nx-panel"><strong>Rendimiento</strong><div style="margin:10px 0 20px;font-size:22px;font-weight:800">'+esc(s.yieldQty??'—')+' '+esc(s.yieldUnitEs||s.yieldUnitEn||'')+'</div><strong>Método</strong><p style="color:#b2bdcd;white-space:pre-wrap;font-size:13px;line-height:1.55">'+esc(d.sheet?.methodEs||d.sheet?.methodEn||'Sin método registrado.')+'</p></aside></div></main></div>');document.getElementById('nx-back').onclick=renderHome;document.getElementById('nx-colassign')?.addEventListener('click',openCollectionAssignments);document.getElementById('nx-links')?.addEventListener('click',openLinks);document.getElementById('nx-cost')?.addEventListener('click',openCost)}
-function openImportModal(){modal('Importar fichas técnicas','<p style="color:#b2bdcd;font-size:13px;line-height:1.55;margin-top:0">Ingresa el código de importación entregado por Nexo Group. El paquete se copiará dentro del Workspace activo y quedará separado del paquete maestro de Nexo.</p><input id="nx-import-code" class="nx-search" style="width:100%;box-sizing:border-box;margin:8px 0 10px" placeholder="Código de importación" autocomplete="off" autocapitalize="characters"><div id="nx-import-progress" style="color:#93a0b4;font-size:12px;min-height:20px;margin:0 0 10px"></div><button id="nx-import-submit" class="nx-btn nx-btn-accent" style="width:100%">Importar al Workspace</button>');const input=document.getElementById('nx-import-code'),button=document.getElementById('nx-import-submit'),progress=document.getElementById('nx-import-progress');input?.focus();if(button)button.onclick=async()=>{const code=(input?.value||'').trim();if(!code){toast('Escribe el código de importación');return}button.disabled=true;button.textContent='Importando…';if(progress)progress.textContent='Preparando paquete…';try{let result=null;for(let step=0;step<60;step++){result=await api('import.code',{code});const done=Number(result?.processedCount||0),total=Number(result?.totalCount||0);if(progress&&total>0)progress.textContent='Importando '+done+' de '+total+' fichas…';if(result?.complete===true)break}if(result?.complete!==true)throw new Error('La importación no pudo completarse en el número esperado de pasos.');bootstrap=await api('bootstrap');document.querySelector('.nx-overlay')?.remove();activeTab='collections';toast((result?.collectionSheetCount||result?.totalCount||0)+' fichas importadas a '+(result?.workspaceName||'Workspace'));renderHome()}catch(e){button.disabled=false;button.textContent='Continuar importación';if(progress)progress.textContent='La importación quedó pausada. Puedes continuar con el mismo código.';toast(e.message||String(e))}}}
-
-async function newCollection(){const name=prompt('Nombre de la colección');if(!name)return;try{await api('collection.create',{input:{name}});bootstrap=await api('bootstrap');toast('Colección creada');renderHome()}catch(e){toast(e.message||String(e))}}
-async function openCollectionAssignments(){const sheetId=selectedSheet?.sheet?.id;if(!sheetId)return;const cols=bootstrap?.collections||[];if(!cols.length){toast('Crea una colección primero');return}const body=cols.map(col=>{const on=(col.sheetIds||[]).includes(sheetId);return '<div class="nx-link-row"><div><h4>'+esc(col.name)+'</h4><p>'+((col.sheetIds||[]).length)+' fichas</p></div><div style="display:flex;justify-content:flex-end"><button class="nx-btn '+(on?'':'nx-btn-accent')+'" data-col-toggle="'+esc(col.id)+'" data-on="'+(on?'1':'0')+'">'+(on?'Quitar':'Añadir')+'</button></div></div>'}).join('');modal('Colecciones de esta ficha',body);document.querySelectorAll('[data-col-toggle]').forEach(btn=>btn.onclick=async()=>{try{const id=btn.dataset.colToggle;if(btn.dataset.on==='1'){await api('collection.remove',{collectionId:id,sheetId})}else{await api('collection.add',{collectionId:id,sheetId})}bootstrap=await api('bootstrap');toast('Colecciones actualizadas');document.querySelector('.nx-overlay')?.remove();openCollectionAssignments()}catch(e){toast(e.message||String(e))}})}
-async function openLinks(){try{const d=await api('inventory.candidates',{sheetId:selectedSheet.sheet.id});const rows=d.rows||[],all=d.inventory||[];const body=rows.length?rows.map(r=>{const exact=new Set((r.exactCandidates||[]).map(x=>x.id));const opts=all.map(x=>'<option value="'+esc(x.id)+'" '+(r.currentLink?.inventoryItemId===x.id?'selected':'')+'>'+(exact.has(x.id)?'★ ':'')+esc(x.productName)+' · '+esc(x.supplier||'')+' · '+esc(x.presentation??'')+' '+esc(x.unitOfMeasure||'')+' · '+esc(x.costPerUnit??'—')+'/'+esc(x.unidadCosto||'')+'</option>').join('');return '<div class="nx-link-row"><div><h4>'+esc(r.displayEs||r.displayEn||r.ingredientId)+'</h4><p>'+esc(r.quantity??'')+' '+esc(r.unit||'')+(r.ambiguousExactMatch?' · varias coincidencias exactas':(exact.size===1?' · ★ sugerencia exacta':''))+'</p></div><div><select class="nx-select" data-link-component="'+esc(r.componentId)+'" data-ing="'+esc(r.ingredientId)+'"><option value="">Sin vínculo</option>'+opts+'</select></div></div>'}).join(''):'<div class="nx-empty">No hay componentes vinculables en esta ficha.</div>';modal('Vincular con Inventory Smart',body);document.querySelectorAll('[data-link-component]').forEach(sel=>sel.onchange=async()=>{try{if(sel.value){await api('inventory.link',{input:{technicalSheetId:selectedSheet.sheet.id,componentId:sel.dataset.linkComponent,inventoryItemId:sel.value,linkScope:'ingredient',matchMethod:'manual'}})}else{await api('inventory.unlink',{input:{technicalSheetId:selectedSheet.sheet.id,componentId:sel.dataset.linkComponent,linkScope:'ingredient'}})}toast('Vínculo actualizado')}catch(e){toast(e.message||String(e))}})}catch(e){toast(e.message||String(e))}}
-async function openCost(){try{const c=await api('cost',{sheetId:selectedSheet.sheet.id});const rows=(c.components||[]).map(x=>'<div class="nx-cost-row"><div class="nx-cost-row-top"><span>'+esc(x.label||x.componentId)+'</span><strong>'+money(x.knownCost)+'</strong></div><div class="nx-bar"><span style="width:'+Math.max(0,Math.min(100,Number(x.contributionPercent)||0))+'%"></span></div><div style="margin-top:5px;color:#93a0b4;font-size:11px">'+(x.status==='COSTED'?pct(x.contributionPercent):'<span class="nx-warn">'+esc(x.reason||x.status)+'</span>')+'</div></div>').join('');const body='<div class="nx-cost-total">'+money(c.totalKnownCost)+'</div><div class="nx-cost-sub">Costo conocido'+(c.complete?' · completo':' · '+c.unresolvedCount+' pendientes')+(c.costPerYieldUnit!=null?' · '+money(c.costPerYieldUnit)+' por unidad de rendimiento':'')+'</div><div style="margin-top:18px">'+rows+'</div>';modal('Costos de la ficha',body)}catch(e){toast(e.message||String(e))}}
-function modal(title,body){const o=document.createElement('div');o.className='nx-overlay';o.innerHTML='<div class="nx-modal"><div class="nx-modal-head"><strong>'+esc(title)+'</strong><button class="nx-btn" data-close>✕</button></div><div class="nx-modal-body">'+body+'</div></div>';document.body.appendChild(o);o.querySelector('[data-close]').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()}}
-start().catch(err);
+function loading(text='Preparando Fichas Técnicas Dinámicas…'){
+  mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:#0d121a;color:#f4f6f8;font:600 14px Inter,Arial,sans-serif"><div style="text-align:center"><div style="width:34px;height:34px;border:3px solid #3a4656;border-top-color:#d9b45b;border-radius:50%;margin:0 auto 14px;animation:nxspin .8s linear infinite"></div><strong>'+esc(text)+'</strong><style>@keyframes nxspin{to{transform:rotate(360deg)}}</style></div></div>';
+}
+function showError(error){
+  const message=String(error?.message||error||'Error desconocido');
+  mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:#0d121a;color:#f4f6f8;font:14px Inter,Arial,sans-serif;padding:24px"><div style="max-width:560px;border:1px solid #344156;border-radius:18px;background:#111927;padding:22px"><h2 style="margin:0 0 10px">No se pudo abrir Fichas Técnicas Dinámicas</h2><p style="color:#aeb9c9;line-height:1.55">'+esc(message)+'</p><button id="nx-engine-retry" style="border:1px solid #d9b45b;background:#d9b45b;color:#17130b;border-radius:10px;padding:10px 14px;font-weight:800">Reintentar</button></div></div>';
+  document.getElementById('nx-engine-retry')?.addEventListener('click',retryAccess);
+}
+function loginVisible(visible){
+  const root=document.getElementById('nx-fichas-app');
+  if(root)root.style.display=visible?'none':'block';
+}
+function retryAccess(){
+  const u=new URL(location.href);
+  ['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));
+  location.replace(u.href);
+}
+async function api(action,payload={}){
+  const headers={'Content-Type':'application/json','Accept':'application/json'};
+  if(sessionToken)headers.Authorization='Bearer '+sessionToken;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),30000);
+  try{
+    const response=await fetch(API,{
+      method:'POST',
+      cache:'no-store',
+      signal:controller.signal,
+      headers,
+      body:JSON.stringify({action,...payload})
+    });
+    let data=null;
+    try{data=await response.json()}catch(_){}
+    if(!response.ok){
+      if(data?.error)throw new Error(data.error);
+      throw accessError('HTTP_'+response.status);
+    }
+    if(data?.ok===false)throw new Error(data.error||'Operación no disponible');
+    return data?.data??data;
+  }catch(error){
+    if(error?.name==='AbortError')throw accessError('REQUEST_TIMEOUT');
+    throw error;
+  }finally{
+    clearTimeout(timer);
+  }
+}
+function stripBoot(){
+  try{
+    const u=new URL(location.href);
+    ['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));
+    history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
+  }catch(_){}
+}
+async function waitBoot(){
+  let previous='',deadline=Date.now()+30000;
+  try{
+    while(Date.now()<deadline){
+      const q=new URLSearchParams(location.search);
+      const token=q.get('nxb');
+      const error=q.get('nxbe');
+      const state=q.get('nxbs')||'WAITING_PAGE';
+      if(state!==previous){
+        previous=state;
+        accessStage=state;
+        deadline=Date.now()+(state==='LOGIN'?310000:30000);
+        loginVisible(state==='LOGIN');
+      }
+      if(error)throw accessError(error);
+      if(token&&(state==='READY'||state==='WAITING_PAGE'))return token;
+      await new Promise(resolve=>setTimeout(resolve,100));
+    }
+    throw accessError('PAGE_TIMEOUT');
+  }finally{
+    loginVisible(false);
+  }
+}
+function postToEngine(type,payload={}){
+  try{frame?.contentWindow?.postMessage({type,payload},'*')}catch(_){}
+}
+async function pushEngineData(){
+  if(loadingData)return;
+  loadingData=true;
+  try{
+    const data=await api('engine.data');
+    postToEngine('DM_MENU_DATA',{ok:true,...data});
+  }catch(error){
+    postToEngine('DM_MENU_DATA',{ok:false,error:String(error?.message||error)});
+    throw error;
+  }finally{
+    loadingData=false;
+  }
+}
+async function importPackage(code){
+  if(importing)return;
+  importing=true;
+  try{
+    let result=null;
+    for(let step=0;step<80;step++){
+      result=await api('import.code',{code});
+      postToEngine('NEXO_DM_IMPORT_PROGRESS',{
+        processedCount:Number(result?.processedCount||0),
+        totalCount:Number(result?.totalCount||0),
+        remainingCount:Number(result?.remainingCount||0),
+        complete:result?.complete===true
+      });
+      if(result?.complete===true)break;
+    }
+    if(result?.complete!==true){
+      throw new Error('La importación quedó incompleta. Puedes continuar con el mismo código.');
+    }
+    await pushEngineData();
+    postToEngine('NEXO_DM_IMPORT_DONE',result);
+  }catch(error){
+    postToEngine('NEXO_DM_IMPORT_ERROR',{
+      message:String(error?.message||error||'No se pudo importar el paquete.')
+    });
+  }finally{
+    importing=false;
+  }
+}
+function handleEngineMessage(event){
+  if(!frame||event.source!==frame.contentWindow)return;
+  let message=event.data;
+  if(typeof message==='string'){
+    try{message=JSON.parse(message)}catch(_){return}
+  }
+  if(!message?.type)return;
+  const payload=message.payload||{};
+  if(message.type==='DM_LOAD_MENU_DATA'){
+    pushEngineData().catch(showError);
+    return;
+  }
+  if(message.type==='NEXO_DM_IMPORT_CODE'){
+    importPackage(String(payload.code||'').trim());
+    return;
+  }
+  if(message.type==='DM_SAVE_PHOTO_FILE'){
+    postToEngine('DM_PHOTO_ERROR',{
+      requestId:payload.requestId,
+      error:'PHOTO_SERVER_SYNC_PENDING'
+    });
+    return;
+  }
+}
+function mountEngine(){
+  const root=mountRoot();
+  root.innerHTML='';
+  frame=document.createElement('iframe');
+  frame.id='nexo-dm-engine';
+  frame.src=ENGINE;
+  frame.title='Fichas Técnicas Dinámicas';
+  frame.allow='camera';
+  frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#f4f1ea;';
+  root.appendChild(frame);
+  window.addEventListener('message',handleEngineMessage);
+}
+async function start(){
+  loading();
+  const bootToken=await waitBoot();
+  accessStage='EXCHANGE';
+  stripBoot();
+  const exchange=await api('exchange',{bootToken});
+  sessionToken=exchange?.sessionToken||'';
+  if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
+  accessStage='ENGINE';
+  mountEngine();
+}
+start().catch(showError);
 })();
