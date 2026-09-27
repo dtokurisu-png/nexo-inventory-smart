@@ -14,7 +14,7 @@
 html.nxo-global-header-active body{padding-top:var(--nexo-global-header-h)!important}
 html.nxo-global-header-active #nxo-app,
 html.nxo-global-header-active #nx-fichas-app{top:var(--nexo-global-header-h)!important}
-.nxo-gh{position:fixed;inset:0 0 auto 0;height:var(--nexo-global-header-h);z-index:2147483640;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px 14px;background:linear-gradient(180deg,#315091,#2f4f93);border-bottom:2px solid #172755;box-shadow:0 7px 20px rgba(0,0,0,.24);font-family:Arial,Helvetica,sans-serif;color:#fff}
+.nxo-gh{position:fixed;inset:0 0 auto 0;height:var(--nexo-global-header-h);z-index:2147483640;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px 14px;background:linear-gradient(180deg,var(--nxo-gh-blue),var(--nxo-gh-blue2));border-bottom:2px solid #172755;box-shadow:0 7px 20px rgba(0,0,0,.24);font-family:Arial,Helvetica,sans-serif;color:#fff}
 .nxo-gh *{box-sizing:border-box}
 .nxo-gh-left,.nxo-gh-right{display:flex;align-items:center;gap:9px;min-width:0}
 .nxo-gh-left{flex:1}.nxo-gh-right{justify-content:flex-end}
