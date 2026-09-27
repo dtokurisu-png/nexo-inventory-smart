@@ -1,13 +1,13 @@
 #nexoWorkspaceLibraryLayer{position:fixed;inset:0;z-index:2147483645;background:rgba(11,14,19,.72);display:grid;place-items:center;padding:14px}
-.nexoWorkspaceModal{width:min(620px,calc(100vw - 28px));max-height:88dvh;overflow:auto;background:#fffdfa;color:#191713;border:1px solid #d8d1c4;border-radius:20px;box-shadow:0 28px 90px rgba(0,0,0,.35)}
-.nexoWorkspaceModalHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #e2ddd3;position:sticky;top:0;background:#fffdfa;z-index:2}
-.nexoWorkspaceModalHead strong{font-size:17px}.nexoWorkspaceModalHead button{width:36px;height:36px;border:1px solid #d8d1c4;border-radius:10px;background:#fff;font-size:22px}
-.nexoWorkspaceModalBody{padding:16px}.nexoWorkspaceModalCopy{margin:0 0 13px;color:#6f6a61;line-height:1.55}.nexoWorkspaceCode{width:100%;margin:0 0 10px}.nexoWorkspaceProgress{min-height:22px;color:#6f6a61;font-size:12px;margin-bottom:9px}
+.nexoWorkspaceModal{width:min(620px,calc(100vw - 28px));max-height:88dvh;overflow:auto;background:#ffffff;color:#111827;border:1px solid #b9cbed;border-radius:20px;box-shadow:0 28px 90px rgba(0,0,0,.35)}
+.nexoWorkspaceModalHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #d6e0f1;position:sticky;top:0;background:#ffffff;z-index:2}
+.nexoWorkspaceModalHead strong{font-size:17px}.nexoWorkspaceModalHead button{width:36px;height:36px;border:1px solid #b9cbed;border-radius:10px;background:#fff;font-size:22px}
+.nexoWorkspaceModalBody{padding:16px}.nexoWorkspaceModalCopy{margin:0 0 13px;color:#5b6780;line-height:1.55}.nexoWorkspaceCode{width:100%;margin:0 0 10px}.nexoWorkspaceProgress{min-height:22px;color:#5b6780;font-size:12px;margin-bottom:9px}
 .nexoWorkspaceLibraryHead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:15px}.nexoWorkspaceLibraryHead h1{margin:2px 0 5px;font-size:clamp(25px,5vw,38px)}.nexoWorkspaceLibraryHead p{margin:0;color:var(--muted);max-width:720px}.nexoWorkspaceEyebrow{font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
 .nexoWorkspaceActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.nexoWorkspaceBtn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:11px;padding:9px 12px;font-weight:850}.nexoWorkspaceBtn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}.nexoWorkspaceBtn.wide{width:100%;min-height:44px}.nexoWorkspaceBtn:disabled{opacity:.55}
-.nexoWorkspaceTabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;background:#e9e4da;border-radius:13px;margin:0 0 15px}.nexoWorkspaceTabs button{border:0;background:transparent;border-radius:10px;padding:10px 12px;font-weight:850;color:#6d675d}.nexoWorkspaceTabs button.active{background:#fff;color:#191713;box-shadow:0 4px 14px rgba(34,29,21,.08)}
-.nexoWorkspaceLibraryBody{min-height:180px}.nexoWorkspaceEmpty{border:1px dashed #cfc7b7;background:rgba(255,255,255,.55);border-radius:18px;text-align:center;padding:36px 20px}.nexoWorkspaceEmptyIcon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:#191713;color:#fff;margin:0 auto 12px;font-size:22px}.nexoWorkspaceEmpty h2{margin:0 0 7px}.nexoWorkspaceEmpty p{margin:0 auto 16px;color:var(--muted);max-width:560px;line-height:1.5}.nexoWorkspaceEmpty .nexoWorkspaceActions{justify-content:center}
-.nexoWorkspaceSheetTools{margin:0 0 12px}.nexoWorkspaceSheetTools .search{width:100%}.nexoWorkspacePreview{text-align:center;padding:8px}.nexoWorkspacePreview h3{margin:0 0 8px}.nexoWorkspacePreview p{margin:0;color:#6f6a61;line-height:1.55}
+.nexoWorkspaceTabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;background:#dce7f7;border-radius:13px;margin:0 0 15px}.nexoWorkspaceTabs button{border:0;background:transparent;border-radius:10px;padding:10px 12px;font-weight:850;color:#4a5871}.nexoWorkspaceTabs button.active{background:#fff;color:#111827;box-shadow:0 4px 14px rgba(34,29,21,.08)}
+.nexoWorkspaceLibraryBody{min-height:180px}.nexoWorkspaceEmpty{border:1px dashed #b9cbed;background:rgba(255,255,255,.55);border-radius:18px;text-align:center;padding:36px 20px}.nexoWorkspaceEmptyIcon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:#111827;color:#fff;margin:0 auto 12px;font-size:22px}.nexoWorkspaceEmpty h2{margin:0 0 7px}.nexoWorkspaceEmpty p{margin:0 auto 16px;color:var(--muted);max-width:560px;line-height:1.5}.nexoWorkspaceEmpty .nexoWorkspaceActions{justify-content:center}
+.nexoWorkspaceSheetTools{margin:0 0 12px}.nexoWorkspaceSheetTools .search{width:100%}.nexoWorkspacePreview{text-align:center;padding:8px}.nexoWorkspacePreview h3{margin:0 0 8px}.nexoWorkspacePreview p{margin:0;color:#5b6780;line-height:1.55}
 @media(max-width:720px){.nexoWorkspaceLibraryHead{display:grid;gap:10px}.nexoWorkspaceActions{justify-content:flex-start}.nexoWorkspaceLibraryHead h1{font-size:22px}.nexoWorkspaceLibraryHead p{font-size:11px}.nexoWorkspaceTabs button{padding:8px;font-size:11px}.nexoWorkspaceBtn{font-size:10px;padding:7px 9px}.nexoWorkspaceEmpty{padding:24px 12px}.nexoWorkspaceEmpty h2{font-size:16px}.nexoWorkspaceEmpty p{font-size:11px}}
 @media(min-width:900px){
   .nexoWorkspaceLibraryBody .taxonomyGrid,
@@ -51,3 +51,34 @@
     line-height:1.45!important;
   }
 }
+
+/* Inventory Smart-aligned interaction system; taxonomy semantic colors stay intact. */
+.nexoWorkspaceBtn{
+  background:#264c8f;
+  color:#fff;
+  border-color:#172755;
+  transition:transform .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease,border-color .14s ease;
+}
+.nexoWorkspaceBtn.primary{background:#246b36;color:#fff;border-color:#173d22}
+.nexoWorkspaceBtn:hover,.nexoWorkspaceBtn:focus-visible{
+  background:#f1994a!important;
+  color:#111827!important;
+  border-color:#172755!important;
+  transform:translateY(-1px);
+  box-shadow:0 8px 16px rgba(23,39,85,.16);
+  outline:none;
+}
+.nexoWorkspaceBtn:active{transform:translateY(0) scale(.99)}
+.nexoWorkspaceBtn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.nexoWorkspaceTabs{background:#dce7f7;border:1px solid #b9cbed}
+.nexoWorkspaceTabs button{color:#4a5871;transition:background .14s ease,color .14s ease,transform .14s ease}
+.nexoWorkspaceTabs button:hover,.nexoWorkspaceTabs button:focus-visible{background:#f1994a;color:#111827;outline:none}
+.nexoWorkspaceTabs button.active{background:#2f4f93;color:#fff;box-shadow:none}
+.nexoWorkspaceModal{box-shadow:0 28px 70px rgba(23,39,85,.22)}
+.nexoWorkspaceModalHead button{
+  background:#1f233a;color:#fff;border-color:#172755;cursor:pointer;
+  transition:background .14s ease,color .14s ease,transform .14s ease;
+}
+.nexoWorkspaceModalHead button:hover,.nexoWorkspaceModalHead button:focus-visible{background:#f1994a;color:#111827;transform:translateY(-1px);outline:none}
+.nexoWorkspaceEmpty{background:#f8fbff}
+.nexoWorkspaceEmptyIcon{background:#2f4f93;color:#fff}
