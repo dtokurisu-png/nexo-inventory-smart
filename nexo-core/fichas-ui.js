@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260927-9';
-const ENGINE_REVISION='workspace-native-nav-20260927-2';
+const ACCESS_REVISION='fichas-engine-20260928-comments-1';
+const ENGINE_REVISION='workspace-comments-20260928-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -338,6 +338,29 @@ function handleEngineMessage(event){
   }
   if(message.type==='NEXO_DM_OPEN_IMPORT'){
     renderImportCodeStage();
+    return;
+  }
+  if(message.type==='NEXO_DM_RECIPE_COMMENT'){
+    const requestId=String(payload.requestId||'');
+    api('comment.create',{
+      input:{
+        technicalSheetId:payload.technicalSheetId,
+        recipeTitle:payload.recipeTitle,
+        comment:payload.comment
+      }
+    }).then(data=>{
+      postToEngine('NEXO_DM_RECIPE_COMMENT_RESULT',{
+        ok:true,
+        requestId,
+        comment:data
+      });
+    }).catch(error=>{
+      postToEngine('NEXO_DM_RECIPE_COMMENT_RESULT',{
+        ok:false,
+        requestId,
+        error:String(error?.message||error)
+      });
+    });
     return;
   }
   if(message.type==='NEXO_APP_EXIT_TO_WORKSPACE'){
