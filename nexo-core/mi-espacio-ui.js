@@ -891,7 +891,7 @@ function topbar(mode){
   const notification=canAdmin
     ?'<div class="nxo-notification-wrap">'+
        '<button type="button" class="nxo-notification-button" id="nxo-notification-button" aria-label="Notificaciones" aria-expanded="false">'+
-         '<span class="nxo-notification-icon" aria-hidden="true">♢</span>'+
+         '<span class="nxo-notification-icon" aria-hidden="true">🔔</span>'+
          '<span class="nxo-notification-badge" id="nxo-notification-badge" hidden>0</span>'+
        '</button>'+
        '<div class="nxo-notification-menu" id="nxo-notification-menu">'+
