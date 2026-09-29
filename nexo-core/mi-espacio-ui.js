@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-8';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-9';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -384,7 +384,7 @@ function mountNexoOrganicBackground(){
     const birthRaw=n.parent
       ?clamp((time-n.moveStart)/Math.max(1,n.moveDuration),0,1)
       :clamp(age/900,0,1);
-    const growth=smooth(birthRaw);
+    const growth=n.parent?ease(birthRaw):smooth(birthRaw);
     const life=nodeLifeAlpha(n,time);
     const wave=Math.sin(time*n.pulseSpeed+n.phase);
     const baseAlpha=clamp(n.alphaBase+n.alphaAmp*wave,.58,.99);
@@ -505,6 +505,7 @@ function mountNexoOrganicBackground(){
 
   function drawLink(l,time){
     const a=getNode(l.a),b=getNode(l.b);
+    if(l.dyingAt&&!l.dead)l.dyingAt=0;
     if(!a||!b||a.state==='dead'||b.state==='dead'){l.dead=true;return;}
 
     const va=nodeVisualState(a,time);
@@ -512,7 +513,7 @@ function mountNexoOrganicBackground(){
     const linkLife=Math.min(va.life,vb.life);
     const linkLen=Math.hypot(b.x-a.x,b.y-a.y);
     l.active=b.moving?vb.growth:1;
-    if(linkLen<.75||linkLife<=.001)return;
+    if(linkLen<.75||(va.life<=.001&&vb.life<=.001))return;
 
     const endA=va.rr*2;
     const endB=vb.rr*2;
@@ -522,16 +523,17 @@ function mountNexoOrganicBackground(){
 
     // Each half keeps the exact node hue. Opacity is identical to the node
     // through its visible boundary, then tapers only after leaving the circle.
-    const aEdgeAlpha=va.alpha*linkLife;
-    const bEdgeAlpha=vb.alpha*linkLife;
-    const centerAlpha=((aEdgeAlpha+bEdgeAlpha)*.5)*.13;
+    const aEdgeAlpha=va.alpha;
+    const bEdgeAlpha=vb.alpha;
+    const centerAlphaA=aEdgeAlpha*.13;
+    const centerAlphaB=bEdgeAlpha*.13;
 
     ctx.save();
     const grad=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
     grad.addColorStop(0,'rgba('+a.color+','+aEdgeAlpha+')');
     grad.addColorStop(edgeStopA,'rgba('+a.color+','+aEdgeAlpha+')');
-    grad.addColorStop(.499,'rgba('+a.color+','+centerAlpha+')');
-    grad.addColorStop(.501,'rgba('+b.color+','+centerAlpha+')');
+    grad.addColorStop(.499,'rgba('+a.color+','+centerAlphaA+')');
+    grad.addColorStop(.501,'rgba('+b.color+','+centerAlphaB+')');
     grad.addColorStop(edgeStopB,'rgba('+b.color+','+bEdgeAlpha+')');
     grad.addColorStop(1,'rgba('+b.color+','+bEdgeAlpha+')');
     ctx.fillStyle=grad;
@@ -612,26 +614,23 @@ function mountNexoOrganicBackground(){
     ctx.fillStyle=aura;
     ctx.beginPath();ctx.arc(n.x,n.y,rr*(2.8+n.auraGain*.6),0,Math.PI*2);ctx.fill();
 
-    const body=ctx.createRadialGradient(n.x-rr*.28,n.y-rr*.30,rr*.06,n.x,n.y,rr);
-    body.addColorStop(0,'rgba('+n.color+',1)');
-    body.addColorStop(.42,'rgba('+n.color+',.92)');
-    body.addColorStop(1,'rgba('+n.color+',.72)');
     ctx.globalAlpha=alpha;
-    ctx.fillStyle=body;
-    ctx.shadowColor='rgba('+n.color+','+Math.min(.72,alpha*.78)+')';
-    ctx.shadowBlur=10+8*pulse01;
+    ctx.fillStyle='rgb('+n.color+')';
+    ctx.shadowColor='rgba('+n.color+','+Math.min(.74,alpha*.82)+')';
+    ctx.shadowBlur=11+8*pulse01;
     ctx.beginPath();ctx.arc(n.x,n.y,rr,0,Math.PI*2);ctx.fill();
     ctx.globalAlpha=1;
 
-    const core=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*.50);
-    core.addColorStop(0,'rgba('+n.color+',1)');
-    core.addColorStop(.48,'rgba('+n.color+',.82)');
+    // Inner energy stays in the same hue family and never changes the outer-edge alpha.
+    const core=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*.56);
+    core.addColorStop(0,'rgba('+n.color+',.72)');
+    core.addColorStop(.48,'rgba('+n.color+',.30)');
     core.addColorStop(1,'rgba('+n.color+',0)');
     ctx.globalAlpha=alpha;
     ctx.fillStyle=core;
-    ctx.shadowColor='rgba('+n.color+','+Math.min(.88,alpha)+')';
-    ctx.shadowBlur=13+10*pulse01;
-    ctx.beginPath();ctx.arc(n.x,n.y,rr*.50,0,Math.PI*2);ctx.fill();
+    ctx.shadowColor='rgba('+n.color+','+Math.min(.84,alpha)+')';
+    ctx.shadowBlur=12+9*pulse01;
+    ctx.beginPath();ctx.arc(n.x,n.y,rr*.56,0,Math.PI*2);ctx.fill();
     ctx.globalAlpha=1;
     ctx.restore();
   }
