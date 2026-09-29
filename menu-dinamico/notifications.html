@@ -27,14 +27,25 @@ small{display:block;margin-top:14px;color:#6d7688;line-height:1.45}
   <p>Activa este permiso una sola vez. Cuando un temporizador de Fichas Técnicas termine, Android podrá mostrar el aviso en la barra superior y en el panel de notificaciones.</p>
   <button id="enable" type="button">Activar notificaciones</button>
   <div id="state" class="state">Esperando autorización.</div>
+  <div id="help" style="display:none;margin-top:14px;padding:14px;border-radius:14px;background:#fff7df;color:#554316;font-size:13px;line-height:1.55">
+    <strong>Cómo habilitarlas en Edge / Android</strong>
+    <ol style="margin:8px 0 0;padding-left:20px">
+      <li>Abre el menú del navegador <b>⋮</b>.</li>
+      <li>Entra en <b>Configuración</b> → <b>Permisos del sitio</b> o <b>Configuración del sitio</b>.</li>
+      <li>Busca <b>Notificaciones</b>.</li>
+      <li>Busca <b>dtokurisu-png.github.io</b> y cámbialo a <b>Permitir</b>.</li>
+      <li>Regresa aquí y pulsa <b>Volver a comprobar</b>.</li>
+    </ol>
+  </div>
   <small>El sonido de alarma de Fichas seguirá funcionando por separado. Esta autorización solo añade el aviso del sistema.</small>
 </main>
 <script>
 (()=>{'use strict';
 const SW='./sw.js?v=20260929-system-notifications-10';
 const ICON='https://static.wixstatic.com/media/8b64a8_9aaf5cc2adbb41d484291557d6024f08~mv2.png';
-const b=document.getElementById('enable'),s=document.getElementById('state');
+const b=document.getElementById('enable'),s=document.getElementById('state'),h=document.getElementById('help');
 function setState(text,cls=''){s.textContent=text;s.className='state'+(cls?' '+cls:'')}
+function showHelp(show){h.style.display=show?'block':'none'}
 function tell(permission){try{window.opener?.postMessage({type:'NEXO_TIMER_NOTIFICATION_PERMISSION',permission},'*')}catch(_){}}
 async function worker(){if(!('serviceWorker'in navigator))throw new Error('SERVICE_WORKER_UNAVAILABLE');const reg=await navigator.serviceWorker.register(SW,{scope:'./',updateViaCache:'none'});await navigator.serviceWorker.ready;try{await reg.update()}catch(_){}return reg}
 async function enable(){
@@ -46,13 +57,20 @@ async function enable(){
     if(permission==='default')permission=await Notification.requestPermission();
     tell(permission);
     if(permission==='granted'){
+      showHelp(false);
       setState('Notificaciones activadas. Ya puedes volver a Fichas.','ok');
       b.textContent='Notificaciones activadas';
       try{await reg.showNotification('Nexo Group · Temporizadores',{body:'Las notificaciones del teléfono quedaron activadas.',icon:ICON,badge:ICON,tag:'nexo-timer-permission',silent:true,data:{url:'./pwa.html'}})}catch(_){}
       setTimeout(()=>{try{window.close()}catch(_){}},1400);
       return;
     }
-    if(permission==='denied'){setState('El permiso quedó bloqueado. Puedes habilitarlo desde los permisos del sitio en el navegador.','bad');b.textContent='Permiso bloqueado';return}
+    if(permission==='denied'){
+      showHelp(true);
+      setState('El permiso está bloqueado por Edge. Debes cambiarlo manualmente en los permisos del sitio.','bad');
+      b.textContent='Volver a comprobar';
+      b.disabled=false;
+      return;
+    }
     setState('No se concedió el permiso. Puedes intentarlo de nuevo.','bad');b.disabled=false;
   }catch(err){
     setState('No se pudo activar: '+String(err?.message||err),'bad');b.disabled=false;
@@ -61,9 +79,13 @@ async function enable(){
 b.onclick=enable;
 if('Notification'in window){
   tell(Notification.permission);
-  if(Notification.permission==='granted'){setState('Notificaciones ya activadas.','ok');b.textContent='Notificaciones activadas';b.disabled=true}
-  else if(Notification.permission==='denied'){setState('El permiso está bloqueado en este navegador.','bad');b.textContent='Permiso bloqueado'}
+  if(Notification.permission==='granted'){
+    showHelp(false);setState('Notificaciones ya activadas.','ok');b.textContent='Notificaciones activadas';b.disabled=true
+  }else if(Notification.permission==='denied'){
+    showHelp(true);setState('El permiso está bloqueado por Edge. Debes cambiarlo manualmente en los permisos del sitio.','bad');b.textContent='Volver a comprobar';b.disabled=false
+  }
 }
+if(new URLSearchParams(location.search).get('help')==='1'&&Notification.permission!=='granted')showHelp(true);
 worker().catch(()=>{});
 })();
 </script>
