@@ -60,7 +60,12 @@
       "yieldUnitEn": "serving",
       "yieldUnitEs": "porción",
       "methodEn": "Plating Instructions:\nStart with the Potato Purée:\nUsing a spoon or small scoop, place a generous portion of the potato purée on the plate, towards the center. The potato should be the base of the dish.\nAdd the Roasted Chicken:\nPlace the roasted half chicken on top of the potato purée or just slightly off-center.\nMake sure the crispy skin of the chicken faces upwards for a beautiful, golden finish.\nDrizzle the Madeira sauce around the chicken, but not directly on top of it.",
-      "methodEs": "Instrucciones de emplatado:\nComience con el puré de papa:\nUsando una cuchara o una cuchara pequeña, coloque una porción generosa del puré de papa en el plato, hacia el centro. La papa debe ser la base del plato.\nAgregue el pollo asado:\nColoque el medio pollo asado sobre el puré de papa o apenas desplazado del centro.\nAsegúrese de que la piel crujiente del pollo quede hacia arriba para obtener un acabado dorado y atractivo.\nRocíe la salsa Madeira alrededor del pollo, pero no directamente encima."
+      "methodEs": "Instrucciones de emplatado:\nComience con el puré de papa:\nUsando una cuchara o una cuchara pequeña, coloque una porción generosa del puré de papa en el plato, hacia el centro. La papa debe ser la base del plato.\nAgregue el pollo asado:\nColoque el medio pollo asado sobre el puré de papa o apenas desplazado del centro.\nAsegúrese de que la piel crujiente del pollo quede hacia arriba para obtener un acabado dorado y atractivo.\nRocíe la salsa Madeira alrededor del pollo, pero no directamente encima.",
+      "heroImage": {
+        "id": "8b64a8_ca620211a51848fb9212ffae6da7ae0a~mv2.jpg",
+        "url": "https://static.wixstatic.com/media/8b64a8_ca620211a51848fb9212ffae6da7ae0a~mv2.jpg",
+        "altText": "Roasted Chicken"
+      }
     },
     {
       "_id": "prep-yuzu-achiote",
@@ -91,7 +96,12 @@
       "methodEn": "In a fryer, preheated to 350°F. Fry the brussels sprouts for 1.5 to 3 minutes or until golden brown and tender. Drain well and place into a mixing bowl, season with salt immediately. Toss quince vinaigrette with crispy Brussels in a mixing bowl until fully coated. Adjust seasoning as needed. Place into the center of the copper plate, finish with the rice, coconut flakes, Fresno curls, dots of hemp seed aioli throughout and micro cilantro. Finish with Murray’s Sea Salt.",
       "methodEs": "En una freidora precalentada a 350°F, fría las coles de Bruselas durante 1.5 a 3 minutos o hasta que estén doradas y tiernas. Escurra bien y colóquelas en un tazón para mezclar; sazone con sal inmediatamente. Mezcle las coles de Bruselas crujientes con la vinagreta de membrillo en un tazón hasta que queden completamente cubiertas. Ajuste la sazón según sea necesario. Coloque en el centro del plato de cobre y termine con el arroz, las hojuelas de coco, rizos de Fresno, puntos de alioli de semilla de cáñamo distribuidos por el plato y micro cilantro. Termine con sal marina Murray’s.",
       "notesEn": "SOURCE INCONSISTENCY: The MOP calls for Fresno curls and hemp seed aioli, but neither appears in the printed To Plate ingredient list. The To Plate list instead prints 1 g “chili rounds”; the source does not confirm that this is the same as Fresno curls. The To Plate list also includes 10 g Thai Banana, which is not mentioned in the MOP. Preserve all source text pending verification.",
-      "notesEs": "INCONSISTENCIA DE LA FUENTE: El MOP indica rizos de Fresno y alioli de semilla de cáñamo, pero ninguno aparece en la lista impresa de Para emplatar. La lista imprime en cambio 1 g de “chili rounds”; la fuente no confirma que sea lo mismo que los rizos de Fresno. La lista también incluye 10 g de Thai Banana, que no se menciona en el MOP. Se conserva todo el texto fuente pendiente de verificación."
+      "notesEs": "INCONSISTENCIA DE LA FUENTE: El MOP indica rizos de Fresno y alioli de semilla de cáñamo, pero ninguno aparece en la lista impresa de Para emplatar. La lista imprime en cambio 1 g de “chili rounds”; la fuente no confirma que sea lo mismo que los rizos de Fresno. La lista también incluye 10 g de Thai Banana, que no se menciona en el MOP. Se conserva todo el texto fuente pendiente de verificación.",
+      "heroImage": {
+        "id": "8b64a8_3b4a5090ffa0474e8a9a78db048028e4~mv2.jpg",
+        "url": "https://static.wixstatic.com/media/8b64a8_3b4a5090ffa0474e8a9a78db048028e4~mv2.jpg",
+        "altText": "Brussels Sprouts"
+      }
     },
     {
       "_id": "prep-cream-of-corn",
@@ -715,7 +725,11 @@
       "notesEn": "Plate-up source lists 10 oz bisque, 50 g crème fraîche, 50 g cooked lobster meat, 2 g chive oil, and nasturtium leaf garnish.",
       "notesEs": "La fuente de emplatado indica 10 oz de bisque, 50 g de crème fraîche, 50 g de carne de langosta cocida, 2 g de aceite de cebollín y hoja de capuchina como guarnición.",
       "_createdDate": "2026-09-24T22:31:07.000Z",
-      "heroImage": null
+      "heroImage": {
+        "id": "8b64a8_cab76c111d3b4bbbb4af8a10dcf06bdf~mv2.jpg",
+        "url": "https://static.wixstatic.com/media/8b64a8_cab76c111d3b4bbbb4af8a10dcf06bdf~mv2.jpg",
+        "altText": "Lobster Bisque"
+      }
     },
     {
       "_id": "prep-lobster-bisque",
@@ -778,7 +792,11 @@
       "methodEn": "Add soup to cauldron. Place baguettes and load with cheese. Place in salamander for 2 minutes or until cheese melts. Garnish with chives.",
       "methodEs": "Agregue la sopa al cauldron. Coloque las baguettes y cúbralas con queso. Lleve a la salamandra durante 2 minutos o hasta que el queso se derrita. Termine con cebollín.",
       "_createdDate": "2026-09-24T22:31:07.000Z",
-      "heroImage": null
+      "heroImage": {
+        "id": "8b64a8_7dba7f6986e8479dbc2bb3f6150134b2~mv2.jpg",
+        "url": "https://static.wixstatic.com/media/8b64a8_7dba7f6986e8479dbc2bb3f6150134b2~mv2.jpg",
+        "altText": "French Onion Soup"
+      }
     },
     {
       "_id": "prep-onion-soup",
@@ -813,7 +831,11 @@
       "notesEn": "The master provides a To Plate list but no separate plate-up MOP for this dish.",
       "notesEs": "El master proporciona la lista To Plate, pero no un MOP separado de emplatado para este plato.",
       "_createdDate": "2026-09-24T22:31:07.000Z",
-      "heroImage": null
+      "heroImage": {
+        "id": "8b64a8_20983b318a3b4df99907d4f415affcf3~mv2.jpg",
+        "url": "https://static.wixstatic.com/media/8b64a8_20983b318a3b4df99907d4f415affcf3~mv2.jpg",
+        "altText": "Baby Gem Salad"
+      }
     },
     {
       "_id": "prep-herb-mix",
@@ -883,7 +905,12 @@
       "sortOrder": 53,
       "originalLanguage": "en",
       "active": true,
-      "_createdDate": "2026-09-25T23:20:00.000Z"
+      "_createdDate": "2026-09-25T23:20:00.000Z",
+      "heroImage": {
+        "id": "8b64a8_8cb794c5150e4f4da5fcf5f539638455~mv2.jpg",
+        "url": "https://static.wixstatic.com/media/8b64a8_8cb794c5150e4f4da5fcf5f539638455~mv2.jpg",
+        "altText": "Wedge Salad"
+      }
     },
     {
       "_id": "prep-buttermilk-ranch-dressing",
@@ -929,7 +956,12 @@
       "sortOrder": 56,
       "originalLanguage": "en",
       "active": true,
-      "_createdDate": "2026-09-25T23:20:00.000Z"
+      "_createdDate": "2026-09-25T23:20:00.000Z",
+      "heroImage": {
+        "id": "8b64a8_83631be411ea4a71b4ea0ca84bc9d940~mv2.jpg",
+        "url": "https://static.wixstatic.com/media/8b64a8_83631be411ea4a71b4ea0ca84bc9d940~mv2.jpg",
+        "altText": "Ancient Grains Salad"
+      }
     },
     {
       "_id": "prep-buttermilk-vinaigrette",
@@ -1054,7 +1086,12 @@
       "sortOrder": 64,
       "originalLanguage": "en",
       "active": true,
-      "_createdDate": "2026-09-25T23:20:00.000Z"
+      "_createdDate": "2026-09-25T23:20:00.000Z",
+      "heroImage": {
+        "id": "8b64a8_e068a32ecdd74f828e38c35f8d7a4841~mv2.jpg",
+        "url": "https://static.wixstatic.com/media/8b64a8_e068a32ecdd74f828e38c35f8d7a4841~mv2.jpg",
+        "altText": "Duroc Pork Chop"
+      }
     },
     {
       "_id": "prep-duroc-pork-chop-brine",
