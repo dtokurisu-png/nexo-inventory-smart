@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260929-notification-recovery-12';
-const ENGINE_REVISION='workspace-notification-recovery-20260929-12';
+const ACCESS_REVISION='fichas-engine-20260929-photo-sync-13';
+const ENGINE_REVISION='workspace-photo-sync-20260929-13';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -356,6 +356,58 @@ async function runImportHost(){
   }
 }
 
+async function savePhotoFromEngine(payload={}){
+  const requestId=String(payload.requestId||'');
+  const file=payload.file;
+  const entityType=String(payload.entityType||'');
+  const entityId=String(payload.entityId||'');
+  const fileName=String(payload.fileName||file?.name||'foto.jpg');
+  const mimeType=String(payload.mimeType||file?.type||'image/jpeg');
+  const sizeInBytes=Number(payload.sizeInBytes||file?.size||0);
+
+  if(!file||typeof file.arrayBuffer!=='function'){
+    throw new Error('PHOTO_FILE_MISSING');
+  }
+
+  const ticket=await api('photo.upload-url',{
+    input:{entityType,entityId,fileName,mimeType,sizeInBytes}
+  });
+  const uploadUrl=String(ticket?.uploadUrl||'');
+  if(!uploadUrl)throw new Error('PHOTO_UPLOAD_URL_MISSING');
+
+  const uploadResponse=await fetch(uploadUrl,{
+    method:'PUT',
+    headers:{'Content-Type':mimeType},
+    body:file
+  });
+  let uploadBody={};
+  try{uploadBody=await uploadResponse.json()}catch(_){}
+  if(!uploadResponse.ok){
+    throw new Error(
+      String(uploadBody?.message||uploadBody?.error||('PHOTO_UPLOAD_HTTP_'+uploadResponse.status))
+    );
+  }
+
+  const fileId=String(
+    uploadBody?.file?.id||
+    uploadBody?.file?._id||
+    uploadBody?.id||
+    uploadBody?._id||
+    ''
+  );
+  if(!fileId)throw new Error('PHOTO_UPLOAD_FILE_ID_MISSING');
+
+  const saved=await api('photo.commit',{
+    input:{entityType,entityId,fileId}
+  });
+  const image=saved?.image;
+  if(!image?.id||!image?.url)throw new Error('PHOTO_COMMIT_INVALID_IMAGE');
+
+  postToEngine('DM_PHOTO_SAVED',{ok:true,requestId,image});
+  pushEngineData().catch(()=>{});
+  return image;
+}
+
 function handleEngineMessage(event){
   if(!frame||event.source!==frame.contentWindow)return;
   let message=event.data;
@@ -408,9 +460,11 @@ function handleEngineMessage(event){
     return;
   }
   if(message.type==='DM_SAVE_PHOTO_FILE'){
-    postToEngine('DM_PHOTO_ERROR',{
-      requestId:payload.requestId,
-      error:'PHOTO_SERVER_SYNC_PENDING'
+    savePhotoFromEngine(payload).catch(error=>{
+      postToEngine('DM_PHOTO_ERROR',{
+        requestId:payload.requestId,
+        error:String(error?.message||error||'PHOTO_SAVE_FAILED')
+      });
     });
     return;
   }
