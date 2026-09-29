@@ -1,2 +1,99 @@
-const CACHE='nexo-recetario-v43';const SHELL=['./pwa.html','./live.html','./mobile-v3.html','./manifest.webmanifest','./data-recipes-current.json','./navigation-client-v1.js','./photo-system-v1.js','./taxonomy-core-v3.js','./reading-magnifier-v1.js','./recipe-workflow-v1.css','./recipe-workflow-v1.js','./unit-semantics-v1.js','./stripe-system-v3.css'];self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);if(u.origin!==self.location.origin)return;const networkFirst=async()=>{try{const res=await fetch(r,{cache:'no-store'});if(res&&res.ok){const c=await caches.open(CACHE);c.put(r,res.clone())}return res}catch(err){const hit=await caches.match(r,{ignoreSearch:true});if(hit)return hit;throw err}};e.respondWith(networkFirst())});
-self.addEventListener('notificationclick',e=>{const d=e.notification?.data||{};e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async list=>{for(const c of list){if(c.url.includes('/menu-dinamico/')){try{await c.focus();return}catch(_){}}}if(self.clients.openWindow)return self.clients.openWindow(d.url||'./pwa.html')}))});
+const CACHE='nexo-recetario-v44';
+const SHELL=[
+  './pwa.html',
+  './live.html',
+  './mobile-v3.html',
+  './notifications.html',
+  './manifest.webmanifest',
+  './data-recipes-current.json',
+  './navigation-client-v1.js',
+  './photo-system-v1.js',
+  './taxonomy-core-v3.js',
+  './reading-magnifier-v1.js',
+  './recipe-workflow-v1.css',
+  './recipe-workflow-v1.js',
+  './unit-semantics-v1.js',
+  './stripe-system-v3.css'
+];
+
+self.addEventListener('install',event=>{
+  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).catch(()=>{}));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate',event=>{
+  event.waitUntil(
+    caches.keys()
+      .then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))
+      .then(()=>self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch',event=>{
+  const request=event.request;
+  if(request.method!=='GET')return;
+  const url=new URL(request.url);
+  if(url.origin!==self.location.origin)return;
+  const networkFirst=async()=>{
+    try{
+      const response=await fetch(request,{cache:'no-store'});
+      if(response&&response.ok){
+        const cache=await caches.open(CACHE);
+        cache.put(request,response.clone());
+      }
+      return response;
+    }catch(error){
+      const hit=await caches.match(request,{ignoreSearch:true});
+      if(hit)return hit;
+      throw error;
+    }
+  };
+  event.respondWith(networkFirst());
+});
+
+async function timerClients(){
+  return self.clients.matchAll({type:'window',includeUncontrolled:true});
+}
+
+async function sendToTimerClients(message){
+  const list=await timerClients();
+  for(const client of list){
+    try{client.postMessage(message)}catch(_){}
+  }
+  return list;
+}
+
+self.addEventListener('notificationclick',event=>{
+  const notification=event.notification;
+  const data=notification?.data||{};
+  const timerId=String(data.timerId||'');
+  notification?.close();
+
+  if(event.action==='stop'){
+    event.waitUntil(
+      sendToTimerClients({
+        type:'NEXO_TIMER_NOTIFICATION_STOP',
+        timerId
+      })
+    );
+    return;
+  }
+
+  event.waitUntil((async()=>{
+    const list=await sendToTimerClients({
+      type:'NEXO_TIMER_NOTIFICATION_OPEN',
+      timerId
+    });
+    for(const client of list){
+      if(client.url.includes('/menu-dinamico/')){
+        try{
+          await client.focus();
+          return;
+        }catch(_){}
+      }
+    }
+    if(self.clients.openWindow){
+      await self.clients.openWindow(data.url||'./pwa.html');
+    }
+  })());
+});
