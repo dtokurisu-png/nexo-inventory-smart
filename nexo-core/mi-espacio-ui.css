@@ -803,3 +803,154 @@ html,body{margin:0}
 @media(prefers-reduced-motion:reduce){
   #nxo-organic-canvas{opacity:.92}
 }
+
+/* =========================================================
+   NEXO SHELL GLASS DARK v15 · 2026-09-29
+   Canonical shell from Workspace screenshot:
+   dark polarized glass, light text, gold navigation accents.
+========================================================= */
+:root{
+  --nxo-shell-glass:rgba(10,14,22,.78);
+  --nxo-shell-glass-strong:rgba(8,11,17,.90);
+  --nxo-shell-line:rgba(255,255,255,.11);
+  --nxo-shell-text:#f2f5fa;
+  --nxo-shell-soft:#a8b2c3;
+  --nxo-shell-gold:#e1bd69;
+}
+
+.nxo-topbar,
+.nxo-topbar.nxo-workspace-nav{
+  color:var(--nxo-shell-text)!important;
+  background:rgba(6,9,14,.90)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.28)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(118%)!important;
+  backdrop-filter:blur(20px) saturate(118%)!important;
+}
+.nxo-nav-mark,.nxo-logo{
+  color:#17130c!important;
+  background:linear-gradient(145deg,#f1d98e,#a87c2f)!important;
+  border:1px solid rgba(255,231,170,.34)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.44)!important;
+}
+.nxo-nav-brand,.nxo-nav-brand-copy strong,.nxo-brand-copy h1{color:var(--nxo-shell-text)!important}
+.nxo-nav-brand-copy small,.nxo-brand-copy p,.nxo-nav-account-copy small,.nxo-nav-caret{color:#8f9aab!important}
+.nxo-nav-link{color:#9ca6b7!important}
+.nxo-nav-link:hover,.nxo-nav-link:focus-visible{color:#eef2f8!important}
+.nxo-nav-link:hover:after,.nxo-nav-link:focus-visible:after{background:#d7b45f!important}
+.nxo-nav-link.active{color:var(--nxo-shell-gold)!important}
+.nxo-nav-link.active:after{background:var(--nxo-shell-gold)!important}
+.nxo-avatar{
+  color:var(--nxo-shell-gold)!important;
+  background:rgba(225,189,105,.10)!important;
+  border:1px solid rgba(225,189,105,.34)!important;
+}
+.nxo-nav-account-menu{
+  color:var(--nxo-shell-text)!important;
+  background:rgba(9,13,20,.96)!important;
+  border-color:var(--nxo-shell-line)!important;
+  box-shadow:0 20px 54px rgba(0,0,0,.42)!important;
+}
+.nxo-nav-account-menu button{color:var(--nxo-shell-text)!important}
+.nxo-nav-account-menu button:hover,.nxo-nav-account-menu button:focus-visible{
+  color:#111827!important;background:var(--nxo-shell-gold)!important;
+}
+
+/* Polarized dark glass behind all card text. */
+.nxo-hero-card,.nxo-card,.nxo-panel,.nxo-stat,.nxo-member,.nxo-tool-toggle,
+.nxo-summary-strip,.nxo-summary-item,.nxo-welcome,.nxo-invite,.nxo-review-card,.nxo-empty{
+  color:var(--nxo-shell-text)!important;
+  border:1px solid var(--nxo-shell-line)!important;
+  background:linear-gradient(150deg,rgba(16,22,33,.84),rgba(8,12,19,.76))!important;
+  -webkit-backdrop-filter:blur(19px) saturate(115%)!important;
+  backdrop-filter:blur(19px) saturate(115%)!important;
+  box-shadow:0 16px 42px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.045)!important;
+}
+.nxo-card.clickable:hover,.nxo-card.clickable:focus-within{
+  border-color:rgba(225,189,105,.44)!important;
+  background:linear-gradient(150deg,rgba(24,30,42,.91),rgba(11,15,23,.85))!important;
+  box-shadow:0 20px 48px rgba(0,0,0,.34),0 0 0 1px rgba(225,189,105,.10)!important;
+}
+.nxo-hero-card:before,.nxo-card:before,.nxo-panel:before,.nxo-welcome:after{
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.24),transparent)!important;
+  opacity:.56!important;
+}
+.nxo-eyebrow{color:var(--nxo-shell-gold)!important}
+.nxo-hero-card h2,.nxo-workspace-header h2,.nxo-section-head h3,.nxo-card h4,
+.nxo-welcome h2,.nxo-member-name,.nxo-tool-toggle strong{color:var(--nxo-shell-text)!important}
+.nxo-hero-card p,.nxo-card p,.nxo-section-head p,.nxo-workspace-header p,.nxo-member-sub,
+.nxo-tool-toggle p,.nxo-welcome p,.nxo-muted,.nxo-role{color:var(--nxo-shell-soft)!important}
+.nxo-stat strong,.nxo-summary-item strong{color:#ffffff!important}
+.nxo-chip,.nxo-perm,.nxo-access-summary{
+  color:#dce3ee!important;
+  background:rgba(255,255,255,.055)!important;
+  border-color:rgba(255,255,255,.10)!important;
+}
+.nxo-empty{
+  color:#98a4b7!important;
+  border-style:dashed!important;
+}
+.nxo-tabs{border-color:rgba(255,255,255,.09)!important}
+.nxo-tab{color:#9da8b9!important}
+.nxo-tab:hover,.nxo-tab:focus-visible{
+  color:#fff!important;background:rgba(255,255,255,.055)!important;border-color:rgba(255,255,255,.10)!important
+}
+.nxo-tab.active{
+  color:var(--nxo-shell-gold)!important;
+  background:rgba(225,189,105,.10)!important;
+  border-color:rgba(225,189,105,.28)!important;
+  box-shadow:none!important
+}
+
+/* Header notifications live in the bar, never as a full-width body section. */
+.nxo-notification-wrap{position:relative;display:flex;align-items:center;margin-right:3px}
+.nxo-notification-button{
+  position:relative;width:38px;height:38px;border:1px solid transparent;border-radius:11px;
+  display:grid;place-items:center;background:transparent;color:#d8dfeb;cursor:pointer;
+  transition:background .16s ease,border-color .16s ease,color .16s ease
+}
+.nxo-notification-button:hover,.nxo-notification-button:focus-visible,
+.nxo-notification-button[aria-expanded="true"]{
+  outline:none;color:#fff;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.10)
+}
+.nxo-notification-icon{font-size:20px;line-height:1;transform:rotate(45deg)}
+.nxo-notification-badge{
+  position:absolute;top:2px;right:1px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;
+  display:grid;place-items:center;background:#b94242;color:#fff;font-size:9px;font-weight:900;
+  border:2px solid #080b11
+}
+.nxo-notification-menu{
+  display:none;position:absolute;right:0;top:calc(100% + 9px);width:min(430px,calc(100vw - 24px));
+  max-height:min(620px,74dvh);overflow:auto;z-index:90;padding:10px;
+  border:1px solid var(--nxo-shell-line);border-radius:16px;
+  background:rgba(8,12,19,.96);
+  -webkit-backdrop-filter:blur(22px) saturate(118%);backdrop-filter:blur(22px) saturate(118%);
+  box-shadow:0 24px 64px rgba(0,0,0,.46)
+}
+.nxo-notification-menu.open{display:block}
+.nxo-notification-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 5px 10px}
+.nxo-notification-head>div{display:grid;gap:2px}
+.nxo-notification-head strong{font-size:13px;color:#fff}
+.nxo-notification-head small{font-size:10px;color:#929eaf}
+.nxo-notification-count{
+  min-width:25px;height:25px;padding:0 7px;border-radius:999px;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.10);color:#d9e0ea;background:rgba(255,255,255,.045);font-size:10px
+}
+.nxo-notification-list{display:grid;gap:7px}
+.nxo-notification-item{
+  display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:9px;align-items:start;
+  padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  background:rgba(255,255,255,.035)
+}
+.nxo-notification-copy{min-width:0;display:grid;gap:2px}
+.nxo-notification-copy strong{font-size:11px;color:#fff}
+.nxo-notification-copy>span,.nxo-notification-copy>small{font-size:9px;color:#8f9aab}
+.nxo-notification-copy p{margin:4px 0 0;color:#c2cad6!important;font-size:10px;line-height:1.42}
+.nxo-notification-copy em{font-style:normal;color:#f0a1a1;font-size:9px}
+.nxo-notification-action .nxo-btn{padding:7px 9px!important;font-size:9px!important}
+.nxo-notification-empty{padding:22px 12px;text-align:center;color:#8f9aab;font-size:11px}
+
+@media(max-width:760px){
+  .nxo-notification-menu{position:fixed;top:64px;right:10px;left:10px;width:auto}
+}
+
