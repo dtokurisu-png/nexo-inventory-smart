@@ -9,7 +9,12 @@
       "active": true,
       "sortOrder": 4,
       "methodEn": "Use a sauté pan, preheat to medium heat. Add blend oil. Add scallops to the pan, presentation side down first. Flip over scallops, 1 minute each side. What you’re looking for: bacon tightens around scallop; fat renders out and edges begin to crisp. Add butter, garlic and thyme. Tilt pan and spoon butter over scallops continuously for 30 seconds. Remove from the stove and place them inside the oven for 1 minute. Take out of the oven and let them rest for 1 minute before plating.",
-      "methodEs": "Use una sartén para saltear y precaliéntela a fuego medio. Agregue el aceite mezclado. Coloque las vieiras en la sartén con el lado de presentación hacia abajo primero. Voltéelas y cocine 1 minuto por cada lado. Lo que debe observar: el tocino se ajusta alrededor de la vieira, la grasa se derrite y los bordes comienzan a dorarse y ponerse crujientes. Agregue mantequilla, ajo y tomillo. Incline la sartén y bañe continuamente las vieiras con la mantequilla durante 30 segundos. Retire del fuego y colóquelas en el horno durante 1 minuto. Sáquelas del horno y déjelas reposar 1 minuto antes de emplatar."
+      "methodEs": "Use una sartén para saltear y precaliéntela a fuego medio. Agregue el aceite mezclado. Coloque las vieiras en la sartén con el lado de presentación hacia abajo primero. Voltéelas y cocine 1 minuto por cada lado. Lo que debe observar: el tocino se ajusta alrededor de la vieira, la grasa se derrite y los bordes comienzan a dorarse y ponerse crujientes. Agregue mantequilla, ajo y tomillo. Incline la sartén y bañe continuamente las vieiras con la mantequilla durante 30 segundos. Retire del fuego y colóquelas en el horno durante 1 minuto. Sáquelas del horno y déjelas reposar 1 minuto antes de emplatar.",
+      "heroImage": {
+        "id": "8b64a8_ad1db20f2eff4432bd53de09ec9e4d7e~mv2.png",
+        "url": "https://static.wixstatic.com/media/8b64a8_ad1db20f2eff4432bd53de09ec9e4d7e~mv2.png",
+        "altText": "Beef Bacon Wrapped Scallops"
+      }
     },
     {
       "_id": "prep-bacon-wrapped-scallops",
@@ -35,7 +40,12 @@
       "yieldUnitEn": "serving",
       "yieldUnitEs": "porción",
       "methodEn": "Pat dry salmon. In a medium sauté pan over medium-high heat, once hot add oil to coat the bottom. Season salmon with salt. Place presentation side down and sear for 2–3 minutes. Transfer salmon to a preheated 350°F oven and continue cooking for another 4–5 minutes. Remove from oven.\n\nFor the corn succotash, heat a pan over medium heat with blended oil. Add shallots, zucchini, red bell peppers, and cream of corn; cook for a few minutes. Adjust seasoning as needed. Fold in miso butter to finish.\n\nOn a large plate, spoon succotash in an offset crescent. Place salmon on top at a slight angle. Cluster radishes, Fresno curls, and micro cilantro on top of salmon.",
-      "methodEs": "Seque bien el salmón. En una sartén mediana a fuego medio-alto, cuando esté caliente agregue aceite para cubrir el fondo. Sazone el salmón con sal. Colóquelo con el lado de presentación hacia abajo y selle durante 2–3 minutos. Pase el salmón a un horno precalentado a 350°F y continúe la cocción durante otros 4–5 minutos. Retire del horno.\n\nPara el succotash de maíz, caliente una sartén a fuego medio con aceite mezclado. Agregue chalotas, calabacín, pimiento rojo y crema de maíz; cocine unos minutos. Ajuste la sazón según sea necesario. Incorpore la mantequilla de miso para terminar.\n\nEn un plato grande, coloque el succotash formando una media luna desplazada. Ponga el salmón encima con una ligera inclinación. Agrupe los rábanos, rizos de Fresno y micro cilantro sobre el salmón."
+      "methodEs": "Seque bien el salmón. En una sartén mediana a fuego medio-alto, cuando esté caliente agregue aceite para cubrir el fondo. Sazone el salmón con sal. Colóquelo con el lado de presentación hacia abajo y selle durante 2–3 minutos. Pase el salmón a un horno precalentado a 350°F y continúe la cocción durante otros 4–5 minutos. Retire del horno.\n\nPara el succotash de maíz, caliente una sartén a fuego medio con aceite mezclado. Agregue chalotas, calabacín, pimiento rojo y crema de maíz; cocine unos minutos. Ajuste la sazón según sea necesario. Incorpore la mantequilla de miso para terminar.\n\nEn un plato grande, coloque el succotash formando una media luna desplazada. Ponga el salmón encima con una ligera inclinación. Agrupe los rábanos, rizos de Fresno y micro cilantro sobre el salmón.",
+      "heroImage": {
+        "id": "8b64a8_ab93622260024b9697551c107a840b93~mv2.png",
+        "url": "https://static.wixstatic.com/media/8b64a8_ab93622260024b9697551c107a840b93~mv2.png",
+        "altText": "Yuzu Achiote Ora King Salmon"
+      }
     },
     {
       "_id": "dish-roasted-chicken",
@@ -705,11 +715,7 @@
       "notesEn": "Plate-up source lists 10 oz bisque, 50 g crème fraîche, 50 g cooked lobster meat, 2 g chive oil, and nasturtium leaf garnish.",
       "notesEs": "La fuente de emplatado indica 10 oz de bisque, 50 g de crème fraîche, 50 g de carne de langosta cocida, 2 g de aceite de cebollín y hoja de capuchina como guarnición.",
       "_createdDate": "2026-09-24T22:31:07.000Z",
-      "heroImage": {
-        "id": "8b64a8_375b1827dca04352b099ab2e18979b0f~mv2.jpg",
-        "url": "https://static.wixstatic.com/media/8b64a8_375b1827dca04352b099ab2e18979b0f~mv2.jpg",
-        "altText": "Lobster Bisque"
-      }
+      "heroImage": null
     },
     {
       "_id": "prep-lobster-bisque",
@@ -772,11 +778,7 @@
       "methodEn": "Add soup to cauldron. Place baguettes and load with cheese. Place in salamander for 2 minutes or until cheese melts. Garnish with chives.",
       "methodEs": "Agregue la sopa al cauldron. Coloque las baguettes y cúbralas con queso. Lleve a la salamandra durante 2 minutos o hasta que el queso se derrita. Termine con cebollín.",
       "_createdDate": "2026-09-24T22:31:07.000Z",
-      "heroImage": {
-        "id": "8b64a8_40fc5f2d3414437e83873595231baf93~mv2.jpg",
-        "url": "https://static.wixstatic.com/media/8b64a8_40fc5f2d3414437e83873595231baf93~mv2.jpg",
-        "altText": "French Onion Soup"
-      }
+      "heroImage": null
     },
     {
       "_id": "prep-onion-soup",
@@ -811,11 +813,7 @@
       "notesEn": "The master provides a To Plate list but no separate plate-up MOP for this dish.",
       "notesEs": "El master proporciona la lista To Plate, pero no un MOP separado de emplatado para este plato.",
       "_createdDate": "2026-09-24T22:31:07.000Z",
-      "heroImage": {
-        "id": "8b64a8_5e829e8bec13487883c6fc716268d908~mv2.jpg",
-        "url": "https://static.wixstatic.com/media/8b64a8_5e829e8bec13487883c6fc716268d908~mv2.jpg",
-        "altText": "Baby Gem Salad"
-      }
+      "heroImage": null
     },
     {
       "_id": "prep-herb-mix",
