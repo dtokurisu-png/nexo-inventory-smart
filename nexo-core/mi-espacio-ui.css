@@ -1052,7 +1052,7 @@ html,body{margin:0}
 .nxo-app[data-theme="day"] .nxo-empty{
   color:#111827!important;
   border:1px solid rgba(185,203,237,.92)!important;
-  background:linear-gradient(145deg,rgba(255,255,255,.93),rgba(238,244,255,.86))!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.315),rgba(238,244,255,.285))!important;
   -webkit-backdrop-filter:blur(15px) saturate(118%)!important;
   backdrop-filter:blur(15px) saturate(118%)!important;
   box-shadow:0 14px 34px rgba(23,39,85,.13),inset 0 1px 0 rgba(255,255,255,.88)!important;
@@ -1060,7 +1060,7 @@ html,body{margin:0}
 .nxo-app[data-theme="day"] .nxo-card.clickable:hover,
 .nxo-app[data-theme="day"] .nxo-card.clickable:focus-within{
   border-color:#f88f5b!important;
-  background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(255,244,236,.91))!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.345),rgba(255,244,236,.315))!important;
   box-shadow:0 18px 38px rgba(23,39,85,.16),0 0 0 2px rgba(248,143,91,.09)!important
 }
 .nxo-app[data-theme="day"] .nxo-hero-card:before,
@@ -1158,17 +1158,58 @@ html,body{margin:0}
 .nxo-app[data-theme="night"] .nxo-invite,
 .nxo-app[data-theme="night"] .nxo-review-card,
 .nxo-app[data-theme="night"] .nxo-empty{
-  background:linear-gradient(150deg,rgba(16,22,33,.42),rgba(8,12,19,.38))!important;
+  background:linear-gradient(150deg,rgba(16,22,33,.315),rgba(8,12,19,.285))!important;
   border-color:rgba(255,255,255,.08)!important;
   box-shadow:0 12px 28px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.035)!important;
 }
 .nxo-app[data-theme="night"] .nxo-card.clickable:hover,
 .nxo-app[data-theme="night"] .nxo-card.clickable:focus-within{
-  background:linear-gradient(150deg,rgba(24,30,42,.46),rgba(11,15,23,.42))!important;
+  background:linear-gradient(150deg,rgba(24,30,42,.345),rgba(11,15,23,.315))!important;
   border-color:rgba(225,189,105,.34)!important;
   box-shadow:0 16px 34px rgba(0,0,0,.28),0 0 0 1px rgba(225,189,105,.08)!important;
 }
 @supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
   .nxo-app[data-theme="night"] #nxo-theme-film{background:rgba(5,8,14,.70)!important}
+}
+
+/* =========================================================
+   NEXO MATCHED CARD TRANSPARENCY v18 · 2026-09-29
+   Night cards reduced another 25%; day cards matched to same alpha.
+========================================================= */
+.nxo-app[data-theme="day"] .nxo-hero-card,
+.nxo-app[data-theme="day"] .nxo-card,
+.nxo-app[data-theme="day"] .nxo-panel,
+.nxo-app[data-theme="day"] .nxo-stat,
+.nxo-app[data-theme="day"] .nxo-member,
+.nxo-app[data-theme="day"] .nxo-tool-toggle,
+.nxo-app[data-theme="day"] .nxo-summary-strip,
+.nxo-app[data-theme="day"] .nxo-summary-item,
+.nxo-app[data-theme="day"] .nxo-welcome,
+.nxo-app[data-theme="day"] .nxo-invite,
+.nxo-app[data-theme="day"] .nxo-review-card,
+.nxo-app[data-theme="day"] .nxo-empty{
+  background:linear-gradient(145deg,rgba(255,255,255,.315),rgba(238,244,255,.285))!important;
+}
+.nxo-app[data-theme="night"] .nxo-hero-card,
+.nxo-app[data-theme="night"] .nxo-card,
+.nxo-app[data-theme="night"] .nxo-panel,
+.nxo-app[data-theme="night"] .nxo-stat,
+.nxo-app[data-theme="night"] .nxo-member,
+.nxo-app[data-theme="night"] .nxo-tool-toggle,
+.nxo-app[data-theme="night"] .nxo-summary-strip,
+.nxo-app[data-theme="night"] .nxo-summary-item,
+.nxo-app[data-theme="night"] .nxo-welcome,
+.nxo-app[data-theme="night"] .nxo-invite,
+.nxo-app[data-theme="night"] .nxo-review-card,
+.nxo-app[data-theme="night"] .nxo-empty{
+  background:linear-gradient(150deg,rgba(16,22,33,.315),rgba(8,12,19,.285))!important;
+}
+.nxo-app[data-theme="day"] .nxo-card.clickable:hover,
+.nxo-app[data-theme="day"] .nxo-card.clickable:focus-within{
+  background:linear-gradient(145deg,rgba(255,255,255,.345),rgba(255,244,236,.315))!important;
+}
+.nxo-app[data-theme="night"] .nxo-card.clickable:hover,
+.nxo-app[data-theme="night"] .nxo-card.clickable:focus-within{
+  background:linear-gradient(150deg,rgba(24,30,42,.345),rgba(11,15,23,.315))!important;
 }
 
