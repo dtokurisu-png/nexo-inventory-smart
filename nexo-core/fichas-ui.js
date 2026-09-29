@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260929-review-flow-2';
-const ENGINE_REVISION='workspace-review-flow-20260929-2';
+const ACCESS_REVISION='fichas-engine-20260929-unified-header-3';
+const ENGINE_REVISION='workspace-unified-header-20260929-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -15,6 +15,8 @@ let loadingData=false;
 let importing=false;
 let importPreview=null;
 let importCode='';
+const launchQuery=new URLSearchParams(location.search);
+const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
 
 function accessError(code){
   return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.');
@@ -123,6 +125,16 @@ function workspaceReturnUrl(){
 }
 function exitToWorkspace(){
   location.assign(workspaceReturnUrl());
+}
+function siteBase(){
+  const p=location.pathname.replace(/\/+$/,'');
+  return (location.origin+p.replace(/\/blank-4$/,'')).replace(/\/$/,'');
+}
+function openPersonalSpace(){
+  location.assign(siteBase()+'/blank-8');
+}
+function openDevelopmentCenter(){
+  location.assign(siteBase()||location.origin);
 }
 function postToEngine(type,payload={}){
   try{frame?.contentWindow?.postMessage({type,payload},'*')}catch(_){}
@@ -367,6 +379,14 @@ function handleEngineMessage(event){
     exitToWorkspace();
     return;
   }
+  if(message.type==='NEXO_APP_OPEN_PERSONAL'){
+    openPersonalSpace();
+    return;
+  }
+  if(message.type==='NEXO_APP_OPEN_DEVELOPMENT'){
+    openDevelopmentCenter();
+    return;
+  }
   if(message.type==='DM_SAVE_PHOTO_FILE'){
     postToEngine('DM_PHOTO_ERROR',{
       requestId:payload.requestId,
@@ -384,6 +404,9 @@ function mountEngine(){
   frame.title='Fichas Técnicas Dinámicas';
   frame.allow='camera';
   frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#eef3fb;';
+  frame.addEventListener('load',()=>{
+    postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel});
+  });
   root.appendChild(frame);
   window.addEventListener('message',handleEngineMessage);
 }
