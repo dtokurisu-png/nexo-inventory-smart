@@ -23,14 +23,64 @@ html.nexoMobile .calcWrap{gap:5px!important}html.nexoMobile .calcScreen{padding:
 
 @media(min-width:721px){.installBtn{display:none}}
 @media(max-width:370px){.grid{gap:9px}.meta h3{font-size:19px}.muted{font-size:16px}.brandText{max-width:132px}}
+
+/* Unified Nexo application header · workspace logic */
+.topbar{
+  height:calc(var(--header) + env(safe-area-inset-top));
+  gap:14px;
+  background:rgba(6,9,14,.94);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 10px 30px rgba(0,0,0,.28);
+  backdrop-filter:blur(20px) saturate(118%);
+}
+.brand{gap:10px;min-width:180px}
+.mark{
+  width:36px;height:36px;border-radius:11px;
+  background:linear-gradient(145deg,#f1d98e,#a87c2f);
+  color:#17130c;border:1px solid rgba(255,231,170,.34);
+  box-shadow:0 8px 22px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.44);
+  font-size:17px;
+}
+.brandText{display:grid;line-height:1.1}
+.brandText strong{font-size:13px;color:#f2f5fa}
+.brandText small{margin-top:3px;font-size:10px;color:#8f9aab;font-weight:600}
+.nexoNav{display:flex;align-self:stretch;align-items:stretch;gap:16px;min-width:0}
+.nexoNavLink{
+  position:relative;border:0;background:transparent;color:#9ca6b7;padding:0 2px;
+  font:inherit;font-size:12px;font-weight:760;white-space:nowrap
+}
+.nexoNavLink:after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:3px 3px 0 0;background:transparent
+}
+.nexoNavLink:hover,.nexoNavLink:focus-visible{color:#f3f6fb;outline:none}
+.nexoNavLink:hover:after,.nexoNavLink:focus-visible:after{background:#d7b45f}
+.nexoNavLink.active{color:#e1bd69;font-weight:900}
+.nexoNavLink.active:after{background:#e1bd69}
+.topUtility{display:flex;align-items:center;gap:7px}
+.icon,.lang,.installBtn{
+  border-color:rgba(255,255,255,.10);background:rgba(255,255,255,.045);color:#f2f5fa;
+}
+.icon:hover,.lang:hover,.installBtn:hover,.icon:focus-visible,.lang:focus-visible,.installBtn:focus-visible{
+  background:#e1bd69;color:#111827;border-color:#b18a38
+}
+@media(max-width:900px){
+  .nexoNav{gap:10px}.nexoNavLink{font-size:11px}.brand{min-width:0}
+}
+@media(max-width:720px){
+  .topbar{gap:7px;background:rgba(6,9,14,.96)}
+  .nexoNav{display:none}
+  .brandText strong{font-size:14px}
+  .brandText small{display:none}
+  .topUtility{gap:5px}
+}
 </style>
 </head>
 <body>
-<div class="app"><header class="topbar"><button id="back" class="icon hidden">←</button><div class="brand"><div class="mark">NG</div><div class="brandText">Recetario dinámico</div></div><div class="spacer"></div><button id="installApp" class="installBtn">Instalar</button><button id="legendBtn" class="icon" aria-label="Guía">?</button><button id="home" class="icon">⌂</button><button id="calcBtn" class="icon hidden" aria-label="Calculadora" title="Calculadora">🧮</button><button id="timerBtn" class="icon hidden" aria-label="Temporizadores" title="Temporizadores">⏱</button><button id="commentBtn" class="icon hidden" aria-label="Comentarios de la receta" title="Comentarios de la receta">💬</button><button id="lang" class="lang">ES</button></header><main id="view"></main></div><div id="modal"></div><div id="status" class="status hidden"></div>
+<div class="app"><header class="topbar"><button id="back" class="icon hidden">←</button><div class="brand"><div class="mark">N</div><div class="brandText"><strong>Nexo Group</strong><small>Fichas Técnicas Dinámicas</small></div></div><nav class="nexoNav" aria-label="Navegación principal"><button id="personalNav" class="nexoNavLink" type="button">Mi espacio</button><button id="workspaceNav" class="nexoNavLink" type="button">Workspace</button><button class="nexoNavLink active" type="button" aria-current="page">Fichas técnicas</button><button id="developmentNav" class="nexoNavLink" type="button">Centro de desarrollo</button></nav><div class="spacer"></div><div class="topUtility"><button id="installApp" class="installBtn">Instalar</button><button id="legendBtn" class="icon" aria-label="Guía">?</button><button id="home" class="icon" aria-label="Volver al Workspace" title="Volver al Workspace">⌂</button><button id="calcBtn" class="icon hidden" aria-label="Calculadora" title="Calculadora">🧮</button><button id="timerBtn" class="icon hidden" aria-label="Temporizadores" title="Temporizadores">⏱</button><button id="commentBtn" class="icon hidden" aria-label="Comentarios de la receta" title="Comentarios de la receta">💬</button><button id="lang" class="lang">ES</button></div></header><main id="view"></main></div><div id="modal"></div><div id="status" class="status hidden"></div>
 <script>
 (()=>{'use strict';
 const I={es:{library:'Recetario dinámico',sub:'Fichas técnicas, preparaciones e ingredientes conectados.',search:'Buscar receta, ingrediente o preparación…',noResults:'No se encontraron coincidencias',all:'Todo',dish:'Platos',prep:'Preparaciones',product:'Productos',yield:'Rendimiento',method:'Método / MOP',noPhoto:'Sin foto',whole:'Producto entero / base',cut:'Preparación / corte',add:'Agregar foto',replace:'Cambiar foto',empty:'Todavía no hay recetas cargadas',waiting:'Esperando conexión con Wix…',legend:'Guía de colores',openRecipe:'Abrir receta',pending:'Ficha técnica pendiente',subrecipe:'Preparación / subreceta',ingredient:'Producto / ingrediente',unit:'Unidad de medida',close:'Cerrar',calculator:'Calculadora',calcHint:'Calculadora rápida para cocina. Usa punto o coma para decimales.',comments:'Sugerir cambio',commentTitle:'Recomendación sobre la receta',commentHint:'Escribe una recomendación de cambio para esta ficha técnica. El administrador del Workspace podrá revisarla, aceptarla, rechazarla o guardarla como pendiente.',commentPlaceholder:'Describe el cambio que recomiendas…',sendComment:'Enviar recomendación',sendingComment:'Enviando…',commentSaved:'Recomendación enviada.'},en:{library:'Dynamic recipe book',sub:'Connected technical sheets, preparations, and ingredients.',search:'Search recipe, ingredient, or preparation…',noResults:'No matches found',all:'All',dish:'Dishes',prep:'Preparations',product:'Products',yield:'Yield',method:'Method / MOP',noPhoto:'No photo',whole:'Whole / base product',cut:'Preparation / cut',add:'Add photo',replace:'Replace photo',empty:'No recipes have been added yet',waiting:'Waiting for Wix connection…',legend:'Color guide',openRecipe:'Open recipe',pending:'Technical sheet pending',subrecipe:'Preparation / subrecipe',ingredient:'Product / ingredient',unit:'Unit of measure',close:'Close',calculator:'Calculator',calcHint:'Quick kitchen calculator. Use a dot or comma for decimals.',comments:'Suggest change',commentTitle:'Recipe change recommendation',commentHint:'Write a change recommendation for this technical sheet. Workspace administrators can review, accept, reject, or keep it pending.',commentPlaceholder:'Describe the change you recommend…',sendComment:'Send recommendation',sendingComment:'Sending…',commentSaved:'Recommendation sent.'}};
-const S={lang:localStorage.getItem('nexo_dynamic_menu_lang')||'es',recipes:[],sections:[],components:[],ingredients:[],preparations:[],route:[],filter:'ALL',query:'',loaded:false,modal:null,workspaceMode:false};const C={display:'0',acc:null,op:null,expr:'',fresh:true};const $=q=>document.querySelector(q),view=$('#view'),modal=$('#modal'),back=$('#back'),lang=$('#lang'),calcBtn=$('#calcBtn'),timerBtn=$('#timerBtn'),commentBtn=$('#commentBtn'),status=$('#status');const t=k=>I[S.lang][k]||k,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),txt=(o,a,b)=>S.lang==='es'?(o?.[b]||o?.[a]||''):(o?.[a]||o?.[b]||''),rname=r=>txt(r,'titleEn','titleEs')||'—',iname=x=>txt(x,'nameEn','nameEs')||'—',pname=x=>txt(x,'nameEn','nameEs')||'—',img=x=>typeof x==='string'?x:(x&&(x.url||x.image?.url||x.src)||'');const send=(type,payload={})=>parent.postMessage({type,payload},'*');
+const S={lang:localStorage.getItem('nexo_dynamic_menu_lang')||'es',recipes:[],sections:[],components:[],ingredients:[],preparations:[],route:[],filter:'ALL',query:'',loaded:false,modal:null,workspaceMode:false,workspaceLabel:'Workspace'};const C={display:'0',acc:null,op:null,expr:'',fresh:true};const $=q=>document.querySelector(q),view=$('#view'),modal=$('#modal'),back=$('#back'),lang=$('#lang'),calcBtn=$('#calcBtn'),timerBtn=$('#timerBtn'),commentBtn=$('#commentBtn'),status=$('#status'),personalNav=$('#personalNav'),workspaceNav=$('#workspaceNav'),developmentNav=$('#developmentNav');const t=k=>I[S.lang][k]||k,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),txt=(o,a,b)=>S.lang==='es'?(o?.[b]||o?.[a]||''):(o?.[a]||o?.[b]||''),rname=r=>txt(r,'titleEn','titleEs')||'—',iname=x=>txt(x,'nameEn','nameEs')||'—',pname=x=>txt(x,'nameEn','nameEs')||'—',img=x=>typeof x==='string'?x:(x&&(x.url||x.image?.url||x.src)||'');const send=(type,payload={})=>parent.postMessage({type,payload},'*');
 function searchNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
 function searchCorpus(r){const A=x=>Array.isArray(x)?x:[],vals=[r?.titleEn,r?.titleEs,r?.category,r?.recipeType,r?.notesEn,r?.notesEs],secs=A(S.sections).filter(s=>s&&s.recipeId===r?._id),secIds=new Set(secs.map(s=>s._id));secs.forEach(s=>vals.push(s.titleEn,s.titleEs));A(S.components).filter(c=>c&&(c.recipeId===r?._id||secIds.has(c.sectionId))).forEach(c=>{vals.push(c.displayEn,c.displayEs,c.noteEn,c.noteEs);if(c.targetIngredientId){const i=A(S.ingredients).find(x=>x&&x._id===c.targetIngredientId);if(i)vals.push(i.nameEn,i.nameEs)}if(c.targetPreparationId){const p=A(S.preparations).find(x=>x&&x._id===c.targetPreparationId);if(p)vals.push(p.nameEn,p.nameEs)}if(c.targetRecipeId){const x=A(S.recipes).find(x=>x&&x._id===c.targetRecipeId);if(x)vals.push(x.titleEn,x.titleEs)}});return searchNorm(vals.filter(Boolean).join(' '))}
 function searchMatch(r,q){const tokens=searchNorm(q).split(' ').filter(Boolean);if(!tokens.length)return true;const hay=searchCorpus(r);return tokens.every(x=>hay.includes(x))}
@@ -39,10 +89,15 @@ function paintSearchResults(){const g=view.querySelector('.grid');if(!g)return;c
 const install=$('#installApp');install.onclick=()=>{const pwa='https://dtokurisu-png.github.io/nexo-inventory-smart/menu-dinamico/pwa.html';try{window.top.location.href=pwa}catch(_){window.open(pwa,'_blank','noopener')}};
 function toast(m,ms=2200){status.textContent=m;status.classList.remove('hidden');clearTimeout(toast.x);toast.x=setTimeout(()=>status.classList.add('hidden'),ms)}function showCalc(v){if(calcBtn)calcBtn.classList.toggle('hidden',!v);if(timerBtn)timerBtn.classList.toggle('hidden',!v);if(commentBtn)commentBtn.classList.toggle('hidden',!(v&&S.workspaceMode))}function setLang(v){S.lang=v;localStorage.setItem('nexo_dynamic_menu_lang',v);lang.textContent=v.toUpperCase();install.textContent=v==='es'?'Instalar':'Install';calcBtn?.setAttribute('aria-label',t('calculator'));calcBtn?.setAttribute('title',t('calculator'));commentBtn?.setAttribute('aria-label',t('comments'));commentBtn?.setAttribute('title',t('comments'));document.documentElement.lang=v;render();if(S.modal)renderModal()}lang.onclick=()=>setLang(S.lang==='es'?'en':'es');calcBtn.onclick=()=>{S.modal={kind:'calculator'};renderModal()};commentBtn.onclick=()=>{const cur=S.route.at(-1);if(!cur||!S.workspaceMode)return;S.modal={kind:'comment',recipeId:cur.id,requestId:''};renderModal()};
 function exitToWorkspace(){send('NEXO_APP_EXIT_TO_WORKSPACE',{source:'dynamic-technical-sheets'})}
+function openPersonal(){send('NEXO_APP_OPEN_PERSONAL',{source:'dynamic-technical-sheets'})}
+function openDevelopment(){send('NEXO_APP_OPEN_DEVELOPMENT',{source:'dynamic-technical-sheets'})}
+personalNav.onclick=openPersonal;
+workspaceNav.onclick=exitToWorkspace;
+developmentNav.onclick=openDevelopment;
 $('#home').onclick=()=>{if(S.workspaceMode){exitToWorkspace();return}S.route=[];S.modal=null;modal.innerHTML='';showCalc(false);render()};
 $('#legendBtn').onclick=()=>{S.modal={kind:'legend'};renderModal()};
 back.onclick=()=>{if(S.modal){S.modal=null;renderModal()}else if(S.route.length){S.route.pop();render();scrollTo(0,0)}else if(S.workspaceMode){exitToWorkspace()}};
-addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(m?.type==='NEXO_WORKSPACE_CONTEXT'){S.workspaceMode=!!m?.payload?.workspaceMode;render();return}if(m?.type==='NEXO_DM_RECIPE_COMMENT_RESULT'){const p=m.payload||{};if(S.modal?.kind!=='comment'||(S.modal.requestId&&p.requestId!==S.modal.requestId))return;const save=$('#commentSave');if(p.ok!==false){toast(t('commentSaved'));closeModal();return}if(save){save.disabled=false;save.textContent=t('sendComment')}const err=$('#commentError');if(err)err.textContent=p.error||'Error';}});
+addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(m?.type==='NEXO_WORKSPACE_CONTEXT'){S.workspaceMode=!!m?.payload?.workspaceMode;S.workspaceLabel=m?.payload?.workspaceLabel||'Workspace';workspaceNav.textContent=S.workspaceLabel;workspaceNav.classList.toggle('hidden',!S.workspaceMode);render();return}if(m?.type==='NEXO_DM_RECIPE_COMMENT_RESULT'){const p=m.payload||{};if(S.modal?.kind!=='comment'||(S.modal.requestId&&p.requestId!==S.modal.requestId))return;const save=$('#commentSave');if(p.ok!==false){toast(t('commentSaved'));closeModal();return}if(save){save.disabled=false;save.textContent=t('sendComment')}const err=$('#commentError');if(err)err.textContent=p.error||'Error';}});
 addEventListener('NEXO_TAXONOMY_RENDERED',e=>{const mode=e.detail?.mode;showCalc(mode==='dish'||mode==='prep')});
 function render(){lang.textContent=S.lang.toUpperCase();back.classList.toggle('hidden',!S.route.length&&!S.modal&&!S.workspaceMode);if(!S.loaded){showCalc(false);view.innerHTML=`<div class="homeView"><div class="empty">${esc(t('waiting'))}</div></div>`;return}const cur=S.route.at(-1);cur?renderRecipe(cur.id):renderHome()}
 function renderHome(){showCalc(false);const list=homeResults(),q=S.query.trim();view.innerHTML=`<div class="homeView"><h1 class="title">${esc(t('library'))}</h1><p class="subtitle">${esc(t('sub'))}</p><input id="q" class="search" placeholder="${esc(t('search'))}" value="${esc(S.query)}" autocomplete="off"><div class="chips">${chip('ALL',t('all'))}${chip('DISH',t('dish'))}${chip('SUBRECIPE',t('prep'))}</div><div class="grid">${list.length?list.map(card).join(''):`<div class="empty">${esc(q?t('noResults'):t('empty'))}</div>`}</div></div>`;view.querySelectorAll('[data-f]').forEach(x=>x.onclick=()=>{S.filter=x.dataset.f;renderHome()});view.querySelectorAll('[data-r]').forEach(x=>x.onclick=()=>openRecipe(x.dataset.r));queueMicrotask(()=>window.dispatchEvent(new CustomEvent('NEXO_NATIVE_RENDERED',{detail:{kind:'home'}})))}
