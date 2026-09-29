@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260929-timer-alarm-6';
-const ENGINE_REVISION='workspace-timer-alarm-20260929-6';
+const ACCESS_REVISION='fichas-engine-20260929-timer-alarm-7';
+const ENGINE_REVISION='workspace-timer-alarm-20260929-7';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
