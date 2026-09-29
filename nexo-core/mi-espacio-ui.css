@@ -135,3 +135,48 @@
 .nxo-check{background:#fff!important;border-color:#b9cbed!important;color:#111827!important}
 .nxo-perm{background:#edf3ff!important;border-color:#b9cbed!important;color:#34405f!important}
 .nxo-toast{background:#1f233a!important;color:#fff!important;border:1px solid #172755!important}
+
+
+/* RECOMMENDATION WORKFLOW 2026-09-28 */
+.nxo-notice-list{display:grid;gap:10px}
+.nxo-notice{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 16px!important}
+.nxo-notice-main{display:flex;gap:11px;align-items:flex-start;min-width:0}
+.nxo-notice-copy{min-width:0;flex:1;line-height:1.45}
+.nxo-notice-copy p{margin:6px 0 0;color:#5b6780;line-height:1.55;white-space:pre-wrap;font-size:12px}
+.nxo-notice-copy small{display:block;margin-top:7px;color:#7a879d;font-size:10px}
+.nxo-notice-actions{display:flex;align-items:center;gap:7px}
+.nxo-notice-error{margin-top:8px;padding:7px 9px;border:1px solid #e0a7a7;border-radius:9px;background:#fff2f2;color:#9c2f2f;font-size:10px;font-weight:750}
+.nxo-review-card{padding:14px;border:1px solid #b9cbed;border-radius:13px;background:#fff}
+.nxo-review-card p{margin:8px 0;color:#111827;line-height:1.6;white-space:pre-wrap}
+.nxo-review-card small{color:#5b6780}
+.nxo-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.nxo-choice{appearance:none;text-align:left;border:1px solid #b9cbed;border-radius:14px;background:#fff;color:#111827;padding:16px;cursor:pointer;transition:.14s ease}
+.nxo-choice:hover,.nxo-choice:focus-visible{border-color:#f1994a;transform:translateY(-1px);box-shadow:0 10px 20px rgba(23,39,85,.13);outline:none}
+.nxo-choice strong{display:block;font-size:13px;margin-bottom:6px;color:#172755}
+.nxo-choice span{display:block;color:#5b6780;font-size:11px;line-height:1.5}
+.nxo-note-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px;padding:6px 4px 12px}
+.nxo-pinned-note{position:relative;appearance:none;min-height:145px;border:1px solid #d8c67f;border-radius:3px;background:linear-gradient(160deg,#fff9c9,#f7e992);color:#3c351f;padding:30px 16px 16px;text-align:left;cursor:pointer;box-shadow:0 10px 18px rgba(76,64,25,.14);transform:rotate(-.6deg);transition:.15s ease;font:inherit}
+.nxo-pinned-note.n1{background:linear-gradient(160deg,#fff4d7,#f4d49b);transform:rotate(.7deg)}
+.nxo-pinned-note.n2{background:linear-gradient(160deg,#eef4ff,#d9e5fa);border-color:#aebfdf;transform:rotate(-.2deg)}
+.nxo-pinned-note:hover,.nxo-pinned-note:focus-visible{transform:rotate(0deg) translateY(-3px) scale(1.01);box-shadow:0 15px 26px rgba(23,39,85,.18);outline:none}
+.nxo-note-pin{position:absolute;top:10px;left:50%;width:15px;height:15px;margin-left:-7px;border-radius:50%;background:#b94242;border:2px solid #8e2b2b;box-shadow:0 3px 5px rgba(0,0,0,.2)}
+.nxo-note-pin:after{content:"";position:absolute;width:2px;height:11px;background:#7f2c2c;left:5px;top:9px;transform:rotate(9deg);transform-origin:top}
+.nxo-note-label{display:block;font-size:9px;font-weight:900;letter-spacing:.12em;color:#786b34;margin-bottom:8px}
+.nxo-pinned-note strong{display:block;font-size:15px;line-height:1.35;word-break:break-word}
+.nxo-progress-wrap{padding:4px 0}
+.nxo-progress-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.nxo-progress-head strong:first-child{font-size:13px}
+.nxo-progress-head strong:last-child{font-size:17px;color:#2f4f93}
+.nxo-progress-track{height:14px;border-radius:999px;background:#dce7f7;border:1px solid #b9cbed;overflow:hidden}
+.nxo-progress-track span{display:block;height:100%;width:0;background:linear-gradient(90deg,#2f4f93,#246b36);border-radius:999px;transition:width .35s ease}
+.nxo-change-success,.nxo-change-failed{margin-top:14px;padding:14px;border-radius:12px}
+.nxo-change-success{background:#eaf6ec;border:1px solid #8fc49c;color:#173d22}
+.nxo-change-failed{background:#fff2f2;border:1px solid #dca6a6;color:#8c2828}
+.nxo-change-success p,.nxo-change-failed p{line-height:1.55}
+@media(max-width:650px){
+  .nxo-notice{grid-template-columns:1fr}
+  .nxo-notice-actions{justify-content:flex-start}
+  .nxo-choice-grid{grid-template-columns:1fr}
+  .nxo-note-board{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .nxo-pinned-note{min-height:128px}
+}
