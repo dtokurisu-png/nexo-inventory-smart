@@ -954,3 +954,188 @@ html,body{margin:0}
   .nxo-notification-menu{position:fixed;top:64px;right:10px;left:10px;width:auto}
 }
 
+/* =========================================================
+   NEXO DAY/NIGHT THEME v16 · 2026-09-29
+   Day restores the canonical Inventario Smart / Menú HTML palette.
+   Night preserves the v15 dark shell.
+========================================================= */
+#nxo-theme-film{
+  position:fixed;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  transition:background .22s ease;
+}
+.nxo-content-layer{z-index:3!important}
+.nxo-app[data-theme="day"]{
+  background:#f5f2ea!important;
+  color:#111827!important;
+}
+.nxo-app[data-theme="day"] #nxo-theme-film{
+  background:rgba(248,246,239,.42);
+  -webkit-backdrop-filter:blur(.35px);
+  backdrop-filter:blur(.35px);
+}
+.nxo-app[data-theme="night"] #nxo-theme-film{
+  background:rgba(5,8,14,.30);
+}
+
+/* Theme switch lives with header utilities. */
+.nxo-theme-button{
+  width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+  border:1px solid transparent;background:transparent;color:inherit;
+  font:700 17px/1 Inter,system-ui,sans-serif;cursor:pointer;
+  transition:background .16s ease,border-color .16s ease,transform .16s ease
+}
+.nxo-theme-button:hover,.nxo-theme-button:focus-visible{
+  outline:none;transform:translateY(-1px)
+}
+
+/* DAY — canonical Nexo palette, off-white background, dark blue particles. */
+.nxo-app[data-theme="day"] .nxo-topbar,
+.nxo-app[data-theme="day"] .nxo-topbar.nxo-workspace-nav{
+  color:#fff!important;
+  background:rgba(38,76,143,.94)!important;
+  border-bottom:2px solid rgba(23,39,85,.88)!important;
+  box-shadow:0 10px 28px rgba(23,39,85,.18)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(120%)!important;
+  backdrop-filter:blur(18px) saturate(120%)!important;
+}
+.nxo-app[data-theme="day"] .nxo-nav-mark,
+.nxo-app[data-theme="day"] .nxo-logo{
+  color:#fff!important;
+  background:linear-gradient(145deg,#3b579a,#1f233a)!important;
+  border:1px solid rgba(255,255,255,.25)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.16)!important;
+}
+.nxo-app[data-theme="day"] .nxo-nav-brand,
+.nxo-app[data-theme="day"] .nxo-nav-brand-copy strong,
+.nxo-app[data-theme="day"] .nxo-brand-copy h1{color:#fff!important}
+.nxo-app[data-theme="day"] .nxo-nav-brand-copy small,
+.nxo-app[data-theme="day"] .nxo-brand-copy p,
+.nxo-app[data-theme="day"] .nxo-nav-account-copy small,
+.nxo-app[data-theme="day"] .nxo-nav-caret{color:#d8e3f8!important}
+.nxo-app[data-theme="day"] .nxo-nav-link{color:#d8e3f8!important}
+.nxo-app[data-theme="day"] .nxo-nav-link:hover,
+.nxo-app[data-theme="day"] .nxo-nav-link:focus-visible{color:#fff!important}
+.nxo-app[data-theme="day"] .nxo-nav-link:hover:after,
+.nxo-app[data-theme="day"] .nxo-nav-link:focus-visible:after{background:#f88f5b!important}
+.nxo-app[data-theme="day"] .nxo-nav-link.active{color:#fff3a9!important}
+.nxo-app[data-theme="day"] .nxo-nav-link.active:after{background:#fff3a9!important}
+.nxo-app[data-theme="day"] .nxo-avatar{
+  color:#fff!important;background:#3b579a!important;border-color:rgba(255,255,255,.32)!important
+}
+.nxo-app[data-theme="day"] .nxo-theme-button,
+.nxo-app[data-theme="day"] .nxo-notification-button{
+  color:#fff;background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12)
+}
+.nxo-app[data-theme="day"] .nxo-theme-button:hover,
+.nxo-app[data-theme="day"] .nxo-theme-button:focus-visible,
+.nxo-app[data-theme="day"] .nxo-notification-button:hover,
+.nxo-app[data-theme="day"] .nxo-notification-button:focus-visible,
+.nxo-app[data-theme="day"] .nxo-notification-button[aria-expanded="true"]{
+  color:#111827;background:#f88f5b;border-color:#d36d3e
+}
+
+/* About 40% less transparent than the previous light glass surfaces. */
+.nxo-app[data-theme="day"] .nxo-hero-card,
+.nxo-app[data-theme="day"] .nxo-card,
+.nxo-app[data-theme="day"] .nxo-panel,
+.nxo-app[data-theme="day"] .nxo-stat,
+.nxo-app[data-theme="day"] .nxo-member,
+.nxo-app[data-theme="day"] .nxo-tool-toggle,
+.nxo-app[data-theme="day"] .nxo-summary-strip,
+.nxo-app[data-theme="day"] .nxo-summary-item,
+.nxo-app[data-theme="day"] .nxo-welcome,
+.nxo-app[data-theme="day"] .nxo-invite,
+.nxo-app[data-theme="day"] .nxo-review-card,
+.nxo-app[data-theme="day"] .nxo-empty{
+  color:#111827!important;
+  border:1px solid rgba(185,203,237,.92)!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.93),rgba(238,244,255,.86))!important;
+  -webkit-backdrop-filter:blur(15px) saturate(118%)!important;
+  backdrop-filter:blur(15px) saturate(118%)!important;
+  box-shadow:0 14px 34px rgba(23,39,85,.13),inset 0 1px 0 rgba(255,255,255,.88)!important;
+}
+.nxo-app[data-theme="day"] .nxo-card.clickable:hover,
+.nxo-app[data-theme="day"] .nxo-card.clickable:focus-within{
+  border-color:#f88f5b!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(255,244,236,.91))!important;
+  box-shadow:0 18px 38px rgba(23,39,85,.16),0 0 0 2px rgba(248,143,91,.09)!important
+}
+.nxo-app[data-theme="day"] .nxo-hero-card:before,
+.nxo-app[data-theme="day"] .nxo-card:before,
+.nxo-app[data-theme="day"] .nxo-panel:before,
+.nxo-app[data-theme="day"] .nxo-welcome:after{
+  background:linear-gradient(90deg,#2f4f93,#e79069,#246b36)!important;
+  opacity:.66!important
+}
+.nxo-app[data-theme="day"] .nxo-eyebrow{color:#264c8f!important}
+.nxo-app[data-theme="day"] .nxo-hero-card h2,
+.nxo-app[data-theme="day"] .nxo-workspace-header h2,
+.nxo-app[data-theme="day"] .nxo-section-head h3,
+.nxo-app[data-theme="day"] .nxo-card h4,
+.nxo-app[data-theme="day"] .nxo-welcome h2,
+.nxo-app[data-theme="day"] .nxo-member-name,
+.nxo-app[data-theme="day"] .nxo-tool-toggle strong{color:#111827!important}
+.nxo-app[data-theme="day"] .nxo-hero-card p,
+.nxo-app[data-theme="day"] .nxo-card p,
+.nxo-app[data-theme="day"] .nxo-section-head p,
+.nxo-app[data-theme="day"] .nxo-workspace-header p,
+.nxo-app[data-theme="day"] .nxo-member-sub,
+.nxo-app[data-theme="day"] .nxo-tool-toggle p,
+.nxo-app[data-theme="day"] .nxo-welcome p,
+.nxo-app[data-theme="day"] .nxo-muted,
+.nxo-app[data-theme="day"] .nxo-role{color:#5b6780!important}
+.nxo-app[data-theme="day"] .nxo-stat strong,
+.nxo-app[data-theme="day"] .nxo-summary-item strong{color:#264c8f!important}
+.nxo-app[data-theme="day"] .nxo-chip,
+.nxo-app[data-theme="day"] .nxo-perm,
+.nxo-app[data-theme="day"] .nxo-access-summary{
+  color:#34405f!important;background:rgba(220,231,247,.82)!important;border-color:#b9cbed!important
+}
+.nxo-app[data-theme="day"] .nxo-empty{color:#66738d!important}
+.nxo-app[data-theme="day"] .nxo-tab{color:#5b6780!important}
+.nxo-app[data-theme="day"] .nxo-tab:hover,
+.nxo-app[data-theme="day"] .nxo-tab:focus-visible{
+  color:#111827!important;background:#f88f5b!important;border-color:#d36d3e!important
+}
+.nxo-app[data-theme="day"] .nxo-tab.active{
+  color:#fff!important;background:#2f4f93!important;border-color:#172755!important;
+  box-shadow:0 5px 12px rgba(23,39,85,.14)!important
+}
+.nxo-app[data-theme="day"] .nxo-notification-menu,
+.nxo-app[data-theme="day"] .nxo-nav-account-menu{
+  color:#111827!important;
+  background:rgba(248,251,255,.96)!important;
+  border-color:#b9cbed!important;
+  box-shadow:0 22px 54px rgba(23,39,85,.22)!important
+}
+.nxo-app[data-theme="day"] .nxo-notification-head strong,
+.nxo-app[data-theme="day"] .nxo-notification-copy strong{color:#172755!important}
+.nxo-app[data-theme="day"] .nxo-notification-head small,
+.nxo-app[data-theme="day"] .nxo-notification-copy>span,
+.nxo-app[data-theme="day"] .nxo-notification-copy>small,
+.nxo-app[data-theme="day"] .nxo-notification-empty{color:#66738d!important}
+.nxo-app[data-theme="day"] .nxo-notification-item{
+  border-color:#d4deef;background:rgba(238,244,255,.82)
+}
+.nxo-app[data-theme="day"] .nxo-notification-copy p{color:#34405f!important}
+.nxo-app[data-theme="day"] .nxo-notification-count{
+  border-color:#b9cbed;color:#34405f;background:#eef4ff
+}
+
+/* NIGHT — retain v15, only define the film and theme-button treatment. */
+.nxo-app[data-theme="night"] .nxo-theme-button{
+  color:#d8dfeb;background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.08)
+}
+.nxo-app[data-theme="night"] .nxo-theme-button:hover,
+.nxo-app[data-theme="night"] .nxo-theme-button:focus-visible{
+  color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.13)
+}
+
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  .nxo-app[data-theme="day"] #nxo-theme-film{background:rgba(248,246,239,.56)}
+  .nxo-app[data-theme="night"] #nxo-theme-film{background:rgba(5,8,14,.38)}
+}
+
