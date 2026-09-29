@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260928-3';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-4';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -43,7 +43,7 @@ function mountNexoOrganicBackground(){
   const dpr=Math.min(window.devicePixelRatio||1,1.5);
 
   let W=0,H=0,lastW=0,lastH=0;
-  let nodeSeq=0,lastSpawn=0,nextSpawnDelay=520,lastCull=0,nextCullDelay=2500;
+  let nodeSeq=0,lastSpawn=0,nextSpawnDelay=520,lastCull=0,nextCullDelay=1500,coreCullAt=0,coreCulled=false;
   const startAt=performance.now();
   const nodes=[];
   const links=[];
@@ -309,25 +309,12 @@ function mountNexoOrganicBackground(){
     return false;
   }
 
-  function markNodeForFade(time){
-    const alive=nodes.filter(n=>
-      n.state==='active'&&!n.moving&&time-n.born>7600
-    );
-    if(alive.length<(W<700?22:34))return;
-    if(!alive.length)return;
-
-    let n;
-    if(Math.random()<.24){
-      const internal=alive.filter(x=>nodeDegree(x.id)>=2);
-      n=internal.length?pick(internal):pick(alive);
-    }else{
-      n=pick(alive);
-    }
-    if(!n)return;
+  function fadeNode(n,time){
+    if(!n||n.state!=='active'||n.moving)return false;
 
     n.state='dying';
     n.deathAt=time;
-    n.deathDuration=rand(1900,3500);
+    n.deathDuration=rand(1050,2050);
 
     links.forEach(l=>{
       if(!l.dead&&(l.a===n.id||l.b===n.id)){
@@ -335,6 +322,31 @@ function mountNexoOrganicBackground(){
         l.deathDuration=n.deathDuration;
       }
     });
+    return true;
+  }
+
+  function markNodeForFade(time,forceCore=false){
+    const alive=nodes.filter(n=>
+      n.state==='active'&&!n.moving&&time-n.born>5200
+    );
+    if(!alive.length)return false;
+
+    if(forceCore){
+      const core=alive.find(n=>n.id===1);
+      if(core)return fadeNode(core,time);
+      return false;
+    }
+
+    if(alive.length<(W<700?18:28))return false;
+
+    let n;
+    if(Math.random()<.42){
+      const internal=alive.filter(x=>nodeDegree(x.id)>=2);
+      n=internal.length?pick(internal):pick(alive);
+    }else{
+      n=pick(alive);
+    }
+    return fadeNode(n,time);
   }
 
   function cleanup(time){
@@ -362,6 +374,8 @@ function mountNexoOrganicBackground(){
     first.scaleAmp=.045;
     first.pulseSpeed=.00155;
     first.branchCap=randInt(7,11);
+    coreCullAt=performance.now()+rand(13000,18000);
+    coreCulled=false;
   }
 
   function nodeLifeAlpha(n,time){
@@ -623,10 +637,22 @@ function mountNexoOrganicBackground(){
       }
     }
 
-    if(!reduce&&time-startAt>10500&&time-lastCull>nextCullDelay){
-      markNodeForFade(time);
+    if(!reduce&&!coreCulled&&time>=coreCullAt){
+      coreCulled=markNodeForFade(time,true)||!nodes.some(n=>n.id===1&&n.state==='active');
+      if(coreCulled){
+        lastCull=time;
+        nextCullDelay=rand(900,1700);
+      }
+    }
+
+    if(!reduce&&time-startAt>8200&&time-lastCull>nextCullDelay){
+      const attempts=Math.random()<.22?2:1;
+      let changed=false;
+      for(let i=0;i<attempts;i++){
+        if(markNodeForFade(time))changed=true;
+      }
       lastCull=time;
-      nextCullDelay=rand(1900,4200);
+      nextCullDelay=changed?rand(850,2100):rand(1300,2600);
     }
 
     links.forEach(l=>drawLink(l,time));
