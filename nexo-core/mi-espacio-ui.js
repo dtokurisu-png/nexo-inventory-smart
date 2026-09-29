@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-9';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-10';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -84,6 +84,100 @@ function mountNexoOrganicBackground(){
       if(!l.dead&&!l.dyingAt&&(l.a===id||l.b===id))count++;
     }
     return count;
+  }
+
+  function networkTopology(){
+    const alive=nodes.filter(n=>n.state!=='dead');
+    const ids=new Set(alive.map(n=>n.id));
+    const adj=new Map(alive.map(n=>[n.id,[]]));
+
+    for(const l of links){
+      if(l.dead||l.dyingAt||!ids.has(l.a)||!ids.has(l.b))continue;
+      adj.get(l.a).push(l.b);
+      adj.get(l.b).push(l.a);
+    }
+
+    const seen=new Set();
+    const components=[];
+    const componentSize=new Map();
+
+    for(const n of alive){
+      if(seen.has(n.id))continue;
+      const stack=[n.id],part=[];
+      seen.add(n.id);
+
+      while(stack.length){
+        const id=stack.pop();
+        part.push(id);
+        for(const next of adj.get(id)||[]){
+          if(seen.has(next))continue;
+          seen.add(next);
+          stack.push(next);
+        }
+      }
+
+      components.push(part);
+      for(const id of part)componentSize.set(id,part.length);
+    }
+
+    const smallComponents=components.filter(c=>c.length<=2);
+    const smallIds=new Set(smallComponents.flat());
+
+    return {
+      aliveCount:alive.length,
+      components,
+      componentSize,
+      smallComponents,
+      smallIds,
+      needsRepair:smallComponents.length>0
+    };
+  }
+
+  function removalCreatesTinyFragment(nodeId){
+    const alive=nodes.filter(n=>n.state!=='dead'&&n.id!==nodeId);
+    if(alive.length<2)return false;
+
+    const ids=new Set(alive.map(n=>n.id));
+    const neighbors=[];
+    for(const l of links){
+      if(l.dead||l.dyingAt)continue;
+      if(l.a===nodeId&&ids.has(l.b))neighbors.push(l.b);
+      else if(l.b===nodeId&&ids.has(l.a))neighbors.push(l.a);
+    }
+    if(neighbors.length<2)return false;
+
+    const adj=new Map(alive.map(n=>[n.id,[]]));
+    for(const l of links){
+      if(l.dead||l.dyingAt||l.a===nodeId||l.b===nodeId)continue;
+      if(!ids.has(l.a)||!ids.has(l.b))continue;
+      adj.get(l.a).push(l.b);
+      adj.get(l.b).push(l.a);
+    }
+
+    const compByNode=new Map();
+    let compIndex=0;
+    const compSizes=[];
+
+    for(const n of alive){
+      if(compByNode.has(n.id))continue;
+      const stack=[n.id],part=[];
+      compByNode.set(n.id,compIndex);
+      while(stack.length){
+        const id=stack.pop();
+        part.push(id);
+        for(const next of adj.get(id)||[]){
+          if(compByNode.has(next))continue;
+          compByNode.set(next,compIndex);
+          stack.push(next);
+        }
+      }
+      compSizes[compIndex]=part.length;
+      compIndex++;
+    }
+
+    const neighborComps=[...new Set(neighbors.map(id=>compByNode.get(id)).filter(v=>v!==undefined))];
+    if(neighborComps.length<2)return false;
+    return neighborComps.some(i=>compSizes[i]<=3);
   }
 
   function addNode(x,y,r,color,parent=null,time=performance.now()){
@@ -214,12 +308,13 @@ function mountNexoOrganicBackground(){
     return true;
   }
 
-  function targetFor(source,newRadius){
-    const minDist=W<700?78:116;
-    const maxDist=W<700?175:275;
+  function targetFor(source,newRadius,repair=false){
+    const minDist=repair?(W<700?62:88):(W<700?78:116);
+    const maxDist=repair?(W<700?148:215):(W<700?175:275);
     const margin=W<700?32:54;
+    const tries=repair?88:64;
 
-    for(let k=0;k<64;k++){
+    for(let k=0;k<tries;k++){
       const ang=rand(0,Math.PI*2);
       const d=rand(minDist,maxDist);
       const x=clamp(source.x+Math.cos(ang)*d,margin,W-margin);
@@ -274,32 +369,47 @@ function mountNexoOrganicBackground(){
   }
 
   function spawn(time){
-    const maxNodes=W<700?40:58;
-    if(reduce||nodes.filter(n=>n.state!=='dead').length>=maxNodes)return false;
+    if(reduce)return false;
+
+    const topology=networkTopology();
+    const target=W<700?34:50;
+    const repairMax=W<700?48:66;
+    const repairing=topology.needsRepair;
+
+    if(topology.aliveCount>=target&&!repairing)return false;
+    if(repairing&&topology.aliveCount>=repairMax)return false;
 
     const candidates=nodes.filter(n=>
       n.settled&&n.state==='active'&&nodeDegree(n.id)<n.branchCap
     );
     if(!candidates.length)return false;
 
-    const isolated=candidates.filter(n=>nodeDegree(n.id)===0);
-    const lowDegree=candidates.filter(n=>nodeDegree(n.id)<=Math.max(2,Math.floor(n.branchCap*.55)));
-    const pool=isolated.length?isolated:(lowDegree.length?lowDegree:candidates);
+    const repairCandidates=candidates.filter(n=>
+      topology.smallIds.has(n.id)||nodeDegree(n.id)<=1
+    );
+    const lowDegree=candidates.filter(n=>
+      nodeDegree(n.id)<=Math.max(2,Math.floor(n.branchCap*.55))
+    );
+    const pool=repairing&&repairCandidates.length
+      ?repairCandidates
+      :(lowDegree.length?lowDegree:candidates);
 
-    for(let attempt=0;attempt<36;attempt++){
-      const source=pick(attempt<24?pool:candidates);
+    const attempts=repairing?52:36;
+    for(let attempt=0;attempt<attempts;attempt++){
+      const source=pick(attempt<Math.floor(attempts*.72)?pool:candidates);
       if(!source)continue;
 
+      const sourceRepair=repairing&&(topology.smallIds.has(source.id)||nodeDegree(source.id)<=1);
       const radius=rand(W<700?10:12,W<700?19:24);
-      const target=targetFor(source,radius);
-      if(!target)continue;
+      const targetPoint=targetFor(source,radius,sourceRepair);
+      if(!targetPoint)continue;
 
       const child=addNode(source.x,source.y,radius,pick(coreColors),source.id,time);
       child.sx=source.x;child.sy=source.y;
-      child.tx=target.x;child.ty=target.y;
-      child.anchorX=target.x;child.anchorY=target.y;
-      child.driftFromX=target.x;child.driftFromY=target.y;
-      child.driftToX=target.x;child.driftToY=target.y;
+      child.tx=targetPoint.x;child.ty=targetPoint.y;
+      child.anchorX=targetPoint.x;child.anchorY=targetPoint.y;
+      child.driftFromX=targetPoint.x;child.driftFromY=targetPoint.y;
+      child.driftToX=targetPoint.x;child.driftToY=targetPoint.y;
       child.moveStart=time;
       child.moveDuration=rand(1100,2200);
       child.moving=true;
@@ -333,13 +443,21 @@ function mountNexoOrganicBackground(){
 
     if(alive.length<(W<700?18:28))return false;
 
+    const topology=networkTopology();
+    let eligible=alive.filter(n=>(topology.componentSize.get(n.id)||1)>2);
+    if(!eligible.length)return false;
+
+    const structurallySafe=eligible.filter(n=>!removalCreatesTinyFragment(n.id));
+    if(structurallySafe.length)eligible=structurallySafe;
+
+    const leaves=eligible.filter(n=>nodeDegree(n.id)<=1);
+    const internal=eligible.filter(n=>nodeDegree(n.id)>=2);
     let n;
-    if(Math.random()<.42){
-      const internal=alive.filter(x=>nodeDegree(x.id)>=2);
-      n=internal.length?pick(internal):pick(alive);
-    }else{
-      n=pick(alive);
-    }
+
+    if(internal.length&&Math.random()<.24)n=pick(internal);
+    else if(leaves.length)n=pick(leaves);
+    else n=pick(eligible);
+
     return fadeNode(n,time);
   }
 
@@ -642,14 +760,18 @@ function mountNexoOrganicBackground(){
 
     const aliveCount=nodes.filter(n=>n.state!=='dead').length;
     const target=W<700?34:50;
+    const repairMax=W<700?48:66;
 
-    if(!reduce&&time-startAt>550&&time-lastSpawn>nextSpawnDelay&&aliveCount<target){
-      if(spawn(time)){
+    if(!reduce&&time-startAt>550&&time-lastSpawn>nextSpawnDelay){
+      const topology=networkTopology();
+      const canGrow=aliveCount<target||(topology.needsRepair&&aliveCount<repairMax);
+
+      if(canGrow&&spawn(time)){
         lastSpawn=time;
-        nextSpawnDelay=rand(420,820);
+        nextSpawnDelay=topology.needsRepair?rand(300,620):rand(420,820);
       }else{
         lastSpawn=time;
-        nextSpawnDelay=rand(680,1180);
+        nextSpawnDelay=topology.needsRepair?rand(420,820):rand(680,1180);
       }
     }
 
@@ -662,9 +784,17 @@ function mountNexoOrganicBackground(){
     }
 
     if(!reduce&&time-startAt>11000&&time-lastCull>nextCullDelay){
-      const changed=markNodeForFade(time);
-      lastCull=time;
-      nextCullDelay=changed?rand(2800,5200):rand(2200,3800);
+      const topology=networkTopology();
+      const repairing=topology.needsRepair&&aliveCount<repairMax;
+
+      if(repairing){
+        lastCull=time;
+        nextCullDelay=rand(1800,3000);
+      }else{
+        const changed=markNodeForFade(time);
+        lastCull=time;
+        nextCullDelay=changed?rand(2800,5200):rand(2200,3800);
+      }
     }
 
     links.forEach(l=>drawLink(l,time));
