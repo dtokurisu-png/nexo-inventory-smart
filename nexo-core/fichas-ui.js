@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260929-named-timers-9';
-const ENGINE_REVISION='workspace-named-timers-20260929-9';
+const ACCESS_REVISION='fichas-engine-20260929-package-v3-sync-10';
+const ENGINE_REVISION='workspace-package-v3-sync-20260929-10';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -233,7 +233,10 @@ function renderImportPreviewStage(preview){
   if(!body)return;
   const groups=Array.isArray(preview?.collections)?preview.collections:[];
   const total=Number(preview?.totalCount||0);
-  const done=Number(preview?.alreadyCompleteCount||0);
+  const current=Number(preview?.alreadyCurrentCount??preview?.alreadyCompleteCount??0);
+  const updates=Number(preview?.updateCount||0);
+  const creates=Number(preview?.createCount||0);
+  const pending=Number(preview?.pendingCount??Math.max(0,total-current));
   const itemSingular=preview?.itemLabelSingular||'elemento';
   const itemPlural=preview?.itemLabelPlural||'elementos';
   const containerSingular=preview?.containerLabelSingular||'colección';
@@ -242,14 +245,28 @@ function renderImportPreviewStage(preview){
     const n=Number(g?.count||0);
     return '<div class="nx-imp-group"><strong>'+esc(g?.name||'—')+'</strong><span>'+n+' '+esc(countWord(n,g?.itemLabelSingular||itemSingular,g?.itemLabelPlural||itemPlural))+(g?.importMode==='linked'?' · vinculados':'')+'</span></div>';
   }).join('');
-  const resume=done?'<div class="nx-imp-resume">↻ Se detectó progreso anterior: '+done+' de '+total+' '+esc(itemPlural)+' ya están completas. Se continuará desde ahí.</div>':'';
+  const resume=current
+    ? '<div class="nx-imp-resume">✓ '+current+' de '+total+' '+esc(itemPlural)+' ya están al día en la versión '+Number(preview?.version||0)+'.</div>'
+    :'';
+  const changes=pending
+    ? '<div class="nx-imp-resume">↻ Esta sincronización actualizará '+updates+' y creará '+creates+' '+esc(itemPlural)+'. No se crearán duplicados de fichas existentes.</div>'
+    : '<div class="nx-imp-resume">✓ Este paquete ya está completamente actualizado.</div>';
+  const actionLabel=updates>0?'Sí, actualizar':(creates>0?'Sí, importar':'Cerrar');
   body.innerHTML='<div class="nx-imp-top"><div><small>PAQUETE VERIFICADO</small><h2 style="margin:3px 0 0">'+esc(preview?.packageName||'Paquete Nexo')+'</h2></div></div>'+
     (preview?.packageDescription?'<p>'+esc(preview.packageDescription)+'</p>':'')+
-    '<div class="nx-imp-stats"><div class="nx-imp-stat"><strong>'+groups.length+'</strong><span>'+esc(countWord(groups.length,containerSingular,containerPlural))+'</span></div><div class="nx-imp-stat"><strong>'+total+'</strong><span>'+esc(countWord(total,itemSingular,itemPlural))+'</span></div>'+(done?'<div class="nx-imp-stat"><strong>'+Math.max(0,total-done)+'</strong><span>pendientes</span></div>':'')+'</div>'+
-    rows+resume+'<p><strong>¿Deseas continuar con la importación?</strong></p>'+
-    '<div class="nx-imp-actions"><button id="nx-import-cancel" class="btn" type="button">No, cancelar</button><button id="nx-import-confirm" class="btn primary" type="button">Sí, importar</button></div>';
+    '<div class="nx-imp-stats">'+
+      '<div class="nx-imp-stat"><strong>'+total+'</strong><span>'+esc(countWord(total,itemSingular,itemPlural))+'</span></div>'+
+      '<div class="nx-imp-stat"><strong>'+current+'</strong><span>al día</span></div>'+
+      '<div class="nx-imp-stat"><strong>'+updates+'</strong><span>por actualizar</span></div>'+
+      '<div class="nx-imp-stat"><strong>'+creates+'</strong><span>por crear</span></div>'+
+    '</div>'+
+    rows+resume+changes+
+    (pending?'<p><strong>¿Deseas sincronizar el paquete con este Workspace?</strong></p>':'')+
+    '<div class="nx-imp-actions"><button id="nx-import-cancel" class="btn" type="button">'+(pending?'No, cancelar':'Cerrar')+'</button>'+
+    (pending?'<button id="nx-import-confirm" class="btn primary" type="button">'+actionLabel+'</button>':'')+'</div>';
   body.querySelector('#nx-import-cancel').onclick=closeImportHost;
-  body.querySelector('#nx-import-confirm').onclick=()=>runImportHost();
+  const confirm=body.querySelector('#nx-import-confirm');
+  if(confirm)confirm.onclick=()=>runImportHost();
 }
 
 function pendingImportItems(limit=5){
@@ -261,7 +278,9 @@ function itemLine(item,done=false){
   const title=item?.title||item?.titleEs||item?.titleEn||item?.id||'—';
   const container=importPreview?.containerLabelSingular||'colección';
   const group=item?.collectionName||'Sin colección';
-  return (done?'✓ ':'Cargando ')+label+' «'+title+'» '+(done?'· ':'en ')+container+' «'+group+'»'+(done?'':'…');
+  const action=String(item?.action||'create');
+  const verb=action==='update'?(done?'Actualizada':'Actualizando'):(done?'Importada':'Importando');
+  return (done?'✓ ':'')+verb+' '+label+' «'+title+'» '+(done?'· ':'en ')+container+' «'+group+'»'+(done?'':'…');
 }
 
 async function runImportHost(){
