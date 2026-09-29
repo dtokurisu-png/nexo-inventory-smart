@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260929-package-v3-sync-10';
-const ENGINE_REVISION='workspace-package-v3-sync-20260929-10';
+const ACCESS_REVISION='fichas-engine-20260929-system-notifications-11';
+const ENGINE_REVISION='workspace-system-notifications-20260929-11';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -422,7 +422,7 @@ function mountEngine(){
   frame.id='nexo-dm-engine';
   frame.src=ENGINE;
   frame.title='Fichas Técnicas Dinámicas';
-  frame.allow='camera';
+  frame.allow='camera; notifications';
   frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#eef3fb;';
   frame.addEventListener('load',()=>{
     postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,theme:workspaceTheme});
