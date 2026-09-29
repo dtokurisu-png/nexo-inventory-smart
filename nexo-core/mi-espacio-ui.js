@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-7';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-8';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -282,8 +282,9 @@ function mountNexoOrganicBackground(){
     );
     if(!candidates.length)return false;
 
+    const isolated=candidates.filter(n=>nodeDegree(n.id)===0);
     const lowDegree=candidates.filter(n=>nodeDegree(n.id)<=Math.max(2,Math.floor(n.branchCap*.55)));
-    const pool=lowDegree.length?lowDegree:candidates;
+    const pool=isolated.length?isolated:(lowDegree.length?lowDegree:candidates);
 
     for(let attempt=0;attempt<36;attempt++){
       const source=pick(attempt<24?pool:candidates);
@@ -314,20 +315,13 @@ function mountNexoOrganicBackground(){
 
     n.state='dying';
     n.deathAt=time;
-    n.deathDuration=rand(1050,2050);
-
-    links.forEach(l=>{
-      if(!l.dead&&(l.a===n.id||l.b===n.id)){
-        l.dyingAt=time;
-        l.deathDuration=n.deathDuration;
-      }
-    });
+    n.deathDuration=rand(1250,2150);
     return true;
   }
 
   function markNodeForFade(time,forceCore=false){
     const alive=nodes.filter(n=>
-      n.state==='active'&&!n.moving&&time-n.born>5200
+      n.state==='active'&&!n.moving&&time-n.born>8500
     );
     if(!alive.length)return false;
 
@@ -353,8 +347,10 @@ function mountNexoOrganicBackground(){
     for(const n of nodes){
       if(n.state==='dying'&&time-n.deathAt>=n.deathDuration)n.state='dead';
     }
+
     for(const l of links){
-      if(l.dyingAt&&time-l.dyingAt>=l.deathDuration)l.dead=true;
+      const a=getNode(l.a),b=getNode(l.b);
+      if(!a||!b||a.state==='dead'||b.state==='dead')l.dead=true;
     }
     for(const p of pulses){
       if(p.dead||p.link.dead)p.dead=true;
@@ -385,14 +381,22 @@ function mountNexoOrganicBackground(){
 
   function nodeVisualState(n,time){
     const age=time-n.born;
-    const appear=clamp(age/900,0,1);
+    const birthRaw=n.parent
+      ?clamp((time-n.moveStart)/Math.max(1,n.moveDuration),0,1)
+      :clamp(age/900,0,1);
+    const growth=smooth(birthRaw);
     const life=nodeLifeAlpha(n,time);
     const wave=Math.sin(time*n.pulseSpeed+n.phase);
+    const baseAlpha=clamp(n.alphaBase+n.alphaAmp*wave,.58,.99);
+    const fullR=n.r*(1+n.scaleAmp*wave);
     return {
       wave,
       pulse01:(wave+1)/2,
-      alpha:clamp((n.alphaBase+n.alphaAmp*wave)*appear*life,.48,.99),
-      rr:n.r*(1+n.scaleAmp*wave)
+      growth,
+      life,
+      alpha:baseAlpha*growth*life,
+      rr:fullR*growth,
+      fullR
     };
   }
 
@@ -458,24 +462,6 @@ function mountNexoOrganicBackground(){
     ctx.fillRect(0,0,W,H);
   }
 
-  function drawLiquidBridge(a,b,progress,fade){
-    if(progress>=1)return;
-    const inv=1-progress;
-    ctx.save();
-    ctx.lineCap='round';
-
-    ctx.strokeStyle='rgba(104,151,230,'+((.08+inv*.16)*fade)+')';
-    ctx.lineWidth=Math.max(3,a.r*.82*inv);
-    ctx.shadowColor='rgba(105,167,255,'+(.36*fade)+')';
-    ctx.shadowBlur=20*inv;
-    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-
-    ctx.strokeStyle='rgba(255,255,255,'+((.05+inv*.12)*fade)+')';
-    ctx.lineWidth=Math.max(1,a.r*.17*inv);
-    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-    ctx.restore();
-  }
-
   function taperedFilamentPath(a,b,endA,endB,mid,progress){
     const bx=a.x+(b.x-a.x)*progress;
     const by=a.y+(b.y-a.y)*progress;
@@ -519,50 +505,43 @@ function mountNexoOrganicBackground(){
 
   function drawLink(l,time){
     const a=getNode(l.a),b=getNode(l.b);
-    if(!a||!b)return;
+    if(!a||!b||a.state==='dead'||b.state==='dead'){l.dead=true;return;}
 
-    const reveal=clamp((time-l.born)/Math.max(700,b.moveDuration*.72),0,1);
-    l.active=reveal;
-    let fade=1;
-    if(l.dyingAt)fade=1-clamp((time-l.dyingAt)/l.deathDuration,0,1);
-    if(fade<=0)return;
-
-    const moveProgress=b.moving?clamp((time-b.moveStart)/b.moveDuration,0,1):1;
-    if(b.moving)drawLiquidBridge(a,b,moveProgress,fade);
-
-    const energy=.90+.10*Math.sin(time*.00135+l.phase);
     const va=nodeVisualState(a,time);
     const vb=nodeVisualState(b,time);
+    const linkLife=Math.min(va.life,vb.life);
+    const linkLen=Math.hypot(b.x-a.x,b.y-a.y);
+    l.active=b.moving?vb.growth:1;
+    if(linkLen<.75||linkLife<=.001)return;
+
     const endA=va.rr*2;
     const endB=vb.rr*2;
     const mid=l.midWidth;
-    const centerAlpha=((va.alpha+vb.alpha)*.5)*.12*l.filamentAlpha*fade*energy;
-    const linkLen=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
-    const edgeStopA=clamp(va.rr/linkLen,.015,.28);
-    const edgeStopB=clamp(1-(vb.rr/linkLen),.72,.985);
+    const edgeStopA=clamp(va.rr/linkLen,.015,.32);
+    const edgeStopB=clamp(1-(vb.rr/linkLen),.68,.985);
+
+    // Each half keeps the exact node hue. Opacity is identical to the node
+    // through its visible boundary, then tapers only after leaving the circle.
+    const aEdgeAlpha=va.alpha*linkLife;
+    const bEdgeAlpha=vb.alpha*linkLife;
+    const centerAlpha=((aEdgeAlpha+bEdgeAlpha)*.5)*.13;
 
     ctx.save();
     const grad=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
-    grad.addColorStop(0,'rgba(104,151,230,'+va.alpha+')');
-    grad.addColorStop(edgeStopA,'rgba(104,151,230,'+va.alpha+')');
-    grad.addColorStop(.50,'rgba(105,167,255,'+centerAlpha+')');
-    grad.addColorStop(edgeStopB,'rgba(184,207,246,'+vb.alpha+')');
-    grad.addColorStop(1,'rgba(184,207,246,'+vb.alpha+')');
+    grad.addColorStop(0,'rgba('+a.color+','+aEdgeAlpha+')');
+    grad.addColorStop(edgeStopA,'rgba('+a.color+','+aEdgeAlpha+')');
+    grad.addColorStop(.499,'rgba('+a.color+','+centerAlpha+')');
+    grad.addColorStop(.501,'rgba('+b.color+','+centerAlpha+')');
+    grad.addColorStop(edgeStopB,'rgba('+b.color+','+bEdgeAlpha+')');
+    grad.addColorStop(1,'rgba('+b.color+','+bEdgeAlpha+')');
     ctx.fillStyle=grad;
-    ctx.shadowColor='rgba('+l.energyColor+','+(.18*fade)+')';
-    ctx.shadowBlur=9;
-    taperedFilamentPath(a,b,endA,endB,mid,reveal);
+    ctx.shadowColor='rgba('+a.color+','+Math.min(.28,aEdgeAlpha*.32)+')';
+    ctx.shadowBlur=8;
+    taperedFilamentPath(a,b,endA,endB,mid,1);
     ctx.fill();
-
-    ctx.strokeStyle='rgba(225,236,255,'+(.11*fade)+')';
-    ctx.lineWidth=.75;
-    ctx.beginPath();
-    ctx.moveTo(a.x,a.y);
-    ctx.lineTo(a.x+(b.x-a.x)*reveal,a.y+(b.y-a.y)*reveal);
-    ctx.stroke();
     ctx.restore();
 
-    if(!reduce&&!l.dyingAt&&reveal>.98&&time>=l.nextPulseAt){
+    if(!reduce&&linkLife>.98&&l.active>.98&&time>=l.nextPulseAt){
       createPulse(l,time);
       l.nextPulseAt=time+rand(l.minPulseGap,l.maxPulseGap);
     }
@@ -633,25 +612,26 @@ function mountNexoOrganicBackground(){
     ctx.fillStyle=aura;
     ctx.beginPath();ctx.arc(n.x,n.y,rr*(2.8+n.auraGain*.6),0,Math.PI*2);ctx.fill();
 
-    const body=ctx.createRadialGradient(n.x-rr*.32,n.y-rr*.34,rr*.08,n.x,n.y,rr);
-    body.addColorStop(0,'rgb(238,246,255)');
-    body.addColorStop(.16,'rgb(124,168,238)');
-    body.addColorStop(.58,'rgb(58,89,151)');
-    body.addColorStop(1,'rgb(34,51,91)');
+    const body=ctx.createRadialGradient(n.x-rr*.28,n.y-rr*.30,rr*.06,n.x,n.y,rr);
+    body.addColorStop(0,'rgba('+n.color+',1)');
+    body.addColorStop(.42,'rgba('+n.color+',.92)');
+    body.addColorStop(1,'rgba('+n.color+',.72)');
     ctx.globalAlpha=alpha;
     ctx.fillStyle=body;
+    ctx.shadowColor='rgba('+n.color+','+Math.min(.72,alpha*.78)+')';
+    ctx.shadowBlur=10+8*pulse01;
     ctx.beginPath();ctx.arc(n.x,n.y,rr,0,Math.PI*2);ctx.fill();
     ctx.globalAlpha=1;
 
-    const core=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*.52);
-    core.addColorStop(0,'rgba(255,255,255,.96)');
-    core.addColorStop(.20,'rgba('+n.color+',.92)');
+    const core=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*.50);
+    core.addColorStop(0,'rgba('+n.color+',1)');
+    core.addColorStop(.48,'rgba('+n.color+',.82)');
     core.addColorStop(1,'rgba('+n.color+',0)');
     ctx.globalAlpha=alpha;
     ctx.fillStyle=core;
-    ctx.shadowColor='rgba('+n.color+','+Math.min(.92,alpha)+')';
-    ctx.shadowBlur=16+12*pulse01;
-    ctx.beginPath();ctx.arc(n.x,n.y,rr*.52,0,Math.PI*2);ctx.fill();
+    ctx.shadowColor='rgba('+n.color+','+Math.min(.88,alpha)+')';
+    ctx.shadowBlur=13+10*pulse01;
+    ctx.beginPath();ctx.arc(n.x,n.y,rr*.50,0,Math.PI*2);ctx.fill();
     ctx.globalAlpha=1;
     ctx.restore();
   }
@@ -678,18 +658,14 @@ function mountNexoOrganicBackground(){
       coreCulled=markNodeForFade(time,true)||!nodes.some(n=>n.id===1&&n.state==='active');
       if(coreCulled){
         lastCull=time;
-        nextCullDelay=rand(900,1700);
+        nextCullDelay=rand(2800,4200);
       }
     }
 
-    if(!reduce&&time-startAt>8200&&time-lastCull>nextCullDelay){
-      const attempts=Math.random()<.22?2:1;
-      let changed=false;
-      for(let i=0;i<attempts;i++){
-        if(markNodeForFade(time))changed=true;
-      }
+    if(!reduce&&time-startAt>11000&&time-lastCull>nextCullDelay){
+      const changed=markNodeForFade(time);
       lastCull=time;
-      nextCullDelay=changed?rand(850,2100):rand(1300,2600);
+      nextCullDelay=changed?rand(2800,5200):rand(2200,3800);
     }
 
     links.forEach(l=>drawLink(l,time));
