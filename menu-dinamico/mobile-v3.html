@@ -113,7 +113,7 @@ html[data-theme="night"] .modal,
 html[data-theme="night"] .photo,
 html[data-theme="night"] .heroImage,
 html[data-theme="night"] .empty{
-  background:rgba(16,22,33,.42)!important;
+  background:rgba(16,22,33,.315)!important;
   border-color:rgba(255,255,255,.10)!important;
   box-shadow:0 12px 28px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.035)!important;
   -webkit-backdrop-filter:blur(16px) saturate(112%);
@@ -121,7 +121,7 @@ html[data-theme="night"] .empty{
 }
 html[data-theme="night"] .recipeCard:hover,
 html[data-theme="night"] .recipeCard:focus-visible{
-  background:rgba(24,30,42,.46)!important;
+  background:rgba(24,30,42,.345)!important;
   border-color:rgba(225,189,105,.34)!important;
   box-shadow:0 16px 34px rgba(0,0,0,.28)!important;
 }
@@ -131,7 +131,7 @@ html[data-theme="night"] .yield,
 html[data-theme="night"] .secondary,
 html[data-theme="night"] .prep{
   color:#f2f5fa!important;
-  background:rgba(16,22,33,.36)!important;
+  background:rgba(16,22,33,.27)!important;
   border-color:rgba(255,255,255,.10)!important;
 }
 html[data-theme="night"] .search::placeholder{color:#8f9aab}
@@ -139,7 +139,7 @@ html[data-theme="night"] .row{border-bottom-color:rgba(255,255,255,.08)!importan
 html[data-theme="night"] .thumb,
 html[data-theme="night"] .pic{background:rgba(8,12,19,.30)!important}
 html[data-theme="night"] .modalHead{
-  background:rgba(22,30,45,.58)!important;
+  background:rgba(22,30,45,.435)!important;
   border-bottom-color:rgba(255,255,255,.09)!important;
 }
 html[data-theme="night"] .modalShade{background:rgba(2,4,8,.72)!important}
@@ -148,6 +148,46 @@ html[data-theme="night"] .topbar{
 }
 @supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
   html[data-theme="night"] body:before{background:rgba(5,8,14,.70)}
+}
+
+
+/* =========================================================
+   FICHAS MATCHED CARD TRANSPARENCY v5 · 2026-09-29
+   Night is 25% more transparent than v4; day matches the same alpha.
+========================================================= */
+html[data-theme="day"] .card,
+html[data-theme="day"] .section,
+html[data-theme="day"] .modal,
+html[data-theme="day"] .photo,
+html[data-theme="day"] .heroImage,
+html[data-theme="day"] .empty{
+  background:rgba(255,255,255,.315)!important;
+  border-color:rgba(185,203,237,.72)!important;
+  -webkit-backdrop-filter:blur(16px) saturate(112%);
+  backdrop-filter:blur(16px) saturate(112%);
+}
+html[data-theme="night"] .card,
+html[data-theme="night"] .section,
+html[data-theme="night"] .modal,
+html[data-theme="night"] .photo,
+html[data-theme="night"] .heroImage,
+html[data-theme="night"] .empty{
+  background:rgba(16,22,33,.315)!important;
+}
+html[data-theme="day"] .recipeCard:hover,
+html[data-theme="day"] .recipeCard:focus-visible{
+  background:rgba(255,244,236,.345)!important;
+}
+html[data-theme="night"] .recipeCard:hover,
+html[data-theme="night"] .recipeCard:focus-visible{
+  background:rgba(24,30,42,.345)!important;
+}
+html[data-theme="day"] .search,
+html[data-theme="day"] .chip,
+html[data-theme="day"] .yield,
+html[data-theme="day"] .secondary,
+html[data-theme="day"] .prep{
+  background:rgba(255,255,255,.27)!important;
 }
 </style>
 </head>
