@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-shell-20260929-15';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-theme-20260929-16';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -10,14 +10,33 @@ function accessError(code){return new Error('No se pudo completar el acceso ('+A
 function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r.style.display=visible?'none':'';document.body.classList.toggle('nxo-lock',!visible)}
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
+const NEXO_THEME_KEY='nexoTheme:v1';
+function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
+function applyTheme(theme,persist=true){
+  const t=theme==='night'?'night':'day';
+  const r=document.getElementById('nxo-app');
+  if(r)r.dataset.theme=t;
+  if(persist)try{localStorage.setItem(NEXO_THEME_KEY,t)}catch(_){}
+  const b=document.getElementById('nxo-theme-toggle');
+  if(b){
+    const night=t==='night';
+    b.textContent=night?'☀':'☾';
+    b.setAttribute('aria-label',night?'Cambiar a modo diurno':'Cambiar a modo nocturno');
+    b.setAttribute('title',night?'Modo diurno':'Modo nocturno');
+    b.setAttribute('aria-pressed',night?'true':'false');
+  }
+  return t;
+}
+function toggleTheme(){const r=document.getElementById('nxo-app');applyTheme(r?.dataset?.theme==='night'?'day':'night',true)}
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const initials=v=>String(v||'N').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'N';
 function addCss(){if(document.getElementById('nxo-css'))return;const l=document.createElement('link');l.id='nxo-css';l.rel='stylesheet';l.href=CSS;document.head.appendChild(l)}
-function root(){addCss();document.body.classList.add('nxo-lock');let r=document.getElementById('nxo-app');if(!r){r=document.createElement('div');r.id='nxo-app';r.className='nxo-app';document.body.appendChild(r)}return r}
+function root(){addCss();document.body.classList.add('nxo-lock');let r=document.getElementById('nxo-app');if(!r){r=document.createElement('div');r.id='nxo-app';r.className='nxo-app';r.dataset.theme=storedTheme();document.body.appendChild(r)}else if(!r.dataset.theme){r.dataset.theme=storedTheme()}return r}
 let nxoOrganicRaf=0,nxoOrganicResize=null,nxoOrganicStarted=false;
 function ensureOrganicLayers(){
   const r=root();
   let c=r.querySelector('#nxo-organic-canvas');
+  let film=r.querySelector('#nxo-theme-film');
   let layer=r.querySelector('#nxo-content-layer');
   if(!c){
     c=document.createElement('canvas');
@@ -25,13 +44,19 @@ function ensureOrganicLayers(){
     c.setAttribute('aria-hidden','true');
     r.prepend(c);
   }
+  if(!film){
+    film=document.createElement('div');
+    film.id='nxo-theme-film';
+    film.setAttribute('aria-hidden','true');
+    if(layer)r.insertBefore(film,layer);else r.appendChild(film);
+  }
   if(!layer){
     layer=document.createElement('div');
     layer.id='nxo-content-layer';
     layer.className='nxo-content-layer';
     r.appendChild(layer);
   }
-  return {r,c,layer};
+  return {r,c,film,layer};
 }
 function mountNexoOrganicBackground(){
   if(nxoOrganicStarted)return;
@@ -56,6 +81,8 @@ function mountNexoOrganicBackground(){
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const ease=t=>1-Math.pow(1-t,3);
   const smooth=t=>t*t*(3-2*t);
+  const themeMode=()=>document.getElementById('nxo-app')?.dataset?.theme==='night'?'night':'day';
+  const particleRgb=()=>themeMode()==='night'?'255,255,255':'38,76,143';
 
   function resize(){
     W=Math.max(1,window.innerWidth);
@@ -610,17 +637,30 @@ function mountNexoOrganicBackground(){
   }
 
   function drawBackground(){
+    const night=themeMode()==='night';
     const g=ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,'#182341');
-    g.addColorStop(.5,'#11192f');
-    g.addColorStop(1,'#0b1122');
+    if(night){
+      g.addColorStop(0,'#182341');
+      g.addColorStop(.5,'#11192f');
+      g.addColorStop(1,'#0b1122');
+    }else{
+      g.addColorStop(0,'#fbfaf6');
+      g.addColorStop(.52,'#f5f3ed');
+      g.addColorStop(1,'#eeeae1');
+    }
     ctx.fillStyle=g;
     ctx.fillRect(0,0,W,H);
 
     const center=ctx.createRadialGradient(W*.5,H*.46,0,W*.5,H*.46,Math.max(W,H)*.52);
-    center.addColorStop(0,'rgba(47,79,147,.17)');
-    center.addColorStop(.44,'rgba(38,76,143,.065)');
-    center.addColorStop(1,'rgba(10,16,37,0)');
+    if(night){
+      center.addColorStop(0,'rgba(47,79,147,.17)');
+      center.addColorStop(.44,'rgba(38,76,143,.065)');
+      center.addColorStop(1,'rgba(10,16,37,0)');
+    }else{
+      center.addColorStop(0,'rgba(220,231,247,.48)');
+      center.addColorStop(.46,'rgba(185,203,237,.20)');
+      center.addColorStop(1,'rgba(245,242,234,0)');
+    }
     ctx.fillStyle=center;
     ctx.fillRect(0,0,W,H);
   }
@@ -683,17 +723,18 @@ function mountNexoOrganicBackground(){
     const edgeB=clamp(1-(vb.rr/linkLen),.72,.98);
     const centerAlpha=clamp(((va.alpha+vb.alpha)*.5)*.70,0,.42);
 
+    const rgb=particleRgb();
     ctx.save();
     const grad=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
-    grad.addColorStop(0,'rgba(255,255,255,0)');
-    grad.addColorStop(edgeA,'rgba(255,255,255,0)');
-    grad.addColorStop(.32,'rgba(255,255,255,'+(centerAlpha*.42)+')');
-    grad.addColorStop(.50,'rgba(255,255,255,'+centerAlpha+')');
-    grad.addColorStop(.68,'rgba(255,255,255,'+(centerAlpha*.42)+')');
-    grad.addColorStop(edgeB,'rgba(255,255,255,0)');
-    grad.addColorStop(1,'rgba(255,255,255,0)');
+    grad.addColorStop(0,'rgba('+rgb+',0)');
+    grad.addColorStop(edgeA,'rgba('+rgb+',0)');
+    grad.addColorStop(.32,'rgba('+rgb+','+(centerAlpha*.42)+')');
+    grad.addColorStop(.50,'rgba('+rgb+','+centerAlpha+')');
+    grad.addColorStop(.68,'rgba('+rgb+','+(centerAlpha*.42)+')');
+    grad.addColorStop(edgeB,'rgba('+rgb+',0)');
+    grad.addColorStop(1,'rgba('+rgb+',0)');
     ctx.fillStyle=grad;
-    ctx.shadowColor='rgba(255,255,255,'+(centerAlpha*.28)+')';
+    ctx.shadowColor='rgba('+rgb+','+(centerAlpha*.28)+')';
     ctx.shadowBlur=7;
     taperedFilamentPath(a,b,endA,endB,mid,1);
     ctx.fill();
@@ -724,22 +765,23 @@ function mountNexoOrganicBackground(){
     const x1=a.x+(b.x-a.x)*ahead;
     const y1=a.y+(b.y-a.y)*ahead;
 
+    const rgb=particleRgb();
     ctx.save();
     const beam=ctx.createLinearGradient(x0,y0,x1,y1);
-    beam.addColorStop(0,'rgba(255,255,255,0)');
-    beam.addColorStop(.44,'rgba(255,255,255,'+(p.alpha*.34)+')');
-    beam.addColorStop(.54,'rgba(255,255,255,'+p.alpha+')');
-    beam.addColorStop(.66,'rgba(255,255,255,'+(p.alpha*.34)+')');
-    beam.addColorStop(1,'rgba(255,255,255,0)');
+    beam.addColorStop(0,'rgba('+rgb+',0)');
+    beam.addColorStop(.44,'rgba('+rgb+','+(p.alpha*.34)+')');
+    beam.addColorStop(.54,'rgba('+rgb+','+p.alpha+')');
+    beam.addColorStop(.66,'rgba('+rgb+','+(p.alpha*.34)+')');
+    beam.addColorStop(1,'rgba('+rgb+',0)');
     ctx.strokeStyle=beam;
     ctx.lineWidth=p.size;
     ctx.lineCap='round';
-    ctx.shadowColor='rgba(255,255,255,'+(p.alpha*.72)+')';
+    ctx.shadowColor='rgba('+rgb+','+(p.alpha*.72)+')';
     ctx.shadowBlur=p.halo;
     ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
 
-    ctx.fillStyle='rgba(255,255,255,'+(p.alpha*.78)+')';
-    ctx.shadowColor='rgba(255,255,255,'+p.alpha+')';
+    ctx.fillStyle='rgba('+rgb+','+(p.alpha*.78)+')';
+    ctx.shadowColor='rgba('+rgb+','+p.alpha+')';
     ctx.shadowBlur=p.halo*.72;
     ctx.beginPath();ctx.arc(x,y,p.size*.72,0,Math.PI*2);ctx.fill();
     ctx.restore();
@@ -755,42 +797,40 @@ function mountNexoOrganicBackground(){
     const rr=visual.rr;
     if(rr<=.2||alpha<=.001)return;
 
+    const rgb=particleRgb();
     ctx.save();
 
-    // Exterior white illumination.
     const auraRadius=rr*(2.45+n.auraGain*.48);
     const aura=ctx.createRadialGradient(n.x,n.y,rr*.72,n.x,n.y,auraRadius);
-    aura.addColorStop(0,'rgba(255,255,255,'+(alpha*(.16+.06*pulse01))+')');
-    aura.addColorStop(.36,'rgba(255,255,255,'+(alpha*(.075+.025*pulse01))+')');
-    aura.addColorStop(1,'rgba(255,255,255,0)');
+    aura.addColorStop(0,'rgba('+rgb+','+(alpha*(.16+.06*pulse01))+')');
+    aura.addColorStop(.36,'rgba('+rgb+','+(alpha*(.075+.025*pulse01))+')');
+    aura.addColorStop(1,'rgba('+rgb+',0)');
     ctx.fillStyle=aura;
     ctx.beginPath();ctx.arc(n.x,n.y,auraRadius,0,Math.PI*2);ctx.fill();
 
-    // Transparent white circle; global opacity never exceeds 60%.
     const body=ctx.createRadialGradient(
       n.x-rr*.20,n.y-rr*.22,rr*.05,
       n.x,n.y,rr
     );
-    body.addColorStop(0,'rgba(255,255,255,.98)');
-    body.addColorStop(.34,'rgba(255,255,255,.74)');
-    body.addColorStop(.76,'rgba(255,255,255,.42)');
-    body.addColorStop(1,'rgba(255,255,255,.22)');
+    body.addColorStop(0,'rgba('+rgb+',.98)');
+    body.addColorStop(.34,'rgba('+rgb+',.74)');
+    body.addColorStop(.76,'rgba('+rgb+',.42)');
+    body.addColorStop(1,'rgba('+rgb+',.22)');
     ctx.globalAlpha=alpha;
     ctx.fillStyle=body;
-    ctx.shadowColor='rgba(255,255,255,'+Math.min(.34,alpha*.52)+')';
+    ctx.shadowColor='rgba('+rgb+','+Math.min(.34,alpha*.52)+')';
     ctx.shadowBlur=10+7*pulse01;
     ctx.beginPath();ctx.arc(n.x,n.y,rr,0,Math.PI*2);ctx.fill();
     ctx.globalAlpha=1;
 
-    // Central white illumination, kept inside the same 60% node envelope.
     const core=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*.62);
-    core.addColorStop(0,'rgba(255,255,255,1)');
-    core.addColorStop(.26,'rgba(255,255,255,.72)');
-    core.addColorStop(.66,'rgba(255,255,255,.24)');
-    core.addColorStop(1,'rgba(255,255,255,0)');
+    core.addColorStop(0,'rgba('+rgb+',1)');
+    core.addColorStop(.26,'rgba('+rgb+',.72)');
+    core.addColorStop(.66,'rgba('+rgb+',.24)');
+    core.addColorStop(1,'rgba('+rgb+',0)');
     ctx.globalAlpha=alpha;
     ctx.fillStyle=core;
-    ctx.shadowColor='rgba(255,255,255,'+Math.min(.38,alpha*.62)+')';
+    ctx.shadowColor='rgba('+rgb+','+Math.min(.38,alpha*.62)+')';
     ctx.shadowBlur=12+8*pulse01;
     ctx.beginPath();ctx.arc(n.x,n.y,rr*.62,0,Math.PI*2);ctx.fill();
     ctx.globalAlpha=1;
@@ -908,6 +948,7 @@ function topbar(mode){
       '<button type="button" class="nxo-nav-link" id="nxo-nav-development">Centro de desarrollo</button>'+
     '</nav>'+
     '<div class="nxo-nav-account-wrap">'+
+      '<button type="button" class="nxo-theme-button" id="nxo-theme-toggle" aria-label="Cambiar tema" aria-pressed="false"></button>'+
       notification+
       '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
         '<span class="nxo-avatar">'+esc(initials(name))+'</span>'+
@@ -928,6 +969,9 @@ function bindTopbar(mode){
   const menu=document.getElementById('nxo-nav-account-menu');
   const bell=document.getElementById('nxo-notification-button');
   const bellMenu=document.getElementById('nxo-notification-menu');
+  const themeButton=document.getElementById('nxo-theme-toggle');
+  applyTheme(document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),false);
+  themeButton?.addEventListener('click',e=>{e.stopPropagation();toggleTheme()});
 
   if(isWorkspace){
     document.getElementById('nxo-personal')?.addEventListener('click',returnPersonal);
