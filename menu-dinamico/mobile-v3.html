@@ -349,8 +349,9 @@ function refreshTimerNotificationUI(){
     state.textContent=es?'Activas · Android mostrará el aviso en la barra y panel de notificaciones.':'On · Android will show the alert in the notification shade.';
     button.textContent=es?'Activadas':'Enabled';button.disabled=true
   }else if(p==='denied'){
-    state.textContent=es?'Bloqueadas por el navegador · habilítalas en los permisos del sitio.':'Blocked by the browser · enable them in site permissions.';
-    button.textContent=es?'Bloqueadas':'Blocked';button.disabled=true
+    state.textContent=es?'Bloqueadas por el navegador. Toca “Cómo activar” para ver dónde habilitarlas.':'Blocked by the browser. Tap “How to enable” to see where to allow them.';
+    button.textContent=es?'Cómo activar':'How to enable';button.disabled=false;
+    button.onclick=()=>{window.open('./notifications.html?lang='+encodeURIComponent(S.lang)+'&help=1','nexo_timer_notifications')}
   }else if(p==='unsupported'){
     state.textContent=es?'Este navegador no admite notificaciones web persistentes.':'This browser does not support persistent web notifications.';
     button.textContent=es?'No disponible':'Unavailable';button.disabled=true
