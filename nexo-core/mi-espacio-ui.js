@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-10';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-11';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -192,6 +192,8 @@ function mountNexoOrganicBackground(){
       driftDuration:rand(1600,3600),
       driftRadius,
       lastDriftUpdate:0,
+      lastBranchAt:0,
+      branchChildren:0,
       r,baseR:r,color,parent,
       branchCap:randInt(6,10),
       born:time,
@@ -379,27 +381,47 @@ function mountNexoOrganicBackground(){
     if(topology.aliveCount>=target&&!repairing)return false;
     if(repairing&&topology.aliveCount>=repairMax)return false;
 
-    const candidates=nodes.filter(n=>
-      n.settled&&n.state==='active'&&nodeDegree(n.id)<n.branchCap
-    );
+    const candidates=nodes.filter(n=>{
+      if(!n.settled||n.state!=='active'||nodeDegree(n.id)>=n.branchCap)return false;
+      const deg=nodeDegree(n.id);
+      const cooldown=repairing?620:1050;
+      return deg===0||time-(n.lastBranchAt||0)>=cooldown;
+    });
     if(!candidates.length)return false;
 
-    const repairCandidates=candidates.filter(n=>
-      topology.smallIds.has(n.id)||nodeDegree(n.id)<=1
-    );
-    const lowDegree=candidates.filter(n=>
-      nodeDegree(n.id)<=Math.max(2,Math.floor(n.branchCap*.55))
-    );
-    const pool=repairing&&repairCandidates.length
-      ?repairCandidates
-      :(lowDegree.length?lowDegree:candidates);
+    function branchScore(n){
+      const deg=nodeDegree(n.id);
+      const age=Math.max(0,time-n.born);
+      const componentSize=topology.componentSize.get(n.id)||1;
+      const recentBonus=clamp(1-age/32000,0,1)*5;
+      let score=recentBonus;
 
-    const attempts=repairing?52:36;
+      // Repair tiny fragments aggressively, but do not keep extending one tip forever.
+      if(componentSize<=2)score+=18;
+      if(deg===0)score+=13;
+      else if(deg===1)score+=11;
+      else if(deg===2)score+=15;
+      else if(deg===3)score+=8;
+      else score+=Math.max(0,6-deg);
+
+      // Nodes that have already emitted many children remain eligible, but lose priority.
+      score-=Math.min(6,n.branchChildren||0)*1.15;
+      return score;
+    }
+
+    const ranked=candidates
+      .map(n=>({n,score:branchScore(n)}))
+      .sort((a,b)=>b.score-a.score);
+
+    const pool=ranked.slice(0,Math.min(repairing?10:8,ranked.length)).map(x=>x.n);
+    const attempts=repairing?58:40;
+
     for(let attempt=0;attempt<attempts;attempt++){
-      const source=pick(attempt<Math.floor(attempts*.72)?pool:candidates);
+      const source=pick(attempt<Math.floor(attempts*.78)?pool:candidates);
       if(!source)continue;
 
-      const sourceRepair=repairing&&(topology.smallIds.has(source.id)||nodeDegree(source.id)<=1);
+      const deg=nodeDegree(source.id);
+      const sourceRepair=repairing&&((topology.componentSize.get(source.id)||1)<=2||deg<=1);
       const radius=rand(W<700?10:12,W<700?19:24);
       const targetPoint=targetFor(source,radius,sourceRepair);
       if(!targetPoint)continue;
@@ -414,6 +436,11 @@ function mountNexoOrganicBackground(){
       child.moveDuration=rand(1100,2200);
       child.moving=true;
       child.settled=false;
+      child.lastBranchAt=time;
+
+      source.lastBranchAt=time;
+      source.branchChildren=(source.branchChildren||0)+1;
+
       addLink(source,child,time);
       return true;
     }
@@ -444,21 +471,18 @@ function mountNexoOrganicBackground(){
     if(alive.length<(W<700?18:28))return false;
 
     const topology=networkTopology();
+
+    // Age is the primary rule: old growth recedes first so the living frontier
+    // appears to travel across the surface instead of preserving old zig-zag trunks.
     let eligible=alive.filter(n=>(topology.componentSize.get(n.id)||1)>2);
     if(!eligible.length)return false;
 
-    const structurallySafe=eligible.filter(n=>!removalCreatesTinyFragment(n.id));
-    if(structurallySafe.length)eligible=structurallySafe;
+    eligible.sort((a,b)=>a.born-b.born);
+    const oldest=eligible[0];
 
-    const leaves=eligible.filter(n=>nodeDegree(n.id)<=1);
-    const internal=eligible.filter(n=>nodeDegree(n.id)>=2);
-    let n;
-
-    if(internal.length&&Math.random()<.24)n=pick(internal);
-    else if(leaves.length)n=pick(leaves);
-    else n=pick(eligible);
-
-    return fadeNode(n,time);
+    // Do not keep an old bridge forever. Topology repair is responsible for
+    // regrowing any small fragment produced after this oldest node disappears.
+    return fadeNode(oldest,time);
   }
 
   function cleanup(time){
@@ -766,12 +790,19 @@ function mountNexoOrganicBackground(){
       const topology=networkTopology();
       const canGrow=aliveCount<target||(topology.needsRepair&&aliveCount<repairMax);
 
-      if(canGrow&&spawn(time)){
+      if(canGrow){
+        const births=topology.needsRepair?2:1;
+        let grew=false;
+        for(let i=0;i<births;i++){
+          if(spawn(time))grew=true;
+        }
         lastSpawn=time;
-        nextSpawnDelay=topology.needsRepair?rand(300,620):rand(420,820);
+        nextSpawnDelay=grew
+          ?(topology.needsRepair?rand(260,520):rand(420,820))
+          :(topology.needsRepair?rand(380,720):rand(680,1180));
       }else{
         lastSpawn=time;
-        nextSpawnDelay=topology.needsRepair?rand(420,820):rand(680,1180);
+        nextSpawnDelay=rand(680,1180);
       }
     }
 
@@ -779,7 +810,7 @@ function mountNexoOrganicBackground(){
       coreCulled=markNodeForFade(time,true)||!nodes.some(n=>n.id===1&&n.state==='active');
       if(coreCulled){
         lastCull=time;
-        nextCullDelay=rand(2800,4200);
+        nextCullDelay=rand(2600,3800);
       }
     }
 
@@ -789,11 +820,11 @@ function mountNexoOrganicBackground(){
 
       if(repairing){
         lastCull=time;
-        nextCullDelay=rand(1800,3000);
+        nextCullDelay=rand(1700,2800);
       }else{
         const changed=markNodeForFade(time);
         lastCull=time;
-        nextCullDelay=changed?rand(2800,5200):rand(2200,3800);
+        nextCullDelay=changed?rand(2600,4300):rand(2200,3600);
       }
     }
 
