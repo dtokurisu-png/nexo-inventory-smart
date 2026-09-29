@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-11';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-12';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -663,10 +663,11 @@ function mountNexoOrganicBackground(){
     const edgeStopA=clamp(va.rr/linkLen,.015,.32);
     const edgeStopB=clamp(1-(vb.rr/linkLen),.68,.985);
 
-    // Each half keeps the exact node hue. Opacity is identical to the node
-    // through its visible boundary, then tapers only after leaving the circle.
-    const aEdgeAlpha=va.alpha;
-    const bEdgeAlpha=vb.alpha;
+    // The circle must stay 50% more opaque than the wide expansion.
+    // Therefore the expansion tracks the live node alpha at 2/3 intensity:
+    // nodeAlpha = expansionAlpha * 1.5.
+    const aEdgeAlpha=va.alpha/1.5;
+    const bEdgeAlpha=vb.alpha/1.5;
     const centerAlphaA=aEdgeAlpha*.13;
     const centerAlphaB=bEdgeAlpha*.13;
 
@@ -679,7 +680,7 @@ function mountNexoOrganicBackground(){
     grad.addColorStop(edgeStopB,'rgba('+b.color+','+bEdgeAlpha+')');
     grad.addColorStop(1,'rgba('+b.color+','+bEdgeAlpha+')');
     ctx.fillStyle=grad;
-    ctx.shadowColor='rgba('+a.color+','+Math.min(.28,aEdgeAlpha*.32)+')';
+    ctx.shadowColor='rgba('+a.color+','+Math.min(.18,aEdgeAlpha*.24)+')';
     ctx.shadowBlur=8;
     taperedFilamentPath(a,b,endA,endB,mid,1);
     ctx.fill();
