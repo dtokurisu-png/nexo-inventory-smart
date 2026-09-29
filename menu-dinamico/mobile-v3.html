@@ -337,7 +337,7 @@ async function closeTimerNotification(id){
 }
 function notifyDueTimers(){for(const x of T.items){if(x.due&&!x.notificationSent)showTimerNotification(x)}}
 function openTimerNotificationPermission(){
-  const url='./notifications.html?lang='+encodeURIComponent(S.lang);
+  const url='./notifications.html?v=20260929-blocked-help-11&lang='+encodeURIComponent(S.lang);
   const w=window.open(url,'nexo_timer_notifications');
   if(!w)toast(S.lang==='es'?'Permite ventanas emergentes para activar las notificaciones.':'Allow pop-ups to enable notifications.',5000)
 }
@@ -351,7 +351,7 @@ function refreshTimerNotificationUI(){
   }else if(p==='denied'){
     state.textContent=es?'Bloqueadas por el navegador. Toca “Cómo activar” para ver dónde habilitarlas.':'Blocked by the browser. Tap “How to enable” to see where to allow them.';
     button.textContent=es?'Cómo activar':'How to enable';button.disabled=false;
-    button.onclick=()=>{window.open('./notifications.html?lang='+encodeURIComponent(S.lang)+'&help=1','nexo_timer_notifications')}
+    button.onclick=()=>{window.open('./notifications.html?v=20260929-blocked-help-11&lang='+encodeURIComponent(S.lang)+'&help=1','nexo_timer_notifications')}
   }else if(p==='unsupported'){
     state.textContent=es?'Este navegador no admite notificaciones web persistentes.':'This browser does not support persistent web notifications.';
     button.textContent=es?'No disponible':'Unavailable';button.disabled=true
