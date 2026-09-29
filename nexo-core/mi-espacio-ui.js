@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-5';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-6';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -108,8 +108,8 @@ function mountNexoOrganicBackground(){
       phase:rand(0,Math.PI*2),
       pulseSpeed:rand(.00115,.00255),
       scaleAmp:rand(.025,.075),
-      alphaBase:rand(.40,.74),
-      alphaAmp:rand(.08,.24),
+      alphaBase:rand(.64,.91),
+      alphaAmp:rand(.06,.20),
       auraGain:rand(.78,1.24),
       state:'active',
       deathAt:0,
@@ -383,6 +383,19 @@ function mountNexoOrganicBackground(){
     return 1-clamp((time-n.deathAt)/n.deathDuration,0,1);
   }
 
+  function nodeVisualState(n,time){
+    const age=time-n.born;
+    const appear=clamp(age/900,0,1);
+    const life=nodeLifeAlpha(n,time);
+    const wave=Math.sin(time*n.pulseSpeed+n.phase);
+    return {
+      wave,
+      pulse01:(wave+1)/2,
+      alpha:clamp((n.alphaBase+n.alphaAmp*wave)*appear*life,.08,.98),
+      rr:n.r*(1+n.scaleAmp*wave)
+    };
+  }
+
   function updateNodes(time){
     for(const n of nodes){
       if(n.moving){
@@ -503,15 +516,18 @@ function mountNexoOrganicBackground(){
     if(b.moving)drawLiquidBridge(a,b,moveProgress,fade);
 
     const energy=.90+.10*Math.sin(time*.00135+l.phase);
-    const endA=clamp(a.r*1.05,15.4,32.2);
-    const endB=clamp(b.r*1.05,15.4,32.2);
+    const va=nodeVisualState(a,time);
+    const vb=nodeVisualState(b,time);
+    const endA=va.rr*2;
+    const endB=vb.rr*2;
     const mid=l.midWidth;
+    const centerAlpha=((va.alpha+vb.alpha)*.5)*.14*l.filamentAlpha*fade*energy;
 
     ctx.save();
     const grad=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
-    grad.addColorStop(0,'rgba(104,151,230,'+(.25*l.filamentAlpha*fade*energy)+')');
-    grad.addColorStop(.48,'rgba(105,167,255,'+(.14*l.filamentAlpha*fade*energy)+')');
-    grad.addColorStop(1,'rgba(184,207,246,'+(.24*l.filamentAlpha*fade*energy)+')');
+    grad.addColorStop(0,'rgba(104,151,230,'+va.alpha+')');
+    grad.addColorStop(.48,'rgba(105,167,255,'+centerAlpha+')');
+    grad.addColorStop(1,'rgba(184,207,246,'+vb.alpha+')');
     ctx.fillStyle=grad;
     ctx.shadowColor='rgba('+l.energyColor+','+(.18*fade)+')';
     ctx.shadowBlur=9;
@@ -583,12 +599,11 @@ function mountNexoOrganicBackground(){
     const age=time-n.born;
     if(age<0)return;
 
-    const appear=clamp(age/900,0,1);
-    const life=nodeLifeAlpha(n,time);
-    const wave=Math.sin(time*n.pulseSpeed+n.phase);
-    const pulse01=(wave+1)/2;
-    const alpha=clamp((n.alphaBase+n.alphaAmp*wave)*appear*life,.05,1);
-    const rr=n.r*(1+n.scaleAmp*wave);
+    const visual=nodeVisualState(n,time);
+    const wave=visual.wave;
+    const pulse01=visual.pulse01;
+    const alpha=visual.alpha;
+    const rr=visual.rr;
 
     ctx.save();
     const aura=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*(2.8+n.auraGain*.6));
@@ -604,9 +619,7 @@ function mountNexoOrganicBackground(){
     body.addColorStop(.58,'rgba(58,89,151,'+(alpha*.34)+')');
     body.addColorStop(1,'rgba(34,51,91,'+(alpha*.16)+')');
     ctx.fillStyle=body;
-    ctx.strokeStyle='rgba(184,207,246,'+(alpha*.32)+')';
-    ctx.lineWidth=1;
-    ctx.beginPath();ctx.arc(n.x,n.y,rr,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.arc(n.x,n.y,rr,0,Math.PI*2);ctx.fill();
 
     const core=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*.52);
     core.addColorStop(0,'rgba(255,255,255,'+(alpha*.95)+')');
