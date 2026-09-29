@@ -911,7 +911,7 @@ async function waitBoot(){
 
 function siteBase(){const p=location.pathname.replace(/\/+$/,'');return (location.origin+p.replace(/\/blank-8$/,'')).replace(/\/$/,'')}
 function routeUrl(path){const p=String(path||'').trim();return p?siteBase()+(p.startsWith('/')?p:'/'+p):''}
-function launchWithBack(url,label,workspaceId=''){if(!url)return'';try{const u=new URL(url,location.href);const back=new URL(siteBase()+'/blank-8');if(workspaceId)back.searchParams.set('nxoWorkspace',workspaceId);u.searchParams.set('nxoBack',back.href);u.searchParams.set('nxoBackLabel',label||'Mi espacio');return u.href}catch(_){return url}}
+function launchWithBack(url,label,workspaceId=''){if(!url)return'';try{const u=new URL(url,location.href);const back=new URL(siteBase()+'/blank-8');if(workspaceId)back.searchParams.set('nxoWorkspace',workspaceId);u.searchParams.set('nxoBack',back.href);u.searchParams.set('nxoBackLabel',label||'Mi espacio');u.searchParams.set('nxoTheme',document.getElementById('nxo-app')?.dataset?.theme||storedTheme());return u.href}catch(_){return url}}
 function toolLaunchUrl(t){const route=routeUrl(t.routePath);if(!route)return'';const wsid=workspace?.workspace?.id||'';return launchWithBack(route,wsid?workspace.workspace.name:'Mi espacio',wsid)}
 function centerDevelopmentUrl(){return launchWithBack(siteBase(),'Mi espacio','')}
 function setWorkspaceReturnParam(id){try{const u=new URL(location.href);if(id)u.searchParams.set('nxoWorkspace',id);else u.searchParams.delete('nxoWorkspace');history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
