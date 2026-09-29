@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260928-2';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260928-3';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -43,7 +43,7 @@ function mountNexoOrganicBackground(){
   const dpr=Math.min(window.devicePixelRatio||1,1.5);
 
   let W=0,H=0,lastW=0,lastH=0;
-  let nodeSeq=0,lastSpawn=0,nextSpawnDelay=640,lastCull=0,nextCullDelay=2600;
+  let nodeSeq=0,lastSpawn=0,nextSpawnDelay=520,lastCull=0,nextCullDelay=2500;
   const startAt=performance.now();
   const nodes=[];
   const links=[];
@@ -51,9 +51,11 @@ function mountNexoOrganicBackground(){
   const coreColors=['47,79,147','248,143,91','36,107,54'];
 
   const rand=(a,b)=>Math.random()*(b-a)+a;
+  const randInt=(a,b)=>Math.floor(rand(a,b+1));
   const pick=a=>a[Math.floor(Math.random()*a.length)];
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const ease=t=>1-Math.pow(1-t,3);
+  const smooth=t=>t*t*(3-2*t);
 
   function resize(){
     W=Math.max(1,window.innerWidth);
@@ -68,6 +70,9 @@ function mountNexoOrganicBackground(){
       const sx=W/lastW,sy=H/lastH;
       nodes.forEach(n=>{
         n.x*=sx;n.y*=sy;n.sx*=sx;n.sy*=sy;n.tx*=sx;n.ty*=sy;
+        n.anchorX*=sx;n.anchorY*=sy;
+        n.driftFromX*=sx;n.driftFromY*=sy;
+        n.driftToX*=sx;n.driftToY*=sy;
       });
     }
     lastW=W;lastH=H;
@@ -75,15 +80,26 @@ function mountNexoOrganicBackground(){
 
   function nodeDegree(id){
     let count=0;
-    for(const l of links)if(!l.dead&&(l.a===id||l.b===id))count++;
+    for(const l of links){
+      if(!l.dead&&!l.dyingAt&&(l.a===id||l.b===id))count++;
+    }
     return count;
   }
 
   function addNode(x,y,r,color,parent=null,time=performance.now()){
+    const driftRadius=rand(W<700?7:9,W<700?17:24);
     const n={
       id:++nodeSeq,
       x,y,sx:x,sy:y,tx:x,ty:y,
+      anchorX:x,anchorY:y,
+      driftFromX:x,driftFromY:y,
+      driftToX:x,driftToY:y,
+      driftStartAt:time,
+      driftDuration:rand(1600,3600),
+      driftRadius,
+      lastDriftUpdate:0,
       r,baseR:r,color,parent,
+      branchCap:randInt(6,10),
       born:time,
       moveStart:time,
       moveDuration:1,
@@ -113,8 +129,8 @@ function mountNexoOrganicBackground(){
       filamentAlpha:rand(.72,1),
       midWidth:rand(.75,1.35),
       nextPulseAt:time+rand(500,1500),
-      minPulseGap:rand(720,1500),
-      maxPulseGap:rand(1550,3300),
+      minPulseGap:rand(680,1450),
+      maxPulseGap:rand(1500,3150),
       dyingAt:0,
       deathDuration:rand(1500,2600),
       dead:false
@@ -146,37 +162,65 @@ function mountNexoOrganicBackground(){
   }
 
   function candidateIsClean(source,target,newRadius){
-    const nodeClearance=W<700?22:30;
+    const nodeClearance=W<700?20:27;
     for(const n of nodes){
       if(n.id===source.id||n.state==='dead')continue;
       const min=nodeClearance+n.r+newRadius;
       if(Math.hypot(target.x-n.x,target.y-n.y)<min)return false;
-      if(pointSegmentDistance(n.x,n.y,source.x,source.y,target.x,target.y)<n.r+nodeClearance*.72)return false;
+      if(pointSegmentDistance(n.x,n.y,source.x,source.y,target.x,target.y)<n.r+nodeClearance*.70)return false;
     }
 
     const candidate={x:target.x,y:target.y};
     for(const l of links){
       if(l.dead||l.dyingAt||l.a===source.id||l.b===source.id)continue;
       const a=getNode(l.a),b=getNode(l.b);
-      if(!a||!b)continue;
+      if(!a||!b||a.state==='dead'||b.state==='dead')continue;
       if(segmentsCross(source,candidate,a,b))return false;
     }
     return true;
   }
 
-  function targetFor(source,newRadius){
-    const minDist=W<700?82:125;
-    const maxDist=W<700?170:265;
-    const margin=W<700?34:58;
-    const outward=Math.atan2(source.y-H/2,source.x-W/2);
+  function dynamicPositionIsClean(n,x,y){
+    const margin=W<700?26:42;
+    if(x<margin||x>W-margin||y<margin||y>H-margin)return false;
 
-    for(let k=0;k<52;k++){
-      let ang;
-      if(source.parent&&Math.random()<.64){
-        ang=outward+rand(-.92,.92);
-      }else{
-        ang=rand(0,Math.PI*2);
+    const clearance=W<700?11:16;
+    for(const other of nodes){
+      if(other.id===n.id||other.state==='dead')continue;
+      if(Math.hypot(x-other.x,y-other.y)<n.r+other.r+clearance)return false;
+    }
+
+    const incident=links.filter(l=>!l.dead&&!l.dyingAt&&(l.a===n.id||l.b===n.id));
+    const proposed={x,y};
+
+    for(const il of incident){
+      const otherId=il.a===n.id?il.b:il.a;
+      const neighbor=getNode(otherId);
+      if(!neighbor||neighbor.state==='dead')continue;
+
+      for(const otherNode of nodes){
+        if(otherNode.id===n.id||otherNode.id===neighbor.id||otherNode.state==='dead')continue;
+        if(pointSegmentDistance(otherNode.x,otherNode.y,x,y,neighbor.x,neighbor.y)<otherNode.r+clearance*.62)return false;
       }
+
+      for(const l of links){
+        if(l.dead||l.dyingAt||l===il)continue;
+        if(l.a===n.id||l.b===n.id||l.a===neighbor.id||l.b===neighbor.id)continue;
+        const a=getNode(l.a),b=getNode(l.b);
+        if(!a||!b||a.state==='dead'||b.state==='dead')continue;
+        if(segmentsCross(proposed,neighbor,a,b))return false;
+      }
+    }
+    return true;
+  }
+
+  function targetFor(source,newRadius){
+    const minDist=W<700?78:116;
+    const maxDist=W<700?175:275;
+    const margin=W<700?32:54;
+
+    for(let k=0;k<64;k++){
+      const ang=rand(0,Math.PI*2);
       const d=rand(minDist,maxDist);
       const x=clamp(source.x+Math.cos(ang)*d,margin,W-margin);
       const y=clamp(source.y+Math.sin(ang)*d,margin,H-margin);
@@ -186,12 +230,37 @@ function mountNexoOrganicBackground(){
     return null;
   }
 
+  function chooseDriftTarget(n,time){
+    n.driftFromX=n.x;
+    n.driftFromY=n.y;
+
+    for(let k=0;k<16;k++){
+      const ang=rand(0,Math.PI*2);
+      const radius=n.driftRadius*Math.sqrt(Math.random());
+      const x=n.anchorX+Math.cos(ang)*radius;
+      const y=n.anchorY+Math.sin(ang)*radius;
+      if(dynamicPositionIsClean(n,x,y)){
+        n.driftToX=x;
+        n.driftToY=y;
+        n.driftStartAt=time;
+        n.driftDuration=rand(1300,3900);
+        return true;
+      }
+    }
+
+    n.driftToX=n.x;
+    n.driftToY=n.y;
+    n.driftStartAt=time;
+    n.driftDuration=rand(700,1500);
+    return false;
+  }
+
   function createPulse(link,time){
     if(link.dead||link.dyingAt)return;
     pulses.push({
       link,
       start:time,
-      duration:rand(1350,3600),
+      duration:rand(1250,3650),
       color:Math.random()<.58?link.energyColor:pick(coreColors),
       size:rand(2.4,5.5),
       alpha:rand(.36,.56),
@@ -201,35 +270,37 @@ function mountNexoOrganicBackground(){
       direction:Math.random()<.80?1:-1,
       dead:false
     });
-    if(pulses.length>90)pulses.splice(0,pulses.length-90);
+    if(pulses.length>120)pulses.splice(0,pulses.length-120);
   }
 
   function spawn(time){
-    const maxNodes=W<700?22:32;
+    const maxNodes=W<700?40:58;
     if(reduce||nodes.filter(n=>n.state!=='dead').length>=maxNodes)return false;
 
-    const candidates=nodes
-      .filter(n=>n.settled&&n.state==='active'&&nodeDegree(n.id)<4)
-      .sort((a,b)=>{
-        const da=Math.hypot(a.x-W/2,a.y-H/2);
-        const db=Math.hypot(b.x-W/2,b.y-H/2);
-        return db-da;
-      });
+    const candidates=nodes.filter(n=>
+      n.settled&&n.state==='active'&&nodeDegree(n.id)<n.branchCap
+    );
     if(!candidates.length)return false;
 
-    const pool=nodes.length<5?[nodes[0]]:candidates.slice(0,Math.max(4,Math.ceil(candidates.length*.78)));
-    for(let attempt=0;attempt<28;attempt++){
-      const source=attempt<4?pick(pool):pick(candidates);
+    const lowDegree=candidates.filter(n=>nodeDegree(n.id)<=Math.max(2,Math.floor(n.branchCap*.55)));
+    const pool=lowDegree.length?lowDegree:candidates;
+
+    for(let attempt=0;attempt<36;attempt++){
+      const source=pick(attempt<24?pool:candidates);
       if(!source)continue;
-      const radius=rand(W<700?11:13,W<700?19:24);
+
+      const radius=rand(W<700?10:12,W<700?19:24);
       const target=targetFor(source,radius);
       if(!target)continue;
 
       const child=addNode(source.x,source.y,radius,pick(coreColors),source.id,time);
       child.sx=source.x;child.sy=source.y;
       child.tx=target.x;child.ty=target.y;
+      child.anchorX=target.x;child.anchorY=target.y;
+      child.driftFromX=target.x;child.driftFromY=target.y;
+      child.driftToX=target.x;child.driftToY=target.y;
       child.moveStart=time;
-      child.moveDuration=rand(1150,2250);
+      child.moveDuration=rand(1100,2200);
       child.moving=true;
       child.settled=false;
       addLink(source,child,time);
@@ -238,15 +309,26 @@ function mountNexoOrganicBackground(){
     return false;
   }
 
-  function markLeafForFade(time){
-    const alive=nodes.filter(n=>n.state==='active'&&!n.moving);
-    if(alive.length<(W<700?13:18))return;
-    const candidates=alive.filter(n=>n.id!==1&&nodeDegree(n.id)<=1&&time-n.born>6500);
-    if(!candidates.length)return;
-    const n=pick(candidates);
+  function markNodeForFade(time){
+    const alive=nodes.filter(n=>
+      n.state==='active'&&!n.moving&&time-n.born>7600
+    );
+    if(alive.length<(W<700?22:34))return;
+    if(!alive.length)return;
+
+    let n;
+    if(Math.random()<.24){
+      const internal=alive.filter(x=>nodeDegree(x.id)>=2);
+      n=internal.length?pick(internal):pick(alive);
+    }else{
+      n=pick(alive);
+    }
+    if(!n)return;
+
     n.state='dying';
     n.deathAt=time;
-    n.deathDuration=rand(1800,3400);
+    n.deathDuration=rand(1900,3500);
+
     links.forEach(l=>{
       if(!l.dead&&(l.a===n.id||l.b===n.id)){
         l.dyingAt=time;
@@ -273,12 +355,13 @@ function mountNexoOrganicBackground(){
 
   function init(){
     nodes.length=0;links.length=0;pulses.length=0;nodeSeq=0;
-    const rootNode=addNode(W/2,H/2,W<700?24:32,'47,79,147',null,performance.now());
-    rootNode.born=performance.now()+200;
-    rootNode.alphaBase=.74;
-    rootNode.alphaAmp=.12;
-    rootNode.scaleAmp=.045;
-    rootNode.pulseSpeed=.00155;
+    const first=addNode(W/2,H/2,W<700?24:32,'47,79,147',null,performance.now());
+    first.born=performance.now()+200;
+    first.alphaBase=.74;
+    first.alphaAmp=.12;
+    first.scaleAmp=.045;
+    first.pulseSpeed=.00155;
+    first.branchCap=randInt(7,11);
   }
 
   function nodeLifeAlpha(n,time){
@@ -288,17 +371,46 @@ function mountNexoOrganicBackground(){
 
   function updateNodes(time){
     for(const n of nodes){
-      if(!n.moving)continue;
-      const p=clamp((time-n.moveStart)/n.moveDuration,0,1);
-      const e=ease(p);
-      const wobble=Math.sin(p*Math.PI)*Math.sin(n.phase)*8;
-      const dx=n.tx-n.sx,dy=n.ty-n.sy;
-      const len=Math.max(1,Math.hypot(dx,dy));
-      const nx=-dy/len,ny=dx/len;
-      n.x=n.sx+dx*e+nx*wobble;
-      n.y=n.sy+dy*e+ny*wobble;
+      if(n.moving){
+        const p=clamp((time-n.moveStart)/n.moveDuration,0,1);
+        const e=ease(p);
+        const wobble=Math.sin(p*Math.PI)*Math.sin(n.phase)*8;
+        const dx=n.tx-n.sx,dy=n.ty-n.sy;
+        const len=Math.max(1,Math.hypot(dx,dy));
+        const nx=-dy/len,ny=dx/len;
+        n.x=n.sx+dx*e+nx*wobble;
+        n.y=n.sy+dy*e+ny*wobble;
+
+        if(p>=1){
+          n.x=n.tx;n.y=n.ty;
+          n.anchorX=n.tx;n.anchorY=n.ty;
+          n.driftFromX=n.x;n.driftFromY=n.y;
+          n.driftToX=n.x;n.driftToY=n.y;
+          n.driftStartAt=time;
+          n.moving=false;n.settled=true;
+          chooseDriftTarget(n,time);
+        }
+        continue;
+      }
+
+      if(n.state!=='active'||reduce)continue;
+      if(time-n.lastDriftUpdate<34)continue;
+      n.lastDriftUpdate=time;
+
+      let p=(time-n.driftStartAt)/n.driftDuration;
       if(p>=1){
-        n.x=n.tx;n.y=n.ty;n.moving=false;n.settled=true;
+        chooseDriftTarget(n,time);
+        p=0;
+      }
+      p=clamp(p,0,1);
+      const e=smooth(p);
+      const x=n.driftFromX+(n.driftToX-n.driftFromX)*e;
+      const y=n.driftFromY+(n.driftToY-n.driftFromY)*e;
+
+      if(dynamicPositionIsClean(n,x,y)){
+        n.x=x;n.y=y;
+      }else{
+        chooseDriftTarget(n,time);
       }
     }
   }
@@ -322,8 +434,6 @@ function mountNexoOrganicBackground(){
   function drawLiquidBridge(a,b,progress,fade){
     if(progress>=1)return;
     const inv=1-progress;
-    const dx=b.x-a.x,dy=b.y-a.y;
-    const len=Math.max(1,Math.hypot(dx,dy));
     ctx.save();
     ctx.lineCap='round';
 
@@ -501,21 +611,22 @@ function mountNexoOrganicBackground(){
     drawBackground();
 
     const aliveCount=nodes.filter(n=>n.state!=='dead').length;
-    const target=W<700?19:27;
-    if(!reduce&&time-startAt>650&&time-lastSpawn>nextSpawnDelay&&aliveCount<target){
+    const target=W<700?34:50;
+
+    if(!reduce&&time-startAt>550&&time-lastSpawn>nextSpawnDelay&&aliveCount<target){
       if(spawn(time)){
         lastSpawn=time;
-        nextSpawnDelay=rand(520,980);
+        nextSpawnDelay=rand(420,820);
       }else{
         lastSpawn=time;
-        nextSpawnDelay=rand(820,1350);
+        nextSpawnDelay=rand(680,1180);
       }
     }
 
-    if(!reduce&&time-startAt>11500&&time-lastCull>nextCullDelay){
-      markLeafForFade(time);
+    if(!reduce&&time-startAt>10500&&time-lastCull>nextCullDelay){
+      markNodeForFade(time);
       lastCull=time;
-      nextCullDelay=rand(2200,4800);
+      nextCullDelay=rand(1900,4200);
     }
 
     links.forEach(l=>drawLink(l,time));
