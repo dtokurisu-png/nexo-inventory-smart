@@ -773,120 +773,67 @@ html,body{margin:0}
 }
 
 /* =========================================================
-   NEXO HEX AMBIENT BACKGROUND · Mi espacio experiment 1
-   Inspired by the user's hexagonal loading reference.
-   Background-only: no product logic or foreground layout changed.
+   NEXO HEX AMBIENT BACKGROUND · Mi espacio experiment 2
+   Explicit SVG layer. More visible and independent from
+   pseudo-element/data-URI rendering.
 ========================================================= */
-.nxo-app{
-  isolation:isolate;
-}
-
-/* Wide blue honeycomb mesh */
-.nxo-app::before{
-  content:"";
+.nxo-app{isolation:isolate}
+.nxo-hex-bg{
   position:fixed;
-  inset:-12%;
+  inset:0;
   z-index:0;
+  overflow:hidden;
   pointer-events:none;
-  width:auto;
-  height:auto;
-  border-radius:0;
-  opacity:.31;
-  filter:
-    drop-shadow(0 0 5px rgba(38,76,143,.18))
-    drop-shadow(0 0 14px rgba(47,79,147,.08));
-  background-color:transparent;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='90' viewBox='0 0 104 90'%3E%3Cg fill='none' stroke='%23264C8F' stroke-width='1.15' stroke-opacity='.48'%3E%3Cpath d='M26 2 50 16 50 44 26 58 2 44 2 16Z'/%3E%3Cpath d='M78 32 102 46 102 74 78 88 54 74 54 46Z'/%3E%3C/g%3E%3C/svg%3E");
-  background-size:104px 90px;
-  background-position:0 0;
-  -webkit-mask-image:
-    radial-gradient(circle at 18% 30%,#000 0 9%,rgba(0,0,0,.72) 18%,transparent 40%),
-    radial-gradient(circle at 82% 68%,#000 0 8%,rgba(0,0,0,.66) 17%,transparent 38%);
-  mask-image:
-    radial-gradient(circle at 18% 30%,#000 0 9%,rgba(0,0,0,.72) 18%,transparent 40%),
-    radial-gradient(circle at 82% 68%,#000 0 8%,rgba(0,0,0,.66) 17%,transparent 38%);
-  animation:nxoHexDrift 28s linear infinite;
+  opacity:1;
 }
-
-/* Brighter local cluster: blue -> orange -> green */
-.nxo-app::after{
-  content:"";
-  position:fixed;
-  inset:-8%;
-  z-index:0;
-  pointer-events:none;
-  width:auto;
-  height:auto;
-  border-radius:0;
-  opacity:.64;
-  background:
-    radial-gradient(circle at 72% 22%,rgba(248,143,91,.28) 0 1.1%,rgba(248,143,91,.12) 5%,transparent 14%),
-    radial-gradient(circle at 68% 25%,rgba(38,76,143,.26) 0 2%,rgba(38,76,143,.10) 8%,transparent 19%),
-    radial-gradient(circle at 24% 76%,rgba(36,107,54,.16) 0 1.6%,rgba(36,107,54,.07) 7%,transparent 17%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='90' viewBox='0 0 104 90'%3E%3Cg fill='none' stroke-width='1.35'%3E%3Cpath d='M26 2 50 16 50 44 26 58 2 44 2 16Z' stroke='%23F88F5B' stroke-opacity='.62'/%3E%3Cpath d='M78 32 102 46 102 74 78 88 54 74 54 46Z' stroke='%232F4F93' stroke-opacity='.58'/%3E%3C/g%3E%3C/svg%3E");
-  background-size:auto,auto,auto,104px 90px;
-  filter:
-    drop-shadow(0 0 6px rgba(248,143,91,.16))
-    drop-shadow(0 0 12px rgba(38,76,143,.12));
-  -webkit-mask-image:radial-gradient(circle at 72% 24%,#000 0 8%,rgba(0,0,0,.78) 15%,transparent 29%);
-  mask-image:radial-gradient(circle at 72% 24%,#000 0 8%,rgba(0,0,0,.78) 15%,transparent 29%);
-  animation:nxoHexCluster 7.5s ease-in-out infinite alternate;
+.nxo-hex-bg svg{
+  position:absolute;
+  inset:-4%;
+  width:108%;
+  height:108%;
+  display:block;
 }
-
-.nxo-shell{
-  position:relative;
-  z-index:2;
+.nxo-hex-grid{
+  opacity:.42;
+  animation:nxoHexMeshDrift 28s linear infinite;
+  transform-origin:center;
 }
-
-@keyframes nxoHexDrift{
-  0%{background-position:0 0}
-  50%{background-position:-26px -15px}
-  100%{background-position:-52px -30px}
+.nxo-hex-grid path{
+  vector-effect:non-scaling-stroke;
 }
+.nxo-hex-glow-blue,
+.nxo-hex-glow-orange,
+.nxo-hex-glow-green{
+  transform-box:fill-box;
+  transform-origin:center;
+}
+.nxo-hex-glow-blue{animation:nxoHexPulseBlue 5.8s ease-in-out infinite}
+.nxo-hex-glow-orange{animation:nxoHexPulseOrange 6.6s ease-in-out infinite .8s}
+.nxo-hex-glow-green{animation:nxoHexPulseGreen 7.2s ease-in-out infinite 1.6s}
+.nxo-shell,.nxo-loading{position:relative;z-index:2}
 
-@keyframes nxoHexCluster{
-  0%{
-    transform:translate3d(0,0,0) scale(1);
-    opacity:.48;
-    filter:
-      drop-shadow(0 0 5px rgba(248,143,91,.13))
-      drop-shadow(0 0 10px rgba(38,76,143,.10));
-  }
-  55%{
-    opacity:.72;
-  }
-  100%{
-    transform:translate3d(-12px,9px,0) scale(1.035);
-    opacity:.62;
-    filter:
-      drop-shadow(0 0 10px rgba(248,143,91,.22))
-      drop-shadow(0 0 18px rgba(38,76,143,.16));
-  }
+@keyframes nxoHexMeshDrift{
+  0%{transform:translate3d(0,0,0)}
+  50%{transform:translate3d(-18px,-10px,0)}
+  100%{transform:translate3d(-36px,-20px,0)}
+}
+@keyframes nxoHexPulseBlue{
+  0%,100%{opacity:.35;transform:scale(.96)}
+  50%{opacity:.92;transform:scale(1.08)}
+}
+@keyframes nxoHexPulseOrange{
+  0%,100%{opacity:.28;transform:scale(.94)}
+  50%{opacity:.88;transform:scale(1.1)}
+}
+@keyframes nxoHexPulseGreen{
+  0%,100%{opacity:.22;transform:scale(.94)}
+  50%{opacity:.72;transform:scale(1.07)}
 }
 
 @media(max-width:650px){
-  .nxo-app::before{
-    opacity:.24;
-    background-size:86px 74px;
-    animation-duration:34s;
-    -webkit-mask-image:
-      radial-gradient(circle at 9% 24%,#000 0 8%,rgba(0,0,0,.70) 17%,transparent 36%),
-      radial-gradient(circle at 92% 72%,#000 0 7%,rgba(0,0,0,.60) 15%,transparent 34%);
-    mask-image:
-      radial-gradient(circle at 9% 24%,#000 0 8%,rgba(0,0,0,.70) 17%,transparent 36%),
-      radial-gradient(circle at 92% 72%,#000 0 7%,rgba(0,0,0,.60) 15%,transparent 34%);
-  }
-  .nxo-app::after{
-    opacity:.54;
-    background-size:auto,auto,auto,86px 74px;
-    -webkit-mask-image:radial-gradient(circle at 83% 20%,#000 0 10%,rgba(0,0,0,.72) 18%,transparent 34%);
-    mask-image:radial-gradient(circle at 83% 20%,#000 0 10%,rgba(0,0,0,.72) 18%,transparent 34%);
-  }
+  .nxo-hex-grid{opacity:.34;animation-duration:34s}
+  .nxo-hex-glow-blue,.nxo-hex-glow-orange,.nxo-hex-glow-green{opacity:.72}
 }
-
 @media(prefers-reduced-motion:reduce){
-  .nxo-app::before,
-  .nxo-app::after{
-    animation:none!important;
-  }
+  .nxo-hex-grid,.nxo-hex-glow-blue,.nxo-hex-glow-orange,.nxo-hex-glow-green{animation:none!important}
 }
