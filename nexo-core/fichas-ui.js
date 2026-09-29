@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260929-unified-header-3';
-const ENGINE_REVISION='workspace-unified-header-20260929-3';
+const ACCESS_REVISION='fichas-engine-20260929-night-glass-4';
+const ENGINE_REVISION='workspace-night-glass-20260929-4';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -17,6 +17,7 @@ let importPreview=null;
 let importCode='';
 const launchQuery=new URLSearchParams(location.search);
 const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
+const workspaceTheme=launchQuery.get('nxoTheme')==='night'?'night':'day';
 
 function accessError(code){
   return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.');
@@ -405,7 +406,7 @@ function mountEngine(){
   frame.allow='camera';
   frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#eef3fb;';
   frame.addEventListener('load',()=>{
-    postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel});
+    postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,theme:workspaceTheme});
   });
   root.appendChild(frame);
   window.addEventListener('message',handleEngineMessage);
