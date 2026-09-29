@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-12';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-13';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -43,11 +43,12 @@ function mountNexoOrganicBackground(){
   const dpr=Math.min(window.devicePixelRatio||1,1.5);
 
   let W=0,H=0,lastW=0,lastH=0;
-  let nodeSeq=0,lastSpawn=0,nextSpawnDelay=520,lastCull=0,nextCullDelay=1500,coreCullAt=0,coreCulled=false;
+  let nodeSeq=0,lastSpawn=0,nextSpawnDelay=420,concurrentBirthLimit=4;
   const startAt=performance.now();
   const nodes=[];
   const links=[];
   const pulses=[];
+  const retirementQueue=[];
   const coreColors=['47,79,147','248,143,91','36,107,54'];
 
   const rand=(a,b)=>Math.random()*(b-a)+a;
@@ -194,8 +195,9 @@ function mountNexoOrganicBackground(){
       lastDriftUpdate:0,
       lastBranchAt:0,
       branchChildren:0,
+      retirementScheduled:false,
       r,baseR:r,color,parent,
-      branchCap:randInt(6,10),
+      branchCap:randInt(5,6),
       born:time,
       moveStart:time,
       moveDuration:1,
@@ -370,60 +372,107 @@ function mountNexoOrganicBackground(){
     if(pulses.length>120)pulses.splice(0,pulses.length-120);
   }
 
+  function parentHasMovingChild(parentId){
+    return nodes.some(n=>n.state!=='dead'&&n.moving&&n.parent===parentId);
+  }
+
+  function populationLimits(){
+    const center=W<700?34:50;
+    return {
+      center,
+      retireStart:center-5,
+      hardMax:center+5
+    };
+  }
+
+  function scheduleRetirementAfterBirth(child,time){
+    if(!child||child.retirementScheduled)return false;
+    child.retirementScheduled=true;
+
+    const {retireStart}=populationLimits();
+    const aliveCount=nodes.filter(n=>n.state!=='dead').length;
+    if(aliveCount<retireStart)return false;
+
+    retirementQueue.push({
+      childId:child.id,
+      dueAt:time+rand(3000,5000)
+    });
+    retirementQueue.sort((a,b)=>a.dueAt-b.dueAt);
+    return true;
+  }
+
+  function retireOldestAvailable(time){
+    const eligible=nodes.filter(n=>
+      n.state==='active'&&
+      !n.moving&&
+      !parentHasMovingChild(n.id)
+    );
+    if(!eligible.length)return false;
+
+    eligible.sort((a,b)=>a.born-b.born);
+    return fadeNode(eligible[0],time);
+  }
+
+  function processRetirementQueue(time){
+    while(retirementQueue.length&&retirementQueue[0].dueAt<=time){
+      if(!retireOldestAvailable(time))break;
+      retirementQueue.shift();
+    }
+  }
+
   function spawn(time){
     if(reduce)return false;
 
+    const {hardMax}=populationLimits();
+    const aliveCount=nodes.filter(n=>n.state!=='dead').length;
+    if(aliveCount>=hardMax)return false;
+
     const topology=networkTopology();
-    const target=W<700?34:50;
-    const repairMax=W<700?48:66;
-    const repairing=topology.needsRepair;
-
-    if(topology.aliveCount>=target&&!repairing)return false;
-    if(repairing&&topology.aliveCount>=repairMax)return false;
-
     const candidates=nodes.filter(n=>{
-      if(!n.settled||n.state!=='active'||nodeDegree(n.id)>=n.branchCap)return false;
-      const deg=nodeDegree(n.id);
-      const cooldown=repairing?620:1050;
-      return deg===0||time-(n.lastBranchAt||0)>=cooldown;
+      if(!n.settled||n.state!=='active')return false;
+      if((n.branchChildren||0)>=n.branchCap)return false;
+      if(parentHasMovingChild(n.id))return false;
+      return true;
     });
     if(!candidates.length)return false;
 
     function branchScore(n){
-      const deg=nodeDegree(n.id);
+      const children=n.branchChildren||0;
       const age=Math.max(0,time-n.born);
       const componentSize=topology.componentSize.get(n.id)||1;
-      const recentBonus=clamp(1-age/32000,0,1)*5;
-      let score=recentBonus;
+      let score=0;
 
-      // Repair tiny fragments aggressively, but do not keep extending one tip forever.
-      if(componentSize<=2)score+=18;
-      if(deg===0)score+=13;
-      else if(deg===1)score+=11;
-      else if(deg===2)score+=15;
-      else if(deg===3)score+=8;
-      else score+=Math.max(0,6-deg);
+      // Favor newer growth and nodes that still have most of their 5–6-child budget.
+      score+=clamp(1-age/42000,0,1)*8;
+      score+=(n.branchCap-children)*3.2;
 
-      // Nodes that have already emitted many children remain eligible, but lose priority.
-      score-=Math.min(6,n.branchChildren||0)*1.15;
-      return score;
+      // Keep small detached groups capable of branching into real clusters.
+      if(componentSize<=2)score+=10;
+      else if(componentSize<=4)score+=5;
+
+      // Prefer a spread of parents rather than extending one tip repeatedly.
+      const deg=nodeDegree(n.id);
+      if(deg<=1)score+=5;
+      else if(deg===2)score+=7;
+      else if(deg===3)score+=4;
+
+      return score+Math.random()*2.5;
     }
 
     const ranked=candidates
       .map(n=>({n,score:branchScore(n)}))
       .sort((a,b)=>b.score-a.score);
 
-    const pool=ranked.slice(0,Math.min(repairing?10:8,ranked.length)).map(x=>x.n);
-    const attempts=repairing?58:40;
+    const pool=ranked.slice(0,Math.min(10,ranked.length)).map(x=>x.n);
+    const attempts=48;
 
     for(let attempt=0;attempt<attempts;attempt++){
-      const source=pick(attempt<Math.floor(attempts*.78)?pool:candidates);
-      if(!source)continue;
+      const source=pick(attempt<36?pool:candidates);
+      if(!source||parentHasMovingChild(source.id))continue;
 
-      const deg=nodeDegree(source.id);
-      const sourceRepair=repairing&&((topology.componentSize.get(source.id)||1)<=2||deg<=1);
       const radius=rand(W<700?10:12,W<700?19:24);
-      const targetPoint=targetFor(source,radius,sourceRepair);
+      const repair=(topology.componentSize.get(source.id)||1)<=2;
+      const targetPoint=targetFor(source,radius,repair);
       if(!targetPoint)continue;
 
       const child=addNode(source.x,source.y,radius,pick(coreColors),source.id,time);
@@ -456,33 +505,8 @@ function mountNexoOrganicBackground(){
     return true;
   }
 
-  function markNodeForFade(time,forceCore=false){
-    const alive=nodes.filter(n=>
-      n.state==='active'&&!n.moving&&time-n.born>8500
-    );
-    if(!alive.length)return false;
-
-    if(forceCore){
-      const core=alive.find(n=>n.id===1);
-      if(core)return fadeNode(core,time);
-      return false;
-    }
-
-    if(alive.length<(W<700?18:28))return false;
-
-    const topology=networkTopology();
-
-    // Age is the primary rule: old growth recedes first so the living frontier
-    // appears to travel across the surface instead of preserving old zig-zag trunks.
-    let eligible=alive.filter(n=>(topology.componentSize.get(n.id)||1)>2);
-    if(!eligible.length)return false;
-
-    eligible.sort((a,b)=>a.born-b.born);
-    const oldest=eligible[0];
-
-    // Do not keep an old bridge forever. Topology repair is responsible for
-    // regrowing any small fragment produced after this oldest node disappears.
-    return fadeNode(oldest,time);
+  function markNodeForFade(time){
+    return retireOldestAvailable(time);
   }
 
   function cleanup(time){
@@ -504,16 +528,15 @@ function mountNexoOrganicBackground(){
   }
 
   function init(){
-    nodes.length=0;links.length=0;pulses.length=0;nodeSeq=0;
+    nodes.length=0;links.length=0;pulses.length=0;retirementQueue.length=0;nodeSeq=0;
+    concurrentBirthLimit=randInt(3,5);
     const first=addNode(W/2,H/2,W<700?24:32,'47,79,147',null,performance.now());
     first.born=performance.now()+200;
     first.alphaBase=rand(.68,.96);
     first.alphaAmp=rand(.04,.16);
     first.scaleAmp=.045;
     first.pulseSpeed=.00155;
-    first.branchCap=randInt(7,11);
-    coreCullAt=performance.now()+rand(13000,18000);
-    coreCulled=false;
+    first.branchCap=randInt(5,6);
   }
 
   function nodeLifeAlpha(n,time){
@@ -562,6 +585,8 @@ function mountNexoOrganicBackground(){
           n.driftStartAt=time;
           n.moving=false;n.settled=true;
           chooseDriftTarget(n,time);
+          if(n.parent)scheduleRetirementAfterBirth(n,time);
+          concurrentBirthLimit=randInt(3,5);
         }
         continue;
       }
@@ -781,52 +806,23 @@ function mountNexoOrganicBackground(){
   function frame(time){
     updateNodes(time);
     cleanup(time);
+    processRetirementQueue(time);
     drawBackground();
 
-    const aliveCount=nodes.filter(n=>n.state!=='dead').length;
-    const target=W<700?34:50;
-    const repairMax=W<700?48:66;
-
     if(!reduce&&time-startAt>550&&time-lastSpawn>nextSpawnDelay){
-      const topology=networkTopology();
-      const canGrow=aliveCount<target||(topology.needsRepair&&aliveCount<repairMax);
+      const {hardMax}=populationLimits();
+      const aliveCount=nodes.filter(n=>n.state!=='dead').length;
+      const movingCount=nodes.filter(n=>n.state!=='dead'&&n.moving).length;
+      const slots=Math.max(0,Math.min(concurrentBirthLimit-movingCount,hardMax-aliveCount));
 
-      if(canGrow){
-        const births=topology.needsRepair?2:1;
-        let grew=false;
-        for(let i=0;i<births;i++){
-          if(spawn(time))grew=true;
-        }
-        lastSpawn=time;
-        nextSpawnDelay=grew
-          ?(topology.needsRepair?rand(260,520):rand(420,820))
-          :(topology.needsRepair?rand(380,720):rand(680,1180));
-      }else{
-        lastSpawn=time;
-        nextSpawnDelay=rand(680,1180);
+      let grew=false;
+      for(let i=0;i<slots;i++){
+        if(spawn(time))grew=true;
+        else break;
       }
-    }
 
-    if(!reduce&&!coreCulled&&time>=coreCullAt){
-      coreCulled=markNodeForFade(time,true)||!nodes.some(n=>n.id===1&&n.state==='active');
-      if(coreCulled){
-        lastCull=time;
-        nextCullDelay=rand(2600,3800);
-      }
-    }
-
-    if(!reduce&&time-startAt>11000&&time-lastCull>nextCullDelay){
-      const topology=networkTopology();
-      const repairing=topology.needsRepair&&aliveCount<repairMax;
-
-      if(repairing){
-        lastCull=time;
-        nextCullDelay=rand(1700,2800);
-      }else{
-        const changed=markNodeForFade(time);
-        lastCull=time;
-        nextCullDelay=changed?rand(2600,4300):rand(2200,3600);
-      }
+      lastSpawn=time;
+      nextSpawnDelay=grew?rand(260,520):rand(520,900);
     }
 
     links.forEach(l=>drawLink(l,time));
