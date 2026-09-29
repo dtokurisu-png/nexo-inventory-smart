@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-6';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-7';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -108,8 +108,8 @@ function mountNexoOrganicBackground(){
       phase:rand(0,Math.PI*2),
       pulseSpeed:rand(.00115,.00255),
       scaleAmp:rand(.025,.075),
-      alphaBase:rand(.64,.91),
-      alphaAmp:rand(.06,.20),
+      alphaBase:rand(.68,.96),
+      alphaAmp:rand(.04,.16),
       auraGain:rand(.78,1.24),
       state:'active',
       deathAt:0,
@@ -369,8 +369,8 @@ function mountNexoOrganicBackground(){
     nodes.length=0;links.length=0;pulses.length=0;nodeSeq=0;
     const first=addNode(W/2,H/2,W<700?24:32,'47,79,147',null,performance.now());
     first.born=performance.now()+200;
-    first.alphaBase=.74;
-    first.alphaAmp=.12;
+    first.alphaBase=rand(.68,.96);
+    first.alphaAmp=rand(.04,.16);
     first.scaleAmp=.045;
     first.pulseSpeed=.00155;
     first.branchCap=randInt(7,11);
@@ -391,7 +391,7 @@ function mountNexoOrganicBackground(){
     return {
       wave,
       pulse01:(wave+1)/2,
-      alpha:clamp((n.alphaBase+n.alphaAmp*wave)*appear*life,.08,.98),
+      alpha:clamp((n.alphaBase+n.alphaAmp*wave)*appear*life,.48,.99),
       rr:n.r*(1+n.scaleAmp*wave)
     };
   }
@@ -482,15 +482,30 @@ function mountNexoOrganicBackground(){
     const dx=bx-a.x,dy=by-a.y;
     const len=Math.max(1,Math.hypot(dx,dy));
     const nx=-dy/len,ny=dx/len;
-    const steps=22;
+    const edgeA=clamp((endA*.5)/len,.015,.28);
+    const edgeB=clamp((endB*.5)/len,.015,.28);
+    const steps=28;
     const left=[],right=[];
 
     for(let i=0;i<=steps;i++){
       const t=i/steps;
       const x=a.x+dx*t,y=a.y+dy*t;
-      const wa=mid+(endA-mid)*Math.pow(1-t,3.15);
-      const wb=(endB-mid)*Math.pow(t,3.15);
-      const width=wa+wb;
+      let width;
+
+      if(t<=edgeA){
+        width=endA;
+      }else if(t<.5){
+        const u=clamp((t-edgeA)/Math.max(.001,.5-edgeA),0,1);
+        const e=smooth(u);
+        width=endA+(mid-endA)*e;
+      }else if(t<1-edgeB){
+        const u=clamp((t-.5)/Math.max(.001,.5-edgeB),0,1);
+        const e=smooth(u);
+        width=mid+(endB-mid)*e;
+      }else{
+        width=endB;
+      }
+
       left.push({x:x+nx*width*.5,y:y+ny*width*.5});
       right.push({x:x-nx*width*.5,y:y-ny*width*.5});
     }
@@ -521,12 +536,17 @@ function mountNexoOrganicBackground(){
     const endA=va.rr*2;
     const endB=vb.rr*2;
     const mid=l.midWidth;
-    const centerAlpha=((va.alpha+vb.alpha)*.5)*.14*l.filamentAlpha*fade*energy;
+    const centerAlpha=((va.alpha+vb.alpha)*.5)*.12*l.filamentAlpha*fade*energy;
+    const linkLen=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
+    const edgeStopA=clamp(va.rr/linkLen,.015,.28);
+    const edgeStopB=clamp(1-(vb.rr/linkLen),.72,.985);
 
     ctx.save();
     const grad=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
     grad.addColorStop(0,'rgba(104,151,230,'+va.alpha+')');
-    grad.addColorStop(.48,'rgba(105,167,255,'+centerAlpha+')');
+    grad.addColorStop(edgeStopA,'rgba(104,151,230,'+va.alpha+')');
+    grad.addColorStop(.50,'rgba(105,167,255,'+centerAlpha+')');
+    grad.addColorStop(edgeStopB,'rgba(184,207,246,'+vb.alpha+')');
     grad.addColorStop(1,'rgba(184,207,246,'+vb.alpha+')');
     ctx.fillStyle=grad;
     ctx.shadowColor='rgba('+l.energyColor+','+(.18*fade)+')';
@@ -614,21 +634,25 @@ function mountNexoOrganicBackground(){
     ctx.beginPath();ctx.arc(n.x,n.y,rr*(2.8+n.auraGain*.6),0,Math.PI*2);ctx.fill();
 
     const body=ctx.createRadialGradient(n.x-rr*.32,n.y-rr*.34,rr*.08,n.x,n.y,rr);
-    body.addColorStop(0,'rgba(255,255,255,'+(alpha*.72)+')');
-    body.addColorStop(.16,'rgba(124,168,238,'+(alpha*.55)+')');
-    body.addColorStop(.58,'rgba(58,89,151,'+(alpha*.34)+')');
-    body.addColorStop(1,'rgba(34,51,91,'+(alpha*.16)+')');
+    body.addColorStop(0,'rgb(238,246,255)');
+    body.addColorStop(.16,'rgb(124,168,238)');
+    body.addColorStop(.58,'rgb(58,89,151)');
+    body.addColorStop(1,'rgb(34,51,91)');
+    ctx.globalAlpha=alpha;
     ctx.fillStyle=body;
     ctx.beginPath();ctx.arc(n.x,n.y,rr,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
 
     const core=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*.52);
-    core.addColorStop(0,'rgba(255,255,255,'+(alpha*.95)+')');
-    core.addColorStop(.20,'rgba('+n.color+','+(alpha*.92)+')');
+    core.addColorStop(0,'rgba(255,255,255,.96)');
+    core.addColorStop(.20,'rgba('+n.color+',.92)');
     core.addColorStop(1,'rgba('+n.color+',0)');
+    ctx.globalAlpha=alpha;
     ctx.fillStyle=core;
-    ctx.shadowColor='rgba('+n.color+','+(alpha*.88)+')';
+    ctx.shadowColor='rgba('+n.color+','+Math.min(.92,alpha)+')';
     ctx.shadowBlur=16+12*pulse01;
     ctx.beginPath();ctx.arc(n.x,n.y,rr*.52,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
     ctx.restore();
   }
 
