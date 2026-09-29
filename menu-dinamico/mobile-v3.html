@@ -219,6 +219,16 @@ html[data-theme="day"] .prep{
 .timerActions button.primaryTimer{background:#264c8f;color:#fff;border-color:#172755}
 .timerActions button.stopAlarm{background:#b94242;color:#fff;border-color:#873131}
 .timerAlarmHint{margin:0;color:var(--muted);font-size:11px;line-height:1.45}
+.timerNotify{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.27)}
+.timerNotifyText{display:grid;gap:2px;min-width:0}
+.timerNotifyText strong{font-size:12px;color:var(--ink)}
+.timerNotifyText span{font-size:11px;line-height:1.35;color:var(--muted)}
+.timerNotify button{flex:0 0 auto;min-height:36px;padding:7px 11px;border:1px solid #264c8f;border-radius:9px;background:#264c8f;color:#fff;font-weight:850}
+.timerNotify button[disabled]{opacity:.62;border-color:var(--line);background:rgba(255,255,255,.34);color:var(--muted)}
+html[data-theme="night"] .timerNotify{background:rgba(16,22,33,.27);border-color:rgba(255,255,255,.10)}
+html[data-theme="night"] .timerNotifyText strong{color:#f2f5fa}
+html[data-theme="night"] .timerNotifyText span{color:#a8b2c3}
+html[data-theme="night"] .timerNotify button[disabled]{background:rgba(16,22,33,.27);color:#a8b2c3}
 html[data-theme="night"] .timerCreate,
 html[data-theme="night"] .timerItem{background:rgba(16,22,33,.315);border-color:rgba(255,255,255,.10)}
 html[data-theme="night"] .timerField input,
@@ -243,7 +253,9 @@ html.nexoMobile .timerActions button{min-height:32px;font-size:11px;padding:6px 
 const I={es:{library:'Recetario dinámico',sub:'Fichas técnicas, preparaciones e ingredientes conectados.',search:'Buscar receta, ingrediente o preparación…',noResults:'No se encontraron coincidencias',all:'Todo',dish:'Platos',prep:'Preparaciones',product:'Productos',yield:'Rendimiento',method:'Método / MOP',noPhoto:'Sin foto',whole:'Producto entero / base',cut:'Preparación / corte',add:'Agregar foto',replace:'Cambiar foto',empty:'Todavía no hay recetas cargadas',waiting:'Esperando conexión con Wix…',legend:'Guía de colores',openRecipe:'Abrir receta',pending:'Ficha técnica pendiente',subrecipe:'Preparación / subreceta',ingredient:'Producto / ingrediente',unit:'Unidad de medida',close:'Cerrar',calculator:'Calculadora',calcHint:'Calculadora rápida para cocina. Usa punto o coma para decimales.',comments:'Sugerir cambio',commentTitle:'Recomendación sobre la receta',commentHint:'Escribe una recomendación de cambio para esta ficha técnica. El administrador del Workspace podrá revisarla, aceptarla, rechazarla o guardarla como pendiente.',commentPlaceholder:'Describe el cambio que recomiendas…',sendComment:'Enviar recomendación',sendingComment:'Enviando…',commentSaved:'Recomendación enviada.'},en:{library:'Dynamic recipe book',sub:'Connected technical sheets, preparations, and ingredients.',search:'Search recipe, ingredient, or preparation…',noResults:'No matches found',all:'All',dish:'Dishes',prep:'Preparations',product:'Products',yield:'Yield',method:'Method / MOP',noPhoto:'No photo',whole:'Whole / base product',cut:'Preparation / cut',add:'Add photo',replace:'Replace photo',empty:'No recipes have been added yet',waiting:'Waiting for Wix connection…',legend:'Color guide',openRecipe:'Open recipe',pending:'Technical sheet pending',subrecipe:'Preparation / subrecipe',ingredient:'Product / ingredient',unit:'Unit of measure',close:'Close',calculator:'Calculator',calcHint:'Quick kitchen calculator. Use a dot or comma for decimals.',comments:'Suggest change',commentTitle:'Recipe change recommendation',commentHint:'Write a change recommendation for this technical sheet. Workspace administrators can review, accept, reject, or keep it pending.',commentPlaceholder:'Describe the change you recommend…',sendComment:'Send recommendation',sendingComment:'Sending…',commentSaved:'Recommendation sent.'}};
 const S={lang:localStorage.getItem('nexo_dynamic_menu_lang')||'es',recipes:[],sections:[],components:[],ingredients:[],preparations:[],route:[],filter:'ALL',query:'',loaded:false,modal:null,workspaceMode:false,workspaceLabel:'Workspace',theme:'day'};const C={display:'0',acc:null,op:null,expr:'',fresh:true};
 const TIMER_ALARM_URL='assets/timer-alarm.mp3?v=20260929-3';
-const T={items:[],seq:0,tick:null,ringing:false,primed:false,audio:new Audio(TIMER_ALARM_URL)};
+const TIMER_NOTIFICATION_SW='./sw.js?v=20260929-system-notifications-10';
+const TIMER_NOTIFICATION_ICON='https://static.wixstatic.com/media/8b64a8_9aaf5cc2adbb41d484291557d6024f08~mv2.png';
+const T={items:[],seq:0,tick:null,ringing:false,primed:false,audio:new Audio(TIMER_ALARM_URL),notificationRegistration:null,notificationRegistrationPromise:null};
 T.audio.loop=true;T.audio.preload='auto';T.audio.volume=1;const $=q=>document.querySelector(q),view=$('#view'),modal=$('#modal'),back=$('#back'),lang=$('#lang'),calcBtn=$('#calcBtn'),timerBtn=$('#timerBtn'),commentBtn=$('#commentBtn'),status=$('#status'),personalNav=$('#personalNav'),workspaceNav=$('#workspaceNav'),developmentNav=$('#developmentNav');const t=k=>I[S.lang][k]||k,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),txt=(o,a,b)=>S.lang==='es'?(o?.[b]||o?.[a]||''):(o?.[a]||o?.[b]||''),rname=r=>txt(r,'titleEn','titleEs')||'—',iname=x=>txt(x,'nameEn','nameEs')||'—',pname=x=>txt(x,'nameEn','nameEs')||'—',img=x=>typeof x==='string'?x:(x&&(x.url||x.image?.url||x.src)||'');const send=(type,payload={})=>parent.postMessage({type,payload},'*');
 function searchNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
 function searchCorpus(r){const A=x=>Array.isArray(x)?x:[],vals=[r?.titleEn,r?.titleEs,r?.category,r?.recipeType,r?.notesEn,r?.notesEs],secs=A(S.sections).filter(s=>s&&s.recipeId===r?._id),secIds=new Set(secs.map(s=>s._id));secs.forEach(s=>vals.push(s.titleEn,s.titleEs));A(S.components).filter(c=>c&&(c.recipeId===r?._id||secIds.has(c.sectionId))).forEach(c=>{vals.push(c.displayEn,c.displayEs,c.noteEn,c.noteEs);if(c.targetIngredientId){const i=A(S.ingredients).find(x=>x&&x._id===c.targetIngredientId);if(i)vals.push(i.nameEn,i.nameEs)}if(c.targetPreparationId){const p=A(S.preparations).find(x=>x&&x._id===c.targetPreparationId);if(p)vals.push(p.nameEn,p.nameEs)}if(c.targetRecipeId){const x=A(S.recipes).find(x=>x&&x._id===c.targetRecipeId);if(x)vals.push(x.titleEn,x.titleEs)}});return searchNorm(vals.filter(Boolean).join(' '))}
@@ -280,15 +292,111 @@ function ringTimerAlarm(){if(T.ringing)return;T.ringing=true;try{T.audio.muted=f
 function stopTimerAlarm(){T.ringing=false;try{T.audio.pause();T.audio.currentTime=0}catch(_){}try{navigator.vibrate?.(0)}catch(_){}}
 function syncAlarmState(){const due=T.items.some(x=>x.due);if(due)ringTimerAlarm();else stopTimerAlarm()}
 function ensureTimerTick(){if(T.tick)return;T.tick=setInterval(timerTick,250)}
-function addKitchenTimer(ms,name=''){ms=Math.max(1000,Math.round(ms));primeTimerAlarm();const cleanName=String(name||'').trim().slice(0,80),x={id:'kt-'+(++T.seq),name:cleanName,duration:ms,remaining:ms,endAt:Date.now()+ms,running:true,due:false,done:false,createdAt:Date.now()};T.items.push(x);ensureTimerTick();showCalc(!!S.route.length);if(S.modal?.kind==='timers')timerPaint()}
-function startKitchenTimer(id){const x=T.items.find(t=>t.id===id);if(!x)return;primeTimerAlarm();if(x.done||x.remaining<=0){x.remaining=x.duration;x.done=false;x.due=false}x.endAt=Date.now()+Math.max(1000,x.remaining);x.running=true;x.due=false;syncAlarmState();ensureTimerTick();timerPaint()}
+function timerNotificationPermission(){if(!('Notification'in window)||!('serviceWorker'in navigator))return'unsupported';return Notification.permission}
+async function ensureTimerNotificationWorker(){
+  if(!('serviceWorker'in navigator))throw new Error('SERVICE_WORKER_UNAVAILABLE');
+  if(T.notificationRegistration)return T.notificationRegistration;
+  if(!T.notificationRegistrationPromise){
+    T.notificationRegistrationPromise=navigator.serviceWorker.register(TIMER_NOTIFICATION_SW,{scope:'./',updateViaCache:'none'})
+      .then(async reg=>{try{await reg.update()}catch(_){};T.notificationRegistration=reg;return reg})
+      .catch(err=>{T.notificationRegistrationPromise=null;throw err});
+  }
+  return T.notificationRegistrationPromise
+}
+function timerNotificationTag(id){return'nexo-kitchen-timer-'+String(id||'timer')}
+async function showTimerNotification(x){
+  if(!x||x.notificationSent||timerNotificationPermission()!=='granted')return false;
+  try{
+    const reg=await ensureTimerNotificationWorker();
+    const name=String(x.name||'').trim()||(S.lang==='es'?'Temporizador':'Timer');
+    const title=S.lang==='es'?'Nexo Group · Temporizador terminado':'Nexo Group · Timer finished';
+    const body=S.lang==='es'?'«'+name+'» terminó. Toca para volver a Fichas.':'“'+name+'” finished. Tap to return to Technical Sheets.';
+    await reg.showNotification(title,{
+      body,
+      icon:TIMER_NOTIFICATION_ICON,
+      badge:TIMER_NOTIFICATION_ICON,
+      tag:timerNotificationTag(x.id),
+      renotify:true,
+      requireInteraction:true,
+      vibrate:[500,180,500,180,900],
+      timestamp:Date.now(),
+      data:{timerId:x.id,url:'./pwa.html'},
+      actions:[{action:'stop',title:S.lang==='es'?'Detener alarma':'Stop alarm'}]
+    });
+    x.notificationSent=true;
+    return true
+  }catch(_){return false}
+}
+async function closeTimerNotification(id){
+  if(!('serviceWorker'in navigator))return;
+  try{
+    const reg=await ensureTimerNotificationWorker();
+    const list=await reg.getNotifications({tag:timerNotificationTag(id)});
+    list.forEach(n=>n.close())
+  }catch(_){}
+}
+function notifyDueTimers(){for(const x of T.items){if(x.due&&!x.notificationSent)showTimerNotification(x)}}
+function openTimerNotificationPermission(){
+  const url='./notifications.html?lang='+encodeURIComponent(S.lang);
+  const w=window.open(url,'nexo_timer_notifications');
+  if(!w)toast(S.lang==='es'?'Permite ventanas emergentes para activar las notificaciones.':'Allow pop-ups to enable notifications.',5000)
+}
+function refreshTimerNotificationUI(){
+  const state=document.getElementById('timerNotifyState'),button=document.getElementById('timerNotifyEnable');
+  if(!state||!button)return;
+  const p=timerNotificationPermission(),es=S.lang==='es';
+  if(p==='granted'){
+    state.textContent=es?'Activas · Android mostrará el aviso en la barra y panel de notificaciones.':'On · Android will show the alert in the notification shade.';
+    button.textContent=es?'Activadas':'Enabled';button.disabled=true
+  }else if(p==='denied'){
+    state.textContent=es?'Bloqueadas por el navegador · habilítalas en los permisos del sitio.':'Blocked by the browser · enable them in site permissions.';
+    button.textContent=es?'Bloqueadas':'Blocked';button.disabled=true
+  }else if(p==='unsupported'){
+    state.textContent=es?'Este navegador no admite notificaciones web persistentes.':'This browser does not support persistent web notifications.';
+    button.textContent=es?'No disponible':'Unavailable';button.disabled=true
+  }else{
+    state.textContent=es?'Desactivadas · actívalas una sola vez para recibir el aviso del sistema.':'Off · enable once to receive system alerts.';
+    button.textContent=es?'Activar':'Enable';button.disabled=false
+  }
+}
+function addKitchenTimer(ms,name=''){ms=Math.max(1000,Math.round(ms));primeTimerAlarm();const cleanName=String(name||'').trim().slice(0,80),x={id:'kt-'+(++T.seq),name:cleanName,duration:ms,remaining:ms,endAt:Date.now()+ms,running:true,due:false,done:false,notificationSent:false,createdAt:Date.now()};T.items.push(x);ensureTimerTick();showCalc(!!S.route.length);if(S.modal?.kind==='timers')timerPaint()}
+function startKitchenTimer(id){const x=T.items.find(t=>t.id===id);if(!x)return;primeTimerAlarm();if(x.done||x.remaining<=0){x.remaining=x.duration;x.done=false;x.due=false}x.endAt=Date.now()+Math.max(1000,x.remaining);x.running=true;x.due=false;x.notificationSent=false;closeTimerNotification(x.id);syncAlarmState();ensureTimerTick();timerPaint()}
 function pauseKitchenTimer(id){const x=T.items.find(t=>t.id===id);if(!x||!x.running)return;x.remaining=timerRemaining(x);x.running=false;timerPaint()}
-function resetKitchenTimer(id){const x=T.items.find(t=>t.id===id);if(!x)return;x.running=false;x.due=false;x.done=false;x.remaining=x.duration;syncAlarmState();timerPaint()}
-function removeKitchenTimer(id){const i=T.items.findIndex(t=>t.id===id);if(i<0)return;T.items.splice(i,1);syncAlarmState();showCalc(!!S.route.length);timerPaint()}
-function acknowledgeKitchenTimer(id){const x=T.items.find(t=>t.id===id);if(!x)return;x.due=false;x.done=true;x.running=false;x.remaining=0;syncAlarmState();timerPaint()}
-function timerTick(){const now=Date.now();let fired=false;for(const x of T.items){if(x.running&&x.endAt<=now){x.running=false;x.remaining=0;x.done=true;x.due=true;fired=true}}if(fired){ringTimerAlarm();toast(S.lang==='es'?'⏱ Temporizador terminado · abre Temporizadores para detener la alarma':'⏱ Timer finished · open Timers to stop the alarm',6000)}if(S.modal?.kind==='timers')timerPaint()}
+function resetKitchenTimer(id){const x=T.items.find(t=>t.id===id);if(!x)return;x.running=false;x.due=false;x.done=false;x.notificationSent=false;x.remaining=x.duration;closeTimerNotification(x.id);syncAlarmState();timerPaint()}
+function removeKitchenTimer(id){const i=T.items.findIndex(t=>t.id===id);if(i<0)return;const x=T.items[i];T.items.splice(i,1);closeTimerNotification(x.id);syncAlarmState();showCalc(!!S.route.length);timerPaint()}
+function acknowledgeKitchenTimer(id){const x=T.items.find(t=>t.id===id);if(!x)return;x.due=false;x.done=true;x.running=false;x.remaining=0;closeTimerNotification(x.id);syncAlarmState();timerPaint()}
+function timerTick(){
+  const now=Date.now(),fired=[];
+  for(const x of T.items){
+    if(x.running&&x.endAt<=now){
+      x.running=false;x.remaining=0;x.done=true;x.due=true;fired.push(x)
+    }
+  }
+  if(fired.length){
+    ringTimerAlarm();
+    fired.forEach(showTimerNotification);
+    const names=fired.map((x,i)=>x.name||(S.lang==='es'?'Temporizador '+(i+1):'Timer '+(i+1))).join(', ');
+    toast(S.lang==='es'?'⏱ Temporizador terminado: '+names+' · abre Temporizadores para detener la alarma':'⏱ Timer finished: '+names+' · open Timers to stop the alarm',6000)
+  }
+  if(S.modal?.kind==='timers')timerPaint()
+}
 function timerPaint(){const zone=document.getElementById('timerList');if(!zone)return;const es=S.lang==='es';if(!T.items.length){zone.innerHTML='<div class="timerEmpty">'+(es?'No hay temporizadores activos.':'No active timers.')+'</div>';return}zone.innerHTML=T.items.map((x,i)=>{const rem=timerRemaining(x),state=x.due?(es?'ALARMA SONANDO':'ALARM RINGING'):x.running?(es?'En marcha':'Running'):x.done?(es?'Finalizado':'Finished'):(es?'Pausado':'Paused');return '<article class="timerItem '+(x.due?'ringing':'')+'"><div class="timerMain"><span class="timerName">'+esc(x.name||(es?'Temporizador ':'Timer ')+(i+1))+'</span><strong class="timerTime">'+timerFmt(rem)+'</strong><span class="timerState">'+state+'</span></div><div class="timerActions">'+(x.due?'<button class="stopAlarm" data-timer-ack="'+x.id+'">'+(es?'Detener alarma':'Stop alarm')+'</button>':x.running?'<button data-timer-pause="'+x.id+'">'+(es?'Pausar':'Pause')+'</button>':'<button class="primaryTimer" data-timer-start="'+x.id+'">'+(x.done?(es?'Reiniciar':'Restart'):(es?'Continuar':'Resume'))+'</button>')+'<button data-timer-reset="'+x.id+'">'+(es?'Reset':'Reset')+'</button><button data-timer-remove="'+x.id+'">'+(es?'Eliminar':'Delete')+'</button></div></article>'}).join('');zone.querySelectorAll('[data-timer-start]').forEach(b=>b.onclick=()=>startKitchenTimer(b.dataset.timerStart));zone.querySelectorAll('[data-timer-pause]').forEach(b=>b.onclick=()=>pauseKitchenTimer(b.dataset.timerPause));zone.querySelectorAll('[data-timer-reset]').forEach(b=>b.onclick=()=>resetKitchenTimer(b.dataset.timerReset));zone.querySelectorAll('[data-timer-remove]').forEach(b=>b.onclick=()=>removeKitchenTimer(b.dataset.timerRemove));zone.querySelectorAll('[data-timer-ack]').forEach(b=>b.onclick=()=>acknowledgeKitchenTimer(b.dataset.timerAck))}
-function renderTimers(){const es=S.lang==='es',body='<div class="timerWrap"><div class="timerCreate"><div class="timerFields"><label class="timerField timerNameField"><span>'+(es?'Nombre':'Name')+'</span><input id="timerNameInput" type="text" maxlength="80" autocomplete="off" placeholder="'+(es?'Ej. Arroz, salsa, horno…':'e.g. Rice, sauce, oven…')+'"></label><label class="timerField"><span>'+(es?'Minutos':'Minutes')+'</span><input id="timerMinutes" type="number" min="0" max="999" inputmode="numeric" value="5"></label><label class="timerField"><span>'+(es?'Segundos':'Seconds')+'</span><input id="timerSeconds" type="number" min="0" max="59" inputmode="numeric" value="0"></label></div><button id="timerAdd" class="primary">'+(es?'Iniciar temporizador':'Start timer')+'</button><div class="timerQuick"><button data-timer-quick="60">1 min</button><button data-timer-quick="300">5 min</button><button data-timer-quick="600">10 min</button><button data-timer-quick="900">15 min</button></div><p class="timerAlarmHint">'+(es?'Puedes crear varios temporizadores con nombres distintos. Al finalizar sonará la alarma suministrada hasta que la detengas.':'You can create multiple timers with different names. When finished, the supplied alarm will loop until you stop it.')+'</p></div><div id="timerList" class="timerList"></div></div>';shell(es?'Temporizadores':'Timers',body);const timerName=()=>String(document.getElementById('timerNameInput')?.value||'').trim();document.getElementById('timerAdd').onclick=()=>{const m=Math.max(0,Number(document.getElementById('timerMinutes')?.value||0)),s=Math.max(0,Math.min(59,Number(document.getElementById('timerSeconds')?.value||0))),ms=(m*60+s)*1000;if(ms<1000){toast(es?'Indica al menos 1 segundo.':'Enter at least 1 second.');return}addKitchenTimer(ms,timerName());const n=document.getElementById('timerNameInput');if(n)n.value=''};modal.querySelectorAll('[data-timer-quick]').forEach(b=>b.onclick=()=>{addKitchenTimer(Number(b.dataset.timerQuick)*1000,timerName());const n=document.getElementById('timerNameInput');if(n)n.value=''});timerPaint()}
+function renderTimers(){
+  const es=S.lang==='es';
+  const body='<div class="timerWrap"><div class="timerCreate"><div class="timerFields"><label class="timerField timerNameField"><span>'+(es?'Nombre':'Name')+'</span><input id="timerNameInput" type="text" maxlength="80" autocomplete="off" placeholder="'+(es?'Ej. Arroz, salsa, horno…':'e.g. Rice, sauce, oven…')+'"></label><label class="timerField"><span>'+(es?'Minutos':'Minutes')+'</span><input id="timerMinutes" type="number" min="0" max="999" inputmode="numeric" value="5"></label><label class="timerField"><span>'+(es?'Segundos':'Seconds')+'</span><input id="timerSeconds" type="number" min="0" max="59" inputmode="numeric" value="0"></label></div><button id="timerAdd" class="primary">'+(es?'Iniciar temporizador':'Start timer')+'</button><div class="timerQuick"><button data-timer-quick="60">1 min</button><button data-timer-quick="300">5 min</button><button data-timer-quick="600">10 min</button><button data-timer-quick="900">15 min</button></div><div class="timerNotify"><div class="timerNotifyText"><strong>'+(es?'Notificaciones del teléfono':'Phone notifications')+'</strong><span id="timerNotifyState"></span></div><button id="timerNotifyEnable" type="button">'+(es?'Activar':'Enable')+'</button></div><p class="timerAlarmHint">'+(es?'Puedes crear varios temporizadores con nombres distintos. Al finalizar sonará la alarma suministrada y, si autorizaste las notificaciones, Android mostrará el aviso en la barra superior y en el panel de notificaciones.':'You can create multiple named timers. When one finishes, the supplied alarm will sound and, if notifications are enabled, Android will show an alert in the notification shade.')+'</p></div><div id="timerList" class="timerList"></div></div>';
+  shell(es?'Temporizadores':'Timers',body);
+  const timerName=()=>String(document.getElementById('timerNameInput')?.value||'').trim();
+  document.getElementById('timerAdd').onclick=()=>{
+    const m=Math.max(0,Number(document.getElementById('timerMinutes')?.value||0)),s=Math.max(0,Math.min(59,Number(document.getElementById('timerSeconds')?.value||0))),ms=(m*60+s)*1000;
+    if(ms<1000){toast(es?'Indica al menos 1 segundo.':'Enter at least 1 second.');return}
+    addKitchenTimer(ms,timerName());const n=document.getElementById('timerNameInput');if(n)n.value=''
+  };
+  modal.querySelectorAll('[data-timer-quick]').forEach(b=>b.onclick=()=>{addKitchenTimer(Number(b.dataset.timerQuick)*1000,timerName());const n=document.getElementById('timerNameInput');if(n)n.value=''});
+  const notifyButton=document.getElementById('timerNotifyEnable');
+  if(notifyButton)notifyButton.onclick=openTimerNotificationPermission;
+  refreshTimerNotificationUI();
+  timerPaint()
+}
 function calcNum(){return Number(String(C.display).replace(',','.'))}function calcFmt(n){if(!Number.isFinite(n))return'Error';const a=Math.abs(n);if(a!==0&&(a>=1e12||a<1e-8))return n.toExponential(6);return String(Number(n.toFixed(10)))}function calcApply(a,b,op){if(op==='+')return a+b;if(op==='−')return a-b;if(op==='×')return a*b;if(op==='÷')return b===0?NaN:a/b;return b}function calcPaint(){const d=$('#calcDisplay'),e=$('#calcExpr');if(d)d.textContent=C.display;if(e)e.textContent=C.expr||' '}function calcDigit(v){if(C.display==='Error'){C.display='0';C.acc=null;C.op=null;C.expr='';C.fresh=true}if(C.fresh){C.display=v==='.'?'0.':v;C.fresh=false}else if(v==='.'||v===','){if(!C.display.includes('.')&&!C.display.includes(','))C.display+='.'}else if(C.display.replace(/[-.,]/g,'').length<12)C.display+=v;calcPaint()}function calcOperator(op){let cur=calcNum();if(!Number.isFinite(cur)){calcClear();return}if(C.op&&C.acc!==null&&!C.fresh){cur=calcApply(C.acc,cur,C.op);C.display=calcFmt(cur)}C.acc=cur;C.op=op;C.expr=`${C.display} ${op}`;C.fresh=true;calcPaint()}function calcPercent(){let cur=calcNum();if(!Number.isFinite(cur))return;if(C.acc!==null&&C.op&&(C.op==='+'||C.op==='−'))cur=C.acc*cur/100;else cur=cur/100;C.display=calcFmt(cur);C.fresh=true;calcPaint()}function calcEquals(){if(C.acc===null||!C.op)return;const b=calcNum(),a=C.acc,op=C.op,r=calcApply(a,b,op);C.expr=`${calcFmt(a)} ${op} ${calcFmt(b)} =`;C.display=calcFmt(r);C.acc=null;C.op=null;C.fresh=true;calcPaint()}function calcClear(){C.display='0';C.acc=null;C.op=null;C.expr='';C.fresh=true;calcPaint()}function calcBack(){if(C.fresh||C.display==='Error')return;C.display=C.display.length>1?C.display.slice(0,-1):'0';if(C.display==='-'||C.display==='')C.display='0';calcPaint()}function renderCalculator(){const body=`<div class="calcWrap"><div class="calcScreen"><div id="calcExpr" class="calcExpr"></div><div id="calcDisplay" class="calcDisplay">0</div></div><div class="calcGrid"><button class="calcKey ac" data-calc="ac">AC</button><button class="calcKey" data-calc="back">⌫</button><button class="calcKey op" data-calc="%">%</button><button class="calcKey op" data-calc="÷">÷</button><button class="calcKey" data-calc="7">7</button><button class="calcKey" data-calc="8">8</button><button class="calcKey" data-calc="9">9</button><button class="calcKey op" data-calc="×">×</button><button class="calcKey" data-calc="4">4</button><button class="calcKey" data-calc="5">5</button><button class="calcKey" data-calc="6">6</button><button class="calcKey op" data-calc="−">−</button><button class="calcKey" data-calc="1">1</button><button class="calcKey" data-calc="2">2</button><button class="calcKey" data-calc="3">3</button><button class="calcKey op" data-calc="+">+</button><button class="calcKey" data-calc="0">0</button><button class="calcKey" data-calc=".">.</button><button class="calcKey eq" data-calc="=">=</button></div><p class="calcHint">${esc(t('calcHint'))}</p></div>`;shell(t('calculator'),body);calcPaint();modal.querySelectorAll('[data-calc]').forEach(b=>b.onclick=()=>{const v=b.dataset.calc;if(/^\d$/.test(v)||v==='.')calcDigit(v);else if(['+','−','×','÷'].includes(v))calcOperator(v);else if(v==='%')calcPercent();else if(v==='=')calcEquals();else if(v==='ac')calcClear();else if(v==='back')calcBack()})}
 function renderCommentModal(){const r=S.recipes.find(x=>x._id===S.modal?.recipeId);if(!r){closeModal();return}const body=`<p class="modalText">${esc(t('commentHint'))}</p><textarea id="commentText" class="commentText" maxlength="2000" placeholder="${esc(t('commentPlaceholder'))}"></textarea><div id="commentError" class="commentError"></div><div class="modalActions"><button id="commentSave" class="primary">${esc(t('sendComment'))}</button><button id="commentCancel" class="secondary">${esc(t('close'))}</button></div>`;shell(t('commentTitle')+' · '+rname(r),body);const input=$('#commentText'),save=$('#commentSave');$('#commentCancel').onclick=closeModal;input?.focus();save.onclick=()=>{const comment=String(input?.value||'').trim();if(!comment){const err=$('#commentError');if(err)err.textContent=S.lang==='es'?'Escribe un comentario antes de enviarlo.':'Write a comment before sending.';return}const requestId='recipe-comment-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);S.modal.requestId=requestId;save.disabled=true;save.textContent=t('sendingComment');const err=$('#commentError');if(err)err.textContent='';send('NEXO_DM_RECIPE_COMMENT',{requestId,technicalSheetId:r._id,recipeTitle:rname(r),comment})}}
 function renderModal(){if(!S.modal){modal.innerHTML='';back.classList.toggle('hidden',!S.route.length);return}back.classList.remove('hidden');if(S.modal.kind==='calculator')return renderCalculator();if(S.modal.kind==='timers')return renderTimers();if(S.modal.kind==='comment')return renderCommentModal();if(S.modal.kind==='legend')return renderLegend();if(S.modal.kind==='unit')return renderUnit();if(S.modal.kind==='subrecipe')return renderSubrecipeModal();return renderIngredientModal()}function shell(title,body){modal.innerHTML=`<div class="modalShade" id="shade"><div class="modal"><div class="modalHead"><h2>${esc(title)}</h2><button id="close" class="icon">×</button></div>${body}</div></div>`;$('#close').onclick=closeModal;$('#shade').onclick=e=>{if(e.target.id==='shade')closeModal()}}
@@ -300,7 +408,24 @@ function renderUnit(){let u=S.modal.unit,f=unitFamily(u);shell(`${t('unit')}: ${
 function renderLegend(){let es=S.lang==='es',rows=[['var(--dish)',t('dish'),es?'Ficha final que se sirve al cliente.':'Final dish served to the guest.'],['var(--prep)',t('prep'),es?'Subreceta o preparación reutilizable.':'Reusable preparation or subrecipe.'],['var(--product)',t('product'),es?'Ingrediente o producto base.':'Base ingredient or product.'],['var(--metricMass)','g / kg',es?'Masa métrica.':'Metric mass.'],['var(--imperialMass)','oz / lb',es?'Masa imperial.':'Imperial mass.'],['var(--metricVolume)','ml / L',es?'Volumen métrico.':'Metric volume.'],['var(--count)','ea / u',es?'Conteo por unidad.':'Count by unit.'],['var(--spoon)','tsp / tbsp',es?'Cucharas.':'Spoon measures.'],['var(--cup)','cup',es?'Tazas.':'Cup measures.']];shell(t('legend'),`<div class="legend">${rows.map(r=>`<div class="legendRow"><span class="swatch" style="background:${r[0]}"></span><div><b>${esc(r[1])}</b><small>${esc(r[2])}</small></div></div>`).join('')}</div>`)}
 function applyPhoto(detail){if(!detail?.entityType||!detail.entityId||!detail.image)return;const {entityType,entityId,image}=detail;if(entityType==='recipe'){const r=S.recipes.find(x=>x._id===entityId);if(r)r.heroImage=image}else if(entityType==='ingredient'){const i=S.ingredients.find(x=>x._id===entityId);if(i)i.baseImage=image}else if(entityType==='preparation'){const p=S.preparations.find(x=>x._id===entityId);if(p)p.image=image}if(S.route.at(-1)?.id===entityId)render();if(S.modal)renderModal()}
 addEventListener('NEXO_PHOTO_CHANGED',e=>applyPhoto(e.detail));
-addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(!m?.type)return;let p=m.payload||{};if(m.type==='WIX_READY')send('LOAD_MENU_DATA');if(m.type==='MENU_DATA_LOADED'){Object.assign(S,{recipes:p.recipes||[],sections:p.sections||[],components:p.components||[],ingredients:p.ingredients||[],preparations:p.preparations||[],loaded:true});render()}if(m.type==='ERROR'&&p.message)toast(p.message,3000)});window.NEXO_MENU_API={openRecipe,render,home:()=>{S.route=[];S.modal=null;modal.innerHTML='';render()},getData:()=>S};setLang(S.lang);send('MENU_HTML_READY',{version:'4.2.3',adaptiveMobile:true,visualTaxonomy:true,photoSystem:'external-v1',timers:'named-multi-timers-v3'});})();
+addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(!m?.type)return;let p=m.payload||{};if(m.type==='WIX_READY')send('LOAD_MENU_DATA');if(m.type==='MENU_DATA_LOADED'){Object.assign(S,{recipes:p.recipes||[],sections:p.sections||[],components:p.components||[],ingredients:p.ingredients||[],preparations:p.preparations||[],loaded:true});render()}if(m.type==='ERROR'&&p.message)toast(p.message,3000)});window.NEXO_MENU_API={openRecipe,render,home:()=>{S.route=[];S.modal=null;modal.innerHTML='';render()},getData:()=>S};if('serviceWorker'in navigator){
+  ensureTimerNotificationWorker().catch(()=>{});
+  navigator.serviceWorker.addEventListener('message',event=>{
+    const m=event.data||{};
+    if(m.type==='NEXO_TIMER_NOTIFICATION_STOP'&&m.timerId)acknowledgeKitchenTimer(m.timerId);
+    else if(m.type==='NEXO_TIMER_NOTIFICATION_OPEN'){S.modal={kind:'timers'};renderModal()}
+  })
+}
+addEventListener('message',event=>{
+  const m=event.data||{};
+  if(m.type==='NEXO_TIMER_NOTIFICATION_PERMISSION'){
+    refreshTimerNotificationUI();
+    if(m.permission==='granted')notifyDueTimers()
+  }
+});
+addEventListener('focus',()=>{timerTick();refreshTimerNotificationUI();notifyDueTimers()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){timerTick();refreshTimerNotificationUI();notifyDueTimers()}});
+setLang(S.lang);send('MENU_HTML_READY',{version:'4.3.0',adaptiveMobile:true,visualTaxonomy:true,photoSystem:'external-v1',timers:'named-multi-timers-system-notifications-v4'});})();
 </script>
 </body>
 </html>
