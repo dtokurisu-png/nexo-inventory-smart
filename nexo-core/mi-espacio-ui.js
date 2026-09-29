@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-4';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-organic-20260929-5';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -503,8 +503,8 @@ function mountNexoOrganicBackground(){
     if(b.moving)drawLiquidBridge(a,b,moveProgress,fade);
 
     const energy=.90+.10*Math.sin(time*.00135+l.phase);
-    const endA=clamp(a.r*.30,4.4,9.2);
-    const endB=clamp(b.r*.30,4.4,9.2);
+    const endA=clamp(a.r*1.05,15.4,32.2);
+    const endB=clamp(b.r*1.05,15.4,32.2);
     const mid=l.midWidth;
 
     ctx.save();
