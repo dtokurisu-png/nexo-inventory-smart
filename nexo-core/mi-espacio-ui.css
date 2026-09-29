@@ -913,7 +913,7 @@ html,body{margin:0}
 .nxo-notification-button[aria-expanded="true"]{
   outline:none;color:#fff;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.10)
 }
-.nxo-notification-icon{font-size:20px;line-height:1;transform:rotate(45deg)}
+.nxo-notification-icon{font-size:16px;line-height:1}
 .nxo-notification-badge{
   position:absolute;top:2px;right:1px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;
   display:grid;place-items:center;background:#b94242;color:#fff;font-size:9px;font-weight:900;
