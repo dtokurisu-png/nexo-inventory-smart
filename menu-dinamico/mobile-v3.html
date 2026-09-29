@@ -73,6 +73,82 @@ html.nexoMobile .calcWrap{gap:5px!important}html.nexoMobile .calcScreen{padding:
   .brandText small{display:none}
   .topUtility{gap:5px}
 }
+
+
+/* =========================================================
+   FICHAS NIGHT GLASS v4 · 2026-09-29
+   Same workspace night treatment:
+   darker polarizing film + 50% more transparent containers.
+========================================================= */
+html[data-theme="night"],html[data-theme="night"] body{
+  background:#0b1122!important;
+  color:#f2f5fa!important;
+}
+html[data-theme="night"] body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:rgba(5,8,14,.60);
+}
+html[data-theme="night"] .app{
+  position:relative;
+  z-index:1;
+}
+html[data-theme="night"] main{color:#f2f5fa}
+html[data-theme="night"] .title,
+html[data-theme="night"] .meta h3,
+html[data-theme="night"] .heroText h1,
+html[data-theme="night"] .section h2,
+html[data-theme="night"] .modalHead h2{color:#f2f5fa}
+html[data-theme="night"] .subtitle,
+html[data-theme="night"] .muted,
+html[data-theme="night"] .note,
+html[data-theme="night"] .modalText{color:#a8b2c3!important}
+
+html[data-theme="night"] .card,
+html[data-theme="night"] .section,
+html[data-theme="night"] .modal,
+html[data-theme="night"] .photo,
+html[data-theme="night"] .heroImage,
+html[data-theme="night"] .empty{
+  background:rgba(16,22,33,.42)!important;
+  border-color:rgba(255,255,255,.10)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.035)!important;
+  -webkit-backdrop-filter:blur(16px) saturate(112%);
+  backdrop-filter:blur(16px) saturate(112%);
+}
+html[data-theme="night"] .recipeCard:hover,
+html[data-theme="night"] .recipeCard:focus-visible{
+  background:rgba(24,30,42,.46)!important;
+  border-color:rgba(225,189,105,.34)!important;
+  box-shadow:0 16px 34px rgba(0,0,0,.28)!important;
+}
+html[data-theme="night"] .search,
+html[data-theme="night"] .chip,
+html[data-theme="night"] .yield,
+html[data-theme="night"] .secondary,
+html[data-theme="night"] .prep{
+  color:#f2f5fa!important;
+  background:rgba(16,22,33,.36)!important;
+  border-color:rgba(255,255,255,.10)!important;
+}
+html[data-theme="night"] .search::placeholder{color:#8f9aab}
+html[data-theme="night"] .row{border-bottom-color:rgba(255,255,255,.08)!important}
+html[data-theme="night"] .thumb,
+html[data-theme="night"] .pic{background:rgba(8,12,19,.30)!important}
+html[data-theme="night"] .modalHead{
+  background:rgba(22,30,45,.58)!important;
+  border-bottom-color:rgba(255,255,255,.09)!important;
+}
+html[data-theme="night"] .modalShade{background:rgba(2,4,8,.72)!important}
+html[data-theme="night"] .topbar{
+  background:rgba(6,9,14,.94)!important;
+}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  html[data-theme="night"] body:before{background:rgba(5,8,14,.70)}
+}
 </style>
 </head>
 <body>
@@ -80,7 +156,7 @@ html.nexoMobile .calcWrap{gap:5px!important}html.nexoMobile .calcScreen{padding:
 <script>
 (()=>{'use strict';
 const I={es:{library:'Recetario dinámico',sub:'Fichas técnicas, preparaciones e ingredientes conectados.',search:'Buscar receta, ingrediente o preparación…',noResults:'No se encontraron coincidencias',all:'Todo',dish:'Platos',prep:'Preparaciones',product:'Productos',yield:'Rendimiento',method:'Método / MOP',noPhoto:'Sin foto',whole:'Producto entero / base',cut:'Preparación / corte',add:'Agregar foto',replace:'Cambiar foto',empty:'Todavía no hay recetas cargadas',waiting:'Esperando conexión con Wix…',legend:'Guía de colores',openRecipe:'Abrir receta',pending:'Ficha técnica pendiente',subrecipe:'Preparación / subreceta',ingredient:'Producto / ingrediente',unit:'Unidad de medida',close:'Cerrar',calculator:'Calculadora',calcHint:'Calculadora rápida para cocina. Usa punto o coma para decimales.',comments:'Sugerir cambio',commentTitle:'Recomendación sobre la receta',commentHint:'Escribe una recomendación de cambio para esta ficha técnica. El administrador del Workspace podrá revisarla, aceptarla, rechazarla o guardarla como pendiente.',commentPlaceholder:'Describe el cambio que recomiendas…',sendComment:'Enviar recomendación',sendingComment:'Enviando…',commentSaved:'Recomendación enviada.'},en:{library:'Dynamic recipe book',sub:'Connected technical sheets, preparations, and ingredients.',search:'Search recipe, ingredient, or preparation…',noResults:'No matches found',all:'All',dish:'Dishes',prep:'Preparations',product:'Products',yield:'Yield',method:'Method / MOP',noPhoto:'No photo',whole:'Whole / base product',cut:'Preparation / cut',add:'Add photo',replace:'Replace photo',empty:'No recipes have been added yet',waiting:'Waiting for Wix connection…',legend:'Color guide',openRecipe:'Open recipe',pending:'Technical sheet pending',subrecipe:'Preparation / subrecipe',ingredient:'Product / ingredient',unit:'Unit of measure',close:'Close',calculator:'Calculator',calcHint:'Quick kitchen calculator. Use a dot or comma for decimals.',comments:'Suggest change',commentTitle:'Recipe change recommendation',commentHint:'Write a change recommendation for this technical sheet. Workspace administrators can review, accept, reject, or keep it pending.',commentPlaceholder:'Describe the change you recommend…',sendComment:'Send recommendation',sendingComment:'Sending…',commentSaved:'Recommendation sent.'}};
-const S={lang:localStorage.getItem('nexo_dynamic_menu_lang')||'es',recipes:[],sections:[],components:[],ingredients:[],preparations:[],route:[],filter:'ALL',query:'',loaded:false,modal:null,workspaceMode:false,workspaceLabel:'Workspace'};const C={display:'0',acc:null,op:null,expr:'',fresh:true};const $=q=>document.querySelector(q),view=$('#view'),modal=$('#modal'),back=$('#back'),lang=$('#lang'),calcBtn=$('#calcBtn'),timerBtn=$('#timerBtn'),commentBtn=$('#commentBtn'),status=$('#status'),personalNav=$('#personalNav'),workspaceNav=$('#workspaceNav'),developmentNav=$('#developmentNav');const t=k=>I[S.lang][k]||k,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),txt=(o,a,b)=>S.lang==='es'?(o?.[b]||o?.[a]||''):(o?.[a]||o?.[b]||''),rname=r=>txt(r,'titleEn','titleEs')||'—',iname=x=>txt(x,'nameEn','nameEs')||'—',pname=x=>txt(x,'nameEn','nameEs')||'—',img=x=>typeof x==='string'?x:(x&&(x.url||x.image?.url||x.src)||'');const send=(type,payload={})=>parent.postMessage({type,payload},'*');
+const S={lang:localStorage.getItem('nexo_dynamic_menu_lang')||'es',recipes:[],sections:[],components:[],ingredients:[],preparations:[],route:[],filter:'ALL',query:'',loaded:false,modal:null,workspaceMode:false,workspaceLabel:'Workspace',theme:'day'};const C={display:'0',acc:null,op:null,expr:'',fresh:true};const $=q=>document.querySelector(q),view=$('#view'),modal=$('#modal'),back=$('#back'),lang=$('#lang'),calcBtn=$('#calcBtn'),timerBtn=$('#timerBtn'),commentBtn=$('#commentBtn'),status=$('#status'),personalNav=$('#personalNav'),workspaceNav=$('#workspaceNav'),developmentNav=$('#developmentNav');const t=k=>I[S.lang][k]||k,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),txt=(o,a,b)=>S.lang==='es'?(o?.[b]||o?.[a]||''):(o?.[a]||o?.[b]||''),rname=r=>txt(r,'titleEn','titleEs')||'—',iname=x=>txt(x,'nameEn','nameEs')||'—',pname=x=>txt(x,'nameEn','nameEs')||'—',img=x=>typeof x==='string'?x:(x&&(x.url||x.image?.url||x.src)||'');const send=(type,payload={})=>parent.postMessage({type,payload},'*');
 function searchNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
 function searchCorpus(r){const A=x=>Array.isArray(x)?x:[],vals=[r?.titleEn,r?.titleEs,r?.category,r?.recipeType,r?.notesEn,r?.notesEs],secs=A(S.sections).filter(s=>s&&s.recipeId===r?._id),secIds=new Set(secs.map(s=>s._id));secs.forEach(s=>vals.push(s.titleEn,s.titleEs));A(S.components).filter(c=>c&&(c.recipeId===r?._id||secIds.has(c.sectionId))).forEach(c=>{vals.push(c.displayEn,c.displayEs,c.noteEn,c.noteEs);if(c.targetIngredientId){const i=A(S.ingredients).find(x=>x&&x._id===c.targetIngredientId);if(i)vals.push(i.nameEn,i.nameEs)}if(c.targetPreparationId){const p=A(S.preparations).find(x=>x&&x._id===c.targetPreparationId);if(p)vals.push(p.nameEn,p.nameEs)}if(c.targetRecipeId){const x=A(S.recipes).find(x=>x&&x._id===c.targetRecipeId);if(x)vals.push(x.titleEn,x.titleEs)}});return searchNorm(vals.filter(Boolean).join(' '))}
 function searchMatch(r,q){const tokens=searchNorm(q).split(' ').filter(Boolean);if(!tokens.length)return true;const hay=searchCorpus(r);return tokens.every(x=>hay.includes(x))}
@@ -97,7 +173,7 @@ developmentNav.onclick=openDevelopment;
 $('#home').onclick=()=>{if(S.workspaceMode){exitToWorkspace();return}S.route=[];S.modal=null;modal.innerHTML='';showCalc(false);render()};
 $('#legendBtn').onclick=()=>{S.modal={kind:'legend'};renderModal()};
 back.onclick=()=>{if(S.modal){S.modal=null;renderModal()}else if(S.route.length){S.route.pop();render();scrollTo(0,0)}else if(S.workspaceMode){exitToWorkspace()}};
-addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(m?.type==='NEXO_WORKSPACE_CONTEXT'){S.workspaceMode=!!m?.payload?.workspaceMode;S.workspaceLabel=m?.payload?.workspaceLabel||'Workspace';workspaceNav.textContent=S.workspaceLabel;workspaceNav.classList.toggle('hidden',!S.workspaceMode);render();return}if(m?.type==='NEXO_DM_RECIPE_COMMENT_RESULT'){const p=m.payload||{};if(S.modal?.kind!=='comment'||(S.modal.requestId&&p.requestId!==S.modal.requestId))return;const save=$('#commentSave');if(p.ok!==false){toast(t('commentSaved'));closeModal();return}if(save){save.disabled=false;save.textContent=t('sendComment')}const err=$('#commentError');if(err)err.textContent=p.error||'Error';}});
+addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(m?.type==='NEXO_WORKSPACE_CONTEXT'){S.workspaceMode=!!m?.payload?.workspaceMode;S.workspaceLabel=m?.payload?.workspaceLabel||'Workspace';S.theme=m?.payload?.theme==='night'?'night':'day';document.documentElement.dataset.theme=S.theme;workspaceNav.textContent=S.workspaceLabel;workspaceNav.classList.toggle('hidden',!S.workspaceMode);render();return}if(m?.type==='NEXO_DM_RECIPE_COMMENT_RESULT'){const p=m.payload||{};if(S.modal?.kind!=='comment'||(S.modal.requestId&&p.requestId!==S.modal.requestId))return;const save=$('#commentSave');if(p.ok!==false){toast(t('commentSaved'));closeModal();return}if(save){save.disabled=false;save.textContent=t('sendComment')}const err=$('#commentError');if(err)err.textContent=p.error||'Error';}});
 addEventListener('NEXO_TAXONOMY_RENDERED',e=>{const mode=e.detail?.mode;showCalc(mode==='dish'||mode==='prep')});
 function render(){lang.textContent=S.lang.toUpperCase();back.classList.toggle('hidden',!S.route.length&&!S.modal&&!S.workspaceMode);if(!S.loaded){showCalc(false);view.innerHTML=`<div class="homeView"><div class="empty">${esc(t('waiting'))}</div></div>`;return}const cur=S.route.at(-1);cur?renderRecipe(cur.id):renderHome()}
 function renderHome(){showCalc(false);const list=homeResults(),q=S.query.trim();view.innerHTML=`<div class="homeView"><h1 class="title">${esc(t('library'))}</h1><p class="subtitle">${esc(t('sub'))}</p><input id="q" class="search" placeholder="${esc(t('search'))}" value="${esc(S.query)}" autocomplete="off"><div class="chips">${chip('ALL',t('all'))}${chip('DISH',t('dish'))}${chip('SUBRECIPE',t('prep'))}</div><div class="grid">${list.length?list.map(card).join(''):`<div class="empty">${esc(q?t('noResults'):t('empty'))}</div>`}</div></div>`;view.querySelectorAll('[data-f]').forEach(x=>x.onclick=()=>{S.filter=x.dataset.f;renderHome()});view.querySelectorAll('[data-r]').forEach(x=>x.onclick=()=>openRecipe(x.dataset.r));queueMicrotask(()=>window.dispatchEvent(new CustomEvent('NEXO_NATIVE_RENDERED',{detail:{kind:'home'}})))}
