@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-hex-20260928-2';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-nexo-hex-20260928-3';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -14,7 +14,110 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 const initials=v=>String(v||'N').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'N';
 function addCss(){if(document.getElementById('nxo-css'))return;const l=document.createElement('link');l.id='nxo-css';l.rel='stylesheet';l.href=CSS;document.head.appendChild(l)}
 function root(){addCss();document.body.classList.add('nxo-lock');let r=document.getElementById('nxo-app');if(!r){r=document.createElement('div');r.id='nxo-app';r.className='nxo-app';document.body.appendChild(r)}return r}
-function html(v){root().innerHTML='<div class="nxo-hex-bg" aria-hidden="true"><svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="nxoHexPattern" width="96" height="84" patternUnits="userSpaceOnUse"><path d="M24 2 L48 16 L48 44 L24 58 L0 44 L0 16 Z M72 30 L96 44 L96 72 L72 86 L48 72 L48 44 Z" fill="none" stroke="#264C8F" stroke-width="1.45" stroke-opacity=".56"/></pattern><radialGradient id="nxoBlueGlow"><stop offset="0" stop-color="#2F4F93" stop-opacity=".55"/><stop offset=".42" stop-color="#2F4F93" stop-opacity=".18"/><stop offset="1" stop-color="#2F4F93" stop-opacity="0"/></radialGradient><radialGradient id="nxoOrangeGlow"><stop offset="0" stop-color="#F88F5B" stop-opacity=".62"/><stop offset=".42" stop-color="#F88F5B" stop-opacity=".20"/><stop offset="1" stop-color="#F88F5B" stop-opacity="0"/></radialGradient><radialGradient id="nxoGreenGlow"><stop offset="0" stop-color="#246B36" stop-opacity=".40"/><stop offset=".45" stop-color="#246B36" stop-opacity=".13"/><stop offset="1" stop-color="#246B36" stop-opacity="0"/></radialGradient><filter id="nxoGlow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g class="nxo-hex-grid"><rect x="-100" y="-100" width="1640" height="1100" fill="url(#nxoHexPattern)"/></g><ellipse class="nxo-hex-glow-blue" cx="310" cy="250" rx="250" ry="205" fill="url(#nxoBlueGlow)"/><ellipse class="nxo-hex-glow-orange" cx="1090" cy="235" rx="245" ry="200" fill="url(#nxoOrangeGlow)"/><ellipse class="nxo-hex-glow-green" cx="920" cy="720" rx="220" ry="170" fill="url(#nxoGreenGlow)"/><g filter="url(#nxoGlow)" fill="none"><path class="nxo-hex-glow-orange" d="M1085 145 l48 28 v56 l-48 28 l-48-28 v-56z" stroke="#F88F5B" stroke-width="3" stroke-opacity=".82"/><path class="nxo-hex-glow-blue" d="M300 170 l42 24 v49 l-42 24 l-42-24 v-49z" stroke="#2F4F93" stroke-width="3" stroke-opacity=".78"/><path class="nxo-hex-glow-green" d="M930 650 l38 22 v44 l-38 22 l-38-22 v-44z" stroke="#246B36" stroke-width="2.6" stroke-opacity=".62"/></g></svg></div>'+v}
+let nxoHexRaf=0,nxoHexResize=null;
+function mountHexCanvas(){
+  const r=root();
+  if(nxoHexRaf)cancelAnimationFrame(nxoHexRaf);
+  if(nxoHexResize)window.removeEventListener('resize',nxoHexResize);
+  r.querySelector('#nxo-hex-canvas')?.remove();
+
+  const c=document.createElement('canvas');
+  c.id='nxo-hex-canvas';
+  c.setAttribute('aria-hidden','true');
+  c.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;z-index:1;pointer-events:none;opacity:.92;';
+  r.prepend(c);
+
+  const ctx=c.getContext('2d');
+  const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dpr=Math.min(window.devicePixelRatio||1,1.5);
+
+  function resize(){
+    const w=Math.max(1,window.innerWidth),h=Math.max(1,window.innerHeight);
+    c.width=Math.floor(w*dpr);c.height=Math.floor(h*dpr);
+    c.style.width=w+'px';c.style.height=h+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function hexPath(cx,cy,radius){
+    const a=Math.PI/3;
+    ctx.beginPath();
+    for(let i=0;i<6;i++){
+      const x=cx+Math.cos(a*i)*radius;
+      const y=cy+Math.sin(a*i)*radius;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+  }
+
+  function draw(ts){
+    const w=window.innerWidth,h=window.innerHeight;
+    ctx.clearRect(0,0,w,h);
+
+    const t=(ts||0)/1000;
+    const R=w<700?34:42;
+    const rowH=Math.sqrt(3)*R;
+    const colW=1.5*R;
+    const driftX=reduce?0:(t*5)%colW;
+    const driftY=reduce?0:(t*2.8)%rowH;
+
+    // Ambient glows behind the mesh.
+    const glows=[
+      {x:w*.18,y:h*.27,r:Math.min(w,h)*.34,c:'47,79,147',a:.18},
+      {x:w*.76,y:h*.22,r:Math.min(w,h)*.30,c:'248,143,91',a:.19},
+      {x:w*.68,y:h*.76,r:Math.min(w,h)*.28,c:'36,107,54',a:.10}
+    ];
+    for(const g of glows){
+      const grad=ctx.createRadialGradient(g.x,g.y,0,g.x,g.y,g.r);
+      grad.addColorStop(0,'rgba('+g.c+','+g.a+')');
+      grad.addColorStop(.45,'rgba('+g.c+','+(g.a*.42)+')');
+      grad.addColorStop(1,'rgba('+g.c+',0)');
+      ctx.fillStyle=grad;
+      ctx.fillRect(g.x-g.r,g.y-g.r,g.r*2,g.r*2);
+    }
+
+    // Honeycomb grid.
+    ctx.lineWidth=1.35;
+    ctx.strokeStyle='rgba(38,76,143,.34)';
+    ctx.shadowColor='rgba(38,76,143,.10)';
+    ctx.shadowBlur=5;
+    let col=0;
+    for(let x=-R*3-driftX;x<w+R*3;x+=colW){
+      const yOffset=(col%2)*rowH/2;
+      for(let y=-rowH*2-driftY+yOffset;y<h+rowH*2;y+=rowH){
+        hexPath(x,y,R);
+        ctx.stroke();
+      }
+      col++;
+    }
+
+    // Moving bright cells, similar to the supplied reference but in Nexo colors.
+    const pulse=(Math.sin(t*1.35)+1)/2;
+    const cells=[
+      {x:w*.75,y:h*.22,c:'248,143,91',a:.58+.24*pulse,rr:R*1.06},
+      {x:w*.22,y:h*.32,c:'47,79,147',a:.48+.22*(1-pulse),rr:R},
+      {x:w*.64,y:h*.72,c:'36,107,54',a:.34+.18*pulse,rr:R*.96},
+      {x:w*.84,y:h*.55,c:'38,76,143',a:.30+.20*(1-pulse),rr:R*.90}
+    ];
+    for(const s of cells){
+      ctx.save();
+      ctx.lineWidth=2.4;
+      ctx.strokeStyle='rgba('+s.c+','+s.a+')';
+      ctx.shadowColor='rgba('+s.c+','+Math.min(.65,s.a)+')';
+      ctx.shadowBlur=18;
+      hexPath(s.x,s.y,s.rr);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if(!reduce)nxoHexRaf=requestAnimationFrame(draw);
+  }
+
+  nxoHexResize=()=>{resize();draw(performance.now())};
+  window.addEventListener('resize',nxoHexResize,{passive:true});
+  resize();
+  draw(performance.now());
+}
+function html(v){const r=root();r.innerHTML=v;mountHexCanvas()}
 function loading(label='Abriendo Mi espacio…'){html('<div class="nxo-loading"><div><div class="nxo-spinner"></div><strong>'+esc(label)+'</strong><p class="nxo-muted">Preparando tu contexto Nexo.</p></div></div>')}
 function errorView(e){const m=String(e&&e.message?e.message:e||'Error');html('<div class="nxo-loading"><div class="nxo-error"><h2>No se pudo abrir Mi espacio</h2><p>'+esc(m)+'</p><button id="nxo-retry" class="nxo-btn nxo-btn-gold">Reintentar</button></div></div>');document.getElementById('nxo-retry')?.addEventListener('click',retryAccess)}
 function toast(msg){let x=document.querySelector('.nxo-toast');if(x)x.remove();x=document.createElement('div');x.className='nxo-toast';x.textContent=msg;document.body.appendChild(x);setTimeout(()=>x.remove(),3200)}
