@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#264c8f">
+<title>Activar notificaciones · Nexo Group</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#172033;background:#eef2f8}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:22px;background:linear-gradient(180deg,#315ba7,#17284e)}
+.card{width:min(520px,100%);padding:24px;border-radius:22px;background:rgba(255,255,255,.94);box-shadow:0 20px 60px rgba(0,0,0,.28)}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.mark{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#c29a35;color:#fff;font-size:23px;font-weight:950}
+h1{font-size:22px;margin:0}
+p{font-size:14px;line-height:1.55;color:#516078}
+button{width:100%;min-height:50px;border:0;border-radius:13px;background:#264c8f;color:#fff;font:850 16px/1 system-ui;cursor:pointer}
+button:disabled{opacity:.55;cursor:default}
+.state{margin-top:14px;padding:12px 14px;border-radius:12px;background:#edf2fa;font-size:13px;font-weight:750;color:#34435e}
+.ok{background:#e8f6ed;color:#176135}.bad{background:#fff0ef;color:#8c2c2c}
+small{display:block;margin-top:14px;color:#6d7688;line-height:1.45}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="brand"><div class="mark">N</div><div><h1>Nexo Group</h1><p style="margin:3px 0 0">Notificaciones de temporizador</p></div></div>
+  <p>Activa este permiso una sola vez. Cuando un temporizador de Fichas Técnicas termine, Android podrá mostrar el aviso en la barra superior y en el panel de notificaciones.</p>
+  <button id="enable" type="button">Activar notificaciones</button>
+  <div id="state" class="state">Esperando autorización.</div>
+  <small>El sonido de alarma de Fichas seguirá funcionando por separado. Esta autorización solo añade el aviso del sistema.</small>
+</main>
+<script>
+(()=>{'use strict';
+const SW='./sw.js?v=20260929-system-notifications-10';
+const ICON='https://static.wixstatic.com/media/8b64a8_9aaf5cc2adbb41d484291557d6024f08~mv2.png';
+const b=document.getElementById('enable'),s=document.getElementById('state');
+function setState(text,cls=''){s.textContent=text;s.className='state'+(cls?' '+cls:'')}
+function tell(permission){try{window.opener?.postMessage({type:'NEXO_TIMER_NOTIFICATION_PERMISSION',permission},'*')}catch(_){}}
+async function worker(){if(!('serviceWorker'in navigator))throw new Error('SERVICE_WORKER_UNAVAILABLE');const reg=await navigator.serviceWorker.register(SW,{scope:'./',updateViaCache:'none'});await navigator.serviceWorker.ready;try{await reg.update()}catch(_){}return reg}
+async function enable(){
+  if(!('Notification'in window)){setState('Este navegador no admite notificaciones web.','bad');b.disabled=true;return}
+  b.disabled=true;setState('Solicitando permiso…');
+  try{
+    const reg=await worker();
+    let permission=Notification.permission;
+    if(permission==='default')permission=await Notification.requestPermission();
+    tell(permission);
+    if(permission==='granted'){
+      setState('Notificaciones activadas. Ya puedes volver a Fichas.','ok');
+      b.textContent='Notificaciones activadas';
+      try{await reg.showNotification('Nexo Group · Temporizadores',{body:'Las notificaciones del teléfono quedaron activadas.',icon:ICON,badge:ICON,tag:'nexo-timer-permission',silent:true,data:{url:'./pwa.html'}})}catch(_){}
+      setTimeout(()=>{try{window.close()}catch(_){}},1400);
+      return;
+    }
+    if(permission==='denied'){setState('El permiso quedó bloqueado. Puedes habilitarlo desde los permisos del sitio en el navegador.','bad');b.textContent='Permiso bloqueado';return}
+    setState('No se concedió el permiso. Puedes intentarlo de nuevo.','bad');b.disabled=false;
+  }catch(err){
+    setState('No se pudo activar: '+String(err?.message||err),'bad');b.disabled=false;
+  }
+}
+b.onclick=enable;
+if('Notification'in window){
+  tell(Notification.permission);
+  if(Notification.permission==='granted'){setState('Notificaciones ya activadas.','ok');b.textContent='Notificaciones activadas';b.disabled=true}
+  else if(Notification.permission==='denied'){setState('El permiso está bloqueado en este navegador.','bad');b.textContent='Permiso bloqueado'}
+}
+worker().catch(()=>{});
+})();
+</script>
+</body>
+</html>
