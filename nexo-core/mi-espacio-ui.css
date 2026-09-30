@@ -1704,3 +1704,45 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   NEXO FLOATING HEADER LOGO · 2026-09-30
+   Official logo sits directly on the task bar, without a badge/container.
+========================================================= */
+.nxo-nav-mark,
+.nxo-app[data-theme="day"] .nxo-nav-mark,
+.nxo-app[data-theme="night"] .nxo-nav-mark{
+  width:72px!important;
+  height:48px!important;
+  flex:0 0 72px!important;
+  padding:0!important;
+  margin:0!important;
+  display:block!important;
+  overflow:visible!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important
+}
+.nxo-nav-mark img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:left center!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:none!important
+}
+
+@media(max-width:760px){
+  .nxo-nav-mark,
+  .nxo-app[data-theme="day"] .nxo-nav-mark,
+  .nxo-app[data-theme="night"] .nxo-nav-mark{
+    width:58px!important;
+    height:40px!important;
+    flex:0 0 58px!important
+  }
+}
+
