@@ -1114,8 +1114,12 @@ async function api(action,payload={}){
  const controller=new AbortController(),requestTimeout=action==='recipe-change.process'?90000:(action==='nexa.send'?65000:20000),timer=setTimeout(()=>controller.abort(),requestTimeout);
  try{
   const r=await fetch(API,{method:'POST',cache:'no-store',signal:controller.signal,headers:h,body:JSON.stringify({action,...payload})});
-  if(!r.ok)throw accessError('HTTP_'+r.status);
-  let d;try{d=await r.json()}catch(_){throw accessError('INVALID_RESPONSE')}
+  let d=null;try{d=await r.json()}catch(_){}
+  if(!r.ok){
+    if(d?.error)throw new Error(String(d.error));
+    throw new Error('No se pudo completar '+action+' (HTTP_'+r.status+').');
+  }
+  if(!d)throw new Error('Respuesta inválida en '+action+'.');
   if(d.ok===false)throw new Error(d.error||'Operación no disponible');
   return d.data??d;
  }catch(e){if(e.name==='AbortError')throw accessError('REQUEST_TIMEOUT');throw e}
