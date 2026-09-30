@@ -456,10 +456,10 @@ html,body{margin:0}
 .nxo-pinned-note{
   position:relative;appearance:none;min-height:145px;border:1px solid #d8c67f;border-radius:4px;
   background:linear-gradient(160deg,#fff9c9,#f7e992);color:#3c351f;padding:30px 16px 16px;text-align:left;
-  cursor:pointer;box-shadow:0 12px 24px rgba(0,0,0,.25);transform:rotate(-.6deg);transition:.15s ease;font:inherit
+  cursor:pointer;box-shadow:0 12px 24px rgba(0,0,0,.25);transform:rotate(-2.1deg);transition:.15s ease;font:inherit
 }
-.nxo-pinned-note.n1{background:linear-gradient(160deg,#fff4d7,#f4d49b);transform:rotate(.7deg)}
-.nxo-pinned-note.n2{background:linear-gradient(160deg,#eef4ff,#d9e5fa);border-color:#aebfdf;transform:rotate(-.2deg)}
+.nxo-pinned-note.n1{background:linear-gradient(160deg,#fff4d7,#f4d49b);transform:rotate(2.4deg)}
+.nxo-pinned-note.n2{background:linear-gradient(160deg,#eef4ff,#d9e5fa);border-color:#aebfdf;transform:rotate(-1.7deg)}
 .nxo-pinned-note:hover,.nxo-pinned-note:focus-visible{transform:rotate(0deg) translateY(-3px) scale(1.01);box-shadow:0 18px 30px rgba(0,0,0,.30);outline:none}
 .nxo-note-pin{position:absolute;top:10px;left:50%;width:15px;height:15px;margin-left:-7px;border-radius:50%;background:#b94242;border:2px solid #8e2b2b;box-shadow:0 3px 5px rgba(0,0,0,.2)}
 .nxo-note-pin:after{content:"";position:absolute;width:2px;height:11px;background:#7f2c2c;left:5px;top:9px;transform:rotate(9deg);transform-origin:top}
