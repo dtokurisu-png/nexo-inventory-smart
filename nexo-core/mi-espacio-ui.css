@@ -2317,3 +2317,65 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   UNREAD NOTIFICATION FOIL · NEXOLINX STYLE · 2026-09-30
+   Point 19: only unopened notifications receive the moving foil.
+========================================================= */
+.nxo-notification-item{
+  position:relative!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  contain:paint
+}
+.nxo-notification-item > *{
+  position:relative;
+  z-index:2
+}
+.nxo-notification-item.nxo-notification-unread::after{
+  content:"";
+  position:absolute;
+  inset:2px;
+  z-index:1;
+  pointer-events:none;
+  border-radius:10px;
+  background:
+    linear-gradient(
+      115deg,
+      transparent 0%,
+      transparent 27%,
+      rgba(255,255,255,.08) 33%,
+      rgba(132,228,255,.30) 38%,
+      rgba(255,170,224,.25) 42%,
+      rgba(255,241,166,.31) 47%,
+      rgba(160,255,203,.24) 52%,
+      rgba(255,255,255,.20) 57%,
+      transparent 64%,
+      transparent 100%
+    );
+  background-size:240% 100%;
+  background-position:155% 50%;
+  mix-blend-mode:screen;
+  opacity:.18;
+  animation:nxo-notification-foil-sweep 1.65s ease-in-out infinite
+}
+@keyframes nxo-notification-foil-sweep{
+  0%{
+    background-position:155% 50%;
+    opacity:.18
+  }
+  50%{
+    opacity:.92
+  }
+  100%{
+    background-position:-55% 50%;
+    opacity:.18
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .nxo-notification-item.nxo-notification-unread::after{
+    animation:none;
+    background-position:50% 50%;
+    opacity:.24
+  }
+}
+
