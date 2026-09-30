@@ -1339,3 +1339,163 @@ html,body{margin:0}
   background:linear-gradient(150deg,rgba(24,30,42,.345),rgba(11,15,23,.315))!important;
 }
 
+/* =========================================================
+   NEXO MOBILE HEADER HAMBURGER · 2026-09-30
+   All mobile header actions collapse into one native menu.
+========================================================= */
+.nxo-nav-collapse{
+  display:flex;
+  align-items:stretch;
+  align-self:stretch;
+  gap:22px;
+  flex:1;
+  min-width:0
+}
+.nxo-mobile-menu-button{
+  display:none;
+  width:42px;
+  height:42px;
+  padding:9px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:11px;
+  background:rgba(255,255,255,.05);
+  color:inherit;
+  cursor:pointer;
+  place-items:center;
+  gap:4px
+}
+.nxo-mobile-menu-button span{
+  display:block;
+  width:20px;
+  height:2px;
+  border-radius:999px;
+  background:currentColor;
+  transition:transform .16s ease,opacity .16s ease
+}
+.nxo-mobile-menu-button[aria-expanded="true"] span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.nxo-mobile-menu-button[aria-expanded="true"] span:nth-child(2){opacity:0}
+.nxo-mobile-menu-button[aria-expanded="true"] span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+
+@media(max-width:760px){
+  .nxo-topbar.nxo-workspace-nav{
+    min-height:58px!important;
+    padding:8px 12px!important;
+    gap:10px!important;
+    overflow:visible!important
+  }
+  .nxo-nav-brand{min-width:0!important;flex:0 0 auto}
+  .nxo-nav-brand-copy{display:none!important}
+  .nxo-nav-mark{width:38px!important;height:38px!important}
+  .nxo-mobile-menu-button{
+    display:grid;
+    margin-left:auto;
+    flex:0 0 auto
+  }
+  .nxo-nav-collapse{
+    display:none;
+    position:absolute;
+    top:calc(100% + 8px);
+    left:10px;
+    right:10px;
+    z-index:120;
+    max-height:calc(100dvh - 86px);
+    overflow:auto;
+    padding:10px;
+    border:1px solid rgba(255,255,255,.11);
+    border-radius:16px;
+    background:rgba(7,11,18,.98);
+    box-shadow:0 24px 60px rgba(0,0,0,.38);
+    -webkit-backdrop-filter:blur(22px) saturate(118%);
+    backdrop-filter:blur(22px) saturate(118%)
+  }
+  .nxo-nav-collapse.open{display:grid;gap:8px}
+  .nxo-nav-links{
+    display:grid!important;
+    align-self:auto!important;
+    gap:5px!important;
+    overflow:visible!important
+  }
+  .nxo-nav-link,
+  .nxo-nav-link.active{
+    display:flex!important;
+    align-items:center;
+    min-height:44px;
+    width:100%;
+    padding:0 12px!important;
+    border-radius:10px!important;
+    text-align:left
+  }
+  .nxo-nav-link:after{display:none!important}
+  .nxo-nav-link:hover,.nxo-nav-link:focus-visible,.nxo-nav-link.active{
+    background:rgba(255,255,255,.07)!important
+  }
+  .nxo-nav-account-wrap{
+    position:static!important;
+    display:grid!important;
+    gap:6px;
+    width:100%;
+    padding-top:8px;
+    border-top:1px solid rgba(255,255,255,.09)
+  }
+  .nxo-theme-button,
+  .nxo-notification-button,
+  .nxo-nav-account{
+    width:100%!important;
+    min-height:44px!important;
+    height:44px!important;
+    margin:0!important;
+    padding:0 12px!important;
+    border-radius:10px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:10px!important;
+    text-align:left!important
+  }
+  .nxo-theme-button::after{
+    content:attr(title);
+    font:760 12px/1.2 Inter,system-ui,sans-serif
+  }
+  .nxo-notification-wrap{
+    display:block!important;
+    width:100%!important;
+    margin:0!important
+  }
+  .nxo-notification-button::after{
+    content:"Notificaciones";
+    font-size:12px;
+    font-weight:760
+  }
+  .nxo-notification-badge{
+    top:5px!important;
+    right:7px!important
+  }
+  .nxo-notification-menu,
+  .nxo-nav-account-menu{
+    position:static!important;
+    width:100%!important;
+    margin-top:4px!important;
+    max-height:min(56dvh,520px)!important;
+    box-shadow:none!important
+  }
+  .nxo-nav-account-copy{
+    display:grid!important;
+    flex:1!important
+  }
+  .nxo-nav-caret{display:inline!important;margin-left:auto}
+  .nxo-nav-account{padding:5px 10px!important}
+  .nxo-nav-account .nxo-avatar{width:32px!important;height:32px!important}
+  .nxo-app[data-theme="day"] .nxo-nav-collapse{
+    background:rgba(38,76,143,.98)!important;
+    border-color:rgba(255,255,255,.20)!important;
+    box-shadow:0 22px 52px rgba(23,39,85,.28)!important
+  }
+  .nxo-app[data-theme="day"] .nxo-nav-account-menu,
+  .nxo-app[data-theme="day"] .nxo-notification-menu{
+    background:rgba(248,251,255,.98)!important
+  }
+  .nxo-app[data-theme="night"] .nxo-nav-collapse{
+    background:rgba(7,11,18,.985)!important
+  }
+}
+
