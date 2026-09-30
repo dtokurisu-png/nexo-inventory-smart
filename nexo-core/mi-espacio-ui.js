@@ -1082,7 +1082,7 @@ function mountNexa(){
   }
   nexaSyncHeader();
 }
-\nfunction html(v){
+function html(v){
   const {layer}=ensureOrganicLayers();
   layer.innerHTML=v;
   mountNexoOrganicBackground();
