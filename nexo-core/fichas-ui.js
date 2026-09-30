@@ -275,9 +275,10 @@ async function api(action,payload={}){
     let data=null;
     try{data=await response.json()}catch(_){}
     if(!response.ok){
-      if(data?.error)throw new Error(data.error);
-      throw accessError('HTTP_'+response.status);
+      if(data?.error)throw new Error(String(data.error));
+      throw new Error('No se pudo completar '+action+' (HTTP_'+response.status+').');
     }
+    if(!data)throw new Error('Respuesta inválida en '+action+'.');
     if(data?.ok===false)throw new Error(data.error||'Operación no disponible');
     return data?.data??data;
   }catch(error){
