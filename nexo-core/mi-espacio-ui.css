@@ -1172,6 +1172,50 @@ html,body{margin:0}
   .nxo-app[data-theme="night"] #nxo-theme-film{background:rgba(5,8,14,.70)!important}
 }
 
+
+/* Recommendation review card contrast · 2026-09-30 */
+.nxo-review-card .nxo-eyebrow{
+  font-weight:900!important
+}
+.nxo-review-card p{
+  margin:10px 0 7px!important;
+  line-height:1.58!important;
+  font-size:14px!important
+}
+.nxo-review-card small{
+  display:block;
+  margin-top:7px;
+  font-size:11px!important
+}
+.nxo-app[data-theme="day"] .nxo-review-card{
+  color:#111827!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(238,244,255,.66))!important;
+  border-color:rgba(185,203,237,.98)!important
+}
+.nxo-app[data-theme="day"] .nxo-review-card .nxo-eyebrow{
+  color:#264c8f!important
+}
+.nxo-app[data-theme="day"] .nxo-review-card p{
+  color:#172033!important
+}
+.nxo-app[data-theme="day"] .nxo-review-card small{
+  color:#66738d!important
+}
+.nxo-app[data-theme="night"] .nxo-review-card{
+  color:#f2f5fa!important;
+  background:linear-gradient(150deg,rgba(16,22,33,.78),rgba(8,12,19,.72))!important;
+  border-color:rgba(255,255,255,.11)!important
+}
+.nxo-app[data-theme="night"] .nxo-review-card .nxo-eyebrow{
+  color:#e1bd69!important
+}
+.nxo-app[data-theme="night"] .nxo-review-card p{
+  color:#f2f5fa!important
+}
+.nxo-app[data-theme="night"] .nxo-review-card small{
+  color:#a8b2c3!important
+}
+
 /* =========================================================
    NEXO MATCHED CARD TRANSPARENCY v18 · 2026-09-29
    Night cards reduced another 25%; day cards matched to same alpha.
