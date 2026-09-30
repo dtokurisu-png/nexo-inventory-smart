@@ -1523,3 +1523,92 @@ html,body{margin:0}
   border-color:rgba(255,255,255,.34)!important
 }
 
+/* =========================================================
+   NEXO WORKSPACE HEADER ACTIONS · 2026-09-30
+   Create/join actions live in the top navigation, not the section body.
+========================================================= */
+.nxo-header-workspace-actions{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin-right:3px
+}
+.nxo-header-action{
+  min-height:36px;
+  padding:0 11px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;
+  background:rgba(255,255,255,.06);
+  color:inherit;
+  font:800 11px/1.2 Inter,system-ui,sans-serif;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background .16s ease,border-color .16s ease,transform .16s ease
+}
+.nxo-header-action:hover,.nxo-header-action:focus-visible{
+  outline:none;
+  transform:translateY(-1px);
+  background:rgba(255,255,255,.12);
+  border-color:rgba(255,255,255,.24)
+}
+.nxo-header-action.primary{
+  color:#17130c;
+  background:var(--nxo-shell-gold,#e1bd69);
+  border-color:rgba(255,231,170,.46)
+}
+.nxo-header-action.primary:hover,.nxo-header-action.primary:focus-visible{
+  background:#f0cf7a;
+  border-color:#f4d98e
+}
+.nxo-app[data-theme="day"] .nxo-header-action{
+  color:#fff;
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.18)
+}
+.nxo-app[data-theme="day"] .nxo-header-action:hover,
+.nxo-app[data-theme="day"] .nxo-header-action:focus-visible{
+  background:rgba(255,255,255,.15);
+  border-color:rgba(255,255,255,.28)
+}
+.nxo-app[data-theme="day"] .nxo-header-action.primary{
+  color:#172755;
+  background:#fff3a9;
+  border-color:#f3df7b
+}
+
+@media(max-width:980px) and (min-width:761px){
+  .nxo-header-action{
+    max-width:132px;
+    padding:0 9px;
+    white-space:normal;
+    text-align:center;
+    line-height:1.1
+  }
+}
+
+@media(max-width:760px){
+  .nxo-header-workspace-actions{
+    display:grid!important;
+    width:100%!important;
+    gap:6px!important;
+    margin:0 0 2px!important;
+    padding-bottom:8px;
+    border-bottom:1px solid rgba(255,255,255,.09)
+  }
+  .nxo-header-action{
+    width:100%!important;
+    min-height:44px!important;
+    padding:0 12px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    border-radius:10px!important;
+    text-align:left!important;
+    transform:none!important
+  }
+  .nxo-header-action.primary{
+    justify-content:center!important;
+    font-weight:900
+  }
+}
+
