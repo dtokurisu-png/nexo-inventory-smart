@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-free-library-20260930-23';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=mobile-hamburger-20260930-24';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -943,22 +943,25 @@ function topbar(mode){
 
   return '<header class="nxo-topbar nxo-workspace-nav">'+
     '<div class="nxo-nav-brand" id="nxo-nav-home"><span class="nxo-nav-mark">N</span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div>'+
-    '<nav class="nxo-nav-links" aria-label="Navegación principal">'+
-      '<button type="button" class="nxo-nav-link '+(!isWorkspace?'active':'')+'" id="nxo-personal" '+(!isWorkspace?'aria-current="page"':'')+'>Mi espacio</button>'+
-      (isWorkspace?'<button type="button" class="nxo-nav-link active" aria-current="page">'+esc(wsName)+'</button>':'')+
-      '<button type="button" class="nxo-nav-link" id="nxo-nav-development">Centro de desarrollo</button>'+
-    '</nav>'+
-    '<div class="nxo-nav-account-wrap">'+
-      '<button type="button" class="nxo-theme-button" id="nxo-theme-toggle" aria-label="Cambiar tema" aria-pressed="false"></button>'+
-      notification+
-      '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
-        '<span class="nxo-avatar">'+esc(initials(name))+'</span>'+
-        '<span class="nxo-nav-account-copy"><strong>'+esc(name)+'</strong><small>'+esc(role)+'</small></span>'+
-        '<span class="nxo-nav-caret">⌄</span>'+
-      '</button>'+
-      '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
-        '<button type="button" data-account-action="switch">Cambiar cuenta</button>'+
-        '<button type="button" class="danger" data-account-action="logout">Cerrar sesión</button>'+
+    '<button type="button" class="nxo-mobile-menu-button" id="nxo-mobile-menu-button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nxo-nav-collapse"><span></span><span></span><span></span></button>'+
+    '<div class="nxo-nav-collapse" id="nxo-nav-collapse">'+
+      '<nav class="nxo-nav-links" aria-label="Navegación principal">'+
+        '<button type="button" class="nxo-nav-link '+(!isWorkspace?'active':'')+'" id="nxo-personal" '+(!isWorkspace?'aria-current="page"':'')+'>Mi espacio</button>'+
+        (isWorkspace?'<button type="button" class="nxo-nav-link active" aria-current="page">'+esc(wsName)+'</button>':'')+
+        '<button type="button" class="nxo-nav-link" id="nxo-nav-development">Centro de desarrollo</button>'+
+      '</nav>'+
+      '<div class="nxo-nav-account-wrap">'+
+        '<button type="button" class="nxo-theme-button" id="nxo-theme-toggle" aria-label="Cambiar tema" aria-pressed="false"></button>'+
+        notification+
+        '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
+          '<span class="nxo-avatar">'+esc(initials(name))+'</span>'+
+          '<span class="nxo-nav-account-copy"><strong>'+esc(name)+'</strong><small>'+esc(role)+'</small></span>'+
+          '<span class="nxo-nav-caret">⌄</span>'+
+        '</button>'+
+        '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
+          '<button type="button" data-account-action="switch">Cambiar cuenta</button>'+
+          '<button type="button" class="danger" data-account-action="logout">Cerrar sesión</button>'+
+        '</div>'+
       '</div>'+
     '</div>'+
   '</header>'
@@ -971,8 +974,27 @@ function bindTopbar(mode){
   const bell=document.getElementById('nxo-notification-button');
   const bellMenu=document.getElementById('nxo-notification-menu');
   const themeButton=document.getElementById('nxo-theme-toggle');
+  const mobileButton=document.getElementById('nxo-mobile-menu-button');
+  const mobileMenu=document.getElementById('nxo-nav-collapse');
+  const closeMobileMenu=()=>{
+    mobileMenu?.classList.remove('open');
+    mobileButton?.setAttribute('aria-expanded','false');
+    mobileButton?.setAttribute('aria-label','Abrir menú');
+  };
   applyTheme(document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),false);
   themeButton?.addEventListener('click',e=>{e.stopPropagation();toggleTheme()});
+  mobileButton?.addEventListener('click',e=>{
+    e.stopPropagation();
+    const open=mobileMenu?.classList.toggle('open')===true;
+    mobileButton.setAttribute('aria-expanded',open?'true':'false');
+    mobileButton.setAttribute('aria-label',open?'Cerrar menú':'Abrir menú');
+    if(open){
+      bellMenu?.classList.remove('open');
+      bell?.setAttribute('aria-expanded','false');
+      menu?.classList.remove('open');
+      account?.setAttribute('aria-expanded','false');
+    }
+  });
 
   if(isWorkspace){
     document.getElementById('nxo-personal')?.addEventListener('click',returnPersonal);
@@ -982,6 +1004,20 @@ function bindTopbar(mode){
     document.getElementById('nxo-nav-home')?.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
   }
   document.getElementById('nxo-nav-development')?.addEventListener('click',()=>location.assign(centerDevelopmentUrl()));
+  document.querySelectorAll('#nxo-personal,#nxo-nav-development').forEach(button=>button.addEventListener('click',closeMobileMenu));
+
+  if(!window.__nexoMobileNavOutsideBound){
+    window.__nexoMobileNavOutsideBound=true;
+    document.addEventListener('click',e=>{
+      const currentMenu=document.getElementById('nxo-nav-collapse');
+      const currentButton=document.getElementById('nxo-mobile-menu-button');
+      if(currentMenu?.classList.contains('open')&&!currentMenu.contains(e.target)&&!currentButton?.contains(e.target)){
+        currentMenu.classList.remove('open');
+        currentButton?.setAttribute('aria-expanded','false');
+        currentButton?.setAttribute('aria-label','Abrir menú');
+      }
+    });
+  }
 
   if(bell&&bellMenu){
     bell.addEventListener('click',e=>{
