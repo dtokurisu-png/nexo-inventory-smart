@@ -2675,3 +2675,169 @@ html,body{margin:0}
   color:#111827!important
 }
 
+/* =========================================================
+   WORKSPACE QR INVITATIONS · 2026-09-30
+   Reusable link + QR, native share, downloadable invite image.
+========================================================= */
+.nxo-invite-share{
+  display:grid;
+  gap:15px
+}
+.nxo-invite-share-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 13px;
+  border:1px solid var(--nxo-line);
+  border-radius:14px;
+  background:rgba(255,255,255,.035)
+}
+.nxo-invite-share-logo{
+  width:54px;
+  height:54px;
+  flex:0 0 54px;
+  overflow:hidden;
+  border-radius:13px;
+  display:grid;
+  place-items:center;
+  background:rgba(255,255,255,.07);
+  border:1px solid var(--nxo-line2);
+  font-size:22px
+}
+.nxo-invite-share-logo img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover
+}
+.nxo-invite-share-head>div:last-child{
+  min-width:0;
+  display:grid;
+  gap:3px
+}
+.nxo-invite-share-head strong{
+  font-size:14px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis
+}
+.nxo-invite-share-head span{
+  color:var(--nxo-muted);
+  font-size:10px
+}
+.nxo-invite-qr-card{
+  display:grid;
+  justify-items:center;
+  gap:10px;
+  padding:18px;
+  border:1px solid var(--nxo-line);
+  border-radius:16px;
+  background:rgba(255,255,255,.035)
+}
+.nxo-invite-qr{
+  width:288px;
+  min-height:288px;
+  max-width:100%;
+  display:grid;
+  place-items:center;
+  padding:12px;
+  border-radius:16px;
+  background:#fff;
+  border:1px solid #d8dfeb
+}
+.nxo-invite-qr canvas,
+.nxo-invite-qr img{
+  display:block;
+  width:264px!important;
+  height:264px!important;
+  max-width:100%!important
+}
+.nxo-invite-qr-card p{
+  margin:0;
+  max-width:420px;
+  color:var(--nxo-muted);
+  font-size:11px;
+  line-height:1.55;
+  text-align:center
+}
+.nxo-qr-loading,
+.nxo-qr-error{
+  padding:20px;
+  color:#5b6780;
+  font-size:11px;
+  line-height:1.5;
+  text-align:center
+}
+.nxo-qr-error{
+  color:#8b2d2d
+}
+.nxo-invite-link-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px
+}
+.nxo-invite-link-row .nxo-input{
+  font-size:10px
+}
+.nxo-invite-share-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px
+}
+.nxo-invite-manual{
+  border-top:1px solid var(--nxo-line);
+  padding-top:12px
+}
+.nxo-invite-manual summary{
+  cursor:pointer;
+  color:var(--nxo-text-soft);
+  font-size:11px;
+  font-weight:800
+}
+.nxo-invite-manual>p{
+  margin:8px 0 10px;
+  color:var(--nxo-muted);
+  font-size:10px;
+  line-height:1.5
+}
+.nxo-invite-manual-code{
+  display:grid;
+  gap:8px;
+  margin:0 0 10px;
+  padding:12px;
+  border:1px solid var(--nxo-line);
+  border-radius:12px;
+  background:rgba(255,255,255,.035)
+}
+.nxo-invite-manual-code strong{
+  font-size:20px;
+  letter-spacing:.07em;
+  word-break:break-all
+}
+.nxo-invite-manual-code span{
+  color:var(--nxo-muted);
+  font-size:10px
+}
+.nxo-app[data-theme="day"] .nxo-invite-share-head,
+.nxo-app[data-theme="day"] .nxo-invite-qr-card,
+.nxo-app[data-theme="day"] .nxo-invite-manual-code{
+  background:rgba(255,255,255,.72)!important;
+  border-color:#b9cbed!important
+}
+@media(max-width:560px){
+  .nxo-invite-qr{
+    width:min(288px,100%);
+    min-height:auto
+  }
+  .nxo-invite-link-row{
+    grid-template-columns:1fr
+  }
+  .nxo-invite-share-actions{
+    display:grid;
+    grid-template-columns:1fr
+  }
+  .nxo-invite-share-actions .nxo-btn{
+    width:100%
+  }
+}
+
