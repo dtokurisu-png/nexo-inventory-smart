@@ -10,11 +10,14 @@ const pendingRemote=new Map();
 let stream=null;
 let current=null;
 let syncingPending=false;
+let pendingRetryTimer=null;
 
 const es=()=>document.documentElement.lang!=='en';
 const tr=(a,b)=>es()?a:b;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],preparations:[]};
+const photoScopeId=()=>String(data()?.context?.photoScopeId||'').trim();
+const canClaimLegacy=()=>data()?.capabilities?.canShare===true;
 
 const style=document.createElement('style');
 style.id='nexo-photo-system-v1-style';
@@ -46,16 +49,44 @@ function makeLayer(html){closeLayer();const layer=document.createElement('div');
 function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:'key'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 async function putRecord(rec){const db=await openDb();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(rec);tx.oncomplete=()=>{db.close();resolve(rec)};tx.onerror=()=>{db.close();reject(tx.error)}})}
 async function getRecords(){const db=await openDb();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly'),q=tx.objectStore(STORE).getAll();q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error);tx.oncomplete=()=>db.close()})}
+async function deleteRecord(key){const db=await openDb();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(key);tx.oncomplete=()=>{db.close();resolve(true)};tx.onerror=()=>{db.close();reject(tx.error)}})}
 async function hasNewRecords(){try{return (await getRecords()).length>0}catch(_){return false}}
-async function migrateLegacy(){try{if(await hasNewRecords())return;if(typeof indexedDB.databases!=='function')return;const dbs=await indexedDB.databases();if(!dbs.some(x=>x.name===OLD_DB))return;const old=await new Promise((resolve,reject)=>{const r=indexedDB.open(OLD_DB);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});if(!old.objectStoreNames.contains('media')){old.close();return}const rows=await new Promise((resolve,reject)=>{const tx=old.transaction('media','readonly'),q=tx.objectStore('media').getAll();q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error);tx.oncomplete=()=>old.close()});for(const row of rows){if(!row?.type||!row?.id||!row?.blob)continue;await putRecord({key:keyOf(row.type,row.id),entityType:row.type,entityId:row.id,blob:row.blob,name:row.name||'photo.jpg',mime:row.mime||row.blob.type||'image/jpeg',size:row.size||row.blob.size||0,updatedAt:row.updatedAt||Date.now()})}}catch(_){}}
+async function migrateLegacy(){try{if(await hasNewRecords())return;if(typeof indexedDB.databases!=='function')return;const dbs=await indexedDB.databases();if(!dbs.some(x=>x.name===OLD_DB))return;const old=await new Promise((resolve,reject)=>{const r=indexedDB.open(OLD_DB);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});if(!old.objectStoreNames.contains('media')){old.close();return}const rows=await new Promise((resolve,reject)=>{const tx=old.transaction('media','readonly'),q=tx.objectStore('media').getAll();q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error);tx.oncomplete=()=>old.close()});for(const row of rows){if(!row?.type||!row?.id||!row?.blob)continue;await putRecord({key:keyOf(row.type,row.id),entityType:row.type,entityId:row.id,blob:row.blob,name:row.name||'photo.jpg',mime:row.mime||row.blob.type||'image/jpeg',size:row.size||row.blob.size||0,updatedAt:row.updatedAt||Date.now(),synced:false,scopeId:'',legacy:true})}}catch(_){}}
 
 function objectUrl(rec){const old=objectUrls.get(rec.key);if(old&&old.updatedAt===rec.updatedAt)return old.url;if(old)URL.revokeObjectURL(old.url);const url=URL.createObjectURL(rec.blob);objectUrls.set(rec.key,{updatedAt:rec.updatedAt,url});return url}
 function applyToData(type,id,image){const d=data();if(type==='recipe'){const r=(d.recipes||[]).find(x=>x._id===id);if(r)r.heroImage=image}else if(type==='ingredient'){const i=(d.ingredients||[]).find(x=>x._id===id);if(i)i.baseImage=image}else if(type==='preparation'){const p=(d.preparations||[]).find(x=>x._id===id);if(p)p.image=image}}
 function publishPhoto(type,id,value,source='local'){const image=typeof value==='string'?{url:value,src:value,source}:{...(value||{}),src:value?.src||value?.url||'',source};applyToData(type,id,image);window.dispatchEvent(new CustomEvent('NEXO_PHOTO_CHANGED',{detail:{entityType:type,entityId:id,image,source}}))}
 function requestHostSave(rec){const requestId='photo_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),file=rec.blob||rec.file;return new Promise((resolve,reject)=>{if(!file){reject(new Error('PHOTO_FILE_MISSING'));return}const timer=setTimeout(()=>{pendingRemote.delete(requestId);reject(new Error('PHOTO_SAVE_TIMEOUT'))},90000);pendingRemote.set(requestId,{resolve,reject,timer});parent.postMessage({source:'nexo-dm-photo',type:'DM_SAVE_PHOTO_FILE',payload:{requestId,entityType:rec.entityType,entityId:rec.entityId,fileName:rec.name||'photo.jpg',mimeType:rec.mime||file.type||'image/jpeg',sizeInBytes:rec.size||file.size||0,file}},'*')})}
-async function saveRecordCentral(rec){const saved=await requestHostSave(rec),image=saved?.image;if(!image?.id||!image?.url)throw new Error('INVALID_SAVED_IMAGE');rec.synced=true;rec.remoteImage=image;rec.updatedAt=Date.now();await putRecord(rec);publishPhoto(rec.entityType,rec.entityId,image,'server');return image}
-async function hydrate(){try{const rows=await getRecords();for(const rec of rows){if(rec.synced&&rec.remoteImage?.url)publishPhoto(rec.entityType,rec.entityId,rec.remoteImage,'server-cache');else if(rec.blob)publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending')}}catch(_){}}
-async function pendingPhotoRecords(){try{return(await getRecords()).filter(rec=>!rec.synced&&rec.blob)}catch(_){return[]}}
+async function saveRecordCentral(rec){
+  const saved=await requestHostSave(rec),image=saved?.image;
+  if(!image?.id||!image?.url)throw new Error('INVALID_SAVED_IMAGE');
+  const targetType=saved?.entityType||rec.entityType,targetId=saved?.entityId||rec.entityId;
+  await deleteRecord(rec.key);
+  publishPhoto(targetType,targetId,image,'server');
+  return image
+}
+async function scopedPendingRows(){
+  const rows=await getRecords(),scope=photoScopeId();
+  if(!scope)return[];
+  const mine=[],legacy=[];
+  for(const rec of rows){
+    if(rec?.synced===true){try{await deleteRecord(rec.key)}catch(_){}continue}
+    if(!rec?.blob)continue;
+    if(rec.scopeId===scope)mine.push(rec);
+    else if(!rec.scopeId&&rec.legacy===true&&canClaimLegacy())legacy.push(rec)
+  }
+  if(legacy.length){
+    for(const rec of legacy){
+      rec.scopeId=scope;
+      rec.legacyClaimedAt=Date.now();
+      await putRecord(rec);
+      mine.push(rec)
+    }
+  }
+  return mine
+}
+async function hydrate(){try{const rows=await scopedPendingRows();for(const rec of rows){if(rec.blob)publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending')}}catch(_){}}
+async function pendingPhotoRecords(){try{return await scopedPendingRows()}catch(_){return[]}}
 async function refreshPendingBar(lastError=''){
   const rows=await pendingPhotoRecords(),n=rows.length;
   if(!n){syncBar.hidden=true;syncBarButton.disabled=false;return 0}
@@ -63,7 +94,12 @@ async function refreshPendingBar(lastError=''){
   syncBarText.textContent=(es()?n+' foto'+(n===1?'':'s')+' pendiente'+(n===1?'':'s')+' de sincronizar':n+' photo'+(n===1?'':'s')+' waiting to sync')+(lastError?' · '+lastError:'');
   syncBarButton.textContent=es()?'Sincronizar ahora':'Sync now';
   syncBarButton.disabled=syncingPending;
+  if(n&&navigator.onLine)schedulePendingRetry();
   return n
+}
+function schedulePendingRetry(delay=60000){
+  clearTimeout(pendingRetryTimer);
+  pendingRetryTimer=setTimeout(()=>syncPendingRecords(),delay)
 }
 async function syncPendingRecords({interactive=false}={}){
   if(syncingPending)return;
@@ -72,10 +108,15 @@ async function syncPendingRecords({interactive=false}={}){
   let synced=0,failed=0,lastError='';
   try{
     const rows=await pendingPhotoRecords();
-    for(const rec of rows){
-      try{await saveRecordCentral(rec);synced++}
-      catch(err){failed++;lastError=String(err?.message||err||'PHOTO_SAVE_FAILED')}
-    }
+    let cursor=0;
+    const worker=async()=>{
+      while(cursor<rows.length){
+        const rec=rows[cursor++];
+        try{await saveRecordCentral(rec);synced++}
+        catch(err){failed++;lastError=String(err?.message||err||'PHOTO_SAVE_FAILED')}
+      }
+    };
+    await Promise.all(Array.from({length:Math.min(3,rows.length||1)},()=>worker()));
   }catch(err){failed++;lastError=String(err?.message||err)}
   finally{
     syncingPending=false;
@@ -98,13 +139,13 @@ function cameraFallback(target){const input=document.createElement('input');inpu
 async function openCamera(target){if(!navigator.mediaDevices?.getUserMedia){cameraFallback(target);return}try{const layer=makeLayer(`<h3>${esc(tr('Cámara','Camera'))}</h3><p>${esc(tr('Alinea la imagen y toca Tomar foto.','Frame the image and tap Take photo.'))}</p><video id="nexoPhotoVideo" class="nexoPhotoVideo" autoplay playsinline muted></video><div class="nexoPhotoActions"><button id="nexoCapture" class="nexoPhotoPrimary">📷 ${esc(tr('Tomar foto','Take photo'))}</button><button id="nexoCameraCancel" class="nexoPhotoSecondary">${esc(tr('Cancelar','Cancel'))}</button></div>`);stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},aspectRatio:{ideal:1},width:{ideal:1600},height:{ideal:1600}},audio:false});const video=layer.querySelector('#nexoPhotoVideo');video.srcObject=stream;layer.querySelector('#nexoCameraCancel').onclick=closeLayer;layer.querySelector('#nexoCapture').onclick=()=>capture(target,video)}catch(_){cameraFallback(target)}}
 function capture(target,video){const w=video.videoWidth||1280,h=video.videoHeight||720,src=Math.min(w,h),sx=(w-src)/2,sy=(h-src)/2,out=Math.min(src,2048),canvas=document.createElement('canvas');canvas.width=out;canvas.height=out;canvas.getContext('2d').drawImage(video,sx,sy,src,src,0,0,out,out);canvas.toBlob(blob=>{if(!blob)return;const file=new File([blob],`photo-${Date.now()}.jpg`,{type:'image/jpeg'});if(validateFile(file))review(target,file)},'image/jpeg',.9)}
 function review(target,file){stopCamera();const preview=URL.createObjectURL(file);current={target,file,preview};const layer=makeLayer(`<h3>${esc(tr('Revisar foto','Review photo'))}</h3><p>${esc(tr('Si esta es la imagen correcta, toca Guardar foto.','If this is the correct image, tap Save photo.'))}</p><img class="nexoPhotoPreview" src="${esc(preview)}" alt=""><div class="nexoPhotoActions"><button id="nexoSavePhoto" class="nexoPhotoPrimary">✓ ${esc(tr('Guardar foto','Save photo'))}</button><button id="nexoChangePhoto" class="nexoPhotoSecondary">↻ ${esc(tr('Cambiar','Change'))}</button></div><button id="nexoReviewCancel" class="nexoPhotoCancel">${esc(tr('Cancelar','Cancel'))}</button><p class="nexoPhotoHint">${esc(tr('La foto se guardará en el sistema y quedará disponible en los demás dispositivos. También se conservará una copia local para uso sin conexión.','The photo will be saved to the system and become available on other devices. A local offline copy will also be kept.'))}</p>`);current={target,file,preview};layer.querySelector('#nexoSavePhoto').onclick=saveCurrent;layer.querySelector('#nexoChangePhoto').onclick=()=>{const t=current?.target;if(current?.preview)URL.revokeObjectURL(current.preview);current=null;openChooser(t)};layer.querySelector('#nexoReviewCancel').onclick=closeLayer}
-async function saveCurrent(){const c=current;if(!c)return;const button=document.getElementById('nexoSavePhoto');if(button){button.disabled=true;button.textContent=tr('Guardando en el sistema…','Saving to system…')}const rec={key:keyOf(c.target.entityType,c.target.entityId),entityType:c.target.entityType,entityId:c.target.entityId,blob:c.file,name:c.file.name||'photo.jpg',mime:c.file.type||'image/jpeg',size:c.file.size,updatedAt:Date.now(),synced:false,remoteImage:null};try{await putRecord(rec);publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending');await saveRecordCentral(rec);await refreshPendingBar();toast(tr('✓ Foto guardada en Wix y disponible en otros dispositivos','✓ Photo saved to Wix and available on other devices'),3200);closeLayer()}catch(err){console.error('[NEXO/PHOTO]',err);try{await putRecord(rec)}catch(_){}publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending');await refreshPendingBar(String(err?.message||err||''));toast(tr('Foto guardada temporalmente. Usa “Sincronizar ahora” cuando estés conectado.','Photo saved temporarily. Use “Sync now” when online.'),5200);closeLayer()}}
+async function saveCurrent(){const c=current;if(!c)return;const button=document.getElementById('nexoSavePhoto');if(button){button.disabled=true;button.textContent=tr('Guardando en el sistema…','Saving to system…')}const rec={key:keyOf(c.target.entityType,c.target.entityId),entityType:c.target.entityType,entityId:c.target.entityId,blob:c.file,name:c.file.name||'photo.jpg',mime:c.file.type||'image/jpeg',size:c.file.size,updatedAt:Date.now(),synced:false,scopeId:photoScopeId(),workspaceId:String(data()?.context?.workspaceId||''),remoteImage:null};try{await putRecord(rec);publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending');await saveRecordCentral(rec);await refreshPendingBar();toast(tr('✓ Foto guardada en Wix y disponible en otros dispositivos','✓ Photo saved to Wix and available on other devices'),3200);closeLayer()}catch(err){console.error('[NEXO/PHOTO]',err);try{await putRecord(rec)}catch(_){}publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending');await refreshPendingBar(String(err?.message||err||''));toast(tr('Foto guardada temporalmente. Usa “Sincronizar ahora” cuando estés conectado.','Photo saved temporarily. Use “Sync now” when online.'),5200);closeLayer()}}
 
 document.addEventListener('click',e=>{const control=e.target.closest?.('[data-product-photo],[data-photo-target]');if(!control)return;const target=targetFromButton(control);if(!target)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openChooser(target)},true);
 syncBarButton.onclick=()=>syncPendingRecords({interactive:true});
-addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(!m?.type)return;const p=m.payload||{};if(m.type==='DM_PHOTO_SAVED'){const wait=pendingRemote.get(p.requestId);if(wait){clearTimeout(wait.timer);pendingRemote.delete(p.requestId);wait.resolve(p)}return}if(m.type==='DM_PHOTO_ERROR'){const wait=pendingRemote.get(p.requestId);if(wait){clearTimeout(wait.timer);pendingRemote.delete(p.requestId);wait.reject(new Error(p.error||'PHOTO_SAVE_FAILED'))}return}if(m.type==='MENU_DATA_LOADED'){setTimeout(async()=>{await hydrate();await refreshPendingBar();await syncPendingRecords()},0)}});
+addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(!m?.type)return;const p=m.payload||{};if(m.type==='DM_PHOTO_SAVED'){const wait=pendingRemote.get(p.requestId);if(wait){clearTimeout(wait.timer);pendingRemote.delete(p.requestId);wait.resolve(p)}return}if(m.type==='DM_PHOTO_ERROR'){const wait=pendingRemote.get(p.requestId);if(wait){clearTimeout(wait.timer);pendingRemote.delete(p.requestId);wait.reject(new Error(p.error||'PHOTO_SAVE_FAILED'))}return}if(m.type==='MENU_DATA_LOADED'){clearTimeout(pendingRetryTimer);setTimeout(async()=>{await hydrate();await refreshPendingBar();await syncPendingRecords()},0)}});
 addEventListener('online',()=>setTimeout(()=>syncPendingRecords(),300));
-addEventListener('beforeunload',()=>{stopCamera();for(const item of objectUrls.values())URL.revokeObjectURL(item.url)});
+addEventListener('beforeunload',()=>{clearTimeout(pendingRetryTimer);stopCamera();for(const item of objectUrls.values())URL.revokeObjectURL(item.url)});
 window.NEXO_PHOTO_API={syncPending:()=>syncPendingRecords({interactive:true}),pending:pendingPhotoRecords,refresh:refreshPendingBar};
 (async()=>{await migrateLegacy();await hydrate();await refreshPendingBar();if(navigator.onLine)setTimeout(()=>syncPendingRecords(),600)})();
 })();
