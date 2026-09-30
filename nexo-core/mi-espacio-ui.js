@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=owner-role-next-profile-20260930-36';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=profile-photo-20260930-37';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
-const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=owner-role-next-profile-20260930-36';
+const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=profile-photo-20260930-37';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -1149,6 +1149,7 @@ function hasPerm(key){const list=workspace?.role?.permissions||workspace?.member
 function topbar(mode){
   const isWorkspace=mode==='workspace';
   const name=personal?.profile?.displayName||'Usuario Nexo';
+  const profilePhoto=String(personal?.profile?.photoImage?.url||'').trim();
   const wsName=workspace?.workspace?.name||'Workspace';
   const role=isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):'Cuenta personal';
   const perms=workspace?.role?.permissions||[];
@@ -1187,13 +1188,15 @@ function topbar(mode){
         '<button type="button" class="nxo-theme-button" id="nxo-theme-toggle" aria-label="Cambiar tema" aria-pressed="false"></button>'+
         notification+
         '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
-          '<span class="nxo-avatar">'+esc(initials(name))+'</span>'+
+          '<span class="nxo-avatar">'+(profilePhoto?'<img src="'+esc(profilePhoto)+'" alt="'+esc(name+' foto de perfil')+'">':esc(initials(name)))+'</span>'+
           '<span class="nxo-nav-account-copy"><span class="nxo-nav-account-name-row"><strong>'+esc(name)+'</strong><small class="nxo-nav-account-role">'+esc(role)+'</small></span></span>'+
           '<span class="nxo-nav-caret">⌄</span>'+
         '</button>'+
         '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
+          '<button type="button" data-account-action="photo">Cambiar foto de perfil</button>'+
           '<button type="button" data-account-action="switch">Cambiar cuenta</button>'+
           '<button type="button" class="danger" data-account-action="logout">Cerrar sesión</button>'+
+          '<input type="file" id="nxo-profile-photo-input" class="nxo-profile-photo-input" accept="image/png,image/jpeg,image/webp" hidden>'+
         '</div>'+
       '</div>'+
     '</div>'+
@@ -1209,6 +1212,7 @@ function bindTopbar(mode){
   const themeButton=document.getElementById('nxo-theme-toggle');
   const mobileButton=document.getElementById('nxo-mobile-menu-button');
   const mobileMenu=document.getElementById('nxo-nav-collapse');
+  const profilePhotoInput=document.getElementById('nxo-profile-photo-input');
   const closeMobileMenu=()=>{
     mobileMenu?.classList.remove('open');
     mobileButton?.setAttribute('aria-expanded','false');
@@ -1283,9 +1287,21 @@ function bindTopbar(mode){
     }
   },{once:true});
 
+  profilePhotoInput?.addEventListener('change',()=>{
+    const file=profilePhotoInput.files?.[0]||null;
+    profilePhotoInput.value='';
+    if(file)uploadProfilePhoto(file,isWorkspace);
+  });
+
   document.querySelectorAll('[data-account-action]').forEach(button=>{
     button.addEventListener('click',()=>{
       const action=button.dataset.accountAction;
+      if(action==='photo'){
+        menu?.classList.remove('open');
+        account?.setAttribute('aria-expanded','false');
+        profilePhotoInput?.click();
+        return;
+      }
       const u=new URL(siteBase()+'/blank-8');
       u.searchParams.set('nxoAccountAction',action);
       location.assign(u.href);
@@ -1514,6 +1530,34 @@ async function changeRole(memberId,roleKey){try{await api('workspace.role',{work
 async function removeMember(memberId){if(!confirm('¿Quitar a este miembro del Workspace?'))return;try{await api('workspace.remove',{workspaceId:workspace.workspace.id,targetMemberId:memberId});toast('Miembro removido');await loadMembers()}catch(e){toast(e.message||String(e))}}
 async function loadWorkspaceSettings(){const zone=document.getElementById('nxo-settings-zone');if(!zone)return;try{workspaceToolConfig=await api('workspace.tools',{workspaceId:workspace.workspace.id});const ws=workspace.workspace||{},logo=mediaUrl(ws.logoImage);zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-bottom:14px"><div class="nxo-section-head"><div><h3>Información del Workspace</h3><p>Nombre, descripción y logo visibles para sus miembros.</p></div></div><div class="nxo-workspace-logo-settings"><div class="nxo-workspace-logo-preview">'+(logo?'<img src="'+esc(logo)+'" alt="'+esc((ws.name||'Workspace')+' logo')+'">':'<span>⌂</span>')+'</div><div class="nxo-workspace-logo-copy"><strong>Logo del Workspace</strong><p>PNG, JPG, WEBP o SVG · máximo 8 MB.</p><input id="nxo-workspace-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden><button id="nxo-workspace-logo-change" class="nxo-btn" type="button">'+(logo?'Cambiar logo':'Subir logo')+'</button></div></div><div class="nxo-field"><label>Nombre</label><input id="nxo-settings-name" class="nxo-input" value="'+esc(ws.name||'')+'"></div><div class="nxo-field"><label>Descripción</label><textarea id="nxo-settings-desc" class="nxo-textarea">'+esc(ws.description||'')+'</textarea></div><div class="nxo-modal-actions"><button id="nxo-settings-save" class="nxo-btn nxo-btn-gold">Guardar cambios</button></div></div><div class="nxo-panel" style="padding:18px"><div class="nxo-section-head"><div><h3>Herramientas del Workspace</h3><p>Activa herramientas y decide si todos los miembros o solo personas concretas pueden verlas.</p></div></div><div class="nxo-tool-config">'+workspaceToolConfig.tools.map(t=>{const mode=t.accessMode==='restricted'?'Restringido · '+(t.allowedMemberIds||[]).length+' miembro'+((t.allowedMemberIds||[]).length===1?'':'s'):'Todo el Workspace';return '<div class="nxo-tool-toggle"><div><h4>'+esc(t.nameEs||t.toolKey)+'</h4><p>'+esc(t.descriptionEs||'')+' · '+esc(statusText(t.status))+'</p><div class="nxo-access-summary">'+esc(mode)+'</div></div><div class="nxo-tool-actions"><button class="nxo-btn" data-tool-access="'+esc(t.toolKey)+'" '+(t.enabled?'':'disabled')+'>Parámetros de acceso</button><div class="nxo-switch '+(t.enabled?'on':'')+'" data-tool-toggle="'+esc(t.toolKey)+'" data-enabled="'+(t.enabled?'1':'0')+'"><span></span></div></div></div>'}).join('')+'</div></div>';document.getElementById('nxo-settings-save')?.addEventListener('click',saveWorkspaceSettings);const logoInput=document.getElementById('nxo-workspace-logo-file');document.getElementById('nxo-workspace-logo-change')?.addEventListener('click',()=>logoInput?.click());logoInput?.addEventListener('change',()=>{const file=logoInput.files?.[0];if(file)uploadWorkspaceLogo(file)});document.querySelectorAll('[data-tool-toggle]').forEach(x=>x.onclick=()=>toggleTool(x.dataset.toolToggle,x.dataset.enabled!=='1'));document.querySelectorAll('[data-tool-access]').forEach(x=>x.onclick=()=>toolAccessModal(x.dataset.toolAccess))}catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||e)+'</div>'}}
 async function toolAccessModal(toolKey){const tool=(workspaceToolConfig?.tools||[]).find(t=>t.toolKey===toolKey);if(!tool)return;try{if(!workspaceMembers)workspaceMembers=await api('workspace.members',{workspaceId:workspace.workspace.id});const current=new Set(tool.allowedMemberIds||[]);const members=workspaceMembers?.members||[];modal('Parámetros de acceso · '+(tool.nameEs||tool.toolKey),'<div class="nxo-field"><label>Disponibilidad</label><select id="nxo-access-mode" class="nxo-select"><option value="workspace" '+(tool.accessMode!=='restricted'?'selected':'')+'>Todo el Workspace</option><option value="restricted" '+(tool.accessMode==='restricted'?'selected':'')+'>Solo miembros seleccionados</option></select></div><div id="nxo-access-members" class="nxo-access-list">'+members.map(m=>'<label class="nxo-check"><input type="checkbox" value="'+esc(m.memberId)+'" '+(current.has(m.memberId)?'checked':'')+'><span><strong>'+esc(m.displayName)+'</strong><small>'+esc(roleName(m.roleKey,m.role))+'</small></span></label>').join('')+'</div><p class="nxo-muted" style="line-height:1.5;margin:10px 0 0">Los administradores con permiso de configurar herramientas conservan visibilidad para poder administrarlas.</p><div class="nxo-modal-actions"><button id="nxo-access-save" class="nxo-btn nxo-btn-gold">Guardar acceso</button></div>',o=>{const select=o.querySelector('#nxo-access-mode'),list=o.querySelector('#nxo-access-members'),save=o.querySelector('#nxo-access-save');const sync=()=>{list.style.display=select.value==='restricted'?'grid':'none'};select.onchange=sync;sync();save.onclick=async()=>{const mode=select.value;const allowed=mode==='restricted'?[...o.querySelectorAll('#nxo-access-members input:checked')].map(x=>x.value):[];if(mode==='restricted'&&!allowed.length){toast('Selecciona al menos un miembro');return}save.disabled=true;try{await api('workspace.tool.access',{workspaceId:workspace.workspace.id,toolKey,input:{accessMode:mode,allowedMemberIds:allowed}});o.remove();toast('Acceso actualizado');workspace=await api('workspace.open',{workspaceId:workspace.workspace.id});await loadWorkspaceSettings()}catch(e){save.disabled=false;toast(e.message||String(e))}}})}catch(e){toast(e.message||String(e))}}
+async function uploadProfilePhoto(file,inWorkspace=false){
+  if(!file)return;
+  const allowed=['image/png','image/jpeg','image/webp'];
+  const mime=String(file.type||'').toLowerCase();
+  if(!allowed.includes(mime)){toast('La foto debe ser PNG, JPG o WEBP');return}
+  if(file.size>8*1024*1024){toast('La foto supera el límite de 8 MB');return}
+  const button=document.querySelector('[data-account-action="photo"]');
+  const oldText=button?.textContent||'Cambiar foto de perfil';
+  if(button){button.disabled=true;button.textContent='Subiendo…'}
+  try{
+    const ticket=await api('profile.photo.upload-url',{
+      input:{fileName:file.name||'profile-photo.jpg',mimeType:mime||'image/jpeg',sizeInBytes:file.size}
+    });
+    const uploadUrl=String(ticket?.uploadUrl||'');
+    if(!uploadUrl)throw new Error('Wix no pudo preparar la subida de la foto');
+    const response=await fetch(uploadUrl,{method:'PUT',headers:{'Content-Type':mime||'image/jpeg'},body:file});
+    let body={};try{body=await response.json()}catch(_){}
+    if(!response.ok)throw new Error(String(body?.message||body?.error||('UPLOAD_HTTP_'+response.status)));
+    const fileId=String(body?.file?.id||body?.file?._id||body?.id||body?._id||'');
+    if(!fileId)throw new Error('Wix no devolvió el ID de la foto');
+    personal=await api('profile.photo.commit',{input:{fileId}});
+    toast('Foto de perfil actualizada');
+    if(inWorkspace)renderWorkspace();else renderPersonal();
+  }catch(e){
+    if(button){button.disabled=false;button.textContent=oldText}
+    toast(e.message||String(e))
+  }
+}
 async function uploadWorkspaceLogo(file){
   if(!file||!workspace?.workspace?.id)return;
   const button=document.getElementById('nxo-workspace-logo-change');
