@@ -875,7 +875,214 @@ function mountNexoOrganicBackground(){
   init();
   frame(performance.now());
 }
-function html(v){
+
+/* =========================================================
+   NEXA CORE v1 · transversal assistant shell
+========================================================= */
+let nexaState=null,nexaContextCacheKey="",nexaLoading=false,nexaSending=false;
+
+function nexaContextInput(){
+  const isWorkspace=!!workspace?.workspace?.id;
+  return {
+    workspaceId:isWorkspace?workspace.workspace.id:"",
+    currentToolKey:isWorkspace?"workspace":"mi-espacio",
+    currentToolLabel:isWorkspace?("Workspace · "+(workspace.workspace.name||"Nexo")):"Mi espacio"
+  };
+}
+
+function nexaContextKey(){
+  const x=nexaContextInput();
+  return [x.workspaceId||"personal",x.currentToolKey].join("|");
+}
+
+function nexaTime(value){
+  try{return new Date(value||Date.now()).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}catch(_){return""}
+}
+
+function nexaRenderMessages(messages=[]){
+  const zone=document.getElementById("nxa-messages");
+  if(!zone)return;
+  if(!messages.length){
+    zone.innerHTML='<div class="nxa-empty"><strong>Hola, soy Nexa.</strong><span>Puedo ayudarte a navegar por Nexo Group y entender el contexto en el que estás trabajando.</span><small>Prueba: “Abre Inventario Smart” o “¿Dónde estoy?”</small></div>';
+    return;
+  }
+  zone.innerHTML=messages.map(m=>
+    '<div class="nxa-message '+(m.role==="user"?"user":"assistant")+'">'+
+      '<div class="nxa-message-body">'+esc(m.content||"")+'</div>'+
+      '<small>'+esc(nexaTime(m.at))+'</small>'+
+    '</div>'
+  ).join("");
+  requestAnimationFrame(()=>{zone.scrollTop=zone.scrollHeight});
+}
+
+function nexaSetStatus(textValue,state=""){
+  const x=document.getElementById("nxa-status");
+  if(!x)return;
+  x.textContent=textValue||"";
+  x.dataset.state=state;
+}
+
+function nexaSyncHeader(){
+  const ctx=nexaState?.context;
+  const title=document.getElementById("nxa-context");
+  if(title){
+    title.textContent=ctx
+      ?((ctx.workspaceName?ctx.workspaceName+" · ":"")+(ctx.currentToolLabel||"Nexo Group"))
+      :"Asistente de Nexo Group";
+  }
+  const badge=document.getElementById("nxa-role");
+  if(badge){
+    badge.textContent=ctx?.roleName||"";
+    badge.hidden=!ctx?.roleName;
+  }
+}
+
+async function nexaLoad(force=false){
+  if(!sessionToken||nexaLoading)return;
+  const key=nexaContextKey();
+  if(!force&&nexaState&&nexaContextCacheKey===key){
+    nexaSyncHeader();
+    nexaRenderMessages(nexaState.messages||[]);
+    return;
+  }
+  nexaLoading=true;
+  nexaSetStatus("Cargando contexto…","loading");
+  try{
+    const data=await api("nexa.bootstrap",{input:nexaContextInput()});
+    nexaState=data||null;
+    nexaContextCacheKey=key;
+    nexaSyncHeader();
+    nexaRenderMessages(data?.messages||[]);
+    nexaSetStatus(data?.providerConfigured?"IA conectada":"Navegación local activa",data?.providerConfigured?"online":"local");
+  }catch(e){
+    nexaSetStatus(e.message||String(e),"error");
+  }finally{
+    nexaLoading=false;
+  }
+}
+
+function nexaOpen(){
+  const panel=document.getElementById("nxa-panel");
+  const launcher=document.getElementById("nxa-launcher");
+  if(!panel)return;
+  panel.classList.add("open");
+  panel.setAttribute("aria-hidden","false");
+  launcher?.setAttribute("aria-expanded","true");
+  nexaLoad(false);
+  setTimeout(()=>document.getElementById("nxa-input")?.focus(),80);
+}
+
+function nexaClose(){
+  const panel=document.getElementById("nxa-panel");
+  panel?.classList.remove("open");
+  panel?.setAttribute("aria-hidden","true");
+  document.getElementById("nxa-launcher")?.setAttribute("aria-expanded","false");
+}
+
+function nexaPerformAction(action){
+  if(!action||action.type!=="navigate")return;
+  if(action.target==="mi-espacio"){
+    location.assign(routeUrl("/blank-8"));
+    return;
+  }
+  if(action.target==="centro-desarrollo"){
+    location.assign(centerDevelopmentUrl());
+    return;
+  }
+  const route=routeUrl(action.routePath);
+  if(!route){toast("Nexa no encontró una ruta disponible.");return}
+  const wsid=workspace?.workspace?.id||"";
+  const label=wsid?(workspace?.workspace?.name||"Workspace"):"Mi espacio";
+  location.assign(launchWithBack(route,label,wsid));
+}
+
+async function nexaSend(){
+  if(nexaSending)return;
+  const input=document.getElementById("nxa-input");
+  const button=document.getElementById("nxa-send");
+  const message=input?.value.trim()||"";
+  if(!message)return;
+  nexaSending=true;
+  if(input){input.value="";input.disabled=true}
+  if(button)button.disabled=true;
+  const optimistic=[
+    ...(nexaState?.messages||[]),
+    {role:"user",content:message,at:new Date().toISOString()}
+  ];
+  nexaRenderMessages(optimistic);
+  nexaSetStatus("Nexa está procesando…","loading");
+  try{
+    const data=await api("nexa.send",{input:{...nexaContextInput(),message}});
+    nexaState={
+      ...(nexaState||{}),
+      context:data?.context||nexaState?.context||null,
+      messages:[...optimistic,(data?.message||{role:"assistant",content:"Listo.",at:new Date().toISOString()})]
+    };
+    nexaSyncHeader();
+    nexaRenderMessages(nexaState.messages);
+    nexaSetStatus(data?.provider==="openai"?"IA conectada":"Navegación local activa",data?.provider==="openai"?"online":"local");
+    if(data?.action)setTimeout(()=>nexaPerformAction(data.action),450);
+  }catch(e){
+    const failed=[...optimistic,{role:"assistant",content:"No pude completar esa solicitud: "+(e.message||String(e)),at:new Date().toISOString()}];
+    nexaState={...(nexaState||{}),messages:failed};
+    nexaRenderMessages(failed);
+    nexaSetStatus("No se pudo completar la solicitud","error");
+  }finally{
+    nexaSending=false;
+    if(input){input.disabled=false;input.focus()}
+    if(button)button.disabled=false;
+  }
+}
+
+function mountNexa(){
+  if(!sessionToken)return;
+  const r=root();
+  const contextKey=nexaContextKey();
+  if(nexaContextCacheKey&&nexaContextCacheKey!==contextKey){
+    nexaState=null;
+    nexaContextCacheKey="";
+  }
+  let launcher=document.getElementById("nxa-launcher");
+  if(!launcher){
+    launcher=document.createElement("button");
+    launcher.id="nxa-launcher";
+    launcher.className="nxa-launcher";
+    launcher.type="button";
+    launcher.setAttribute("aria-label","Abrir Nexa");
+    launcher.setAttribute("aria-expanded","false");
+    launcher.innerHTML='<span class="nxa-orb" aria-hidden="true">N</span><strong>Nexa</strong>';
+    r.appendChild(launcher);
+    launcher.addEventListener("click",()=>document.getElementById("nxa-panel")?.classList.contains("open")?nexaClose():nexaOpen());
+  }
+
+  let panel=document.getElementById("nxa-panel");
+  if(!panel){
+    panel=document.createElement("aside");
+    panel.id="nxa-panel";
+    panel.className="nxa-panel";
+    panel.setAttribute("aria-hidden","true");
+    panel.innerHTML=
+      '<div class="nxa-head">'+
+        '<div class="nxa-identity"><span class="nxa-orb" aria-hidden="true">N</span><div><strong>Nexa</strong><small id="nxa-context">Asistente de Nexo Group</small></div></div>'+
+        '<div class="nxa-head-actions"><span class="nxa-role" id="nxa-role" hidden></span><button id="nxa-close" class="nxa-icon-btn" type="button" aria-label="Cerrar Nexa">✕</button></div>'+
+      '</div>'+
+      '<div class="nxa-status-row"><span class="nxa-status-dot"></span><span id="nxa-status">Preparando Nexa…</span></div>'+
+      '<div class="nxa-messages" id="nxa-messages"></div>'+
+      '<div class="nxa-compose">'+
+        '<textarea id="nxa-input" rows="2" maxlength="8000" placeholder="Escribe a Nexa…"></textarea>'+
+        '<button id="nxa-send" type="button" aria-label="Enviar mensaje">➤</button>'+
+      '</div>';
+    r.appendChild(panel);
+    panel.querySelector("#nxa-close")?.addEventListener("click",nexaClose);
+    panel.querySelector("#nxa-send")?.addEventListener("click",nexaSend);
+    panel.querySelector("#nxa-input")?.addEventListener("keydown",e=>{
+      if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();nexaSend()}
+      if(e.key==="Escape")nexaClose();
+    });
+  }
+  nexaSyncHeader();
+}
+\nfunction html(v){
   const {layer}=ensureOrganicLayers();
   layer.innerHTML=v;
   mountNexoOrganicBackground();
@@ -886,7 +1093,7 @@ function toast(msg){let x=document.querySelector('.nxo-toast');if(x)x.remove();x
 async function api(action,payload={}){
  const h={'Content-Type':'application/json','Accept':'application/json'};
  if(sessionToken)h.Authorization='Bearer '+sessionToken;
- const controller=new AbortController(),requestTimeout=action==='recipe-change.process'?90000:20000,timer=setTimeout(()=>controller.abort(),requestTimeout);
+ const controller=new AbortController(),requestTimeout=action==='recipe-change.process'?90000:(action==='nexa.send'?65000:20000),timer=setTimeout(()=>controller.abort(),requestTimeout);
  try{
   const r=await fetch(API,{method:'POST',cache:'no-store',signal:controller.signal,headers:h,body:JSON.stringify({action,...payload})});
   if(!r.ok)throw accessError('HTTP_'+r.status);
