@@ -1979,3 +1979,42 @@ html,body{margin:0}
   .nxa-role{display:none}
   .nxa-identity small{max-width:160px}
 }
+
+/* =========================================================
+   PENDING NOTE PIN · RECURSO 5 · 2026-09-30
+   Approved SVG replaces the CSS-drawn pin.
+========================================================= */
+.nxo-pinned-note{
+  padding-top:42px!important
+}
+.nxo-note-pin{
+  position:absolute!important;
+  top:-8px!important;
+  left:50%!important;
+  width:34px!important;
+  height:38px!important;
+  margin:0!important;
+  transform:translateX(-50%) rotate(-3deg)!important;
+  transform-origin:center center!important;
+  display:block!important;
+  object-fit:contain!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  filter:drop-shadow(0 4px 4px rgba(0,0,0,.22))!important;
+  pointer-events:none!important
+}
+.nxo-note-pin:after{
+  content:none!important;
+  display:none!important
+}
+@media(max-width:650px){
+  .nxo-pinned-note{padding-top:38px!important}
+  .nxo-note-pin{
+    top:-6px!important;
+    width:30px!important;
+    height:34px!important
+  }
+}
+
