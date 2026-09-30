@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=pending-add-theme-contrast-20260930-41';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=numa-brand-20260930-42';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=pending-add-theme-contrast-20260930-41';
 const ACCESS_REVISION='workspace-access-20260927-3';
@@ -10,7 +10,7 @@ const API=apiBase+'/_functions/nexoMiEspacioUi';
 let accessStage='WAITING_PAGE';
 function accessError(code){return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.')}
 function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r.style.display=visible?'none':'';document.body.classList.toggle('nxo-lock',!visible)}
-function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nmav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
+function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
 const NEXO_THEME_KEY='nexoTheme:v1';
 function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
@@ -1125,7 +1125,7 @@ async function api(action,payload={}){
  }catch(e){if(e.name==='AbortError')throw accessError('REQUEST_TIMEOUT');throw e}
  finally{clearTimeout(timer)}
 }
-function stripBoot(){try{const u=new URL(location.href);['nxm','nxme','nxms','nmav'].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
+function stripBoot(){try{const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
 async function waitBoot(){
  let previous='',deadline=Date.now()+30000;
  try{
