@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260929-search-photo-recovery-14';
-const ENGINE_REVISION='workspace-search-photo-recovery-20260929-14';
+const ACCESS_REVISION='fichas-engine-20260929-photo-scope-15';
+const ENGINE_REVISION='workspace-photo-scope-20260929-15';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -398,12 +398,22 @@ async function savePhotoFromEngine(payload={}){
   if(!fileId)throw new Error('PHOTO_UPLOAD_FILE_ID_MISSING');
 
   const saved=await api('photo.commit',{
-    input:{entityType,entityId,fileId}
+    input:{
+      entityType:ticket?.entityType||entityType,
+      entityId:ticket?.entityId||entityId,
+      fileId
+    }
   });
   const image=saved?.image;
   if(!image?.id||!image?.url)throw new Error('PHOTO_COMMIT_INVALID_IMAGE');
 
-  postToEngine('DM_PHOTO_SAVED',{ok:true,requestId,image});
+  postToEngine('DM_PHOTO_SAVED',{
+    ok:true,
+    requestId,
+    entityType:saved?.entityType||ticket?.entityType||entityType,
+    entityId:saved?.entityId||ticket?.entityId||entityId,
+    image
+  });
   pushEngineData().catch(()=>{});
   return image;
 }
