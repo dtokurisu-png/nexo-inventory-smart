@@ -2529,3 +2529,32 @@ html,body{margin:0}
   border-color:#b9cbed!important
 }
 
+/* =========================================================
+   PENDING ADD BUTTON THEME CONTRAST · 2026-09-30
+   Day = Inventory Smart blue. Night = Nexo gold.
+========================================================= */
+.nxo-app[data-theme="day"] .nxo-pending-add{
+  background:#2f4f93!important;
+  border-color:#172755!important;
+  color:#fff!important;
+  box-shadow:0 5px 12px rgba(23,39,85,.18)!important
+}
+.nxo-app[data-theme="day"] .nxo-pending-add:hover,
+.nxo-app[data-theme="day"] .nxo-pending-add:focus-visible{
+  background:#3b579a!important;
+  border-color:#172755!important;
+  color:#fff!important
+}
+.nxo-app[data-theme="night"] .nxo-pending-add{
+  background:#e1bd69!important;
+  border-color:#f0cf7a!important;
+  color:#17130c!important;
+  box-shadow:0 5px 14px rgba(225,189,105,.18)!important
+}
+.nxo-app[data-theme="night"] .nxo-pending-add:hover,
+.nxo-app[data-theme="night"] .nxo-pending-add:focus-visible{
+  background:#f0cf7a!important;
+  border-color:#f4d98e!important;
+  color:#17130c!important
+}
+
