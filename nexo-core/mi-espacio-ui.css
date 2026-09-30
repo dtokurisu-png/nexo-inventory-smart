@@ -2018,3 +2018,37 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   WORKSPACE DESKTOP ACTIONS · LEFT PLACEMENT · 2026-09-30
+   Desktop: buttons sit immediately beside the "Mis Workspaces" copy.
+   Mobile placement remains inside the hamburger menu.
+========================================================= */
+@media(min-width:761px){
+  .nxo-workspace-list-head{
+    justify-content:flex-start!important;
+    align-items:center!important;
+    gap:14px!important
+  }
+  .nxo-workspace-list-head > div:first-child{
+    flex:0 0 auto!important
+  }
+  .nxo-workspace-desktop-actions{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    flex:0 0 auto!important
+  }
+}
+
+@media(max-width:760px){
+  .nxo-workspace-desktop-actions{
+    display:none!important
+  }
+  .nxo-header-workspace-actions{
+    display:grid!important
+  }
+}
+
