@@ -1,8 +1,9 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260930-prep-opaque-19';
-const ENGINE_REVISION='workspace-prep-opaque-20260930-19';
+const ACCESS_REVISION='fichas-nexa-deep-search-20260930-20';
+const ENGINE_REVISION='workspace-nexa-deep-search-20260930-20';
+const NEXA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/nexa-overlay.css?v=nexa-deep-search-20260930-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -15,10 +16,215 @@ let loadingData=false;
 let importing=false;
 let importPreview=null;
 let importCode='';
+let nexaState=null;
+let nexaContextKey='';
+let nexaLoading=false;
+let nexaSending=false;
+let requestedSheetOpened=false;
 const launchQuery=new URLSearchParams(location.search);
 const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
 const workspaceTheme=launchQuery.get('nxoTheme')==='night'?'night':'day';
+const requestedSheetId=launchQuery.get('nexaSheet')||'';
+const requestedSheetTitle=launchQuery.get('nexaSheetTitle')||'';
 
+function ensureNexaCss(){
+  if(document.getElementById('nxa-overlay-css'))return;
+  const link=document.createElement('link');
+  link.id='nxa-overlay-css';
+  link.rel='stylesheet';
+  link.href=NEXA_CSS;
+  document.head.appendChild(link);
+}
+function nexaContextInput(){
+  return {
+    currentToolKey:'dynamic-specs',
+    currentToolLabel:'Fichas Técnicas Dinámicas'
+  };
+}
+function nexaTime(value){
+  try{return new Date(value||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}catch(_){return''}
+}
+function nexaRenderMessages(messages=[]){
+  const zone=document.getElementById('nxa-messages');
+  if(!zone)return;
+  if(!messages.length){
+    zone.innerHTML='<div class="nxa-empty"><strong>Hola, soy Nexa.</strong><span>Estoy dentro de Fichas Técnicas Dinámicas y puedo localizar una ficha visible y abrirla directamente.</span><small>Prueba: “Busca la sopa de cebolla”.</small></div>';
+    return;
+  }
+  zone.innerHTML=messages.map(m=>
+    '<div class="nxa-message '+(m.role==='user'?'user':'assistant')+'">'+
+      '<div class="nxa-message-body">'+esc(m.content||'')+'</div>'+
+      '<small>'+esc(nexaTime(m.at))+'</small>'+
+    '</div>'
+  ).join('');
+  requestAnimationFrame(()=>{zone.scrollTop=zone.scrollHeight});
+}
+function nexaSetStatus(value,state=''){
+  const el=document.getElementById('nxa-status');
+  if(!el)return;
+  el.textContent=value||'';
+  el.dataset.state=state;
+}
+function nexaSyncHeader(){
+  const ctx=nexaState?.context;
+  const title=document.getElementById('nxa-context');
+  if(title){
+    title.textContent=ctx
+      ?((ctx.workspaceName?ctx.workspaceName+' · ':'')+'Fichas Técnicas Dinámicas')
+      :'Fichas Técnicas Dinámicas';
+  }
+  const role=document.getElementById('nxa-role');
+  if(role){
+    role.textContent=ctx?.roleName||'';
+    role.hidden=!ctx?.roleName;
+  }
+}
+async function nexaLoad(force=false){
+  if(!sessionToken||nexaLoading)return;
+  const key='dynamic-specs|'+workspaceLabel;
+  if(!force&&nexaState&&nexaContextKey===key){
+    nexaSyncHeader();
+    nexaRenderMessages(nexaState.messages||[]);
+    return;
+  }
+  nexaLoading=true;
+  nexaSetStatus('Cargando contexto…','loading');
+  try{
+    const data=await api('nexa.bootstrap',{input:nexaContextInput()});
+    nexaState=data||null;
+    nexaContextKey=key;
+    nexaSyncHeader();
+    nexaRenderMessages(data?.messages||[]);
+    nexaSetStatus(data?.providerConfigured?'IA conectada':'Búsqueda local activa',data?.providerConfigured?'online':'local');
+  }catch(error){
+    nexaSetStatus(error?.message||String(error),'error');
+  }finally{
+    nexaLoading=false;
+  }
+}
+function nexaOpen(){
+  const panel=document.getElementById('nxa-panel');
+  if(!panel)return;
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden','false');
+  document.getElementById('nxa-launcher')?.setAttribute('aria-expanded','true');
+  nexaLoad(false);
+  setTimeout(()=>document.getElementById('nxa-input')?.focus(),80);
+}
+function nexaClose(){
+  document.getElementById('nxa-panel')?.classList.remove('open');
+  document.getElementById('nxa-panel')?.setAttribute('aria-hidden','true');
+  document.getElementById('nxa-launcher')?.setAttribute('aria-expanded','false');
+}
+function toolUrl(routePath){
+  const route=String(routePath||'').trim();
+  if(!route)return'';
+  try{
+    const u=new URL(siteBase()+(route.startsWith('/')?route:'/'+route),location.href);
+    u.searchParams.set('nxoBack',location.href);
+    u.searchParams.set('nxoBackLabel','Fichas Técnicas Dinámicas');
+    u.searchParams.set('nxoTheme',workspaceTheme);
+    return u.href;
+  }catch(_){return''}
+}
+function nexaPerformAction(action){
+  if(!action)return;
+  if(action.type==='openTechnicalSheet'){
+    if(!action.sheetId){nexaSetStatus('La ficha no tiene un identificador válido.','error');return}
+    postToEngine('NEXA_OPEN_RECIPE',{sheetId:String(action.sheetId),title:String(action.title||'')});
+    nexaSetStatus('Ficha abierta','local');
+    nexaClose();
+    return;
+  }
+  if(action.type!=='navigate')return;
+  if(action.target==='mi-espacio'){openPersonalSpace();return}
+  if(action.target==='centro-desarrollo'){openDevelopmentCenter();return}
+  const url=toolUrl(action.routePath);
+  if(url)location.assign(url);
+}
+async function nexaSend(){
+  if(nexaSending)return;
+  const input=document.getElementById('nxa-input');
+  const button=document.getElementById('nxa-send');
+  const message=String(input?.value||'').trim();
+  if(!message)return;
+  nexaSending=true;
+  if(input){input.value='';input.disabled=true}
+  if(button)button.disabled=true;
+  const optimistic=[
+    ...(nexaState?.messages||[]),
+    {role:'user',content:message,at:new Date().toISOString()}
+  ];
+  nexaRenderMessages(optimistic);
+  nexaSetStatus('Nexa está buscando…','loading');
+  try{
+    const data=await api('nexa.send',{input:{...nexaContextInput(),message}});
+    nexaState={
+      ...(nexaState||{}),
+      context:data?.context||nexaState?.context||null,
+      messages:[...optimistic,(data?.message||{role:'assistant',content:'Listo.',at:new Date().toISOString()})]
+    };
+    nexaSyncHeader();
+    nexaRenderMessages(nexaState.messages);
+    nexaSetStatus(data?.provider==='openai'?'IA conectada':'Búsqueda local activa',data?.provider==='openai'?'online':'local');
+    if(data?.action)setTimeout(()=>nexaPerformAction(data.action),350);
+  }catch(error){
+    const failed=[...optimistic,{role:'assistant',content:'No pude completar esa solicitud: '+(error?.message||String(error)),at:new Date().toISOString()}];
+    nexaState={...(nexaState||{}),messages:failed};
+    nexaRenderMessages(failed);
+    nexaSetStatus('No se pudo completar la solicitud','error');
+  }finally{
+    nexaSending=false;
+    if(input){input.disabled=false;input.focus()}
+    if(button)button.disabled=false;
+  }
+}
+function mountNexa(){
+  if(!sessionToken)return;
+  ensureNexaCss();
+  let launcher=document.getElementById('nxa-launcher');
+  if(!launcher){
+    launcher=document.createElement('button');
+    launcher.id='nxa-launcher';
+    launcher.className='nxa-launcher';
+    launcher.dataset.theme=workspaceTheme;
+    launcher.type='button';
+    launcher.setAttribute('aria-label','Abrir Nexa');
+    launcher.setAttribute('aria-expanded','false');
+    launcher.innerHTML='<span class="nxa-orb" aria-hidden="true">N</span><strong>Nexa</strong>';
+    document.body.appendChild(launcher);
+    launcher.onclick=()=>document.getElementById('nxa-panel')?.classList.contains('open')?nexaClose():nexaOpen();
+  }
+  let panel=document.getElementById('nxa-panel');
+  if(!panel){
+    panel=document.createElement('aside');
+    panel.id='nxa-panel';
+    panel.className='nxa-panel';
+    panel.dataset.theme=workspaceTheme;
+    panel.setAttribute('aria-hidden','true');
+    panel.innerHTML=
+      '<div class="nxa-head">'+
+        '<div class="nxa-identity"><span class="nxa-orb" aria-hidden="true">N</span><div><strong>Nexa</strong><small id="nxa-context">Fichas Técnicas Dinámicas</small></div></div>'+
+        '<div class="nxa-head-actions"><span class="nxa-role" id="nxa-role" hidden></span><button id="nxa-close" class="nxa-icon-btn" type="button" aria-label="Cerrar Nexa">✕</button></div>'+
+      '</div>'+
+      '<div class="nxa-status-row"><span class="nxa-status-dot"></span><span id="nxa-status">Preparando Nexa…</span></div>'+
+      '<div class="nxa-messages" id="nxa-messages"></div>'+
+      '<div class="nxa-compose"><textarea id="nxa-input" rows="2" maxlength="8000" placeholder="Busca una ficha o pregúntale a Nexa…"></textarea><button id="nxa-send" type="button" aria-label="Enviar mensaje">➤</button></div>';
+    document.body.appendChild(panel);
+    panel.querySelector('#nxa-close').onclick=nexaClose;
+    panel.querySelector('#nxa-send').onclick=nexaSend;
+    panel.querySelector('#nxa-input').addEventListener('keydown',event=>{
+      if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();nexaSend()}
+      if(event.key==='Escape')nexaClose();
+    });
+  }
+  nexaSyncHeader();
+}
+function openRequestedSheet(){
+  if(requestedSheetOpened||!requestedSheetId)return;
+  requestedSheetOpened=true;
+  postToEngine('NEXA_OPEN_RECIPE',{sheetId:requestedSheetId,title:requestedSheetTitle});
+}
 function accessError(code){
   return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.');
 }
@@ -490,6 +696,7 @@ function mountEngine(){
   frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#eef3fb;';
   frame.addEventListener('load',()=>{
     postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,theme:workspaceTheme});
+    setTimeout(openRequestedSheet,180);
   });
   root.appendChild(frame);
   window.addEventListener('message',handleEngineMessage);
@@ -504,6 +711,7 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='ENGINE';
   mountEngine();
+  mountNexa();
 }
 start().catch(showError);
 })();
