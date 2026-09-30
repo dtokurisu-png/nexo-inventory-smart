@@ -954,7 +954,7 @@ async function nexaLoad(force=false){
     nexaContextCacheKey=key;
     nexaSyncHeader();
     nexaRenderMessages(data?.messages||[]);
-    nexaSetStatus(data?.providerConfigured?"IA conectada":"Navegación local activa",data?.providerConfigured?"online":"local");
+    nexaSetStatus(data?.providerConfigured?"API configurada":"Navegación local activa",data?.providerConfigured?"local":"local");
   }catch(e){
     nexaSetStatus(e.message||String(e),"error");
   }finally{
@@ -1037,7 +1037,7 @@ async function nexaSend(){
     };
     nexaSyncHeader();
     nexaRenderMessages(nexaState.messages);
-    nexaSetStatus(data?.provider==="openai"?"IA conectada":"Navegación local activa",data?.provider==="openai"?"online":"local");
+    nexaSetStatus(data?.provider==="openai"?"IA conectada":(data?.provider==="openai_error"?"OpenAI requiere atención":"Navegación local activa"),data?.provider==="openai"?"online":(data?.provider==="openai_error"?"error":"local"));
     if(data?.action)setTimeout(()=>nexaPerformAction(data.action),450);
   }catch(e){
     const failed=[...optimistic,{role:"assistant",content:"No pude completar esa solicitud: "+(e.message||String(e)),at:new Date().toISOString()}];
