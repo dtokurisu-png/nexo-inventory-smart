@@ -1612,3 +1612,69 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   NEXO GROUP OFFICIAL LOGO · 2026-09-30
+   Same approved Wix asset in desktop and mobile header views.
+========================================================= */
+.nxo-nav-brand{
+  flex:0 0 auto!important;
+  min-width:max-content!important
+}
+.nxo-nav-mark{
+  width:42px!important;
+  height:42px!important;
+  flex:0 0 42px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border-radius:10px!important;
+  background:#000!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.24)!important
+}
+.nxo-nav-mark img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  border-radius:inherit!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-mark,
+.nxo-app[data-theme="night"] .nxo-nav-mark{
+  background:#000!important;
+  border-color:rgba(255,255,255,.16)!important
+}
+
+@media(max-width:760px){
+  .nxo-nav-brand{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    min-width:0!important
+  }
+  .nxo-nav-mark{
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    width:40px!important;
+    height:40px!important;
+    flex:0 0 40px!important
+  }
+}
+
+@media(min-width:761px){
+  .nxo-nav-brand{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important
+  }
+  .nxo-nav-mark{
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important
+  }
+  .nxo-nav-brand-copy{
+    display:grid!important
+  }
+}
+
