@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=loading-theme-contrast-20260930-43';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-qr-invite-20260930-44';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-20260927-3';
@@ -1420,6 +1420,28 @@ async function start(){
   personal=await api('bootstrap');
 
   const params=new URLSearchParams(location.search);
+  const inviteToken=String(params.get('nxoJoin')||'').trim();
+  if(inviteToken){
+    try{
+      loading('Uniéndote al Workspace…');
+      workspace=await api('workspace.join.link',{token:inviteToken});
+      const u=new URL(location.href);
+      u.searchParams.delete('nxoJoin');
+      if(workspace?.workspace?.id)u.searchParams.set('nxoWorkspace',workspace.workspace.id);
+      history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
+      workspaceTab='tools';
+      renderWorkspace();
+      toast(workspace?.alreadyMember?'Workspace abierto':'Te uniste a '+(workspace?.workspace?.name||'Workspace'));
+      return
+    }catch(e){
+      const u=new URL(location.href);
+      u.searchParams.delete('nxoJoin');
+      history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
+      errorView(e);
+      return
+    }
+  }
+
   const acquireTool=String(params.get('nxoAcquireTool')||'').trim();
   if(acquireTool){
     try{
@@ -1578,7 +1600,312 @@ function renderAccess(role){const perms=role?.permissions||[];return '<div class
 async function loadMembers(){const zone=document.getElementById('nxo-members-zone');if(!zone)return;try{const wsid=workspace.workspace.id;workspaceMembers=await api('workspace.members',{workspaceId:wsid});const rolePerms=workspace?.role?.permissions||[];const canInvite=rolePerms.includes('members.invite')||rolePerms.includes('members.manage');const canAssign=rolePerms.includes('roles.assign');const canRemove=rolePerms.includes('members.remove')||rolePerms.includes('members.manage');if(canAssign||canInvite){try{workspaceRoles=await api('workspace.roles',{workspaceId:wsid})}catch(_){workspaceRoles=[]}}else workspaceRoles=[];zone.innerHTML='<div class="nxo-section-head"><div><h3>Miembros</h3><p>'+workspaceMembers.members.length+' miembro'+(workspaceMembers.members.length===1?'':'s')+' activo'+(workspaceMembers.members.length===1?'':'s')+'.</p></div>'+(canInvite?'<button id="nxo-invite-member" class="nxo-btn nxo-btn-gold">Invitar miembro</button>':'')+'</div><div class="nxo-member-list">'+workspaceMembers.members.map(m=>memberRow(m,canAssign,canRemove)).join('')+'</div>';document.getElementById('nxo-invite-member')?.addEventListener('click',inviteModal);document.querySelectorAll('[data-member-role]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.memberRole,sel.value));document.querySelectorAll('[data-member-remove]').forEach(btn=>btn.onclick=()=>removeMember(btn.dataset.memberRemove))}catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||e)+'</div>'}}
 function memberRow(m,canAssign,canRemove){const actorRank=Number(workspaceMembers?.currentRole?.rank||workspace?.role?.rank||0),targetRank=Number(m.role?.rank||0),canAct=!m.isWorkspaceOwner&&targetRank<actorRank;const options=(workspaceRoles||[]).map(r=>'<option value="'+esc(r.roleKey)+'" '+(r.roleKey===m.roleKey?'selected':'')+'>'+esc(r.nameEs||r.roleKey)+'</option>').join('');return '<div class="nxo-member"><div class="nxo-member-left"><div class="nxo-avatar">'+esc(initials(m.displayName))+'</div><div style="min-width:0"><div class="nxo-member-name">'+esc(m.displayName)+'</div><div class="nxo-member-sub">'+esc(roleName(m.roleKey,m.role))+(m.isWorkspaceOwner?' · propietario del Workspace':'')+'</div></div></div><div class="nxo-member-actions">'+(canAct&&canAssign&&options?'<select class="nxo-select" style="width:auto;min-width:145px" data-member-role="'+esc(m.memberId)+'">'+options+'</select>':'<span class="nxo-chip">'+esc(roleName(m.roleKey,m.role))+'</span>')+(canAct&&canRemove?'<button class="nxo-btn nxo-btn-danger" data-member-remove="'+esc(m.memberId)+'">Quitar</button>':'')+'</div></div>'}
 async function copyInviteCode(value){try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value);return true}const t=document.createElement('textarea');t.value=value;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.focus();t.select();const ok=document.execCommand('copy');t.remove();return ok}catch(_){return false}}
-function inviteModal(){const opts=(workspaceRoles||[]).map(r=>'<option value="'+esc(r.roleKey)+'">'+esc(r.nameEs||r.roleKey)+'</option>').join('');modal('Invitar miembro','<p class="nxo-muted" style="margin:0 0 14px;line-height:1.55">Genera un código de un solo uso y compártelo por el medio que prefieras. No necesitas conocer el correo de la otra persona.</p><div class="nxo-field"><label>Rol que recibirá al unirse</label><select id="nxo-invite-role" class="nxo-select">'+opts+'</select></div><div id="nxo-invite-result"></div><div class="nxo-modal-actions"><button id="nxo-invite-generate" class="nxo-btn nxo-btn-gold">Generar código</button></div>',o=>{const button=o.querySelector('#nxo-invite-generate'),zone=o.querySelector('#nxo-invite-result');button.onclick=async()=>{const roleKey=o.querySelector('#nxo-invite-role').value;button.disabled=true;button.textContent='Generando…';try{const invite=await api('workspace.invite.code',{workspaceId:workspace.workspace.id,input:{roleKey}});const code=invite.code||'';const expiry=invite.expiresAt?new Date(invite.expiresAt).toLocaleDateString():'7 días';zone.innerHTML='<div class="nxo-panel" style="padding:16px;margin-top:14px"><div class="nxo-eyebrow">Código de invitación</div><div style="font-size:25px;font-weight:950;letter-spacing:.08em;margin:9px 0 6px;word-break:break-all">'+esc(code)+'</div><p class="nxo-muted" style="margin:0 0 12px;line-height:1.5">Rol: '+esc(roleName(invite.roleKey,invite.role))+' · válido hasta '+esc(expiry)+' · un solo uso.</p><button id="nxo-copy-invite" class="nxo-btn">Copiar código</button></div>';button.textContent='Generar otro código';document.getElementById('nxo-copy-invite')?.addEventListener('click',async()=>{const ok=await copyInviteCode(code);toast(ok?'Código copiado':'No se pudo copiar automáticamente. Mantén pulsado el código para copiarlo.')})}catch(e){toast(e.message||String(e));button.textContent='Generar código'}finally{button.disabled=false}}})}
+
+function workspaceInviteUrl(token){
+  const u=new URL(siteBase()+'/blank-8');
+  u.searchParams.set('nxoJoin',String(token||''));
+  return u.href
+}
+
+async function loadWorkspaceQrLibrary(){
+  if(window.QRCode)return window.QRCode;
+  if(window.__nxoQrLibraryPromise)return window.__nxoQrLibraryPromise;
+  window.__nxoQrLibraryPromise=new Promise((resolve,reject)=>{
+    const existing=document.querySelector('script[data-nxo-qr-lib]');
+    if(existing){
+      existing.addEventListener('load',()=>window.QRCode?resolve(window.QRCode):reject(new Error('No se pudo iniciar el generador QR')),{once:true});
+      existing.addEventListener('error',()=>reject(new Error('No se pudo cargar el generador QR')),{once:true});
+      return
+    }
+    const script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    script.async=true;
+    script.dataset.nxoQrLib='1';
+    script.onload=()=>window.QRCode?resolve(window.QRCode):reject(new Error('No se pudo iniciar el generador QR'));
+    script.onerror=()=>reject(new Error('No se pudo cargar el generador QR'));
+    document.head.appendChild(script)
+  });
+  return window.__nxoQrLibraryPromise
+}
+
+async function renderWorkspaceInviteQr(zone,url){
+  if(!zone)return false;
+  zone.innerHTML='<div class="nxo-qr-loading">Generando QR…</div>';
+  try{
+    const QR=await loadWorkspaceQrLibrary();
+    zone.innerHTML='';
+    new QR(zone,{
+      text:url,
+      width:264,
+      height:264,
+      colorDark:'#111827',
+      colorLight:'#ffffff',
+      correctLevel:QR.CorrectLevel.M
+    });
+    return true
+  }catch(e){
+    zone.innerHTML='<div class="nxo-qr-error">No se pudo dibujar el QR. El enlace sigue disponible para copiar o compartir.</div>';
+    return false
+  }
+}
+
+async function shareWorkspaceInvite(invite,url){
+  const title='Únete a '+(invite.workspaceName||'mi Workspace');
+  const text='Únete al Workspace '+(invite.workspaceName||'de Nexo')+' desde este enlace.';
+  try{
+    if(navigator.share){
+      await navigator.share({title,text,url});
+      return
+    }
+  }catch(e){
+    if(e?.name==='AbortError')return
+  }
+  const ok=await copyInviteCode(url);
+  toast(ok?'Enlace copiado para compartir':'No se pudo abrir el menú de compartir')
+}
+
+function safeInviteFileName(value){
+  return String(value||'workspace')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/gi,'-')
+    .replace(/^-+|-+$/g,'')
+    .toLowerCase()
+    .slice(0,60)||'workspace'
+}
+
+async function loadInviteCanvasImage(url){
+  if(!url)return null;
+  try{
+    const response=await fetch(url,{mode:'cors'});
+    if(!response.ok)return null;
+    const blob=await response.blob();
+    if('createImageBitmap' in window)return await createImageBitmap(blob);
+    return await new Promise((resolve,reject)=>{
+      const img=new Image();
+      const objectUrl=URL.createObjectURL(blob);
+      img.onload=()=>{URL.revokeObjectURL(objectUrl);resolve(img)};
+      img.onerror=()=>{URL.revokeObjectURL(objectUrl);reject(new Error('IMAGE_LOAD_FAILED'))};
+      img.src=objectUrl
+    })
+  }catch(_){return null}
+}
+
+function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines=3){
+  const words=String(text||'').split(/\s+/);
+  let line='',lineCount=0;
+  for(let i=0;i<words.length;i++){
+    const test=line?line+' '+words[i]:words[i];
+    if(ctx.measureText(test).width>maxWidth&&line){
+      ctx.fillText(line,x,y+lineCount*lineHeight);
+      lineCount++;
+      if(lineCount>=maxLines)return y+lineCount*lineHeight;
+      line=words[i]
+    }else line=test
+  }
+  if(line&&lineCount<maxLines){
+    ctx.fillText(line,x,y+lineCount*lineHeight);
+    lineCount++
+  }
+  return y+lineCount*lineHeight
+}
+
+async function downloadWorkspaceInviteImage(invite,url,qrZone){
+  const qrCanvas=qrZone?.querySelector('canvas');
+  if(!qrCanvas){toast('Espera a que termine de generarse el QR');return}
+  const canvas=document.createElement('canvas');
+  canvas.width=1200;
+  canvas.height=1500;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#f7f9fc';
+  ctx.fillRect(0,0,1200,1500);
+  ctx.fillStyle='#2f4f93';
+  ctx.fillRect(0,0,1200,270);
+
+  const logoUrl=mediaUrl(invite.workspaceLogoImage||workspace?.workspace?.logoImage);
+  const logo=await loadInviteCanvasImage(logoUrl);
+  if(logo){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(600,150,82,0,Math.PI*2);
+    ctx.clip();
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(518,68,164,164);
+    const w=logo.width||logo.naturalWidth||164,h=logo.height||logo.naturalHeight||164;
+    const scale=Math.max(164/w,164/h);
+    ctx.drawImage(logo,600-w*scale/2,150-h*scale/2,w*scale,h*scale);
+    ctx.restore()
+  }else{
+    ctx.fillStyle='#ffffff';
+    ctx.font='900 42px Arial, sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('NEXO',600,165)
+  }
+
+  ctx.textAlign='center';
+  ctx.fillStyle='#111827';
+  ctx.font='900 48px Arial, sans-serif';
+  wrapCanvasText(ctx,invite.workspaceName||'Workspace Nexo',600,360,980,58,2);
+  ctx.fillStyle='#5b6780';
+  ctx.font='700 30px Arial, sans-serif';
+  ctx.fillText('Escanea para unirte al Workspace',600,480);
+
+  ctx.fillStyle='#ffffff';
+  ctx.strokeStyle='#d4deef';
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.roundRect(150,540,900,900,34);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.drawImage(qrCanvas,250,620,700,700);
+
+  ctx.fillStyle='#34405f';
+  ctx.font='700 23px Arial, sans-serif';
+  ctx.fillText('Inicia sesión o crea tu cuenta y entrarás automáticamente.',600,1365);
+  ctx.fillStyle='#66738d';
+  ctx.font='600 20px Arial, sans-serif';
+  ctx.fillText('Nexo Group · Invitación de Workspace',600,1415);
+
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png',.95));
+  if(!blob){toast('No se pudo crear la imagen');return}
+  const a=document.createElement('a');
+  const href=URL.createObjectURL(blob);
+  a.href=href;
+  a.download='invitacion-'+safeInviteFileName(invite.workspaceName)+'.png';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(href),1500)
+}
+
+function inviteModal(){
+  const roles=workspaceRoles||[];
+  const defaultRole=roles.find(r=>r.roleKey==='collaborator')?.roleKey||roles[0]?.roleKey||'collaborator';
+  const opts=roles.map(r=>'<option value="'+esc(r.roleKey)+'" '+(r.roleKey===defaultRole?'selected':'')+'>'+esc(r.nameEs||r.roleKey)+'</option>').join('');
+
+  modal('Invitar al Workspace',
+    '<div class="nxo-invite-share">'+
+      '<div class="nxo-invite-share-head">'+
+        '<div class="nxo-invite-share-logo" id="nxo-invite-share-logo"></div>'+
+        '<div><strong>'+esc(workspace?.workspace?.name||'Workspace')+'</strong><span>Invitación por QR y enlace</span></div>'+
+      '</div>'+
+      '<div class="nxo-field"><label>Rol que recibirán quienes entren con este QR</label><select id="nxo-invite-role" class="nxo-select">'+opts+'</select></div>'+
+      '<div class="nxo-invite-qr-card">'+
+        '<div id="nxo-invite-qr" class="nxo-invite-qr"><div class="nxo-qr-loading">Preparando invitación…</div></div>'+
+        '<p>Escanea este QR para iniciar sesión o crear una cuenta y entrar automáticamente al Workspace.</p>'+
+      '</div>'+
+      '<div class="nxo-invite-link-row"><input id="nxo-invite-link" class="nxo-input" readonly value=""><button id="nxo-copy-invite-link" class="nxo-btn">Copiar</button></div>'+
+      '<div class="nxo-invite-share-actions">'+
+        '<button id="nxo-share-invite" class="nxo-btn nxo-btn-gold">Compartir</button>'+
+        '<button id="nxo-download-invite" class="nxo-btn">Descargar imagen</button>'+
+        '<button id="nxo-regenerate-invite" class="nxo-btn nxo-btn-danger">Regenerar QR</button>'+
+      '</div>'+
+      '<details class="nxo-invite-manual"><summary>Usar código de un solo uso</summary>'+
+        '<p>Respaldo para alguien que no pueda abrir el QR o el enlace.</p>'+
+        '<div id="nxo-invite-manual-result"></div>'+
+        '<button id="nxo-invite-generate-code" class="nxo-btn">Generar código temporal</button>'+
+      '</details>'+
+    '</div>',
+    async o=>{
+      const roleSelect=o.querySelector('#nxo-invite-role');
+      const qrZone=o.querySelector('#nxo-invite-qr');
+      const linkInput=o.querySelector('#nxo-invite-link');
+      const logoZone=o.querySelector('#nxo-invite-share-logo');
+      const shareButton=o.querySelector('#nxo-share-invite');
+      const copyButton=o.querySelector('#nxo-copy-invite-link');
+      const downloadButton=o.querySelector('#nxo-download-invite');
+      const regenerateButton=o.querySelector('#nxo-regenerate-invite');
+      const manualButton=o.querySelector('#nxo-invite-generate-code');
+      const manualZone=o.querySelector('#nxo-invite-manual-result');
+      let invite=null,url='';
+
+      const paint=async nextInvite=>{
+        invite=nextInvite;
+        url=workspaceInviteUrl(invite.token);
+        linkInput.value=url;
+        const logo=mediaUrl(invite.workspaceLogoImage||workspace?.workspace?.logoImage);
+        logoZone.innerHTML=logo?'<img src="'+esc(logo)+'" alt="'+esc((invite.workspaceName||'Workspace')+' logo')+'">':'<span>⌂</span>';
+        await renderWorkspaceInviteQr(qrZone,url)
+      };
+
+      try{
+        invite=await api('workspace.invite.link',{
+          workspaceId:workspace.workspace.id,
+          input:{roleKey:roleSelect.value||defaultRole}
+        });
+        await paint(invite)
+      }catch(e){
+        qrZone.innerHTML='<div class="nxo-qr-error">'+esc(e.message||String(e))+'</div>';
+        shareButton.disabled=true;
+        copyButton.disabled=true;
+        downloadButton.disabled=true;
+        regenerateButton.disabled=true
+      }
+
+      roleSelect?.addEventListener('change',async()=>{
+        try{
+          roleSelect.disabled=true;
+          const next=await api('workspace.invite.link',{
+            workspaceId:workspace.workspace.id,
+            input:{roleKey:roleSelect.value}
+          });
+          await paint(next);
+          toast('Rol del QR actualizado')
+        }catch(e){toast(e.message||String(e))}
+        finally{roleSelect.disabled=false}
+      });
+
+      copyButton?.addEventListener('click',async()=>{
+        const ok=await copyInviteCode(url);
+        toast(ok?'Enlace copiado':'No se pudo copiar automáticamente')
+      });
+
+      shareButton?.addEventListener('click',()=>shareWorkspaceInvite(invite,url));
+      downloadButton?.addEventListener('click',()=>downloadWorkspaceInviteImage(invite,url,qrZone));
+
+      regenerateButton?.addEventListener('click',async()=>{
+        if(!confirm('¿Regenerar el QR? El QR y enlace anteriores dejarán de funcionar.'))return;
+        regenerateButton.disabled=true;
+        regenerateButton.textContent='Regenerando…';
+        try{
+          const next=await api('workspace.invite.link.regenerate',{
+            workspaceId:workspace.workspace.id,
+            input:{roleKey:roleSelect.value}
+          });
+          await paint(next);
+          toast('QR regenerado. El anterior quedó invalidado.')
+        }catch(e){toast(e.message||String(e))}
+        finally{
+          regenerateButton.disabled=false;
+          regenerateButton.textContent='Regenerar QR'
+        }
+      });
+
+      manualButton?.addEventListener('click',async()=>{
+        manualButton.disabled=true;
+        manualButton.textContent='Generando…';
+        try{
+          const one=await api('workspace.invite.code',{
+            workspaceId:workspace.workspace.id,
+            input:{roleKey:roleSelect.value}
+          });
+          const code=one.code||'';
+          const expiry=one.expiresAt?new Date(one.expiresAt).toLocaleDateString():'7 días';
+          manualZone.innerHTML='<div class="nxo-invite-manual-code"><strong>'+esc(code)+'</strong><span>Válido hasta '+esc(expiry)+' · un solo uso</span><button id="nxo-copy-manual-code" class="nxo-btn">Copiar código</button></div>';
+          o.querySelector('#nxo-copy-manual-code')?.addEventListener('click',async()=>{
+            const ok=await copyInviteCode(code);
+            toast(ok?'Código copiado':'No se pudo copiar automáticamente')
+          })
+        }catch(e){toast(e.message||String(e))}
+        finally{
+          manualButton.disabled=false;
+          manualButton.textContent='Generar otro código temporal'
+        }
+      })
+    }
+  )
+}
+
 async function changeRole(memberId,roleKey){try{await api('workspace.role',{workspaceId:workspace.workspace.id,targetMemberId:memberId,roleKey});toast('Rol actualizado');await loadMembers()}catch(e){toast(e.message||String(e));await loadMembers()}}
 async function removeMember(memberId){if(!confirm('¿Quitar a este miembro del Workspace?'))return;try{await api('workspace.remove',{workspaceId:workspace.workspace.id,targetMemberId:memberId});toast('Miembro removido');await loadMembers()}catch(e){toast(e.message||String(e))}}
 async function loadWorkspaceSettings(){const zone=document.getElementById('nxo-settings-zone');if(!zone)return;try{workspaceToolConfig=await api('workspace.tools',{workspaceId:workspace.workspace.id});const ws=workspace.workspace||{},logo=mediaUrl(ws.logoImage);zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-bottom:14px"><div class="nxo-section-head"><div><h3>Información del Workspace</h3><p>Nombre, descripción y logo visibles para sus miembros.</p></div></div><div class="nxo-workspace-logo-settings"><div class="nxo-workspace-logo-preview">'+(logo?'<img src="'+esc(logo)+'" alt="'+esc((ws.name||'Workspace')+' logo')+'">':'<span>⌂</span>')+'</div><div class="nxo-workspace-logo-copy"><strong>Logo del Workspace</strong><p>PNG, JPG, WEBP o SVG · máximo 8 MB.</p><input id="nxo-workspace-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden><button id="nxo-workspace-logo-change" class="nxo-btn" type="button">'+(logo?'Cambiar logo':'Subir logo')+'</button></div></div><div class="nxo-field"><label>Nombre</label><input id="nxo-settings-name" class="nxo-input" value="'+esc(ws.name||'')+'"></div><div class="nxo-field"><label>Descripción</label><textarea id="nxo-settings-desc" class="nxo-textarea">'+esc(ws.description||'')+'</textarea></div><div class="nxo-modal-actions"><button id="nxo-settings-save" class="nxo-btn nxo-btn-gold">Guardar cambios</button></div></div><div class="nxo-panel" style="padding:18px"><div class="nxo-section-head"><div><h3>Herramientas del Workspace</h3><p>Activa herramientas y decide si todos los miembros o solo personas concretas pueden verlas.</p></div></div><div class="nxo-tool-config">'+workspaceToolConfig.tools.map(t=>{const mode=t.accessMode==='restricted'?'Restringido · '+(t.allowedMemberIds||[]).length+' miembro'+((t.allowedMemberIds||[]).length===1?'':'s'):'Todo el Workspace';return '<div class="nxo-tool-toggle"><div><h4>'+esc(t.nameEs||t.toolKey)+'</h4><p>'+esc(t.descriptionEs||'')+' · '+esc(statusText(t.status))+'</p><div class="nxo-access-summary">'+esc(mode)+'</div></div><div class="nxo-tool-actions"><button class="nxo-btn" data-tool-access="'+esc(t.toolKey)+'" '+(t.enabled?'':'disabled')+'>Parámetros de acceso</button><div class="nxo-switch '+(t.enabled?'on':'')+'" data-tool-toggle="'+esc(t.toolKey)+'" data-enabled="'+(t.enabled?'1':'0')+'"><span></span></div></div></div>'}).join('')+'</div></div>';document.getElementById('nxo-settings-save')?.addEventListener('click',saveWorkspaceSettings);const logoInput=document.getElementById('nxo-workspace-logo-file');document.getElementById('nxo-workspace-logo-change')?.addEventListener('click',()=>logoInput?.click());logoInput?.addEventListener('change',()=>{const file=logoInput.files?.[0];if(file)uploadWorkspaceLogo(file)});document.querySelectorAll('[data-tool-toggle]').forEach(x=>x.onclick=()=>toggleTool(x.dataset.toolToggle,x.dataset.enabled!=='1'));document.querySelectorAll('[data-tool-access]').forEach(x=>x.onclick=()=>toolAccessModal(x.dataset.toolAccess))}catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||e)+'</div>'}}
