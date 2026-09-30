@@ -241,6 +241,55 @@ html,body{margin:0}
 .nxo-workspace-logo-copy strong{font-size:13px}
 .nxo-workspace-logo-copy p{margin:0;color:var(--nxo-muted);font-size:11px;line-height:1.45}
 .nxo-workspace-logo-copy .nxo-btn{width:max-content;margin-top:3px}
+
+.nxo-workspace-card{position:relative}
+.nxo-workspace-card-tools{display:flex;align-items:center;gap:7px;position:relative}
+.nxo-workspace-actions{position:relative;display:flex;align-items:center}
+.nxo-workspace-menu-button{
+  width:30px;height:30px;display:grid;place-items:center;padding:0;border-radius:9px;
+  border:1px solid var(--nxo-line);background:rgba(255,255,255,.035);color:var(--nxo-text-soft);
+  font:900 16px/1 Inter,system-ui,sans-serif;cursor:pointer;transition:.16s ease
+}
+.nxo-workspace-menu-button:hover,
+.nxo-workspace-menu-button:focus-visible,
+.nxo-workspace-menu-button[aria-expanded="true"]{
+  outline:none;color:#fff;background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.16)
+}
+.nxo-workspace-menu{
+  display:none;position:absolute;top:calc(100% + 7px);right:0;z-index:45;min-width:154px;
+  padding:6px;border-radius:11px;border:1px solid var(--nxo-line);
+  background:rgba(8,12,19,.97);box-shadow:0 18px 42px rgba(0,0,0,.34)
+}
+.nxo-workspace-menu.open{display:grid;gap:2px}
+.nxo-workspace-menu button{
+  width:100%;border:0;border-radius:8px;background:transparent;color:#d9e0ea;
+  padding:9px 10px;text-align:left;font:750 11px/1.2 Inter,system-ui,sans-serif;cursor:pointer
+}
+.nxo-workspace-menu button:hover,
+.nxo-workspace-menu button:focus-visible{outline:none;background:rgba(255,255,255,.075);color:#fff}
+.nxo-workspace-menu button.danger{color:#ffb4b4}
+.nxo-workspace-menu button.danger:hover{background:rgba(185,66,66,.18);color:#ffd0d0}
+.nxo-status.ARCHIVED{color:#b8c1d0;background:rgba(145,160,181,.09);border-color:rgba(145,160,181,.24)}
+.nxo-workspace-card.archived{opacity:.82}
+.nxo-workspace-card.archived:hover{transform:none}
+.nxo-archived-section{margin-top:8px}
+.nxo-app[data-theme="day"] .nxo-workspace-menu-button{
+  color:#34405f;background:rgba(238,244,255,.86);border-color:#b9cbed
+}
+.nxo-app[data-theme="day"] .nxo-workspace-menu-button:hover,
+.nxo-app[data-theme="day"] .nxo-workspace-menu-button:focus-visible,
+.nxo-app[data-theme="day"] .nxo-workspace-menu-button[aria-expanded="true"]{
+  color:#172755;background:#fff;border-color:#8ea8d8
+}
+.nxo-app[data-theme="day"] .nxo-workspace-menu{
+  background:rgba(248,251,255,.98);border-color:#b9cbed;box-shadow:0 16px 38px rgba(23,39,85,.18)
+}
+.nxo-app[data-theme="day"] .nxo-workspace-menu button{color:#34405f}
+.nxo-app[data-theme="day"] .nxo-workspace-menu button:hover,
+.nxo-app[data-theme="day"] .nxo-workspace-menu button:focus-visible{color:#172755;background:#eaf1ff}
+.nxo-app[data-theme="day"] .nxo-workspace-menu button.danger{color:#9f2f2f}
+.nxo-app[data-theme="day"] .nxo-workspace-menu button.danger:hover{background:#fdeaea;color:#7f1d1d}
+.nxo-app[data-theme="day"] .nxo-status.ARCHIVED{color:#5b6780;background:#e8edf5;border-color:#c5cedd}
 .nxo-app[data-theme="day"] .nxo-workspace-logo,
 .nxo-app[data-theme="day"] .nxo-workspace-logo-preview{
   background:#eef4ff;border-color:#b9cbed;color:#264c8f
