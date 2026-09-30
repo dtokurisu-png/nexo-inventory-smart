@@ -1,9 +1,9 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-nexa-deep-search-20260930-20';
-const ENGINE_REVISION='workspace-nexa-deep-search-20260930-20';
-const NEXA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/nexa-overlay.css?v=nexa-deep-search-20260930-1';
+const ACCESS_REVISION='fichas-numa-deep-search-20260930-20';
+const ENGINE_REVISION='workspace-numa-deep-search-20260930-20';
+const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-deep-search-20260930-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -16,105 +16,105 @@ let loadingData=false;
 let importing=false;
 let importPreview=null;
 let importCode='';
-let nexaState=null;
-let nexaContextKey='';
-let nexaLoading=false;
-let nexaSending=false;
+let numaState=null;
+let numaContextKey='';
+let numaLoading=false;
+let numaSending=false;
 let requestedSheetOpened=false;
 const launchQuery=new URLSearchParams(location.search);
 const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
 const workspaceTheme=launchQuery.get('nxoTheme')==='night'?'night':'day';
-const requestedSheetId=launchQuery.get('nexaSheet')||'';
-const requestedSheetTitle=launchQuery.get('nexaSheetTitle')||'';
+const requestedSheetId=launchQuery.get('numaSheet')||'';
+const requestedSheetTitle=launchQuery.get('numaSheetTitle')||'';
 
-function ensureNexaCss(){
-  if(document.getElementById('nxa-overlay-css'))return;
+function ensureNumaCss(){
+  if(document.getElementById('nma-overlay-css'))return;
   const link=document.createElement('link');
-  link.id='nxa-overlay-css';
+  link.id='nma-overlay-css';
   link.rel='stylesheet';
-  link.href=NEXA_CSS;
+  link.href=NUMA_CSS;
   document.head.appendChild(link);
 }
-function nexaContextInput(){
+function numaContextInput(){
   return {
     currentToolKey:'dynamic-specs',
     currentToolLabel:'Fichas Técnicas Dinámicas'
   };
 }
-function nexaTime(value){
+function numaTime(value){
   try{return new Date(value||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}catch(_){return''}
 }
-function nexaRenderMessages(messages=[]){
-  const zone=document.getElementById('nxa-messages');
+function numaRenderMessages(messages=[]){
+  const zone=document.getElementById('nma-messages');
   if(!zone)return;
   if(!messages.length){
-    zone.innerHTML='<div class="nxa-empty"><strong>Hola, soy Nexa.</strong><span>Estoy dentro de Fichas Técnicas Dinámicas y puedo localizar una ficha visible y abrirla directamente.</span><small>Prueba: “Busca la sopa de cebolla”.</small></div>';
+    zone.innerHTML='<div class="nma-empty"><strong>Hola, soy Numa.</strong><span>Estoy dentro de Fichas Técnicas Dinámicas y puedo localizar una ficha visible y abrirla directamente.</span><small>Prueba: “Busca la sopa de cebolla”.</small></div>';
     return;
   }
   zone.innerHTML=messages.map(m=>
-    '<div class="nxa-message '+(m.role==='user'?'user':'assistant')+'">'+
-      '<div class="nxa-message-body">'+esc(m.content||'')+'</div>'+
-      '<small>'+esc(nexaTime(m.at))+'</small>'+
+    '<div class="nma-message '+(m.role==='user'?'user':'assistant')+'">'+
+      '<div class="nma-message-body">'+esc(m.content||'')+'</div>'+
+      '<small>'+esc(numaTime(m.at))+'</small>'+
     '</div>'
   ).join('');
   requestAnimationFrame(()=>{zone.scrollTop=zone.scrollHeight});
 }
-function nexaSetStatus(value,state=''){
-  const el=document.getElementById('nxa-status');
+function numaSetStatus(value,state=''){
+  const el=document.getElementById('nma-status');
   if(!el)return;
   el.textContent=value||'';
   el.dataset.state=state;
 }
-function nexaSyncHeader(){
-  const ctx=nexaState?.context;
-  const title=document.getElementById('nxa-context');
+function numaSyncHeader(){
+  const ctx=numaState?.context;
+  const title=document.getElementById('nma-context');
   if(title){
     title.textContent=ctx
       ?((ctx.workspaceName?ctx.workspaceName+' · ':'')+'Fichas Técnicas Dinámicas')
       :'Fichas Técnicas Dinámicas';
   }
-  const role=document.getElementById('nxa-role');
+  const role=document.getElementById('nma-role');
   if(role){
     role.textContent=ctx?.roleName||'';
     role.hidden=!ctx?.roleName;
   }
 }
-async function nexaLoad(force=false){
-  if(!sessionToken||nexaLoading)return;
+async function numaLoad(force=false){
+  if(!sessionToken||numaLoading)return;
   const key='dynamic-specs|'+workspaceLabel;
-  if(!force&&nexaState&&nexaContextKey===key){
-    nexaSyncHeader();
-    nexaRenderMessages(nexaState.messages||[]);
+  if(!force&&numaState&&numaContextKey===key){
+    numaSyncHeader();
+    numaRenderMessages(numaState.messages||[]);
     return;
   }
-  nexaLoading=true;
-  nexaSetStatus('Cargando contexto…','loading');
+  numaLoading=true;
+  numaSetStatus('Cargando contexto…','loading');
   try{
-    const data=await api('nexa.bootstrap',{input:nexaContextInput()});
-    nexaState=data||null;
-    nexaContextKey=key;
-    nexaSyncHeader();
-    nexaRenderMessages(data?.messages||[]);
-    nexaSetStatus(data?.providerConfigured?'API configurada':'Búsqueda local activa','local');
+    const data=await api('numa.bootstrap',{input:numaContextInput()});
+    numaState=data||null;
+    numaContextKey=key;
+    numaSyncHeader();
+    numaRenderMessages(data?.messages||[]);
+    numaSetStatus(data?.providerConfigured?'API configurada':'Búsqueda local activa','local');
   }catch(error){
-    nexaSetStatus(error?.message||String(error),'error');
+    numaSetStatus(error?.message||String(error),'error');
   }finally{
-    nexaLoading=false;
+    numaLoading=false;
   }
 }
-function nexaOpen(){
-  const panel=document.getElementById('nxa-panel');
+function numaOpen(){
+  const panel=document.getElementById('nma-panel');
   if(!panel)return;
   panel.classList.add('open');
   panel.setAttribute('aria-hidden','false');
-  document.getElementById('nxa-launcher')?.setAttribute('aria-expanded','true');
-  nexaLoad(false);
-  setTimeout(()=>document.getElementById('nxa-input')?.focus(),80);
+  document.getElementById('nma-launcher')?.setAttribute('aria-expanded','true');
+  numaLoad(false);
+  setTimeout(()=>document.getElementById('nma-input')?.focus(),80);
 }
-function nexaClose(){
-  document.getElementById('nxa-panel')?.classList.remove('open');
-  document.getElementById('nxa-panel')?.setAttribute('aria-hidden','true');
-  document.getElementById('nxa-launcher')?.setAttribute('aria-expanded','false');
+function numaClose(){
+  document.getElementById('nma-panel')?.classList.remove('open');
+  document.getElementById('nma-panel')?.setAttribute('aria-hidden','true');
+  document.getElementById('nma-launcher')?.setAttribute('aria-expanded','false');
 }
 function toolUrl(routePath){
   const route=String(routePath||'').trim();
@@ -127,13 +127,13 @@ function toolUrl(routePath){
     return u.href;
   }catch(_){return''}
 }
-function nexaPerformAction(action){
+function numaPerformAction(action){
   if(!action)return;
   if(action.type==='openTechnicalSheet'){
-    if(!action.sheetId){nexaSetStatus('La ficha no tiene un identificador válido.','error');return}
-    postToEngine('NEXA_OPEN_RECIPE',{sheetId:String(action.sheetId),title:String(action.title||'')});
-    nexaSetStatus('Ficha abierta','local');
-    nexaClose();
+    if(!action.sheetId){numaSetStatus('La ficha no tiene un identificador válido.','error');return}
+    postToEngine('NUMA_OPEN_RECIPE',{sheetId:String(action.sheetId),title:String(action.title||'')});
+    numaSetStatus('Ficha abierta','local');
+    numaClose();
     return;
   }
   if(action.type!=='navigate')return;
@@ -142,88 +142,88 @@ function nexaPerformAction(action){
   const url=toolUrl(action.routePath);
   if(url)location.assign(url);
 }
-async function nexaSend(){
-  if(nexaSending)return;
-  const input=document.getElementById('nxa-input');
-  const button=document.getElementById('nxa-send');
+async function numaSend(){
+  if(numaSending)return;
+  const input=document.getElementById('nma-input');
+  const button=document.getElementById('nma-send');
   const message=String(input?.value||'').trim();
   if(!message)return;
-  nexaSending=true;
+  numaSending=true;
   if(input){input.value='';input.disabled=true}
   if(button)button.disabled=true;
   const optimistic=[
-    ...(nexaState?.messages||[]),
+    ...(numaState?.messages||[]),
     {role:'user',content:message,at:new Date().toISOString()}
   ];
-  nexaRenderMessages(optimistic);
-  nexaSetStatus('Nexa está buscando…','loading');
+  numaRenderMessages(optimistic);
+  numaSetStatus('Numa está buscando…','loading');
   try{
-    const data=await api('nexa.send',{input:{...nexaContextInput(),message}});
-    nexaState={
-      ...(nexaState||{}),
-      context:data?.context||nexaState?.context||null,
+    const data=await api('numa.send',{input:{...numaContextInput(),message}});
+    numaState={
+      ...(numaState||{}),
+      context:data?.context||numaState?.context||null,
       messages:[...optimistic,(data?.message||{role:'assistant',content:'Listo.',at:new Date().toISOString()})]
     };
-    nexaSyncHeader();
-    nexaRenderMessages(nexaState.messages);
-    nexaSetStatus(data?.provider==='openai'?'IA conectada':(data?.provider==='openai_error'?'OpenAI requiere atención':'Búsqueda local activa'),data?.provider==='openai'?'online':(data?.provider==='openai_error'?'error':'local'));
-    if(data?.action)setTimeout(()=>nexaPerformAction(data.action),350);
+    numaSyncHeader();
+    numaRenderMessages(numaState.messages);
+    numaSetStatus(data?.provider==='openai'?'IA conectada':(data?.provider==='openai_error'?'OpenAI requiere atención':'Búsqueda local activa'),data?.provider==='openai'?'online':(data?.provider==='openai_error'?'error':'local'));
+    if(data?.action)setTimeout(()=>numaPerformAction(data.action),350);
   }catch(error){
     const failed=[...optimistic,{role:'assistant',content:'No pude completar esa solicitud: '+(error?.message||String(error)),at:new Date().toISOString()}];
-    nexaState={...(nexaState||{}),messages:failed};
-    nexaRenderMessages(failed);
-    nexaSetStatus('No se pudo completar la solicitud','error');
+    numaState={...(numaState||{}),messages:failed};
+    numaRenderMessages(failed);
+    numaSetStatus('No se pudo completar la solicitud','error');
   }finally{
-    nexaSending=false;
+    numaSending=false;
     if(input){input.disabled=false;input.focus()}
     if(button)button.disabled=false;
   }
 }
-function mountNexa(){
+function mountNuma(){
   if(!sessionToken)return;
-  ensureNexaCss();
-  let launcher=document.getElementById('nxa-launcher');
+  ensureNumaCss();
+  let launcher=document.getElementById('nma-launcher');
   if(!launcher){
     launcher=document.createElement('button');
-    launcher.id='nxa-launcher';
-    launcher.className='nxa-launcher';
+    launcher.id='nma-launcher';
+    launcher.className='nma-launcher';
     launcher.dataset.theme=workspaceTheme;
     launcher.type='button';
-    launcher.setAttribute('aria-label','Abrir Nexa');
+    launcher.setAttribute('aria-label','Abrir Numa');
     launcher.setAttribute('aria-expanded','false');
-    launcher.innerHTML='<span class="nxa-orb" aria-hidden="true">N</span><strong>Nexa</strong>';
+    launcher.innerHTML='<span class="nma-orb" aria-hidden="true">N</span><strong>Numa</strong>';
     document.body.appendChild(launcher);
-    launcher.onclick=()=>document.getElementById('nxa-panel')?.classList.contains('open')?nexaClose():nexaOpen();
+    launcher.onclick=()=>document.getElementById('nma-panel')?.classList.contains('open')?numaClose():numaOpen();
   }
-  let panel=document.getElementById('nxa-panel');
+  let panel=document.getElementById('nma-panel');
   if(!panel){
     panel=document.createElement('aside');
-    panel.id='nxa-panel';
-    panel.className='nxa-panel';
+    panel.id='nma-panel';
+    panel.className='nma-panel';
     panel.dataset.theme=workspaceTheme;
     panel.setAttribute('aria-hidden','true');
     panel.innerHTML=
-      '<div class="nxa-head">'+
-        '<div class="nxa-identity"><span class="nxa-orb" aria-hidden="true">N</span><div><strong>Nexa</strong><small id="nxa-context">Fichas Técnicas Dinámicas</small></div></div>'+
-        '<div class="nxa-head-actions"><span class="nxa-role" id="nxa-role" hidden></span><button id="nxa-close" class="nxa-icon-btn" type="button" aria-label="Cerrar Nexa">✕</button></div>'+
+      '<div class="nma-head">'+
+        '<div class="nma-identity"><span class="nma-orb" aria-hidden="true">N</span><div><strong>Numa</strong><small id="nma-context">Fichas Técnicas Dinámicas</small></div></div>'+
+        '<div class="nma-head-actions"><span class="nma-role" id="nma-role" hidden></span><button id="nma-close" class="nma-icon-btn" type="button" aria-label="Cerrar Numa">✕</button></div>'+
       '</div>'+
-      '<div class="nxa-status-row"><span class="nxa-status-dot"></span><span id="nxa-status">Preparando Nexa…</span></div>'+
-      '<div class="nxa-messages" id="nxa-messages"></div>'+
-      '<div class="nxa-compose"><textarea id="nxa-input" rows="2" maxlength="8000" placeholder="Busca una ficha o pregúntale a Nexa…"></textarea><button id="nxa-send" type="button" aria-label="Enviar mensaje">➤</button></div>';
+      '<div class="nma-status-row"><span class="nma-status-dot"></span><span id="nma-status">Preparando Numa…</span></div>'+
+      '<div class="nma-messages" id="nma-messages"></div>'+
+      '<div class="nma-compose"><textarea id="nma-input" rows="2" maxlength="8000" placeholder="Busca una ficha o pregúntale a Numa…"></textarea><button id="nma-send" type="button" aria-label="Enviar mensaje">➤</button></div>';
     document.body.appendChild(panel);
-    panel.querySelector('#nxa-close').onclick=nexaClose;
-    panel.querySelector('#nxa-send').onclick=nexaSend;
-    panel.querySelector('#nxa-input').addEventListener('keydown',event=>{
-      if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();nexaSend()}
-      if(event.key==='Escape')nexaClose();
+    panel.querySelector('#nma-close').onclick=numaClose;
+    panel.querySelector('#nma-send').onclick=numaSend;
+    panel.querySelector('#nma-input').addEventListener('keydown',event=>{
+      if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();numaSend()}
+      if(event.key==='Escape')numaClose();
     });
   }
-  nexaSyncHeader();
+  numaSyncHeader();
 }
 function openRequestedSheet(){
   if(requestedSheetOpened||!requestedSheetId)return;
   requestedSheetOpened=true;
-  postToEngine('NEXA_OPEN_RECIPE',{sheetId:requestedSheetId,title:requestedSheetTitle});
+  postToEngine('NUMA_OPEN_RECIPE',{sheetId:requestedSheetId,title:requestedSheetTitle});
 }
 function accessError(code){
   return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.');
@@ -256,7 +256,7 @@ function loginVisible(visible){
 }
 function retryAccess(){
   const u=new URL(location.href);
-  ['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));
+  ['nxb','nxbe','nxbs','nmav'].forEach(k=>u.searchParams.delete(k));
   location.replace(u.href);
 }
 async function api(action,payload={}){
@@ -291,7 +291,7 @@ async function api(action,payload={}){
 function stripBoot(){
   try{
     const u=new URL(location.href);
-    ['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));
+    ['nxb','nxbe','nxbs','nmav'].forEach(k=>u.searchParams.delete(k));
     history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
   }catch(_){}
 }
@@ -712,7 +712,7 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='ENGINE';
   mountEngine();
-  mountNexa();
+  mountNuma();
 }
 start().catch(showError);
 })();
