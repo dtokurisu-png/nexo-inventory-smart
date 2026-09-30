@@ -48,7 +48,7 @@ function numaRenderMessages(messages=[]){
   const zone=document.getElementById('nma-messages');
   if(!zone)return;
   if(!messages.length){
-    zone.innerHTML='<div class="nma-empty"><strong>Hola, soy Numa.</strong><span>Estoy dentro de Fichas Técnicas Dinámicas y puedo localizar una ficha visible y abrirla directamente.</span><small>Prueba: “Busca la sopa de cebolla”.</small></div>';
+    zone.innerHTML='<div class="nma-empty"><strong>Hola, soy Numa.</strong><span>Estoy dentro de Fichas Técnicas Dinámicas. Puedo buscar, listar y abrir fichas visibles sin consumir API.</span><small>Prueba: “¿Cuántas fichas tengo?”, “Busca la sopa de cebolla” o “Regresa”.</small></div>';
     return;
   }
   zone.innerHTML=messages.map(m=>
@@ -95,7 +95,7 @@ async function numaLoad(force=false){
     numaContextKey=key;
     numaSyncHeader();
     numaRenderMessages(data?.messages||[]);
-    numaSetStatus(data?.providerConfigured?'API configurada':'Búsqueda local activa','local');
+    numaSetStatus(data?.providerMode==='local_only'?'Modo local · sin consumo API':(data?.providerConfigured?'API configurada':'Búsqueda local activa'),'local');
   }catch(error){
     numaSetStatus(error?.message||String(error),'error');
   }finally{
@@ -129,6 +129,23 @@ function toolUrl(routePath){
 }
 function numaPerformAction(action){
   if(!action)return;
+  if(action.type==='openWorkspace'){
+    if(!action.workspaceId){numaSetStatus('Numa no recibió un Workspace válido.','error');return}
+    numaClose();
+    try{
+      const u=new URL(siteBase()+'/blank-8',location.href);
+      u.searchParams.set('nxoWorkspace',String(action.workspaceId));
+      u.searchParams.set('nxoTheme',workspaceTheme);
+      location.assign(u.href);
+    }catch(_){openPersonalSpace()}
+    return;
+  }
+  if(action.type==='goBack'){
+    numaClose();
+    if(history.length>1){history.back();return}
+    openPersonalSpace();
+    return;
+  }
   if(action.type==='openTechnicalSheet'){
     if(!action.sheetId){numaSetStatus('La ficha no tiene un identificador válido.','error');return}
     postToEngine('NUMA_OPEN_RECIPE',{sheetId:String(action.sheetId),title:String(action.title||'')});
@@ -166,7 +183,7 @@ async function numaSend(){
     };
     numaSyncHeader();
     numaRenderMessages(numaState.messages);
-    numaSetStatus(data?.provider==='openai'?'IA conectada':(data?.provider==='openai_error'?'OpenAI requiere atención':'Búsqueda local activa'),data?.provider==='openai'?'online':(data?.provider==='openai_error'?'error':'local'));
+    numaSetStatus(data?.provider==='openai'?'IA conectada':(data?.provider==='openai_error'?'OpenAI requiere atención':(data?.provider==='local_only'?'Modo local · sin consumo API':'Búsqueda local activa')),data?.provider==='openai'?'online':(data?.provider==='openai_error'?'error':'local'));
     if(data?.action)setTimeout(()=>numaPerformAction(data.action),350);
   }catch(error){
     const failed=[...optimistic,{role:'assistant',content:'No pude completar esa solicitud: '+(error?.message||String(error)),at:new Date().toISOString()}];
