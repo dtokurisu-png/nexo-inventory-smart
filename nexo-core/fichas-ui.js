@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260929-taxonomy-search-mobile-17';
-const ENGINE_REVISION='workspace-taxonomy-search-mobile-20260929-17';
+const ACCESS_REVISION='fichas-engine-20260930-prep-back-18';
+const ENGINE_REVISION='workspace-prep-back-20260930-18';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
