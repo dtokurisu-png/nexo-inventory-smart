@@ -220,8 +220,10 @@ function renderCategory(){
   const mode=state.mode,label=mode==='dish'?tr('Platos','Dishes'):mode==='prep'?tr('Preparaciones','Preparations'):tr('Productos','Products');
   const items=mode==='product'?activeProducts():activeRecipes().filter(r=>mode==='dish'?String(r.recipeType).toUpperCase()==='DISH':String(r.recipeType).toUpperCase()!=='DISH').sort((a,b)=>{const na=isNewRecipe(a),nb=isNewRecipe(b);if(na!==nb)return na?-1:1;return na&&nb?createdMs(b)-createdMs(a):(a.sortOrder||0)-(b.sortOrder||0)});
   const query=String(state.search?.[mode]||'');
-  view.innerHTML='<div class="homeView taxonomyCategory" data-taxonomy-view="'+mode+'"><div class="taxonomyCategoryHead"><div><h1>'+esc(label)+'</h1><p>'+esc(lang()==='en'?items.length+' items':items.length+' elementos')+'</p></div><button class="taxonomyBackHint" data-tax-root>← '+esc(tr('Categorías','Categories'))+'</button></div><div style="display:grid;gap:5px"><input class="search" data-tax-search inputmode="search" enterkeyhint="search" autocomplete="off" value="'+esc(query)+'" placeholder="'+esc(tr('Buscar…','Search…'))+'"><span data-tax-search-count class="muted" style="font-size:11px;min-height:14px"></span></div><div class="grid" data-tax-grid>'+(mode==='product'?items.map(productCard).join(''):items.map(recipeCard).join(''))+'</div></div>';
-  view.querySelector('[data-tax-root]').onclick=()=>{state.search[mode]='';state.mode='root';renderRoot()};
+  const categoryBack=mode==='prep'?'':'<button class="taxonomyBackHint" data-tax-root>← '+esc(tr('Categorías','Categories'))+'</button>';
+  view.innerHTML='<div class="homeView taxonomyCategory" data-taxonomy-view="'+mode+'"><div class="taxonomyCategoryHead"><div><h1>'+esc(label)+'</h1><p>'+esc(lang()==='en'?items.length+' items':items.length+' elementos')+'</p></div>'+categoryBack+'</div><div style="display:grid;gap:5px"><input class="search" data-tax-search inputmode="search" enterkeyhint="search" autocomplete="off" value="'+esc(query)+'" placeholder="'+esc(tr('Buscar…','Search…'))+'"><span data-tax-search-count class="muted" style="font-size:11px;min-height:14px"></span></div><div class="grid" data-tax-grid>'+(mode==='product'?items.map(productCard).join(''):items.map(recipeCard).join(''))+'</div></div>';
+  const categoryBackButton=view.querySelector('[data-tax-root]');
+  if(categoryBackButton)categoryBackButton.onclick=()=>{state.search[mode]='';state.mode='root';renderRoot()};
   bindTaxonomyCards();
   applyTaxonomySearch();
   startTaxonomySearchWatch();
