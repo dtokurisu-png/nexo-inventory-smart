@@ -904,7 +904,7 @@ function numaRenderMessages(messages=[]){
   const zone=document.getElementById("nma-messages");
   if(!zone)return;
   if(!messages.length){
-    zone.innerHTML='<div class="nma-empty"><strong>Hola, soy Numa.</strong><span>Puedo ayudarte a navegar por Nexo Group y entender el contexto en el que estás trabajando.</span><small>Prueba: “Abre Inventario Smart” o “¿Dónde estoy?”</small></div>';
+    zone.innerHTML='<div class="nma-empty"><strong>Hola, soy Numa.</strong><span>Puedo operar localmente Mi espacio, tus Workspaces y las herramientas autorizadas sin consumir API.</span><small>Prueba: “¿Qué puedes hacer?”, “¿Qué Workspaces tengo?” o “Abre Old Hickory Workspace”.</small></div>';
     return;
   }
   zone.innerHTML=messages.map(m=>
@@ -954,7 +954,7 @@ async function numaLoad(force=false){
     numaContextCacheKey=key;
     numaSyncHeader();
     numaRenderMessages(data?.messages||[]);
-    numaSetStatus(data?.providerConfigured?"API configurada":"Navegación local activa",data?.providerConfigured?"local":"local");
+    numaSetStatus(data?.providerMode==="local_only"?"Modo local · sin consumo API":(data?.providerConfigured?"API configurada":"Navegación local activa"),"local");
   }catch(e){
     numaSetStatus(e.message||String(e),"error");
   }finally{
@@ -982,6 +982,19 @@ function numaClose(){
 
 function numaPerformAction(action){
   if(!action)return;
+  if(action.type==="openWorkspace"){
+    if(!action.workspaceId){toast("Numa no recibió un Workspace válido.");return}
+    numaClose();
+    openWorkspace(String(action.workspaceId));
+    return;
+  }
+  if(action.type==="goBack"){
+    numaClose();
+    if(workspace?.workspace?.id){returnPersonal();return}
+    if(history.length>1){history.back();return}
+    location.assign(routeUrl("/blank-8"));
+    return;
+  }
   if(action.type==="openTechnicalSheet"){
     const route=routeUrl(action.routePath||"/blank-4");
     if(!route||!action.sheetId){toast("Numa no encontró una ficha disponible.");return}
@@ -1037,7 +1050,7 @@ async function numaSend(){
     };
     numaSyncHeader();
     numaRenderMessages(numaState.messages);
-    numaSetStatus(data?.provider==="openai"?"IA conectada":(data?.provider==="openai_error"?"OpenAI requiere atención":"Navegación local activa"),data?.provider==="openai"?"online":(data?.provider==="openai_error"?"error":"local"));
+    numaSetStatus(data?.provider==="openai"?"IA conectada":(data?.provider==="openai_error"?"OpenAI requiere atención":(data?.provider==="local_only"?"Modo local · sin consumo API":"Navegación local activa")),data?.provider==="openai"?"online":(data?.provider==="openai_error"?"error":"local"));
     if(data?.action)setTimeout(()=>numaPerformAction(data.action),450);
   }catch(e){
     const failed=[...optimistic,{role:"assistant",content:"No pude completar esa solicitud: "+(e.message||String(e)),at:new Date().toISOString()}];
