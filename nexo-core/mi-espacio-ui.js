@@ -1119,7 +1119,49 @@ async function workspaceCardAction(workspaceId,action){
   }catch(e){errorView(e)}
 }
 function bindTools(){document.querySelectorAll('[data-tool]').forEach(x=>x.onclick=()=>location.assign(x.dataset.tool))}
-async function start(){loading();const b=await waitBoot();accessStage='EXCHANGE';stripBoot();const ex=await api('exchange',{bootToken:b});sessionToken=ex.sessionToken||'';if(!sessionToken)throw accessError('NO_SESSION_TOKEN');accessStage='BOOTSTRAP';personal=await api('bootstrap');const requestedWorkspace=new URLSearchParams(location.search).get('nxoWorkspace');if(requestedWorkspace){try{workspace=await api('workspace.open',{workspaceId:requestedWorkspace});workspaceTab='tools';renderWorkspace();return}catch(_){clearWorkspaceReturnParam()}}renderPersonal()}
+async function start(){
+  loading();
+  const b=await waitBoot();
+  accessStage='EXCHANGE';
+  stripBoot();
+  const ex=await api('exchange',{bootToken:b});
+  sessionToken=ex.sessionToken||'';
+  if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
+  accessStage='BOOTSTRAP';
+  personal=await api('bootstrap');
+
+  const params=new URLSearchParams(location.search);
+  const acquireTool=String(params.get('nxoAcquireTool')||'').trim();
+  if(acquireTool){
+    try{
+      loading('Añadiendo herramienta a Mi espacio…');
+      personal=await api('personal.tool.acquire',{toolKey:acquireTool});
+      const u=new URL(location.href);
+      u.searchParams.delete('nxoAcquireTool');
+      history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
+      renderPersonal();
+      toast('Herramienta añadida a Mi espacio');
+      return
+    }catch(e){
+      const u=new URL(location.href);
+      u.searchParams.delete('nxoAcquireTool');
+      history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
+      errorView(e);
+      return
+    }
+  }
+
+  const requestedWorkspace=params.get('nxoWorkspace');
+  if(requestedWorkspace){
+    try{
+      workspace=await api('workspace.open',{workspaceId:requestedWorkspace});
+      workspaceTab='tools';
+      renderWorkspace();
+      return
+    }catch(_){clearWorkspaceReturnParam()}
+  }
+  renderPersonal()
+}
 function renderPersonal(){workspace=null;workspaceMembers=null;workspaceRoles=null;workspaceToolConfig=null;workspaceRecipeComments=null;workspacePendingNotes=null;const tools=personal?.tools||[],spaces=personal?.workspaces||[],activeSpaces=spaces.filter(w=>String(w.status||'ACTIVE').toUpperCase()!=='ARCHIVED'),archivedSpaces=spaces.filter(w=>String(w.status||'').toUpperCase()==='ARCHIVED'),inv=personal?.invitations||[];let welcomeHidden=false;try{welcomeHidden=localStorage.getItem('nexoWelcomeDismissed:v1')==='1'}catch(_){}
 const welcome=welcomeHidden?'':'<section class="nxo-welcome"><button id="nxo-dismiss-welcome" class="nxo-welcome-close" aria-label="Cerrar">✕</button><div class="nxo-eyebrow">Mi espacio</div><h2>Hola, '+esc(personal?.profile?.displayName||'Usuario Nexo')+'</h2><p>Desde aquí administras tus herramientas personales y entras a los Workspaces donde colaboras. Puedes cerrar este mensaje cuando ya no lo necesites.</p></section>';
 const summary='<section class="nxo-summary-strip"><div class="nxo-summary-item"><strong>'+tools.length+'</strong><span>Mis herramientas</span></div><div class="nxo-summary-item"><strong>'+spaces.length+'</strong><span>Workspaces</span></div><div class="nxo-summary-item"><strong>'+inv.length+'</strong><span>Invitaciones</span></div><div class="nxo-summary-item"><strong>●</strong><span>Cuenta activa</span></div></section>';
