@@ -1,4 +1,4 @@
-const CACHE='nexo-recetario-v46';
+const CACHE='nexo-recetario-v47';
 const SHELL=[
   './pwa.html',
   './live.html',
