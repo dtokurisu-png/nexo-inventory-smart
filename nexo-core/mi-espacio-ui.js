@@ -981,7 +981,23 @@ function nexaClose(){
 }
 
 function nexaPerformAction(action){
-  if(!action||action.type!=="navigate")return;
+  if(!action)return;
+  if(action.type==="openTechnicalSheet"){
+    const route=routeUrl(action.routePath||"/blank-4");
+    if(!route||!action.sheetId){toast("Nexa no encontró una ficha disponible.");return}
+    const wsid=workspace?.workspace?.id||"";
+    const label=wsid?(workspace?.workspace?.name||"Workspace"):"Mi espacio";
+    try{
+      const u=new URL(launchWithBack(route,label,wsid),location.href);
+      u.searchParams.set("nexaSheet",String(action.sheetId));
+      if(action.title)u.searchParams.set("nexaSheetTitle",String(action.title));
+      location.assign(u.href);
+    }catch(_){
+      location.assign(launchWithBack(route,label,wsid));
+    }
+    return;
+  }
+  if(action.type!=="navigate")return;
   if(action.target==="mi-espacio"){
     location.assign(routeUrl("/blank-8"));
     return;
