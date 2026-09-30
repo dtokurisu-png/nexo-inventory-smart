@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=profile-settings-shell-20260930-38';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=notification-foil-unread-20260930-39';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
-const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=profile-settings-shell-20260930-38';
+const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=notification-foil-unread-20260930-39';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -1530,7 +1530,7 @@ async function loadWorkspaceRecipeComments(){
       (visible.length
         ?'<div class="nxo-notification-list">'+visible.map(r=>{
           const when=nxoWhen(r.commentedAt),working=r.status==='applying',failed=r.status==='change_failed';
-          return '<article class="nxo-notification-item">'+
+          return '<article class="nxo-notification-item '+(r.unread?'nxo-notification-unread':'')+'" data-notification-id="'+esc(r.id)+'">'+
             '<div class="nxo-avatar">'+esc(initials(r.authorName))+'</div>'+
             '<div class="nxo-notification-copy"><strong>'+esc(r.recipeTitle||'Ficha técnica')+'</strong><span>'+esc(r.authorName||'Miembro Nexo')+'</span><p>'+esc(r.comment||'')+'</p>'+(when?'<small>'+esc(when)+'</small>':'')+(failed?'<em>La actualización anterior no se completó.</em>':'')+'</div>'+
             '<div class="nxo-notification-action">'+(working&&r.changeJobId?'<button class="nxo-btn" data-job-watch="'+esc(r.changeJobId)+'">Progreso</button>':'<button class="nxo-btn nxo-btn-gold" data-comment-review="'+esc(r.id)+'">Abrir</button>')+'</div>'+
@@ -1539,8 +1539,15 @@ async function loadWorkspaceRecipeComments(){
         :'<div class="nxo-notification-empty">No hay recomendaciones nuevas por revisar.</div>');
 
     zone.querySelectorAll('[data-comment-review]').forEach(b=>b.onclick=()=>{
+      const id=b.dataset.commentReview;
       document.getElementById('nxo-notification-menu')?.classList.remove('open');
-      openRecipeRecommendation(b.dataset.commentReview);
+      const row=(workspaceRecipeComments?.comments||[]).find(x=>x.id===id);
+      if(row?.unread){
+        row.unread=false;
+        zone.querySelector('[data-notification-id="'+CSS.escape(id)+'"]')?.classList.remove('nxo-notification-unread');
+        api('comment.seen',{commentId:id}).catch(()=>{row.unread=true});
+      }
+      openRecipeRecommendation(id);
     });
     zone.querySelectorAll('[data-job-watch]').forEach(b=>b.onclick=()=>{
       document.getElementById('nxo-notification-menu')?.classList.remove('open');
