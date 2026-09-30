@@ -9,7 +9,7 @@ function syncDeviceClass(){root.classList.toggle('nexoMobile',mobileDevice())}
 syncDeviceClass();
 addEventListener('resize',()=>{cancelAnimationFrame(deviceSyncFrame);deviceSyncFrame=requestAnimationFrame(syncDeviceClass)});
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],preparations:[]};
-const state={mode:'root',nativeCards:{dish:[],prep:[]},productModal:false,applying:false,timer:null};
+const state={mode:'root',nativeCards:{dish:[],prep:[]},productModal:false,applying:false,timer:null,search:{dish:'',prep:'',product:''}};
 const style=document.createElement('style');style.id='nexo-taxonomy-core-v3-style';style.textContent=`
 .recipeCard:before{display:none!important}.recipeCard{appearance:none;-webkit-appearance:none;position:relative;border-top:1px solid var(--line)}.recipeCard:after{content:"";position:absolute;z-index:4;left:0;right:0;bottom:0;height:9px;background:var(--product)}.recipeCard.cardDish:after{background:var(--dish)}.recipeCard.cardPrep:after{background:var(--prep)}.recipeCard.cardProduct:after{background:var(--product)}.recipeCard .meta{padding-bottom:22px}.nexoNewStar{position:absolute;z-index:12;right:10px;top:10px;display:grid;place-items:center;width:38px;height:38px;border-radius:999px;background:#fff7c7;color:#9a6800;border:1px solid #e9cc67;box-shadow:0 5px 16px rgba(0,0,0,.18);font-size:24px;line-height:1;font-weight:900}.nexoNewStar[title]{cursor:help}
 .taxonomyHome,.taxonomyCategory{padding:0}.taxonomyIntro{margin-bottom:18px}.taxonomyGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.taxonomyMaster{--masterStripe:var(--product);appearance:none;-webkit-appearance:none;position:relative;min-height:210px;border:1px solid var(--line);border-radius:18px;background:var(--panel);overflow:hidden;text-align:left;padding:24px 22px 28px;margin-bottom:12px;color:var(--ink);box-shadow:0 10px 0 var(--masterStripe),0 18px 28px rgba(23,39,85,.08)!important;transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease}.taxonomyMaster:hover,.taxonomyMaster:focus-visible{transform:translateY(-2px);border-color:#f1994a;box-shadow:0 10px 0 var(--masterStripe),0 20px 30px rgba(23,39,85,.16)!important;outline:none}.taxonomyMaster.dish{--masterStripe:var(--dish)}.taxonomyMaster.prep{--masterStripe:var(--prep)}.taxonomyMaster.product{--masterStripe:var(--product)}.taxonomyMaster:after{content:none!important;display:none!important}.taxonomyLabel{display:inline-flex;padding:5px 9px;border:1px solid currentColor;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.taxonomyMaster.dish .taxonomyLabel{color:var(--dish)}.taxonomyMaster.prep .taxonomyLabel{color:var(--prep)}.taxonomyMaster.product .taxonomyLabel{color:var(--product)}.taxonomyMaster h2{margin:34px 0 6px;font-size:30px;letter-spacing:-.035em}.taxonomyMaster p{margin:0;color:var(--muted)}.taxonomyCount{position:absolute;right:20px;top:20px;display:grid;place-items:center;min-width:42px;height:42px;padding:0 10px;border-radius:999px;background:var(--bg);font-weight:900}.taxonomyCategoryHead{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}.taxonomyCategoryHead h1{margin:0;font-size:clamp(30px,5vw,46px);letter-spacing:-.035em}.taxonomyCategoryHead p{margin:5px 0 0;color:var(--muted)}.taxonomyCategory .search{margin-bottom:15px}.taxonomyBackHint{border:1px solid #172755;background:#264c8f;color:#fff;border-radius:11px;padding:9px 12px;font-weight:800;transition:transform .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease}.taxonomyBackHint:hover,.taxonomyBackHint:focus-visible{background:#f1994a;color:#111827;transform:translateY(-1px);box-shadow:0 7px 15px rgba(23,39,85,.15);outline:none}.taxonomyProductCard[data-product-id]{cursor:default}.taxonomyProductOpen{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left}.taxonomyProductOpen[data-product-open]{cursor:zoom-in}.taxonomyProductPhotoBtn{display:flex;align-items:center;justify-content:center;gap:7px;width:calc(100% - 24px);margin:0 12px 18px;min-height:44px;border:1px solid var(--product);border-radius:12px;background:#fffaf0;color:#7f5515;font-weight:900;font-size:15px}.taxonomyProductPhotoBtn:active{transform:translateY(1px)}.taxonomyImageShade{position:fixed;z-index:180;inset:0;background:rgba(12,11,9,.88);display:grid;place-items:center;padding:24px}.taxonomyImageViewer{position:relative;display:flex;align-items:center;justify-content:center;width:min(1100px,96vw);height:min(900px,92dvh)}.taxonomyImageViewer img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.38)}.taxonomyImageClose{position:absolute;z-index:2;right:8px;top:8px;width:46px;height:46px;border:1px solid rgba(255,255,255,.35);border-radius:999px;background:rgba(20,18,15,.72);color:#fff;font-size:26px;line-height:1;display:grid;place-items:center}
@@ -155,8 +155,95 @@ function renderRoot(){if(state.applying||view.querySelector('.recipeView'))retur
 function recipeCard(r){const u=img(r.heroImage),dish=String(r.recipeType).toUpperCase()==='DISH',fresh=isNewRecipe(r),tag=dish?tr('Platos','Dishes'):tr('Preparaciones','Preparations');return '<button class="card recipeCard '+(dish?'cardDish':'cardPrep')+'" data-r="'+esc(r._id)+'"><div class="thumb">'+(u?'<img src="'+esc(u)+'" alt="'+esc(text(r,'titleEn','titleEs'))+'">':'<span class="muted">'+esc(tr('Sin foto','No photo'))+'</span>')+'</div><div class="meta"><span class="tag '+(dish?'tagDish':'tagPrep')+'">'+esc(tag)+'</span><h3>'+esc(text(r,'titleEn','titleEs')||'—')+'</h3><span class="muted">'+esc(r.category||'')+'</span></div>'+(fresh?'<span class="nexoNewStar" title="'+esc(tr('Nueva · menos de 30 días','New · less than 30 days'))+'">★</span>':'')+'</button>'}
 function productCard(p){const u=img(p.baseImage),name=text(p,'nameEn','nameEs'),photoLabel=u?tr('Cambiar foto','Change photo'):tr('Tomar foto','Take photo'),body='<div class="thumb">'+(u?'<img src="'+esc(u)+'" alt="'+esc(name)+'">':'<span class="muted">'+esc(tr('Sin foto','No photo'))+'</span>')+'</div><div class="meta"><span class="tag tagProduct">'+esc(tr('Productos','Products'))+'</span><h3>'+esc(name)+'</h3><span class="muted">'+esc(tr('Producto base','Base product'))+'</span></div>';return '<article class="card recipeCard cardProduct taxonomyProductCard '+(u?'':'taxonomyNoPhoto')+'" data-product-id="'+esc(p._id)+'">'+(u?'<button class="taxonomyProductOpen" data-product-open="'+esc(p._id)+'">'+body+'</button>':'<div class="taxonomyProductOpen">'+body+'</div>')+'<button class="taxonomyProductPhotoBtn" data-product-photo="'+esc(p._id)+'" type="button">📷 '+esc(photoLabel)+'</button></article>'}
 function taxNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
-function taxonomySearchText(mode,id){const D=data(),vals=[];if(mode==='product'){const p=(D.ingredients||[]).find(x=>x._id===id);if(p)vals.push(p.nameEn,p.nameEs,p.descriptionEn,p.descriptionEs);return taxNorm(vals.filter(Boolean).join(' '))}const r=(D.recipes||[]).find(x=>x._id===id);if(!r)return'';vals.push(r.titleEn,r.titleEs,r.category,r.notesEn,r.notesEs);const secs=(D.sections||[]).filter(s=>s.recipeId===id),ids=new Set(secs.map(s=>s._id));secs.forEach(s=>vals.push(s.titleEn,s.titleEs));(D.components||[]).filter(c=>c.recipeId===id||ids.has(c.sectionId)).forEach(c=>vals.push(c.displayEn,c.displayEs,c.noteEn,c.noteEs));return taxNorm(vals.filter(Boolean).join(' '))}
-function renderCategory(){if(state.applying||view.querySelector('.recipeView'))return;state.applying=true;const mode=state.mode,label=mode==='dish'?tr('Platos','Dishes'):mode==='prep'?tr('Preparaciones','Preparations'):tr('Productos','Products'),items=mode==='product'?activeProducts():activeRecipes().filter(r=>mode==='dish'?String(r.recipeType).toUpperCase()==='DISH':String(r.recipeType).toUpperCase()!=='DISH').sort((a,b)=>{const na=isNewRecipe(a),nb=isNewRecipe(b);if(na!==nb)return na?-1:1;return na&&nb?createdMs(b)-createdMs(a):(a.sortOrder||0)-(b.sortOrder||0)});view.innerHTML='<div class="homeView taxonomyCategory" data-taxonomy-view="'+mode+'"><div class="taxonomyCategoryHead"><div><h1>'+esc(label)+'</h1><p>'+esc(lang()==='en'?items.length+' items':items.length+' elementos')+'</p></div><button class="taxonomyBackHint" data-tax-root>← '+esc(tr('Categorías','Categories'))+'</button></div><input class="search" data-tax-search placeholder="'+esc(tr('Buscar…','Search…'))+'"><div class="grid" data-tax-grid>'+(mode==='product'?items.map(productCard).join(''):items.map(recipeCard).join(''))+'</div></div>';view.querySelector('[data-tax-root]').onclick=()=>{state.mode='root';renderRoot()};view.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>window.NEXO_MENU_API?.openRecipe?.(b.dataset.r));view.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>openProductImage(b.dataset.productOpen));const q=view.querySelector('[data-tax-search]');q.oninput=()=>{const tokens=taxNorm(q.value).split(' ').filter(Boolean);[...view.querySelector('[data-tax-grid]').children].forEach(card=>{const id=mode==='product'?card.dataset.productId:card.dataset.r,hay=taxonomySearchText(mode,id),ok=tokens.every(x=>hay.includes(x));card.style.display=ok?'':'none'})};syncBack();state.applying=false;window.dispatchEvent(new CustomEvent('NEXO_TAXONOMY_RENDERED',{detail:{mode}}))}
+function taxonomySearchText(mode,id){
+  const D=data(),vals=[];
+  if(mode==='product'){
+    const p=(D.ingredients||[]).find(x=>x._id===id);
+    if(p)vals.push(p.nameEn,p.nameEs,p.descriptionEn,p.descriptionEs);
+    return taxNorm(vals.filter(Boolean).join(' '))
+  }
+  const r=(D.recipes||[]).find(x=>x._id===id);
+  if(!r)return'';
+  vals.push(r.titleEn,r.titleEs,r.category,r.notesEn,r.notesEs,r.methodEn,r.methodEs);
+  const secs=(D.sections||[]).filter(s=>s.recipeId===id),ids=new Set(secs.map(s=>s._id));
+  secs.forEach(s=>vals.push(s.titleEn,s.titleEs));
+  (D.components||[]).filter(comp=>comp.recipeId===id||ids.has(comp.sectionId)).forEach(comp=>{
+    vals.push(comp.displayEn,comp.displayEs,comp.noteEn,comp.noteEs);
+    if(comp.targetIngredientId){
+      const ing=(D.ingredients||[]).find(x=>x._id===comp.targetIngredientId);
+      if(ing)vals.push(ing.nameEn,ing.nameEs,ing.descriptionEn,ing.descriptionEs)
+    }
+    if(comp.targetPreparationId){
+      const prep=(D.preparations||[]).find(x=>x._id===comp.targetPreparationId);
+      if(prep)vals.push(prep.nameEn,prep.nameEs,prep.descriptionEn,prep.descriptionEs)
+    }
+    if(comp.targetRecipeId){
+      const sub=(D.recipes||[]).find(x=>x._id===comp.targetRecipeId);
+      if(sub)vals.push(sub.titleEn,sub.titleEs)
+    }
+  });
+  return taxNorm(vals.filter(Boolean).join(' '))
+}
+function taxonomyMatches(mode,id,query){
+  const tokens=taxNorm(query).split(' ').filter(Boolean);
+  if(!tokens.length)return true;
+  const hay=taxonomySearchText(mode,id);
+  return tokens.every(token=>hay.includes(token))
+}
+function bindTaxonomyCards(){
+  view.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>window.NEXO_MENU_API?.openRecipe?.(b.dataset.r));
+  view.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>openProductImage(b.dataset.productOpen))
+}
+function applyTaxonomySearch(){
+  const mode=state.mode;
+  if(!['dish','prep','product'].includes(mode))return;
+  const q=view.querySelector('[data-tax-search]');
+  const grid=view.querySelector('[data-tax-grid]');
+  if(!q||!grid)return;
+  const query=String(state.search?.[mode]||'');
+  if(q.value!==query)q.value=query;
+  let visible=0,total=0;
+  [...grid.children].forEach(card=>{
+    const id=mode==='product'?card.dataset.productId:card.dataset.r;
+    const ok=taxonomyMatches(mode,id,query);
+    card.hidden=!ok;
+    card.style.display=ok?'':'none';
+    total++;
+    if(ok)visible++
+  });
+  const counter=view.querySelector('[data-tax-search-count]');
+  if(counter)counter.textContent=query.trim()?visible+' / '+total:''
+}
+function renderCategory(){
+  if(state.applying||view.querySelector('.recipeView'))return;
+  state.applying=true;
+  const mode=state.mode,label=mode==='dish'?tr('Platos','Dishes'):mode==='prep'?tr('Preparaciones','Preparations'):tr('Productos','Products');
+  const items=mode==='product'?activeProducts():activeRecipes().filter(r=>mode==='dish'?String(r.recipeType).toUpperCase()==='DISH':String(r.recipeType).toUpperCase()!=='DISH').sort((a,b)=>{const na=isNewRecipe(a),nb=isNewRecipe(b);if(na!==nb)return na?-1:1;return na&&nb?createdMs(b)-createdMs(a):(a.sortOrder||0)-(b.sortOrder||0)});
+  const query=String(state.search?.[mode]||'');
+  view.innerHTML='<div class="homeView taxonomyCategory" data-taxonomy-view="'+mode+'"><div class="taxonomyCategoryHead"><div><h1>'+esc(label)+'</h1><p>'+esc(lang()==='en'?items.length+' items':items.length+' elementos')+'</p></div><button class="taxonomyBackHint" data-tax-root>← '+esc(tr('Categorías','Categories'))+'</button></div><div style="display:grid;gap:5px"><input class="search" data-tax-search inputmode="search" enterkeyhint="search" autocomplete="off" value="'+esc(query)+'" placeholder="'+esc(tr('Buscar…','Search…'))+'"><span data-tax-search-count class="muted" style="font-size:11px;min-height:14px"></span></div><div class="grid" data-tax-grid>'+(mode==='product'?items.map(productCard).join(''):items.map(recipeCard).join(''))+'</div></div>';
+  view.querySelector('[data-tax-root]').onclick=()=>{state.search[mode]='';state.mode='root';renderRoot()};
+  bindTaxonomyCards();
+  applyTaxonomySearch();
+  syncBack();
+  state.applying=false;
+  window.dispatchEvent(new CustomEvent('NEXO_TAXONOMY_RENDERED',{detail:{mode}}))
+}
+function handleTaxonomySearchEvent(e){
+  const input=e.target?.closest?.('[data-tax-search]');
+  if(!input)return;
+  const mode=state.mode;
+  if(!['dish','prep','product'].includes(mode))return;
+  state.search[mode]=String(input.value||'');
+  applyTaxonomySearch()
+}
+['input','keyup','change','search','compositionend'].forEach(type=>document.addEventListener(type,handleTaxonomySearchEvent,true));
+document.addEventListener('keydown',e=>{
+  if(!e.target?.matches?.('[data-tax-search]')||e.key!=='Enter')return;
+  e.preventDefault();
+  handleTaxonomySearchEvent(e);
+  e.target.blur()
+},true);
+
 function openProductImage(id){const p=activeProducts().find(x=>x._id===id),u=img(p?.baseImage);if(!p||!u)return;state.productModal=true;syncBack();const name=text(p,'nameEn','nameEs');modal.innerHTML='<div class="taxonomyImageShade" id="taxonomyShade"><div class="taxonomyImageViewer"><img src="'+esc(u)+'" alt="'+esc(name)+'"><button id="taxonomyClose" class="taxonomyImageClose">×</button></div></div>';const close=()=>{state.productModal=false;modal.innerHTML='';syncBack()};document.getElementById('taxonomyClose').onclick=close;document.getElementById('taxonomyShade').onclick=e=>{if(e.target.id==='taxonomyShade')close()};state.closeProduct=close}
 function applyHome(){if(view.querySelector('.recipeView')){syncBack();return}if(state.mode==='root')renderRoot();else renderCategory()}
 back.addEventListener('click',e=>{if(state.productModal){e.preventDefault();e.stopImmediatePropagation();state.closeProduct?.();return}if(view.querySelector('[data-taxonomy-view]')&&state.mode!=='root'){e.preventDefault();e.stopImmediatePropagation();state.mode='root';renderRoot()}},true);
