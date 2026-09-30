@@ -2170,3 +2170,22 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   PROFILE PHOTO · 2026-09-30
+   Point 17: persistent member profile image.
+========================================================= */
+.nxo-avatar{
+  overflow:hidden!important
+}
+.nxo-avatar img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  border-radius:inherit!important
+}
+.nxo-profile-photo-input{
+  display:none!important
+}
+
