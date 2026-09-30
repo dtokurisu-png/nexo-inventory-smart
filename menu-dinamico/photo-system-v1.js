@@ -73,7 +73,7 @@ async function scopedPendingRows(){
     if(rec?.synced===true){try{await deleteRecord(rec.key)}catch(_){}continue}
     if(!rec?.blob)continue;
     if(rec.scopeId===scope)mine.push(rec);
-    else if(!rec.scopeId&&rec.legacy===true&&canClaimLegacy())legacy.push(rec)
+    else if(!rec.scopeId&&rec.synced!==true&&canClaimLegacy())legacy.push(rec)
   }
   if(legacy.length){
     for(const rec of legacy){
