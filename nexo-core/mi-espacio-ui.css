@@ -219,6 +219,39 @@ html,body{margin:0}
   background:rgba(105,167,255,.10);border:1px solid rgba(105,167,255,.24);
   color:#9bc4ff;font-size:18px;font-weight:900
 }
+.nxo-workspace-logo{
+  width:44px;height:44px;border-radius:12px;display:grid;place-items:center;overflow:hidden;
+  background:rgba(105,167,255,.10);border:1px solid rgba(105,167,255,.24);
+  color:#9bc4ff;font-size:19px;font-weight:900;flex:0 0 auto
+}
+.nxo-workspace-logo img{
+  width:100%;height:100%;display:block;object-fit:cover
+}
+.nxo-workspace-logo-settings{
+  display:flex;align-items:center;gap:14px;margin:4px 0 18px;padding:13px;
+  border:1px solid var(--nxo-line);border-radius:14px;background:rgba(255,255,255,.03)
+}
+.nxo-workspace-logo-preview{
+  width:78px;height:78px;border-radius:18px;display:grid;place-items:center;overflow:hidden;flex:0 0 auto;
+  background:rgba(105,167,255,.10);border:1px solid rgba(105,167,255,.24);
+  color:#9bc4ff;font-size:28px;font-weight:900
+}
+.nxo-workspace-logo-preview img{width:100%;height:100%;display:block;object-fit:cover}
+.nxo-workspace-logo-copy{display:grid;gap:5px;min-width:0}
+.nxo-workspace-logo-copy strong{font-size:13px}
+.nxo-workspace-logo-copy p{margin:0;color:var(--nxo-muted);font-size:11px;line-height:1.45}
+.nxo-workspace-logo-copy .nxo-btn{width:max-content;margin-top:3px}
+.nxo-app[data-theme="day"] .nxo-workspace-logo,
+.nxo-app[data-theme="day"] .nxo-workspace-logo-preview{
+  background:#eef4ff;border-color:#b9cbed;color:#264c8f
+}
+.nxo-app[data-theme="day"] .nxo-workspace-logo-settings{
+  background:rgba(255,255,255,.36);border-color:#b9cbed
+}
+@media(max-width:620px){
+  .nxo-workspace-logo-settings{align-items:flex-start}
+  .nxo-workspace-logo-preview{width:66px;height:66px;border-radius:16px}
+}
 .nxo-card h4{margin:13px 0 6px;font-size:15px}
 .nxo-card p{margin:0;color:var(--nxo-muted);font-size:12px;line-height:1.48}
 .nxo-card-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px}
