@@ -1678,3 +1678,29 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   WORKSPACE ACTIONS RESPONSIVE PLACEMENT · 2026-09-30
+   Desktop: beside "Mis Workspaces". Mobile: inside hamburger menu.
+========================================================= */
+.nxo-workspace-list-head{
+  align-items:center!important
+}
+.nxo-workspace-desktop-actions{
+  display:flex!important;
+  align-items:center;
+  gap:8px;
+  margin-left:auto
+}
+.nxo-header-workspace-actions{
+  display:none!important
+}
+
+@media(max-width:760px){
+  .nxo-workspace-desktop-actions{
+    display:none!important
+  }
+  .nxo-header-workspace-actions{
+    display:grid!important
+  }
+}
+
