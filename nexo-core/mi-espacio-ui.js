@@ -1,6 +1,7 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=mobile-hamburger-20260930-24';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=nexo-brand-logo-20260930-25';
+const NEXO_LOGO='https://dtokurisu-png.github.io/nexo-inventory-smart/menu-dinamico/nexo-app-logo.svg?v=nexo-brand-logo-20260930-25';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -942,7 +943,7 @@ function topbar(mode){
     :'';
 
   return '<header class="nxo-topbar nxo-workspace-nav">'+
-    '<div class="nxo-nav-brand" id="nxo-nav-home"><span class="nxo-nav-mark">N</span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div>'+
+    '<div class="nxo-nav-brand" id="nxo-nav-home"><span class="nxo-nav-mark"><img src="' + esc(NEXO_LOGO) + '" alt="Nexo Group"></span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div>'+
     '<button type="button" class="nxo-mobile-menu-button" id="nxo-mobile-menu-button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nxo-nav-collapse"><span></span><span></span><span></span></button>'+
     '<div class="nxo-nav-collapse" id="nxo-nav-collapse">'+
       '<nav class="nxo-nav-links" aria-label="Navegación principal">'+
