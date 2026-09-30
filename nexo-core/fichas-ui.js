@@ -256,7 +256,7 @@ function loginVisible(visible){
 }
 function retryAccess(){
   const u=new URL(location.href);
-  ['nxb','nxbe','nxbs','nmav'].forEach(k=>u.searchParams.delete(k));
+  ['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));
   location.replace(u.href);
 }
 async function api(action,payload={}){
@@ -291,7 +291,7 @@ async function api(action,payload={}){
 function stripBoot(){
   try{
     const u=new URL(location.href);
-    ['nxb','nxbe','nxbs','nmav'].forEach(k=>u.searchParams.delete(k));
+    ['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));
     history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
   }catch(_){}
 }
