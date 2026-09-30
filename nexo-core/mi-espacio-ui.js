@@ -1,7 +1,7 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-header-actions-20260930-26';
-const NEXO_LOGO='https://dtokurisu-png.github.io/nexo-inventory-smart/menu-dinamico/nexo-app-logo.svg?v=workspace-header-actions-20260930-26';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=pending-note-tilt-20260930-27';
+const NEXO_LOGO='https://dtokurisu-png.github.io/nexo-inventory-smart/menu-dinamico/nexo-app-logo.svg?v=pending-note-tilt-20260930-27';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
