@@ -95,7 +95,7 @@ async function nexaLoad(force=false){
     nexaContextKey=key;
     nexaSyncHeader();
     nexaRenderMessages(data?.messages||[]);
-    nexaSetStatus(data?.providerConfigured?'IA conectada':'Búsqueda local activa',data?.providerConfigured?'online':'local');
+    nexaSetStatus(data?.providerConfigured?'API configurada':'Búsqueda local activa','local');
   }catch(error){
     nexaSetStatus(error?.message||String(error),'error');
   }finally{
@@ -166,7 +166,7 @@ async function nexaSend(){
     };
     nexaSyncHeader();
     nexaRenderMessages(nexaState.messages);
-    nexaSetStatus(data?.provider==='openai'?'IA conectada':'Búsqueda local activa',data?.provider==='openai'?'online':'local');
+    nexaSetStatus(data?.provider==='openai'?'IA conectada':(data?.provider==='openai_error'?'OpenAI requiere atención':'Búsqueda local activa'),data?.provider==='openai'?'online':(data?.provider==='openai_error'?'error':'local'));
     if(data?.action)setTimeout(()=>nexaPerformAction(data.action),350);
   }catch(error){
     const failed=[...optimistic,{role:'assistant',content:'No pude completar esa solicitud: '+(error?.message||String(error)),at:new Date().toISOString()}];
