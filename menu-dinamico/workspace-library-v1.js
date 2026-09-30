@@ -22,6 +22,35 @@ function canCreate(){return capabilities().canEdit===true}
 function activeRecipes(){return(data().recipes||[]).filter(x=>x&&x.active!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0))}
 function activeProducts(){return(data().ingredients||[]).filter(x=>x&&x.active!==false)}
 function hasContent(){return activeRecipes().length>0||activeProducts().length>0}
+function searchNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
+function sheetSearchCorpus(recipe){
+  const d=data(),vals=[recipe?.titleEn,recipe?.titleEs,recipe?.category,recipe?.recipeType,recipe?.notesEn,recipe?.notesEs];
+  const sections=(d.sections||[]).filter(s=>s&&s.recipeId===recipe?._id);
+  const sectionIds=new Set(sections.map(s=>s._id));
+  sections.forEach(s=>vals.push(s.titleEn,s.titleEs));
+  (d.components||[]).filter(c=>c&&(c.recipeId===recipe?._id||sectionIds.has(c.sectionId))).forEach(comp=>{
+    vals.push(comp.displayEn,comp.displayEs,comp.noteEn,comp.noteEs);
+    if(comp.targetIngredientId){
+      const ing=(d.ingredients||[]).find(x=>x&&x._id===comp.targetIngredientId);
+      if(ing)vals.push(ing.nameEn,ing.nameEs)
+    }
+    if(comp.targetPreparationId){
+      const prep=(d.preparations||[]).find(x=>x&&x._id===comp.targetPreparationId);
+      if(prep)vals.push(prep.nameEn,prep.nameEs)
+    }
+    if(comp.targetRecipeId){
+      const sub=(d.recipes||[]).find(x=>x&&x._id===comp.targetRecipeId);
+      if(sub)vals.push(sub.titleEn,sub.titleEs)
+    }
+  });
+  return searchNorm(vals.filter(Boolean).join(' '))
+}
+function sheetMatches(recipe,query){
+  const tokens=searchNorm(query).split(' ').filter(Boolean);
+  if(!tokens.length)return true;
+  const corpus=sheetSearchCorpus(recipe);
+  return tokens.every(token=>corpus.includes(token))
+}
 
 function sheetCard(r){
   const dish=String(r.recipeType||'').toUpperCase()==='DISH';
@@ -52,15 +81,26 @@ function renderSheets(root){
     bindActions(body);
     return;
   }
-  body.innerHTML='<div class="nexoWorkspaceSheetTools"><input class="search" data-nexo-sheet-search placeholder="'+esc(tr('Buscar ficha técnica…','Search technical sheet…'))+'"></div><div class="grid" data-nexo-sheet-grid>'+recipes.map(sheetCard).join('')+'</div>';
+  body.innerHTML='<div class="nexoWorkspaceSheetTools"><input class="search" data-nexo-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar receta, ingrediente o preparación…','Search recipe, ingredient or preparation…'))+'"><span data-nexo-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-nexo-sheet-grid>'+recipes.map(sheetCard).join('')+'</div>';
   body.querySelectorAll('[data-workspace-sheet]').forEach(card=>card.onclick=()=>window.NEXO_MENU_API?.openRecipe?.(card.dataset.workspaceSheet));
   const search=body.querySelector('[data-nexo-sheet-search]');
-  if(search)search.oninput=()=>{
-    const q=String(search.value||'').trim().toLowerCase();
+  const count=body.querySelector('[data-nexo-search-count]');
+  const applySearch=()=>{
+    const q=String(search?.value||'');
+    let visible=0;
     body.querySelectorAll('[data-workspace-sheet]').forEach(card=>{
-      card.style.display=!q||card.textContent.toLowerCase().includes(q)?'':'none';
+      const recipe=recipes.find(r=>r._id===card.dataset.workspaceSheet);
+      const show=recipe?sheetMatches(recipe,q):false;
+      card.hidden=!show;
+      card.style.display=show?'':'none';
+      if(show)visible++;
     });
+    if(count)count.textContent=q.trim()?visible+' / '+recipes.length:'';
   };
+  if(search){
+    ['input','keyup','change','search','compositionend'].forEach(type=>search.addEventListener(type,applySearch));
+    search.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applySearch();search.blur()}});
+  }
 }
 
 function renderCollections(root){
