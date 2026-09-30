@@ -2643,3 +2643,35 @@ html,body{margin:0}
   box-shadow:0 16px 34px rgba(0,0,0,.28),0 0 0 1px rgba(225,189,105,.08)!important
 }
 
+/* =========================================================
+   LOADING TEXT THEME CONTRAST · 2026-09-30
+   Mi espacio / Workspace loading states follow the active theme.
+========================================================= */
+.nxo-app[data-theme="day"] .nxo-loading,
+.nxo-app[data-theme="day"] .nxo-loading strong{
+  color:#111827!important
+}
+.nxo-app[data-theme="day"] .nxo-loading .nxo-muted{
+  color:#5b6780!important
+}
+
+.nxo-app[data-theme="night"] .nxo-loading,
+.nxo-app[data-theme="night"] .nxo-loading strong{
+  color:#f2f5fa!important
+}
+.nxo-app[data-theme="night"] .nxo-loading .nxo-muted{
+  color:#a8b2c3!important
+}
+
+/* Error/loading messages share the same readable theme logic. */
+.nxo-app[data-theme="night"] .nxo-loading .nxo-error,
+.nxo-app[data-theme="night"] .nxo-loading .nxo-error h2,
+.nxo-app[data-theme="night"] .nxo-loading .nxo-error p{
+  color:#f2f5fa!important
+}
+.nxo-app[data-theme="day"] .nxo-loading .nxo-error,
+.nxo-app[data-theme="day"] .nxo-loading .nxo-error h2,
+.nxo-app[data-theme="day"] .nxo-loading .nxo-error p{
+  color:#111827!important
+}
+
