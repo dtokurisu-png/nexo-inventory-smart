@@ -2104,3 +2104,20 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   PENDING COUNT NEXT TO TITLE · 2026-09-30
+   Point 15: the counter belongs beside "Pendientes".
+========================================================= */
+.nxo-pending-title-row{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:7px
+}
+.nxo-pending-title-row .nxo-pending-count{
+  flex:0 0 auto;
+  min-width:22px;
+  justify-content:center;
+  text-align:center
+}
+
