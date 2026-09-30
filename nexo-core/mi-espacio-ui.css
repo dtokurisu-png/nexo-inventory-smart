@@ -2558,3 +2558,88 @@ html,body{margin:0}
   color:#17130c!important
 }
 
+/* =========================================================
+   NIGHT GOLD ACCENT SYSTEM · 2026-09-30
+   Point 21: gold belongs primarily to night mode.
+   Gold = selection/emphasis, green = positive action,
+   red = destructive action.
+========================================================= */
+.nxo-app[data-theme="night"]{
+  --nxo-gold:#d7ad55!important;
+  --nxo-gold2:#f0ce83!important;
+  --nxo-shell-gold:#e1bd69!important
+}
+
+/* Navigation and section emphasis */
+.nxo-app[data-theme="night"] .nxo-nav-link.active{
+  color:#e1bd69!important
+}
+.nxo-app[data-theme="night"] .nxo-nav-link.active:after{
+  background:#e1bd69!important
+}
+.nxo-app[data-theme="night"] .nxo-nav-link:hover:after,
+.nxo-app[data-theme="night"] .nxo-nav-link:focus-visible:after{
+  background:#d7b45f!important
+}
+.nxo-app[data-theme="night"] .nxo-eyebrow{
+  color:#e1bd69!important
+}
+
+/* Selected tabs use gold without turning the whole panel yellow. */
+.nxo-app[data-theme="night"] .nxo-tab.active{
+  color:#f0ce83!important;
+  background:rgba(225,189,105,.10)!important;
+  border-color:rgba(225,189,105,.28)!important;
+  box-shadow:none!important
+}
+.nxo-app[data-theme="night"] .nxo-tab:hover,
+.nxo-app[data-theme="night"] .nxo-tab:focus-visible{
+  color:#f2f5fa!important;
+  background:rgba(255,255,255,.055)!important;
+  border-color:rgba(225,189,105,.18)!important
+}
+
+/* Profile role and small emphasis chips receive a restrained gold tint. */
+.nxo-app[data-theme="night"] .nxo-nav-account-role{
+  color:#f0ce83!important;
+  background:rgba(225,189,105,.08)!important;
+  border-color:rgba(225,189,105,.22)!important
+}
+.nxo-app[data-theme="night"] .nxo-pending-count{
+  color:#e8d5a0!important;
+  background:rgba(225,189,105,.07)!important;
+  border-color:rgba(225,189,105,.18)!important
+}
+
+/* Account menu selection uses gold only as an interaction highlight. */
+.nxo-app[data-theme="night"] .nxo-nav-account-menu button:hover,
+.nxo-app[data-theme="night"] .nxo-nav-account-menu button:focus-visible{
+  color:#111827!important;
+  background:#e1bd69!important
+}
+
+/* Header primary action can use gold in night; semantic positive buttons stay green. */
+.nxo-app[data-theme="night"] .nxo-header-action.primary{
+  color:#17130c!important;
+  background:#e1bd69!important;
+  border-color:#f0cf7a!important
+}
+.nxo-app[data-theme="night"] .nxo-header-action.primary:hover,
+.nxo-app[data-theme="night"] .nxo-header-action.primary:focus-visible{
+  background:#f0cf7a!important;
+  border-color:#f4d98e!important
+}
+
+/* Focus cues in night use restrained gold, never full yellow fills. */
+.nxo-app[data-theme="night"] .nxo-input:focus,
+.nxo-app[data-theme="night"] .nxo-select:focus,
+.nxo-app[data-theme="night"] .nxo-textarea:focus{
+  border-color:#d7b45f!important;
+  box-shadow:0 0 0 3px rgba(225,189,105,.12)!important
+}
+.nxo-app[data-theme="night"] .nxo-card.clickable:hover,
+.nxo-app[data-theme="night"] .nxo-card.clickable:focus-within{
+  border-color:rgba(225,189,105,.34)!important;
+  box-shadow:0 16px 34px rgba(0,0,0,.28),0 0 0 1px rgba(225,189,105,.08)!important
+}
+
