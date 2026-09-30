@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=profile-photo-20260930-37';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=profile-settings-shell-20260930-38';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
-const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=profile-photo-20260930-37';
+const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=profile-settings-shell-20260930-38';
 const ACCESS_REVISION='workspace-access-20260927-3';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -1193,7 +1193,7 @@ function topbar(mode){
           '<span class="nxo-nav-caret">⌄</span>'+
         '</button>'+
         '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
-          '<button type="button" data-account-action="photo">Cambiar foto de perfil</button>'+
+          '<button type="button" data-account-action="settings">Ajustes de perfil</button>'+
           '<button type="button" data-account-action="switch">Cambiar cuenta</button>'+
           '<button type="button" class="danger" data-account-action="logout">Cerrar sesión</button>'+
           '<input type="file" id="nxo-profile-photo-input" class="nxo-profile-photo-input" accept="image/png,image/jpeg,image/webp" hidden>'+
@@ -1296,10 +1296,10 @@ function bindTopbar(mode){
   document.querySelectorAll('[data-account-action]').forEach(button=>{
     button.addEventListener('click',()=>{
       const action=button.dataset.accountAction;
-      if(action==='photo'){
+      if(action==='settings'){
         menu?.classList.remove('open');
         account?.setAttribute('aria-expanded','false');
-        profilePhotoInput?.click();
+        openProfileSettings(isWorkspace);
         return;
       }
       const u=new URL(siteBase()+'/blank-8');
@@ -1460,6 +1460,48 @@ html('<div class="nxo-shell">'+topbar('personal')+'<main class="nxo-main">'+welc
 async function refreshPersonal(){personal=await api('personal.refresh');renderPersonal()}
 async function respondInvite(id,decision){try{loading(decision==='accept'?'Aceptando invitación…':'Actualizando invitación…');personal=await api('invitation.respond',{invitationId:id,decision});toast(decision==='accept'?'Invitación aceptada':'Invitación rechazada');renderPersonal()}catch(e){errorView(e)}}
 function modal(title,body,onReady){const o=document.createElement('div');o.className='nxo-overlay';o.innerHTML='<div class="nxo-modal"><div class="nxo-modal-head"><strong>'+esc(title)+'</strong><button class="nxo-btn" data-close>✕</button></div><div class="nxo-modal-body">'+body+'</div></div>';document.body.appendChild(o);o.querySelector('[data-close]').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};if(onReady)onReady(o);return o}
+function openProfileSettings(inWorkspace=false){
+  const name=personal?.profile?.displayName||'Usuario Nexo';
+  const photo=String(personal?.profile?.photoImage?.url||'').trim();
+  const locale=String(personal?.profile?.locale||'es').toLowerCase();
+  const language=locale.startsWith('en')?'English':'Español';
+  const role=inWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):'Cuenta personal';
+  const context=inWorkspace?(workspace?.workspace?.name||'Workspace'):'Mi espacio';
+  const avatar=photo?'<img src="'+esc(photo)+'" alt="'+esc(name+' foto de perfil')+'">':'<span>'+esc(initials(name))+'</span>';
+  modal('Ajustes de perfil',
+    '<div class="nxo-profile-settings">'+
+      '<section class="nxo-profile-settings-hero">'+
+        '<div class="nxo-profile-settings-avatar">'+avatar+'</div>'+
+        '<div class="nxo-profile-settings-main">'+
+          '<strong>'+esc(name)+'</strong>'+
+          '<span>'+esc(role)+'</span>'+
+          '<small>'+esc(context)+'</small>'+
+        '</div>'+
+        '<button type="button" class="nxo-btn" id="nxo-profile-settings-photo">Cambiar foto</button>'+
+      '</section>'+
+      '<section class="nxo-profile-settings-section">'+
+        '<div class="nxo-profile-settings-section-head"><strong>Perfil</strong><span>Información visible dentro de Nexo.</span></div>'+
+        '<div class="nxo-profile-settings-list">'+
+          '<div class="nxo-profile-settings-row"><span>Nombre mostrado</span><strong>'+esc(name)+'</strong></div>'+
+          '<div class="nxo-profile-settings-row"><span>Rol actual</span><strong>'+esc(role)+'</strong></div>'+
+        '</div>'+
+      '</section>'+
+      '<section class="nxo-profile-settings-section">'+
+        '<div class="nxo-profile-settings-section-head"><strong>Preferencias</strong><span>Configuración personal de la cuenta.</span></div>'+
+        '<div class="nxo-profile-settings-list">'+
+          '<div class="nxo-profile-settings-row"><span>Idioma</span><strong>'+esc(language)+'</strong></div>'+
+        '</div>'+
+      '</section>'+
+      '<p class="nxo-profile-settings-note">Este panel queda preparado para añadir más ajustes de perfil sin recargar el menú principal.</p>'+
+    '</div>',
+    o=>{
+      o.querySelector('#nxo-profile-settings-photo')?.addEventListener('click',()=>{
+        o.remove();
+        document.getElementById('nxo-profile-photo-input')?.click();
+      });
+    }
+  )
+}
 function createWorkspaceModal(){modal('Crear Workspace','<div class="nxo-field"><label>Nombre</label><input id="nxo-ws-name" class="nxo-input" placeholder="Ej. Old Hickory"></div><div class="nxo-field"><label>Descripción</label><textarea id="nxo-ws-desc" class="nxo-textarea" placeholder="Describe el propósito de este espacio."></textarea></div><div class="nxo-modal-actions"><button class="nxo-btn nxo-btn-gold" id="nxo-ws-save">Crear Workspace</button></div>',o=>{o.querySelector('#nxo-ws-save').onclick=async()=>{const name=o.querySelector('#nxo-ws-name').value.trim(),description=o.querySelector('#nxo-ws-desc').value.trim();if(!name){toast('Escribe un nombre');return}try{o.remove();loading('Creando Workspace…');workspace=await api('workspace.create',{input:{name,description}});await openWorkspace(workspace.workspace.id,true)}catch(e){errorView(e)}}})}
 function joinWorkspaceModal(){modal('Unirse a un Workspace','<div class="nxo-field"><label>Código de invitación</label><input id="nxo-join-code" class="nxo-input" placeholder="NEXO-ABCDE-12345" autocomplete="off" autocapitalize="characters"></div><p class="nxo-muted" style="margin:0;line-height:1.55">Pega el código que te compartió un administrador del Workspace. Los códigos son de un solo uso.</p><div class="nxo-modal-actions"><button id="nxo-join-submit" class="nxo-btn nxo-btn-gold">Unirme al Workspace</button></div>',o=>{const input=o.querySelector('#nxo-join-code'),button=o.querySelector('#nxo-join-submit');input?.focus();button.onclick=async()=>{const code=input.value.trim();if(!code){toast('Escribe el código de invitación');return}button.disabled=true;button.textContent='Validando…';try{workspace=await api('workspace.join.code',{code});o.remove();setWorkspaceReturnParam(workspace?.workspace?.id||'');workspaceTab='tools';toast('Te uniste a '+(workspace?.workspace?.name||'Workspace'));renderWorkspace()}catch(e){button.disabled=false;button.textContent='Unirme al Workspace';toast(e.message||String(e))}}})}
 async function openWorkspace(id,alreadyOpen=false){try{loading('Abriendo Workspace…');workspace=alreadyOpen&&workspace?workspace:await api('workspace.open',{workspaceId:id});workspaceRecipeComments=null;workspacePendingNotes=null;setWorkspaceReturnParam(workspace?.workspace?.id||id);workspaceTab='tools';renderWorkspace()}catch(e){errorView(e)}}
