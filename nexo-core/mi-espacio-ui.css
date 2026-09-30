@@ -2189,3 +2189,131 @@ html,body{margin:0}
   display:none!important
 }
 
+/* =========================================================
+   PROFILE SETTINGS · 2026-09-30
+   Point 18: professional profile settings shell.
+========================================================= */
+.nxo-profile-settings{
+  display:grid;
+  gap:14px
+}
+.nxo-profile-settings-hero{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:14px;
+  padding:16px;
+  border:1px solid var(--nxo-line);
+  border-radius:16px;
+  background:rgba(255,255,255,.035)
+}
+.nxo-profile-settings-avatar{
+  width:62px;
+  height:62px;
+  border-radius:50%;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  flex:0 0 62px;
+  border:1px solid var(--nxo-line2);
+  background:rgba(255,255,255,.06);
+  color:var(--nxo-text);
+  font-size:17px;
+  font-weight:900
+}
+.nxo-profile-settings-avatar img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center
+}
+.nxo-profile-settings-main{
+  min-width:0;
+  display:grid;
+  gap:3px
+}
+.nxo-profile-settings-main strong{
+  font-size:15px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis
+}
+.nxo-profile-settings-main span{
+  color:var(--nxo-text-soft);
+  font-size:11px;
+  font-weight:760
+}
+.nxo-profile-settings-main small{
+  color:var(--nxo-muted);
+  font-size:10px
+}
+.nxo-profile-settings-section{
+  overflow:hidden;
+  border:1px solid var(--nxo-line);
+  border-radius:14px;
+  background:rgba(255,255,255,.025)
+}
+.nxo-profile-settings-section-head{
+  display:grid;
+  gap:3px;
+  padding:13px 14px;
+  border-bottom:1px solid var(--nxo-line)
+}
+.nxo-profile-settings-section-head strong{
+  font-size:12px
+}
+.nxo-profile-settings-section-head span{
+  color:var(--nxo-muted);
+  font-size:10px
+}
+.nxo-profile-settings-list{
+  display:grid
+}
+.nxo-profile-settings-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:16px;
+  padding:12px 14px
+}
+.nxo-profile-settings-row + .nxo-profile-settings-row{
+  border-top:1px solid var(--nxo-line)
+}
+.nxo-profile-settings-row span{
+  color:var(--nxo-text-soft);
+  font-size:11px
+}
+.nxo-profile-settings-row strong{
+  color:var(--nxo-text);
+  font-size:11px;
+  text-align:right
+}
+.nxo-profile-settings-note{
+  margin:0;
+  padding:0 2px;
+  color:var(--nxo-muted);
+  font-size:10px;
+  line-height:1.5
+}
+.nxo-app[data-theme="day"] .nxo-profile-settings-hero,
+.nxo-app[data-theme="day"] .nxo-profile-settings-section{
+  background:rgba(255,255,255,.72)
+}
+@media(max-width:560px){
+  .nxo-profile-settings-hero{
+    grid-template-columns:auto minmax(0,1fr)
+  }
+  .nxo-profile-settings-hero .nxo-btn{
+    grid-column:1/-1;
+    width:100%
+  }
+  .nxo-profile-settings-row{
+    grid-template-columns:1fr;
+    gap:4px
+  }
+  .nxo-profile-settings-row strong{
+    text-align:left
+  }
+}
+
