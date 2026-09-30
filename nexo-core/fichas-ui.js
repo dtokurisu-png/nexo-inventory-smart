@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-engine-20260929-photo-sync-13';
-const ENGINE_REVISION='workspace-photo-sync-20260929-13';
+const ACCESS_REVISION='fichas-engine-20260929-search-photo-recovery-14';
+const ENGINE_REVISION='workspace-search-photo-recovery-20260929-14';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
