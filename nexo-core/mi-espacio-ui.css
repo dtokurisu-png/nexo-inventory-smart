@@ -2379,3 +2379,153 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   DAY COLOR LOGIC · INVENTARIO SMART · 2026-09-30
+   Point 20: remove gold/yellow leakage from day mode.
+   Canonical palette: blue #2f4f93, green #246b36,
+   orange #e79069, dark blue #172755, pale blue #dce7f7.
+========================================================= */
+.nxo-app[data-theme="day"]{
+  --nxo-gold:#246b36!important;
+  --nxo-gold2:#2f7d42!important;
+  --nxo-shell-gold:#246b36!important;
+  --nxo-blue:#2f4f93!important;
+  --nxo-green:#246b36!important;
+  --nxo-orange:#e79069!important
+}
+
+/* Header: blue base, white active text, orange selection cue. */
+.nxo-app[data-theme="day"] .nxo-nav-link.active{
+  color:#fff!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-link.active:after{
+  background:#e79069!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-link:hover:after,
+.nxo-app[data-theme="day"] .nxo-nav-link:focus-visible:after{
+  background:#e79069!important
+}
+
+/* Account menu: no gold hover in daylight. */
+.nxo-app[data-theme="day"] .nxo-nav-account-menu button{
+  color:#34405f!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-account-menu button:hover,
+.nxo-app[data-theme="day"] .nxo-nav-account-menu button:focus-visible{
+  color:#172755!important;
+  background:#eaf1ff!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-account-menu button.danger{
+  color:#9f2f2f!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-account-menu button.danger:hover,
+.nxo-app[data-theme="day"] .nxo-nav-account-menu button.danger:focus-visible{
+  color:#7f1d1d!important;
+  background:#fdeaea!important
+}
+
+/* Main titles and workspace identity remain neutral/dark, never gold. */
+.nxo-app[data-theme="day"] .nxo-workspace-header h2,
+.nxo-app[data-theme="day"] .nxo-section-head h3,
+.nxo-app[data-theme="day"] .nxo-pending-title-row h3,
+.nxo-app[data-theme="day"] .nxo-card h4,
+.nxo-app[data-theme="day"] .nxo-member-name,
+.nxo-app[data-theme="day"] .nxo-tool-toggle strong{
+  color:#111827!important
+}
+.nxo-app[data-theme="day"] .nxo-eyebrow{
+  color:#264c8f!important
+}
+
+/* Counters/chips follow the light blue system. */
+.nxo-app[data-theme="day"] .nxo-chip,
+.nxo-app[data-theme="day"] .nxo-pending-count,
+.nxo-app[data-theme="day"] .nxo-notification-count,
+.nxo-app[data-theme="day"] .nxo-perm,
+.nxo-app[data-theme="day"] .nxo-access-summary{
+  color:#34405f!important;
+  background:#eef4ff!important;
+  border-color:#b9cbed!important
+}
+
+/* Primary/positive actions use Inventory Smart green, not yellow. */
+.nxo-app[data-theme="day"] .nxo-btn-gold,
+.nxo-app[data-theme="day"] .nxo-header-action.primary{
+  color:#fff!important;
+  background:#246b36!important;
+  border-color:#173d22!important
+}
+.nxo-app[data-theme="day"] .nxo-btn-gold:hover,
+.nxo-app[data-theme="day"] .nxo-btn-gold:focus-visible,
+.nxo-app[data-theme="day"] .nxo-header-action.primary:hover,
+.nxo-app[data-theme="day"] .nxo-header-action.primary:focus-visible{
+  color:#111827!important;
+  background:#e79069!important;
+  border-color:#9b4b28!important
+}
+
+/* Tabs and choices follow blue selection + orange hover. */
+.nxo-app[data-theme="day"] .nxo-tab.active{
+  color:#fff!important;
+  background:#2f4f93!important;
+  border-color:#172755!important;
+  box-shadow:0 5px 12px rgba(23,39,85,.14)!important
+}
+.nxo-app[data-theme="day"] .nxo-tab:hover,
+.nxo-app[data-theme="day"] .nxo-tab:focus-visible{
+  color:#111827!important;
+  background:#e79069!important;
+  border-color:#9b4b28!important
+}
+.nxo-app[data-theme="day"] .nxo-choice strong{
+  color:#264c8f!important
+}
+.nxo-app[data-theme="day"] .nxo-choice:hover,
+.nxo-app[data-theme="day"] .nxo-choice:focus-visible{
+  border-color:#e79069!important;
+  background:rgba(231,144,105,.10)!important
+}
+
+/* Generic interactive accents: orange focus, green checks, blue loading. */
+.nxo-app[data-theme="day"] .nxo-input:focus,
+.nxo-app[data-theme="day"] .nxo-select:focus,
+.nxo-app[data-theme="day"] .nxo-textarea:focus{
+  border-color:#e79069!important;
+  box-shadow:0 0 0 3px rgba(231,144,105,.18)!important
+}
+.nxo-app[data-theme="day"] .nxo-check:hover{
+  border-color:#e79069!important
+}
+.nxo-app[data-theme="day"] .nxo-check input{
+  accent-color:#246b36!important
+}
+.nxo-app[data-theme="day"] .nxo-spinner{
+  border-top-color:#2f4f93!important
+}
+
+/* Cards use orange interaction borders rather than gold. */
+.nxo-app[data-theme="day"] .nxo-card.clickable:hover,
+.nxo-app[data-theme="day"] .nxo-card.clickable:focus-within{
+  border-color:#e79069!important;
+  box-shadow:0 18px 48px rgba(23,39,85,.16),0 0 0 1px rgba(231,144,105,.10)!important
+}
+
+/* Building remains an orange semantic state instead of a yellow/gold accent. */
+.nxo-app[data-theme="day"] .nxo-status.BUILDING{
+  color:#7d3f25!important;
+  background:#fde9df!important;
+  border-color:#e9b39a!important
+}
+
+/* Avatar/profile role stay blue-neutral in daylight. */
+.nxo-app[data-theme="day"] .nxo-avatar{
+  color:#fff!important;
+  background:#3b579a!important;
+  border-color:rgba(255,255,255,.32)!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-account-role{
+  color:#34405f!important;
+  background:#eef4ff!important;
+  border-color:#b9cbed!important
+}
+
