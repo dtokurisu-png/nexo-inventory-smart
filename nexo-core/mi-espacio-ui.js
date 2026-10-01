@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=pending-add-side-center-20261001-55';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=numa-presence-idle-20261001-56';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -56,6 +56,7 @@ function applyTheme(theme,persist=true){
     b.setAttribute('title',night?ui('Modo diurno','Light mode'):ui('Modo nocturno','Dark mode'));
     b.setAttribute('aria-pressed',night?'true':'false');
   }
+  if(typeof numaSyncVisualTheme==='function')numaSyncVisualTheme();
   return t;
 }
 function toggleTheme(){const r=document.getElementById('nxo-app');applyTheme(r?.dataset?.theme==='night'?'day':'night',true)}
@@ -909,7 +910,75 @@ function mountNexoOrganicBackground(){
 /* =========================================================
    NUMA CORE v1 · transversal assistant shell
 ========================================================= */
+const NUMA_VISUAL_ASSETS={
+  day:{
+    idle:"https://static.wixstatic.com/media/8b64a8_0ea89ddfe6f9485cb51cc818bbc28587~mv2.png",
+    attentive:"https://static.wixstatic.com/media/8b64a8_664b5ce8535143ae83d866ef22339f26~mv2.png",
+    listening:"https://static.wixstatic.com/media/8b64a8_431c1faecd1d40518baba43f648de9dc~mv2.png",
+    thinking:"https://static.wixstatic.com/media/8b64a8_05317e113b054caead2a8672f59167af~mv2.png",
+    success:"https://static.wixstatic.com/media/8b64a8_b673e3b346d845ffa38e21c660eea254~mv2.png",
+    error:"https://static.wixstatic.com/media/8b64a8_0f51f83f717a4cf88888da0ffa3485c9~mv2.png"
+  },
+  night:{
+    idle:"https://static.wixstatic.com/media/8b64a8_1afdaa040eae4947951ca6233fb4b979~mv2.png",
+    attentive:"https://static.wixstatic.com/media/8b64a8_c6cc56b0eb584dbd8d4858ce7418e7d3~mv2.png",
+    listening:"https://static.wixstatic.com/media/8b64a8_ce4b32fa64324cdf8b2a03adccfe5252~mv2.png",
+    thinking:"https://static.wixstatic.com/media/8b64a8_fe4d5fa2ddf840e5b5ae1840138fd915~mv2.png",
+    success:"https://static.wixstatic.com/media/8b64a8_fe372358c9964067b096b3a0b775ecca~mv2.png",
+    error:"https://static.wixstatic.com/media/8b64a8_d1c9c01f021d4b2c8dd0c2975f3c7342~mv2.png"
+  }
+};
+const NUMA_VISUAL_RUNTIME_STATES=new Set(["idle"]);
+let numaVisualRequestedState="idle";
 let numaState=null,numaContextCacheKey="",numaLoading=false,numaSending=false;
+
+function numaVisualTheme(){
+  return document.getElementById("nxo-app")?.dataset?.theme==="night"?"night":"day";
+}
+function numaVisualAsset(state="idle"){
+  const theme=numaVisualTheme();
+  const effective=NUMA_VISUAL_RUNTIME_STATES.has(state)?state:"idle";
+  return NUMA_VISUAL_ASSETS[theme]?.[effective]||NUMA_VISUAL_ASSETS.day.idle;
+}
+function numaSyncVisualTheme(){
+  const theme=numaVisualTheme();
+  const launcher=document.getElementById("nma-launcher");
+  const panel=document.getElementById("nma-panel");
+  if(launcher)launcher.dataset.theme=theme;
+  if(panel)panel.dataset.theme=theme;
+  const img=document.getElementById("nma-character-img");
+  if(img)img.src=numaVisualAsset(numaVisualRequestedState);
+}
+function numaSetVisualState(state="idle"){
+  numaVisualRequestedState=state||"idle";
+  const panel=document.getElementById("nma-panel");
+  const effective=NUMA_VISUAL_RUNTIME_STATES.has(numaVisualRequestedState)?numaVisualRequestedState:"idle";
+  if(panel){
+    panel.dataset.state=effective;
+    panel.dataset.requestedState=numaVisualRequestedState;
+  }
+  const img=document.getElementById("nma-character-img");
+  if(img)img.src=numaVisualAsset(numaVisualRequestedState);
+}
+function numaSpeak(text){
+  const bubble=document.getElementById("nma-speech");
+  if(!bubble)return;
+  bubble.textContent=String(text||"").trim()||"Hola, ¿en qué puedo ayudarte?";
+}
+function numaLifeFieldMarkup(){
+  return '<div class="nma-life-field" aria-hidden="true">'+
+    '<span class="nma-life-link" style="--x:38%;--y:34%;--w:48px;--r:18deg"></span>'+
+    '<span class="nma-life-link" style="--x:47%;--y:39%;--w:42px;--r:128deg"></span>'+
+    '<span class="nma-life-link" style="--x:44%;--y:57%;--w:38px;--r:20deg"></span>'+
+    '<span class="nma-life-link" style="--x:52%;--y:62%;--w:34px;--r:132deg"></span>'+
+    '<span class="nma-life-node" style="--x:38%;--y:34%;--d:-.2s"></span>'+
+    '<span class="nma-life-node" style="--x:55%;--y:39%;--d:-1.1s"></span>'+
+    '<span class="nma-life-node" style="--x:47%;--y:45%;--d:-1.9s"></span>'+
+    '<span class="nma-life-node" style="--x:44%;--y:57%;--d:-.7s"></span>'+
+    '<span class="nma-life-node" style="--x:57%;--y:62%;--d:-1.6s"></span>'+
+    '<span class="nma-life-node" style="--x:50%;--y:68%;--d:-2.3s"></span>'+
+  '</div>';
+}
 
 function numaContextInput(){
   const isWorkspace=!!workspace?.workspace?.id;
@@ -930,26 +999,21 @@ function numaTime(value){
 }
 
 function numaRenderMessages(messages=[]){
-  const zone=document.getElementById("nma-messages");
-  if(!zone)return;
-  if(!messages.length){
-    zone.innerHTML='<div class="nma-empty"><strong>Hola, soy Numa.</strong><span>Puedo operar localmente Mi espacio, tus Workspaces y las herramientas autorizadas sin consumir API.</span><small>Prueba: “¿Qué puedes hacer?”, “¿Qué Workspaces tengo?” o “Abre Old Hickory Workspace”.</small></div>';
-    return;
-  }
-  zone.innerHTML=messages.map(m=>
-    '<div class="nma-message '+(m.role==="user"?"user":"assistant")+'">'+
-      '<div class="nma-message-body">'+esc(m.content||"")+'</div>'+
-      '<small>'+esc(numaTime(m.at))+'</small>'+
-    '</div>'
-  ).join("");
-  requestAnimationFrame(()=>{zone.scrollTop=zone.scrollHeight});
+  const panel=document.getElementById("nma-panel");
+  if(panel?.dataset?.greetingHold==="1")return;
+  const latest=[...(messages||[])].reverse().find(m=>m?.role==="assistant"&&String(m?.content||"").trim());
+  numaSpeak(latest?.content||"Hola, ¿en qué puedo ayudarte?");
 }
 
 function numaSetStatus(textValue,state=""){
   const x=document.getElementById("nma-status");
-  if(!x)return;
-  x.textContent=textValue||"";
-  x.dataset.state=state;
+  if(x){
+    x.textContent=textValue||"";
+    x.dataset.state=state;
+  }
+  if(state==="loading")numaSetVisualState("thinking");
+  else if(state==="error")numaSetVisualState("error");
+  else numaSetVisualState("idle");
 }
 
 function numaSyncHeader(){
@@ -995,11 +1059,18 @@ function numaOpen(){
   const panel=document.getElementById("nma-panel");
   const launcher=document.getElementById("nma-launcher");
   if(!panel)return;
+  numaSyncVisualTheme();
+  numaSetVisualState("idle");
+  panel.dataset.greetingHold="1";
+  numaSpeak("Hola, ¿en qué puedo ayudarte?");
   panel.classList.add("open");
   panel.setAttribute("aria-hidden","false");
   launcher?.setAttribute("aria-expanded","true");
   numaLoad(false);
-  setTimeout(()=>document.getElementById("nma-input")?.focus(),80);
+  setTimeout(()=>{
+    panel.dataset.greetingHold="0";
+    document.getElementById("nma-input")?.focus();
+  },900);
 }
 
 function numaClose(){
@@ -1109,7 +1180,7 @@ function mountNuma(){
     launcher.type="button";
     launcher.setAttribute("aria-label","Abrir Numa");
     launcher.setAttribute("aria-expanded","false");
-    launcher.innerHTML='<span class="nma-orb" aria-hidden="true">N</span><strong>Numa</strong>';
+    launcher.innerHTML='<span class="nma-launch-stream" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="nma-launch-core" aria-hidden="true"></span>';
     r.appendChild(launcher);
     launcher.addEventListener("click",()=>document.getElementById("nma-panel")?.classList.contains("open")?numaClose():numaOpen());
   }
@@ -1120,15 +1191,18 @@ function mountNuma(){
     panel.id="nma-panel";
     panel.className="nma-panel";
     panel.setAttribute("aria-hidden","true");
+    panel.dataset.state="idle";
     panel.innerHTML=
-      '<div class="nma-head">'+
-        '<div class="nma-identity"><span class="nma-orb" aria-hidden="true">N</span><div><strong>Numa</strong><small id="nma-context">Asistente de Nexo Group</small></div></div>'+
-        '<div class="nma-head-actions"><span class="nma-role" id="nma-role" hidden></span><button id="nma-close" class="nma-icon-btn" type="button" aria-label="Cerrar Numa">✕</button></div>'+
+      '<button id="nma-close" class="nma-presence-close" type="button" aria-label="Cerrar Numa">✕</button>'+
+      '<div class="nma-character-stage" aria-label="Numa">'+
+        '<img id="nma-character-img" class="nma-character" alt="" draggable="false">'+
+        numaLifeFieldMarkup()+
+        '<div class="nma-expression-layer" id="nma-expression-layer" aria-hidden="true"></div>'+
       '</div>'+
-      '<div class="nma-status-row"><span class="nma-status-dot"></span><span id="nma-status">Preparando Numa…</span></div>'+
-      '<div class="nma-messages" id="nma-messages"></div>'+
+      '<div class="nma-speech" id="nma-speech" role="status" aria-live="polite">Hola, ¿en qué puedo ayudarte?</div>'+
+      '<div class="nma-status-row"><span class="nma-status-dot"></span><span id="nma-status">Modo local · sin consumo API</span></div>'+
       '<div class="nma-compose">'+
-        '<textarea id="nma-input" rows="2" maxlength="8000" placeholder="Escribe a Numa…"></textarea>'+
+        '<textarea id="nma-input" rows="1" maxlength="8000" placeholder="Escribe a Numa…"></textarea>'+
         '<button id="nma-send" type="button" aria-label="Enviar mensaje">➤</button>'+
       '</div>';
     r.appendChild(panel);
@@ -1139,6 +1213,8 @@ function mountNuma(){
       if(e.key==="Escape")numaClose();
     });
   }
+  numaSyncVisualTheme();
+  numaSetVisualState("idle");
   numaSyncHeader();
 }
 function html(v){
