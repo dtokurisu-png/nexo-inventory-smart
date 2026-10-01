@@ -2056,28 +2056,43 @@ html,body{margin:0}
    MANUAL PENDING NOTES · 2026-09-30
    Point 14: direct creation from the Pendientes section.
 ========================================================= */
-.nxo-pending-head-actions{
+.nxo-pending-board-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 64px;
+  align-items:stretch;
+  gap:16px;
+  width:100%
+}
+.nxo-pending-board-layout .nxo-note-board{
+  min-width:0
+}
+.nxo-pending-empty{
+  min-height:145px;
+  display:grid;
+  place-items:center
+}
+.nxo-pending-add-slot{
   display:flex;
   align-items:center;
-  justify-content:flex-end;
-  gap:8px;
-  flex:0 0 auto
+  justify-content:center;
+  min-height:145px
 }
 .nxo-pending-add{
   appearance:none;
-  width:32px;
-  height:32px;
-  min-width:32px;
+  width:64px;
+  height:64px;
+  min-width:64px;
+  min-height:64px;
   padding:0;
   display:grid;
   place-items:center;
   border:1px solid var(--nxo-line2);
-  border-radius:10px;
+  border-radius:16px;
   background:rgba(255,255,255,.055);
   color:var(--nxo-text);
-  font:800 20px/1 Inter,system-ui,sans-serif;
+  font:800 36px/1 Inter,system-ui,sans-serif;
   cursor:pointer;
-  transition:background var(--nxo-motion),border-color var(--nxo-motion),transform var(--nxo-motion)
+  transition:background var(--nxo-motion),border-color var(--nxo-motion),transform var(--nxo-motion),box-shadow var(--nxo-motion)
 }
 .nxo-pending-add:hover,
 .nxo-pending-add:focus-visible{
@@ -2097,10 +2112,20 @@ html,body{margin:0}
   background:rgba(255,255,255,.24)
 }
 @media(max-width:760px){
+  .nxo-pending-board-layout{
+    grid-template-columns:minmax(0,1fr) 64px;
+    gap:10px
+  }
+  .nxo-pending-add-slot{
+    min-height:128px
+  }
   .nxo-pending-add{
-    width:34px;
-    height:34px;
-    min-width:34px
+    width:64px;
+    height:64px;
+    min-width:64px;
+    min-height:64px;
+    border-radius:16px;
+    font-size:36px
   }
 }
 
