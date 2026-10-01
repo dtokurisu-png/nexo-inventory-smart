@@ -3,7 +3,7 @@ if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
 const ACCESS_REVISION='fichas-theme-contract-20261001-30';
 const ENGINE_REVISION='image-crop-20261001-28';
-const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-3';
+const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -100,7 +100,7 @@ function ensureNumaCss(){
   link.href=NUMA_CSS;
   document.head.appendChild(link);
 }
-const NUMA_PRESENCE_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence-runtime.js?v=20261001-presence-3';
+const NUMA_PRESENCE_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence-runtime.js?v=20261001-presence-4';
 let numaPresence=null,numaPresenceLoadPromise=null,numaTypingTimer=0;
 function numaVisualTheme(){return workspaceTheme==='night'?'night':'day'}
 function ensureNumaPresenceRuntime(){
