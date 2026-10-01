@@ -1,7 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=pending-flow-slot-20261001-57';
-const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-presence-interactive-20261001-3';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=notification-attention-20261001-58';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -64,7 +63,7 @@ function toggleTheme(){const r=document.getElementById('nxo-app');applyTheme(r?.
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const initials=v=>String(v||'N').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'N';
 const mediaUrl=v=>typeof v==='string'?v:(v&&(v.url||v.image?.url||v.src)||'');
-function addCss(){if(!document.getElementById('nxo-css')){const l=document.createElement('link');l.id='nxo-css';l.rel='stylesheet';l.href=CSS;document.head.appendChild(l)}if(!document.getElementById('nma-overlay-css')){const n=document.createElement('link');n.id='nma-overlay-css';n.rel='stylesheet';n.href=NUMA_CSS;document.head.appendChild(n)}}
+function addCss(){if(document.getElementById('nxo-css'))return;const l=document.createElement('link');l.id='nxo-css';l.rel='stylesheet';l.href=CSS;document.head.appendChild(l)}
 function root(){addCss();document.body.classList.add('nxo-lock');let r=document.getElementById('nxo-app');if(!r){r=document.createElement('div');r.id='nxo-app';r.className='nxo-app';r.dataset.theme=storedTheme();document.body.appendChild(r)}else if(!r.dataset.theme){r.dataset.theme=storedTheme()}return r}
 let nxoOrganicRaf=0,nxoOrganicResize=null,nxoOrganicStarted=false;
 function ensureOrganicLayers(){
@@ -1805,10 +1804,18 @@ async function loadWorkspaceRecipeComments(){
     workspaceRecipeComments=await api('workspace.recipe-comments',{workspaceId:workspace.workspace.id});
     const rows=Array.isArray(workspaceRecipeComments?.comments)?workspaceRecipeComments.comments:[];
     const visible=rows.slice(0,12);
+    const unreadCount=rows.reduce((total,row)=>total+(row?.unread?1:0),0);
+    const bell=document.getElementById('nxo-notification-button');
 
     if(badge){
-      badge.textContent=String(rows.length);
-      badge.hidden=rows.length===0;
+      badge.textContent=String(unreadCount);
+      badge.hidden=unreadCount===0;
+    }
+    if(bell){
+      bell.classList.toggle('nxo-has-unread',unreadCount>0);
+      bell.setAttribute('aria-label',unreadCount>0
+        ?ui('Notificaciones · '+unreadCount+' nueva'+(unreadCount===1?'':'s'),'Notifications · '+unreadCount+' new')
+        :ui('Notificaciones','Notifications'));
     }
 
     zone.innerHTML=
@@ -1831,7 +1838,15 @@ async function loadWorkspaceRecipeComments(){
       if(row?.unread){
         row.unread=false;
         zone.querySelector('[data-notification-id="'+CSS.escape(id)+'"]')?.classList.remove('nxo-notification-unread');
-        api('comment.seen',{commentId:id}).catch(()=>{row.unread=true});
+        const remainingUnread=(workspaceRecipeComments?.comments||[]).filter(x=>x?.unread).length;
+        const badgeNow=document.getElementById('nxo-notification-badge');
+        const bellNow=document.getElementById('nxo-notification-button');
+        if(badgeNow){
+          badgeNow.textContent=String(remainingUnread);
+          badgeNow.hidden=remainingUnread===0;
+        }
+        bellNow?.classList.toggle('nxo-has-unread',remainingUnread>0);
+        api('comment.seen',{commentId:id}).catch(()=>{row.unread=true;loadWorkspaceRecipeComments()});
       }
       openRecipeRecommendation(id);
     });
