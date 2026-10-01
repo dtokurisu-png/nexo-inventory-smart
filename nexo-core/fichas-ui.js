@@ -24,7 +24,9 @@ let numaSending=false;
 let requestedSheetOpened=false;
 let engineDataCache=null;
 const launchQuery=new URLSearchParams(location.search);
-const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
+const requestedWorkspaceId=String(launchQuery.get('nxoWorkspace')||'').trim();
+const requestedWorkspaceName=String(launchQuery.get('nxoWorkspaceName')||'').trim();
+const workspaceLabel=requestedWorkspaceName||launchQuery.get('nxoBackLabel')||'Workspace';
 const workspaceToolName=String(launchQuery.get('nxoToolName')||'Fichas Técnicas Dinámicas').trim()||'Fichas Técnicas Dinámicas';
 const workspaceToolDescription=String(launchQuery.get('nxoToolDescription')||'').trim();
 let workspaceTheme=launchQuery.get('nxoTheme')==='night'?'night':launchQuery.get('nxoTheme')==='day'?'day':(()=>{try{return localStorage.getItem('nexoTheme:v1')==='night'?'night':'day'}catch(_){return'day'}})();
@@ -138,6 +140,7 @@ ensureNumaPresenceRuntime().catch(error=>console.warn('NUMA_PRESENCE_RUNTIME',er
 
 function numaContextInput(){
   return {
+    workspaceId:requestedWorkspaceId,
     currentToolKey:'dynamic-specs',
     currentToolLabel:workspaceToolName
   };
@@ -273,7 +276,7 @@ function numaSyncHeader(){
 }
 async function numaLoad(force=false){
   if(!sessionToken||numaLoading)return;
-  const key='dynamic-specs|'+workspaceLabel;
+  const key='dynamic-specs|'+(requestedWorkspaceId||'personal')+'|'+workspaceLabel;
   if(!force&&numaState&&numaContextKey===key){
     numaSyncHeader();
     numaRenderMessages(numaState.messages||[]);
@@ -627,7 +630,7 @@ async function pushEngineData(){
   if(loadingData)return;
   loadingData=true;
   try{
-    const data=await api('engine.data');
+    const data=await api('engine.data',{workspaceId:requestedWorkspaceId});
     engineDataCache=data||null;
     postToEngine('DM_MENU_DATA',{ok:true,...data});
   }catch(error){
@@ -922,6 +925,10 @@ function handleEngineMessage(event){
   }
   if(message.type==='NUMA_RECIPE_OPEN_FAILED'){
     numaSetStatus(payload.error||'No se pudo abrir la ficha solicitada.','error');
+    return;
+  }
+  if(message.type==='NUMA_ENGINE_DATA_READY'){
+    openRequestedSheet();
     return;
   }
   if(message.type==='NEXO_THEME_CHANGED'){
