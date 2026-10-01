@@ -159,6 +159,21 @@
   isolation:isolate;
   pointer-events:none;
 }
+.nma-character-shell{
+  --nma-head-x:50%;
+  --nma-head-y:34%;
+  --nma-head-w:38%;
+  --nma-head-h:27%;
+  --nma-belly-x:50%;
+  --nma-belly-y:60%;
+  --nma-belly-w:30%;
+  --nma-belly-h:23%;
+  position:absolute;
+  inset:0;
+  transform-origin:50% 76%;
+  animation:nmaIdleFloat 5.1s ease-in-out infinite;
+  pointer-events:none;
+}
 .nma-character{
   position:absolute;
   z-index:1;
@@ -167,53 +182,55 @@
   height:100%;
   object-fit:contain;
   object-position:center;
-  transform-origin:50% 76%;
   filter:drop-shadow(0 17px 27px rgba(5,13,27,.17));
   user-select:none;
   -webkit-user-drag:none;
   pointer-events:none;
-  animation:nmaIdleFloat 5.1s ease-in-out infinite;
   transition:opacity .15s ease,filter .2s ease,transform .24s ease;
 }
-.nma-character.changing{opacity:.42;filter:blur(.8px) drop-shadow(0 17px 27px rgba(5,13,27,.12))}
-
-/* Organic internal field: masked by the current character silhouette. */
-.nma-life-field{
-  --nma-mask:none;
+.nma-character.changing{
+  opacity:.42;
+  filter:blur(.8px) drop-shadow(0 17px 27px rgba(5,13,27,.12));
+}
+.nma-core-zone{
   position:absolute;
   z-index:2;
-  inset:0;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  overflow:hidden;
   pointer-events:none;
-  opacity:.66;
-  mix-blend-mode:multiply;
-  -webkit-mask-image:var(--nma-mask);
-  mask-image:var(--nma-mask);
-  -webkit-mask-size:contain;
-  mask-size:contain;
-  -webkit-mask-position:center;
-  mask-position:center;
-  -webkit-mask-repeat:no-repeat;
-  mask-repeat:no-repeat;
-  animation:nmaLifeBreath 4.4s ease-in-out infinite;
+  background:transparent;
+  -webkit-mask-image:radial-gradient(circle at center,#000 0 58%,rgba(0,0,0,.92) 72%,rgba(0,0,0,.5) 86%,transparent 100%);
+  mask-image:radial-gradient(circle at center,#000 0 58%,rgba(0,0,0,.92) 72%,rgba(0,0,0,.5) 86%,transparent 100%);
+  transition:left .24s ease,top .24s ease,width .24s ease,height .24s ease,opacity .2s ease;
 }
-.nma-life-field canvas{
+.nma-core-head{
+  left:var(--nma-head-x);
+  top:var(--nma-head-y);
+  width:var(--nma-head-w);
+  height:var(--nma-head-h);
+}
+.nma-core-belly{
+  left:var(--nma-belly-x);
+  top:var(--nma-belly-y);
+  width:var(--nma-belly-w);
+  height:var(--nma-belly-h);
+}
+.nma-core-canvas{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
   display:block;
 }
-.nma-panel[data-theme="day"] .nma-life-field{
-  opacity:.72;
+.nma-panel[data-theme="day"] .nma-core-zone{
+  opacity:.78;
   mix-blend-mode:multiply;
 }
-.nma-panel[data-theme="night"] .nma-life-field{
-  opacity:.62;
+.nma-panel[data-theme="night"] .nma-core-zone{
+  opacity:.68;
   mix-blend-mode:screen;
 }
-.nma-life-node,.nma-life-link{display:none!important}
-
-/* Expression overlay, independent from pose. */
 .nma-expression-layer{
   position:absolute;
   z-index:5;
@@ -222,6 +239,7 @@
   color:var(--nma-energy);
   text-shadow:0 0 8px rgba(var(--nma-energy-rgb),.68),0 0 20px rgba(var(--nma-energy-rgb),.25);
 }
+/* Expression overlay, independent from pose. */
 .nma-symbol{
   position:absolute;
   right:34px;
@@ -409,11 +427,11 @@
 .nma-head,.nma-identity,.nma-head-actions,.nma-messages,.nma-empty,.nma-role,.nma-icon-btn{display:none!important}
 
 /* Pose-specific motion remains subtle. */
-.nma-panel[data-state="attentive"] .nma-character{animation-duration:4.35s}
-.nma-panel[data-state="listening"] .nma-character{animation-duration:3.9s}
-.nma-panel[data-state="thinking"] .nma-character{animation:nmaThinkingFloat 3.6s ease-in-out infinite}
-.nma-panel[data-state="success"] .nma-character{animation:nmaSuccessFloat 2.5s ease-in-out infinite}
-.nma-panel[data-state="error"] .nma-character{animation:nmaErrorFloat 2.7s ease-in-out infinite}
+.nma-panel[data-state="attentive"] .nma-character-shell{animation-duration:4.35s}
+.nma-panel[data-state="listening"] .nma-character-shell{animation-duration:3.9s}
+.nma-panel[data-state="thinking"] .nma-character-shell{animation:nmaThinkingFloat 3.6s ease-in-out infinite}
+.nma-panel[data-state="success"] .nma-character-shell{animation:nmaSuccessFloat 2.5s ease-in-out infinite}
+.nma-panel[data-state="error"] .nma-character-shell{animation:nmaErrorFloat 2.7s ease-in-out infinite}
 
 /* Animations. */
 @keyframes nmaCoreBreath{0%,100%{transform:scale(.92);opacity:.78}50%{transform:scale(1.07);opacity:1}}
@@ -449,5 +467,5 @@
   .nma-compose{grid-template-columns:1fr 36px!important}
 }
 @media(prefers-reduced-motion:reduce){
-  .nma-launch-core,.nma-character,.nma-life-field,.nma-symbol,.nma-ellipsis i,.nma-think-mark,.nma-confused i,.nma-sparkles i,.nma-error-orbit,.nma-speech{animation:none!important}
+  .nma-launch-core,.nma-character-shell,.nma-symbol,.nma-ellipsis i,.nma-think-mark,.nma-confused i,.nma-sparkles i,.nma-error-orbit,.nma-speech{animation:none!important}
 }
