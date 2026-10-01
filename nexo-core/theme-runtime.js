@@ -57,6 +57,7 @@ const SYSTEM_VARS={
   contrast:'--nxo-semantic-contrast',
   dish:'--nxo-taxonomy-dish',
   preparation:'--nxo-taxonomy-preparation',
+  cut:'--nxo-taxonomy-cut',
   product:'--nxo-taxonomy-product',
   metricMass:'--nxo-unit-metric-mass',
   imperialMass:'--nxo-unit-imperial-mass',
