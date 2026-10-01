@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-global-language-20260930-21';
-const ENGINE_REVISION='workspace-global-language-20260930-21';
+const ACCESS_REVISION='fichas-workspace-identity-20261001-22';
+const ENGINE_REVISION='workspace-tool-identity-20261001-22';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-deep-search-20260930-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -23,6 +23,8 @@ let numaSending=false;
 let requestedSheetOpened=false;
 const launchQuery=new URLSearchParams(location.search);
 const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
+const workspaceToolName=String(launchQuery.get('nxoToolName')||'Fichas Técnicas Dinámicas').trim()||'Fichas Técnicas Dinámicas';
+const workspaceToolDescription=String(launchQuery.get('nxoToolDescription')||'').trim();
 const workspaceTheme=launchQuery.get('nxoTheme')==='night'?'night':'day';
 let workspaceLanguage=launchQuery.get('nxoLang')==='en'?'en':'es';
 const requestedSheetId=launchQuery.get('numaSheet')||'';
@@ -39,7 +41,7 @@ function ensureNumaCss(){
 function numaContextInput(){
   return {
     currentToolKey:'dynamic-specs',
-    currentToolLabel:'Fichas Técnicas Dinámicas'
+    currentToolLabel:workspaceToolName
   };
 }
 function numaTime(value){
@@ -71,8 +73,8 @@ function numaSyncHeader(){
   const title=document.getElementById('nma-context');
   if(title){
     title.textContent=ctx
-      ?((ctx.workspaceName?ctx.workspaceName+' · ':'')+'Fichas Técnicas Dinámicas')
-      :'Fichas Técnicas Dinámicas';
+      ?((ctx.workspaceName?ctx.workspaceName+' · ':'')+workspaceToolName)
+      :workspaceToolName;
   }
   const role=document.getElementById('nma-role');
   if(role){
@@ -123,7 +125,7 @@ function toolUrl(routePath){
   try{
     const u=new URL(siteBase()+(route.startsWith('/')?route:'/'+route),location.href);
     u.searchParams.set('nxoBack',location.href);
-    u.searchParams.set('nxoBackLabel','Fichas Técnicas Dinámicas');
+    u.searchParams.set('nxoBackLabel',workspaceToolName);
     u.searchParams.set('nxoTheme',workspaceTheme);
     return u.href;
   }catch(_){return''}
@@ -222,7 +224,7 @@ function mountNuma(){
     panel.setAttribute('aria-hidden','true');
     panel.innerHTML=
       '<div class="nma-head">'+
-        '<div class="nma-identity"><span class="nma-orb" aria-hidden="true">N</span><div><strong>Numa</strong><small id="nma-context">Fichas Técnicas Dinámicas</small></div></div>'+
+        '<div class="nma-identity"><span class="nma-orb" aria-hidden="true">N</span><div><strong>Numa</strong><small id="nma-context">'+esc(workspaceToolName)+'</small></div></div>'+
         '<div class="nma-head-actions"><span class="nma-role" id="nma-role" hidden></span><button id="nma-close" class="nma-icon-btn" type="button" aria-label="Cerrar Numa">✕</button></div>'+
       '</div>'+
       '<div class="nma-status-row"><span class="nma-status-dot"></span><span id="nma-status">Preparando Numa…</span></div>'+
@@ -260,12 +262,12 @@ function mountRoot(){
   }
   return root;
 }
-function loading(text='Preparando Fichas Técnicas Dinámicas…'){
+function loading(text='Preparando '+workspaceToolName+'…'){
   mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:#eef3fb;color:#111827;font:600 14px Inter,Arial,sans-serif"><div style="text-align:center"><div style="width:34px;height:34px;border:3px solid #b9cbed;border-top-color:#2f4f93;border-radius:50%;margin:0 auto 14px;animation:nxspin .8s linear infinite"></div><strong>'+esc(text)+'</strong><style>@keyframes nxspin{to{transform:rotate(360deg)}}</style></div></div>';
 }
 function showError(error){
   const message=String(error?.message||error||'Error desconocido');
-  mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:#eef3fb;color:#111827;font:14px Inter,Arial,sans-serif;padding:24px"><div style="max-width:560px;border:1px solid #b9cbed;border-radius:18px;background:#ffffff;padding:22px"><h2 style="margin:0 0 10px">No se pudo abrir Fichas Técnicas Dinámicas</h2><p style="color:#5b6780;line-height:1.55">'+esc(message)+'</p><button id="nx-engine-retry" style="border:1px solid #172755;background:#264c8f;color:#ffffff;border-radius:10px;padding:10px 14px;font-weight:800">Reintentar</button></div></div>';
+  mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:#eef3fb;color:#111827;font:14px Inter,Arial,sans-serif;padding:24px"><div style="max-width:560px;border:1px solid #b9cbed;border-radius:18px;background:#ffffff;padding:22px"><h2 style="margin:0 0 10px">No se pudo abrir '+esc(workspaceToolName)+'</h2><p style="color:#5b6780;line-height:1.55">'+esc(message)+'</p><button id="nx-engine-retry" style="border:1px solid #172755;background:#264c8f;color:#ffffff;border-radius:10px;padding:10px 14px;font-weight:800">Reintentar</button></div></div>';
   document.getElementById('nx-engine-retry')?.addEventListener('click',retryAccess);
 }
 function loginVisible(visible){
@@ -728,11 +730,11 @@ function mountEngine(){
   frame=document.createElement('iframe');
   frame.id='nexo-dm-engine';
   frame.src=ENGINE+'&nxoLang='+encodeURIComponent(workspaceLanguage);
-  frame.title=workspaceLanguage==='en'?'Dynamic Technical Sheets':'Fichas Técnicas Dinámicas';
+  frame.title=workspaceToolName;
   frame.allow='camera; notifications';
   frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#eef3fb;';
   frame.addEventListener('load',()=>{
-    postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,theme:workspaceTheme,language:workspaceLanguage});
+    postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,toolName:workspaceToolName,toolDescription:workspaceToolDescription,theme:workspaceTheme,language:workspaceLanguage});
     setTimeout(openRequestedSheet,180);
   });
   root.appendChild(frame);
