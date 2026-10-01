@@ -4,7 +4,7 @@ if(window.NEXO_THEME_RUNTIME)return;
 
 const script=document.currentScript;
 const source=script?.src||location.href;
-const tokenUrl=new URL('./theme-tokens.json?v=20261001-v3',source).href;
+const tokenUrl=new URL('./theme-tokens.json?v=20261001-v3-1',source).href;
 const STORAGE_KEY='nexoTheme:v1';
 const query=new URLSearchParams(location.search);
 let tokenDocument=null;
@@ -145,7 +145,7 @@ const ready=fetch(tokenUrl,{cache:'no-store'})
   });
 
 window.NEXO_THEME_RUNTIME={
-  version:'2026-10-01-v1',
+  version:'2026-10-01-v2',
   tokenUrl,
   ready,
   setTheme,
