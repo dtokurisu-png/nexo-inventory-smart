@@ -1,7 +1,7 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=mobile-live-crop-i18n-20261001-62';
-const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-3';
+const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -912,7 +912,7 @@ function mountNexoOrganicBackground(){
 /* =========================================================
    NUMA CORE v1 · transversal assistant shell
 ========================================================= */
-const NUMA_PRESENCE_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence-runtime.js?v=20261001-presence-3';
+const NUMA_PRESENCE_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence-runtime.js?v=20261001-presence-4';
 let numaPresence=null,numaPresenceLoadPromise=null,numaTypingTimer=0;
 let numaState=null,numaContextCacheKey="",numaLoading=false,numaSending=false;
 function numaVisualTheme(){return document.getElementById("nxo-app")?.dataset?.theme==="night"?"night":"day"}
