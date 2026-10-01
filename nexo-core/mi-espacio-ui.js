@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=profile-workname-theme-tokens-20261001-48';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=pending-styles-tool-identity-20261001-49';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-20260927-3';
@@ -1185,7 +1185,21 @@ async function waitBoot(){
 function siteBase(){const p=location.pathname.replace(/\/+$/,'');return (location.origin+p.replace(/\/blank-8$/,'')).replace(/\/$/,'')}
 function routeUrl(path){const p=String(path||'').trim();return p?siteBase()+(p.startsWith('/')?p:'/'+p):''}
 function launchWithBack(url,label,workspaceId=''){if(!url)return'';try{const u=new URL(url,location.href);const back=new URL(siteBase()+'/blank-8');const lang=currentLanguage();if(workspaceId)back.searchParams.set('nxoWorkspace',workspaceId);back.searchParams.set('nxoLang',lang);u.searchParams.set('nxoBack',back.href);u.searchParams.set('nxoBackLabel',label||ui('Mi espacio','My space'));u.searchParams.set('nxoTheme',document.getElementById('nxo-app')?.dataset?.theme||storedTheme());u.searchParams.set('nxoLang',lang);return u.href}catch(_){return url}}
-function toolLaunchUrl(t){const route=routeUrl(t.routePath);if(!route)return'';const wsid=workspace?.workspace?.id||'';return launchWithBack(route,wsid?workspace.workspace.name:'Mi espacio',wsid)}
+function toolLaunchUrl(t){
+  const route=routeUrl(t.routePath);
+  if(!route)return'';
+  const wsid=workspace?.workspace?.id||'';
+  const launched=launchWithBack(route,wsid?workspace.workspace.name:ui('Mi espacio','My space'),wsid);
+  if(!wsid)return launched;
+  try{
+    const u=new URL(launched,location.href);
+    const customName=String(t.workspaceName||'').trim();
+    const customDescription=String(t.workspaceDescription||'').trim();
+    if(customName)u.searchParams.set('nxoToolName',customName);
+    if(customDescription)u.searchParams.set('nxoToolDescription',customDescription);
+    return u.href
+  }catch(_){return launched}
+}
 function centerDevelopmentUrl(){return launchWithBack(siteBase(),'Mi espacio','')}
 function setWorkspaceReturnParam(id){try{const u=new URL(location.href);if(id)u.searchParams.set('nxoWorkspace',id);else u.searchParams.delete('nxoWorkspace');history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
 function clearWorkspaceReturnParam(){setWorkspaceReturnParam('')}
@@ -1406,7 +1420,7 @@ function bindTopbar(mode){
   });
 }
 
-function toolCard(t){const route=toolLaunchUrl(t);const usable=!!route&&t.status!=='PLANNED';return '<article class="nxo-card '+(usable?'clickable':'')+'" '+(usable?'data-tool="'+esc(route)+'"':'')+'><div class="nxo-card-top"><div class="nxo-tool-icon">'+esc(t.icon||'◈')+'</div><span class="nxo-status '+esc(t.status||'')+'">'+esc(statusText(t.status))+'</span></div><h4>'+esc(t.nameEs||t.nameEn||t.toolKey)+'</h4><p>'+esc(t.descriptionEs||'')+'</p><div class="nxo-card-footer"><span class="nxo-role">'+(usable?'Abrir herramienta':'Aún no disponible')+'</span><span>›</span></div></article>'}
+function toolCard(t){const route=toolLaunchUrl(t),usable=!!route&&t.status!=='PLANNED',name=t.workspaceName||t.nameEs||t.nameEn||t.toolKey,description=t.workspaceDescription||t.descriptionEs||'';return '<article class="nxo-card '+(usable?'clickable':'')+'" '+(usable?'data-tool="'+esc(route)+'"':'')+'><div class="nxo-card-top"><div class="nxo-tool-icon">'+esc(t.icon||'◈')+'</div><span class="nxo-status '+esc(t.status||'')+'">'+esc(statusText(t.status))+'</span></div><h4>'+esc(name)+'</h4><p>'+esc(description)+'</p><div class="nxo-card-footer"><span class="nxo-role">'+(usable?ui('Abrir herramienta','Open tool'):ui('Aún no disponible','Not available yet'))+'</span><span>›</span></div></article>'}
 
 function workspaceCard(w,archived=false){
   const logo=mediaUrl(w.logoImage);
@@ -1752,7 +1766,34 @@ async function loadWorkspaceRecipeComments(){
     zone.innerHTML='<div class="nxo-notification-head"><strong>Notificaciones</strong></div><div class="nxo-notification-empty">'+esc(e.message||e)+'</div>';
   }
 }
-async function loadWorkspacePendingNotes(){const zone=document.getElementById('nxo-pending-notes');if(!zone||!workspace?.workspace?.id)return;try{workspacePendingNotes=await api('workspace.pending-notes',{workspaceId:workspace.workspace.id});const rows=Array.isArray(workspacePendingNotes?.notes)?workspacePendingNotes.notes:[];zone.innerHTML='<div class="nxo-section-head"><div><div class="nxo-pending-title-row"><h3>Pendientes</h3><span class="nxo-chip nxo-pending-count">'+rows.length+'</span></div><p>Notas que permanecen en el Workspace hasta resolverlas.</p></div><div class="nxo-pending-head-actions"><button type="button" class="nxo-pending-add" id="nxo-pending-add" aria-label="Crear pendiente" title="Crear pendiente">+</button></div></div>'+(rows.length?'<div class="nxo-note-board">'+rows.map((r,i)=>'<button type="button" class="nxo-pinned-note n'+(i%3)+'" data-pending-note="'+esc(r.id)+'"><img class="nxo-note-pin" src="'+esc(NEXO_PENDING_PIN)+'" alt="" aria-hidden="true"><span class="nxo-note-label">PENDIENTE</span><strong>'+esc(r.title||'Pendiente')+'</strong></button>').join('')+'</div>':'<div class="nxo-empty">No hay notas pendientes.</div>');zone.querySelectorAll('[data-pending-note]').forEach(b=>b.onclick=()=>openPendingNote(b.dataset.pendingNote));document.getElementById('nxo-pending-add')?.addEventListener('click',openManualPendingModal)}catch(e){zone.innerHTML='<div class="nxo-section-head"><div><h3>Pendientes</h3></div></div><div class="nxo-empty">'+esc(e.message||e)+'</div>'}}
+async function loadWorkspacePendingNotes(){
+  const zone=document.getElementById('nxo-pending-notes');
+  if(!zone||!workspace?.workspace?.id)return;
+  try{
+    workspacePendingNotes=await api('workspace.pending-notes',{workspaceId:workspace.workspace.id});
+    const rows=Array.isArray(workspacePendingNotes?.notes)?workspacePendingNotes.notes:[];
+    const validStyles=new Set(['yellow','peach','blue','mint']);
+    zone.innerHTML=
+      '<div class="nxo-section-head">'+
+        '<div><div class="nxo-pending-title-row"><h3>Pendientes</h3><span class="nxo-chip nxo-pending-count">'+rows.length+'</span></div><p>Notas que permanecen en el Workspace hasta resolverlas.</p></div>'+
+        '<div class="nxo-pending-head-actions"><button type="button" class="nxo-pending-add" id="nxo-pending-add" aria-label="Crear pendiente" title="Crear pendiente">+</button></div>'+
+      '</div>'+
+      (rows.length
+        ?'<div class="nxo-note-board">'+rows.map(r=>{
+          const style=validStyles.has(String(r.styleKey||''))?String(r.styleKey):'yellow';
+          return '<button type="button" class="nxo-pinned-note style-'+esc(style)+'" data-pending-note="'+esc(r.id)+'">'+
+            '<span class="nxo-note-pin" aria-hidden="true"></span>'+
+            '<span class="nxo-note-label">PENDIENTE</span>'+
+            '<strong>'+esc(r.title||'Pendiente')+'</strong>'+
+          '</button>'
+        }).join('')+'</div>'
+        :'<div class="nxo-empty">No hay notas pendientes.</div>');
+    zone.querySelectorAll('[data-pending-note]').forEach(b=>b.onclick=()=>openPendingNote(b.dataset.pendingNote));
+    document.getElementById('nxo-pending-add')?.addEventListener('click',openManualPendingModal)
+  }catch(e){
+    zone.innerHTML='<div class="nxo-section-head"><div><h3>Pendientes</h3></div></div><div class="nxo-empty">'+esc(e.message||e)+'</div>'
+  }
+}
 function openManualPendingModal(){if(!workspace?.workspace?.id)return;modal('Crear pendiente','<div class="nxo-field"><label>Título</label><input id="nxo-manual-pending-title" class="nxo-input" maxlength="120" placeholder="¿Qué queda pendiente?"></div><div class="nxo-field"><label>Nota</label><textarea id="nxo-manual-pending-body" class="nxo-textarea" maxlength="4000" placeholder="Añade los detalles necesarios para retomarlo después."></textarea></div><div class="nxo-modal-actions"><button id="nxo-manual-pending-save" class="nxo-btn nxo-btn-gold">Crear pendiente</button></div>',o=>{const title=o.querySelector('#nxo-manual-pending-title'),body=o.querySelector('#nxo-manual-pending-body'),save=o.querySelector('#nxo-manual-pending-save');title?.focus();save?.addEventListener('click',async()=>{const value=title?.value.trim()||'',note=body?.value.trim()||'';if(!value){toast('Escribe un título');title?.focus();return}save.disabled=true;save.textContent='Guardando…';try{await api('workspace.pending-note.create',{workspaceId:workspace.workspace.id,input:{title:value,body:note,sourceType:'manual'}});o.remove();toast('Pendiente creado');await loadWorkspacePendingNotes()}catch(e){save.disabled=false;save.textContent='Crear pendiente';toast(e.message||String(e))}})})}
 function openRecipeRecommendation(id){const r=(workspaceRecipeComments?.comments||[]).find(x=>x.id===id);if(!r)return;modal('Recomendación · '+(r.recipeTitle||'Ficha técnica'),'<div class="nxo-review-card"><div class="nxo-eyebrow">Enviada por '+esc(r.authorName||'Miembro Nexo')+'</div><p>'+esc(r.comment||'')+'</p><small>'+esc(nxoWhen(r.commentedAt))+'</small></div><p class="nxo-muted" style="line-height:1.55">Decide si la recomendación se rechaza o se acepta para darle seguimiento.</p><div class="nxo-modal-actions"><button id="nxo-review-reject" class="nxo-btn nxo-btn-danger">Rechazar</button><button id="nxo-review-accept" class="nxo-btn nxo-btn-gold">Aceptar</button></div>',o=>{o.querySelector('#nxo-review-reject').onclick=async()=>{if(!confirm('¿Rechazar esta recomendación? Se retirará de la bandeja.'))return;try{await api('comment.reject',{commentId:r.id});o.remove();toast('Recomendación rechazada');await refreshWorkspaceAdminPanels()}catch(e){toast(e.message||String(e))}};o.querySelector('#nxo-review-accept').onclick=()=>{o.remove();acceptedRecommendationOptions(r)}})}
 function acceptedRecommendationOptions(r){modal('Recomendación aceptada','<p style="line-height:1.55">¿Qué deseas hacer con esta recomendación?</p><div class="nxo-choice-grid"><button id="nxo-apply-now" class="nxo-choice"><strong>Realizar el ajuste ahora</strong><span>La IA revisará la ficha actual y aplicará únicamente el cambio aprobado.</span></button><button id="nxo-keep-pending" class="nxo-choice"><strong>Mantener pendiente</strong><span>Guárdala como una nota con pin en el Workspace para retomarla después.</span></button></div>',o=>{o.querySelector('#nxo-apply-now').onclick=()=>{o.remove();startRecipeChange({commentId:r.id})};o.querySelector('#nxo-keep-pending').onclick=()=>{o.remove();pendingTitleModal(r)}})}
@@ -2076,7 +2117,81 @@ function inviteModal(){
 
 async function changeRole(memberId,roleKey){try{await api('workspace.role',{workspaceId:workspace.workspace.id,targetMemberId:memberId,roleKey});toast('Rol actualizado');await loadMembers()}catch(e){toast(e.message||String(e));await loadMembers()}}
 async function removeMember(memberId){if(!confirm('¿Quitar a este miembro del Workspace?'))return;try{await api('workspace.remove',{workspaceId:workspace.workspace.id,targetMemberId:memberId});toast('Miembro removido');await loadMembers()}catch(e){toast(e.message||String(e))}}
-async function loadWorkspaceSettings(){const zone=document.getElementById('nxo-settings-zone');if(!zone)return;try{workspaceToolConfig=await api('workspace.tools',{workspaceId:workspace.workspace.id});const ws=workspace.workspace||{},logo=mediaUrl(ws.logoImage);zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-bottom:14px"><div class="nxo-section-head"><div><h3>Información del Workspace</h3><p>Nombre, descripción y logo visibles para sus miembros.</p></div></div><div class="nxo-workspace-logo-settings"><div class="nxo-workspace-logo-preview">'+(logo?'<img src="'+esc(logo)+'" alt="'+esc((ws.name||'Workspace')+' logo')+'">':'<span>⌂</span>')+'</div><div class="nxo-workspace-logo-copy"><strong>Logo del Workspace</strong><p>PNG, JPG, WEBP o SVG · máximo 8 MB.</p><input id="nxo-workspace-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden><button id="nxo-workspace-logo-change" class="nxo-btn" type="button">'+(logo?'Cambiar logo':'Subir logo')+'</button></div></div><div class="nxo-field"><label>Nombre</label><input id="nxo-settings-name" class="nxo-input" value="'+esc(ws.name||'')+'"></div><div class="nxo-field"><label>Descripción</label><textarea id="nxo-settings-desc" class="nxo-textarea">'+esc(ws.description||'')+'</textarea></div><div class="nxo-modal-actions"><button id="nxo-settings-save" class="nxo-btn nxo-btn-gold">Guardar cambios</button></div></div><div class="nxo-panel" style="padding:18px"><div class="nxo-section-head"><div><h3>Herramientas del Workspace</h3><p>Activa herramientas y decide si todos los miembros o solo personas concretas pueden verlas.</p></div></div><div class="nxo-tool-config">'+workspaceToolConfig.tools.map(t=>{const mode=t.accessMode==='restricted'?'Restringido · '+(t.allowedMemberIds||[]).length+' miembro'+((t.allowedMemberIds||[]).length===1?'':'s'):'Todo el Workspace';return '<div class="nxo-tool-toggle"><div><h4>'+esc(t.nameEs||t.toolKey)+'</h4><p>'+esc(t.descriptionEs||'')+' · '+esc(statusText(t.status))+'</p><div class="nxo-access-summary">'+esc(mode)+'</div></div><div class="nxo-tool-actions"><button class="nxo-btn" data-tool-access="'+esc(t.toolKey)+'" '+(t.enabled?'':'disabled')+'>Parámetros de acceso</button><div class="nxo-switch '+(t.enabled?'on':'')+'" data-tool-toggle="'+esc(t.toolKey)+'" data-enabled="'+(t.enabled?'1':'0')+'"><span></span></div></div></div>'}).join('')+'</div></div>';document.getElementById('nxo-settings-save')?.addEventListener('click',saveWorkspaceSettings);const logoInput=document.getElementById('nxo-workspace-logo-file');document.getElementById('nxo-workspace-logo-change')?.addEventListener('click',()=>logoInput?.click());logoInput?.addEventListener('change',()=>{const file=logoInput.files?.[0];if(file)uploadWorkspaceLogo(file)});document.querySelectorAll('[data-tool-toggle]').forEach(x=>x.onclick=()=>toggleTool(x.dataset.toolToggle,x.dataset.enabled!=='1'));document.querySelectorAll('[data-tool-access]').forEach(x=>x.onclick=()=>toolAccessModal(x.dataset.toolAccess))}catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||e)+'</div>'}}
+async function loadWorkspaceSettings(){
+  const zone=document.getElementById('nxo-settings-zone');
+  if(!zone)return;
+  try{
+    workspaceToolConfig=await api('workspace.tools',{workspaceId:workspace.workspace.id});
+    const ws=workspace.workspace||{},logo=mediaUrl(ws.logoImage);
+    zone.innerHTML=
+      '<div class="nxo-panel" style="padding:18px;margin-bottom:14px">'+
+        '<div class="nxo-section-head"><div><h3>Información del Workspace</h3><p>Nombre, descripción y logo visibles para sus miembros.</p></div></div>'+
+        '<div class="nxo-workspace-logo-settings"><div class="nxo-workspace-logo-preview">'+(logo?'<img src="'+esc(logo)+'" alt="'+esc((ws.name||'Workspace')+' logo')+'">':'<span>⌂</span>')+'</div><div class="nxo-workspace-logo-copy"><strong>Logo del Workspace</strong><p>PNG, JPG, WEBP o SVG · máximo 8 MB.</p><input id="nxo-workspace-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden><button id="nxo-workspace-logo-change" class="nxo-btn" type="button">'+(logo?'Cambiar logo':'Subir logo')+'</button></div></div>'+
+        '<div class="nxo-field"><label>Nombre</label><input id="nxo-settings-name" class="nxo-input" value="'+esc(ws.name||'')+'"></div>'+
+        '<div class="nxo-field"><label>Descripción</label><textarea id="nxo-settings-desc" class="nxo-textarea">'+esc(ws.description||'')+'</textarea></div>'+
+        '<div class="nxo-modal-actions"><button id="nxo-settings-save" class="nxo-btn nxo-btn-gold">Guardar cambios</button></div>'+
+      '</div>'+
+      '<div class="nxo-panel" style="padding:18px">'+
+        '<div class="nxo-section-head"><div><h3>Herramientas del Workspace</h3><p>Activa herramientas, personaliza cómo se presentan y decide quién puede verlas.</p></div></div>'+
+        '<div class="nxo-tool-config">'+workspaceToolConfig.tools.map(t=>{
+          const mode=t.accessMode==='restricted'?'Restringido · '+(t.allowedMemberIds||[]).length+' miembro'+((t.allowedMemberIds||[]).length===1?'':'s'):'Todo el Workspace';
+          const displayName=t.customName||t.nameEs||t.toolKey;
+          const displayDescription=t.customDescription||t.descriptionEs||'';
+          return '<div class="nxo-tool-toggle">'+
+            '<div><h4>'+esc(displayName)+'</h4><p>'+esc(displayDescription)+' · '+esc(statusText(t.status))+'</p><div class="nxo-access-summary">'+esc(mode)+'</div></div>'+
+            '<div class="nxo-tool-actions">'+
+              '<button class="nxo-btn" data-tool-identity="'+esc(t.toolKey)+'">Personalizar</button>'+
+              '<button class="nxo-btn" data-tool-access="'+esc(t.toolKey)+'" '+(t.enabled?'':'disabled')+'>Parámetros de acceso</button>'+
+              '<div class="nxo-switch '+(t.enabled?'on':'')+'" data-tool-toggle="'+esc(t.toolKey)+'" data-enabled="'+(t.enabled?'1':'0')+'"><span></span></div>'+
+            '</div>'+
+          '</div>'
+        }).join('')+'</div>'+
+      '</div>';
+    document.getElementById('nxo-settings-save')?.addEventListener('click',saveWorkspaceSettings);
+    const logoInput=document.getElementById('nxo-workspace-logo-file');
+    document.getElementById('nxo-workspace-logo-change')?.addEventListener('click',()=>logoInput?.click());
+    logoInput?.addEventListener('change',()=>{const file=logoInput.files?.[0];if(file)uploadWorkspaceLogo(file)});
+    document.querySelectorAll('[data-tool-toggle]').forEach(x=>x.onclick=()=>toggleTool(x.dataset.toolToggle,x.dataset.enabled!=='1'));
+    document.querySelectorAll('[data-tool-access]').forEach(x=>x.onclick=()=>toolAccessModal(x.dataset.toolAccess));
+    document.querySelectorAll('[data-tool-identity]').forEach(x=>x.onclick=()=>toolIdentityModal(x.dataset.toolIdentity))
+  }catch(e){
+    zone.innerHTML='<div class="nxo-empty">'+esc(e.message||e)+'</div>'
+  }
+}
+
+function toolIdentityModal(toolKey){
+  const tool=(workspaceToolConfig?.tools||[]).find(t=>t.toolKey===toolKey);
+  if(!tool)return;
+  const baseName=tool.nameEs||tool.nameEn||tool.toolKey;
+  const baseDescription=tool.descriptionEs||'';
+  modal('Personalizar herramienta · '+baseName,
+    '<div class="nxo-field"><label>Nombre en este Workspace</label><input id="nxo-tool-custom-name" class="nxo-input" maxlength="120" value="'+esc(tool.customName||'')+'" placeholder="'+esc(baseName)+'"></div>'+
+    '<div class="nxo-field"><label>Descripción general</label><textarea id="nxo-tool-custom-description" class="nxo-textarea" maxlength="600" placeholder="'+esc(baseDescription)+'">'+esc(tool.customDescription||'')+'</textarea></div>'+
+    '<p class="nxo-muted" style="line-height:1.5">Si dejas un campo vacío, Nexo utilizará el nombre o descripción original de la herramienta. Este cambio solo afecta a este Workspace.</p>'+
+    '<div class="nxo-modal-actions"><button id="nxo-tool-identity-save" class="nxo-btn nxo-btn-gold">Guardar personalización</button></div>',
+    o=>{
+      const save=o.querySelector('#nxo-tool-identity-save');
+      save?.addEventListener('click',async()=>{
+        const name=o.querySelector('#nxo-tool-custom-name')?.value.trim()||'';
+        const description=o.querySelector('#nxo-tool-custom-description')?.value.trim()||'';
+        save.disabled=true;
+        save.textContent='Guardando…';
+        try{
+          await api('workspace.tool.identity',{workspaceId:workspace.workspace.id,toolKey,input:{name,description}});
+          o.remove();
+          workspace=await api('workspace.open',{workspaceId:workspace.workspace.id});
+          toast('Presentación de la herramienta actualizada');
+          await loadWorkspaceSettings()
+        }catch(e){
+          save.disabled=false;
+          save.textContent='Guardar personalización';
+          toast(e.message||String(e))
+        }
+      })
+    }
+  )
+}
+
 async function toolAccessModal(toolKey){const tool=(workspaceToolConfig?.tools||[]).find(t=>t.toolKey===toolKey);if(!tool)return;try{if(!workspaceMembers)workspaceMembers=await api('workspace.members',{workspaceId:workspace.workspace.id});const current=new Set(tool.allowedMemberIds||[]);const members=workspaceMembers?.members||[];modal('Parámetros de acceso · '+(tool.nameEs||tool.toolKey),'<div class="nxo-field"><label>Disponibilidad</label><select id="nxo-access-mode" class="nxo-select"><option value="workspace" '+(tool.accessMode!=='restricted'?'selected':'')+'>Todo el Workspace</option><option value="restricted" '+(tool.accessMode==='restricted'?'selected':'')+'>Solo miembros seleccionados</option></select></div><div id="nxo-access-members" class="nxo-access-list">'+members.map(m=>'<label class="nxo-check"><input type="checkbox" value="'+esc(m.memberId)+'" '+(current.has(m.memberId)?'checked':'')+'><span><strong>'+esc(m.displayName)+'</strong><small>'+esc(roleName(m.roleKey,m.role))+'</small></span></label>').join('')+'</div><p class="nxo-muted" style="line-height:1.5;margin:10px 0 0">Los administradores con permiso de configurar herramientas conservan visibilidad para poder administrarlas.</p><div class="nxo-modal-actions"><button id="nxo-access-save" class="nxo-btn nxo-btn-gold">Guardar acceso</button></div>',o=>{const select=o.querySelector('#nxo-access-mode'),list=o.querySelector('#nxo-access-members'),save=o.querySelector('#nxo-access-save');const sync=()=>{list.style.display=select.value==='restricted'?'grid':'none'};select.onchange=sync;sync();save.onclick=async()=>{const mode=select.value;const allowed=mode==='restricted'?[...o.querySelectorAll('#nxo-access-members input:checked')].map(x=>x.value):[];if(mode==='restricted'&&!allowed.length){toast('Selecciona al menos un miembro');return}save.disabled=true;try{await api('workspace.tool.access',{workspaceId:workspace.workspace.id,toolKey,input:{accessMode:mode,allowedMemberIds:allowed}});o.remove();toast('Acceso actualizado');workspace=await api('workspace.open',{workspaceId:workspace.workspace.id});await loadWorkspaceSettings()}catch(e){save.disabled=false;toast(e.message||String(e))}}})}catch(e){toast(e.message||String(e))}}
 async function uploadProfilePhoto(file,inWorkspace=false){
   if(!file)return;
