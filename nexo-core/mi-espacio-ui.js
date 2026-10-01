@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=mobile-header-primary-utils-20260930-45';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=global-language-settings-20260930-46';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-20260927-3';
@@ -13,7 +13,29 @@ function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
 const NEXO_THEME_KEY='nexoTheme:v1';
+const NEXO_LANGUAGE_KEY='nexoLanguage:v1';
 function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
+function normalizeLanguage(value){return String(value||'').toLowerCase().startsWith('en')?'en':'es'}
+function storedLanguage(){try{return normalizeLanguage(localStorage.getItem(NEXO_LANGUAGE_KEY)||'es')}catch(_){return'es'}}
+function currentLanguage(){return normalizeLanguage(personal?.profile?.locale||storedLanguage())}
+function ui(es,en){return currentLanguage()==='en'?en:es}
+function applyLanguage(value,persist=true){
+  const lang=normalizeLanguage(value);
+  document.documentElement.lang=lang;
+  if(persist)try{localStorage.setItem(NEXO_LANGUAGE_KEY,lang)}catch(_){}
+  if(personal?.profile)personal.profile.locale=lang;
+  return lang
+}
+async function setGlobalLanguage(value){
+  const lang=applyLanguage(value,true);
+  try{
+    if(sessionToken)await api('profile.locale.set',{locale:lang});
+    if(workspace)renderWorkspace();else if(personal)renderPersonal();
+    toast(lang==='en'?'Language changed to English':'Idioma cambiado a Español')
+  }catch(e){
+    toast(e.message||String(e))
+  }
+}
 function applyTheme(theme,persist=true){
   const t=theme==='night'?'night':'day';
   const r=document.getElementById('nxo-app');
@@ -1155,60 +1177,73 @@ async function waitBoot(){
 
 function siteBase(){const p=location.pathname.replace(/\/+$/,'');return (location.origin+p.replace(/\/blank-8$/,'')).replace(/\/$/,'')}
 function routeUrl(path){const p=String(path||'').trim();return p?siteBase()+(p.startsWith('/')?p:'/'+p):''}
-function launchWithBack(url,label,workspaceId=''){if(!url)return'';try{const u=new URL(url,location.href);const back=new URL(siteBase()+'/blank-8');if(workspaceId)back.searchParams.set('nxoWorkspace',workspaceId);u.searchParams.set('nxoBack',back.href);u.searchParams.set('nxoBackLabel',label||'Mi espacio');u.searchParams.set('nxoTheme',document.getElementById('nxo-app')?.dataset?.theme||storedTheme());return u.href}catch(_){return url}}
+function launchWithBack(url,label,workspaceId=''){if(!url)return'';try{const u=new URL(url,location.href);const back=new URL(siteBase()+'/blank-8');const lang=currentLanguage();if(workspaceId)back.searchParams.set('nxoWorkspace',workspaceId);back.searchParams.set('nxoLang',lang);u.searchParams.set('nxoBack',back.href);u.searchParams.set('nxoBackLabel',label||ui('Mi espacio','My space'));u.searchParams.set('nxoTheme',document.getElementById('nxo-app')?.dataset?.theme||storedTheme());u.searchParams.set('nxoLang',lang);return u.href}catch(_){return url}}
 function toolLaunchUrl(t){const route=routeUrl(t.routePath);if(!route)return'';const wsid=workspace?.workspace?.id||'';return launchWithBack(route,wsid?workspace.workspace.name:'Mi espacio',wsid)}
 function centerDevelopmentUrl(){return launchWithBack(siteBase(),'Mi espacio','')}
 function setWorkspaceReturnParam(id){try{const u=new URL(location.href);if(id)u.searchParams.set('nxoWorkspace',id);else u.searchParams.delete('nxoWorkspace');history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
 function clearWorkspaceReturnParam(){setWorkspaceReturnParam('')}
 function statusText(s){return s==='ACTIVE'?'Activo':s==='BUILDING'?'En desarrollo':s==='PLANNED'?'Próximamente':s||''}
-function roleName(roleKey,role){return role?.nameEs||({owner:'Propietario',developer:'Desarrollador',admin:'Administrador',manager:'Manager',collaborator:'Colaborador',viewer:'Consulta'}[roleKey]||roleKey||'Miembro')}
+function roleName(roleKey,role){
+  if(currentLanguage()==='en')return role?.nameEn||({owner:'Owner',developer:'Developer',admin:'Administrator',manager:'Manager',collaborator:'Collaborator',viewer:'Viewer'}[roleKey]||roleKey||'Member');
+  return role?.nameEs||({owner:'Propietario',developer:'Desarrollador',admin:'Administrador',manager:'Manager',collaborator:'Colaborador',viewer:'Consulta'}[roleKey]||roleKey||'Miembro')
+}
 function hasPerm(key){const list=workspace?.role?.permissions||workspace?.membership?.permissions||[];return Array.isArray(list)&&list.includes(key)}
 function topbar(mode){
   const isWorkspace=mode==='workspace';
-  const name=personal?.profile?.displayName||'Usuario Nexo';
+  const name=personal?.profile?.displayName||ui('Usuario Nexo','Nexo user');
   const email=String(personal?.profile?.email||'').trim();
   const profilePhoto=String(personal?.profile?.photoImage?.url||'').trim();
   const wsName=workspace?.workspace?.name||'Workspace';
-  const role=isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):'Cuenta personal';
+  const role=isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):ui('Cuenta personal','Personal account');
   const perms=workspace?.role?.permissions||[];
   const canAdmin=isWorkspace&&(workspace?.membership?.roleKey==='owner'||perms.some(x=>['workspace.manage','members.manage','tools.configure'].includes(x)));
-  const contextLabel=isWorkspace?wsName:'Mi espacio';
+  const contextLabel=isWorkspace?wsName:ui('Mi espacio','My space');
+  const lang=currentLanguage();
+  const theme=document.getElementById('nxo-app')?.dataset?.theme||storedTheme();
 
   const workspaceQuickActions=!isWorkspace
     ?'<div class="nxo-header-workspace-actions">'+
-       '<button type="button" class="nxo-header-action" id="nxo-join-workspace-mobile">Unirse a un Workspace</button>'+
-       '<button type="button" class="nxo-header-action primary" id="nxo-create-workspace-mobile">Nuevo Workspace</button>'+
+       '<button type="button" class="nxo-header-action" id="nxo-join-workspace-mobile">'+esc(ui('Unirse a un Workspace','Join a Workspace'))+'</button>'+
+       '<button type="button" class="nxo-header-action primary" id="nxo-create-workspace-mobile">'+esc(ui('Nuevo Workspace','New Workspace'))+'</button>'+
      '</div>'
     :'';
 
   const notification=canAdmin
     ?'<div class="nxo-notification-wrap">'+
-       '<button type="button" class="nxo-notification-button" id="nxo-notification-button" aria-label="Notificaciones" aria-expanded="false">'+
+       '<button type="button" class="nxo-notification-button" id="nxo-notification-button" aria-label="'+esc(ui('Notificaciones','Notifications'))+'" aria-expanded="false">'+
          '<span class="nxo-notification-icon" aria-hidden="true">🔔</span>'+
          '<span class="nxo-notification-badge" id="nxo-notification-badge" hidden>0</span>'+
        '</button>'+
        '<div class="nxo-notification-menu" id="nxo-notification-menu">'+
-         '<div id="nxo-recipe-comment-notifications"><div class="nxo-notification-head"><strong>Notificaciones</strong></div><div class="nxo-notification-empty">Cargando avisos…</div></div>'+
+         '<div id="nxo-recipe-comment-notifications"><div class="nxo-notification-head"><strong>'+esc(ui('Notificaciones','Notifications'))+'</strong></div><div class="nxo-notification-empty">'+esc(ui('Cargando avisos…','Loading notifications…'))+'</div></div>'+
        '</div>'+
      '</div>'
     :'';
 
+  const quickSettings=
+    '<div class="nxo-quick-settings-wrap">'+
+      '<button type="button" class="nxo-quick-settings-button" id="nxo-quick-settings-button" aria-label="'+esc(ui('Ajustes rápidos','Quick settings'))+'" aria-expanded="false">⚙</button>'+
+      '<div class="nxo-quick-settings-menu" id="nxo-quick-settings-menu">'+
+        '<div class="nxo-quick-settings-title">'+esc(ui('Ajustes rápidos','Quick settings'))+'</div>'+
+        '<button type="button" id="nxo-language-toggle" class="nxo-quick-setting-row"><span>'+esc(ui('Idioma','Language'))+'</span><strong>'+esc(lang==='en'?'EN':'ES')+'</strong></button>'+
+        '<button type="button" id="nxo-theme-toggle" class="nxo-quick-setting-row"><span>'+esc(ui('Apariencia','Appearance'))+'</span><strong>'+esc(theme==='night'?ui('Oscuro','Dark'):ui('Claro','Light'))+'</strong></button>'+
+      '</div>'+
+    '</div>';
+
   return '<header class="nxo-topbar nxo-workspace-nav">'+
     '<div class="nxo-nav-brand" id="nxo-nav-home"><span class="nxo-nav-mark"><img src="'+esc(NEXO_LOGO)+'" alt="Nexo Group"></span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div>'+
     '<div class="nxo-nav-collapse" id="nxo-nav-collapse">'+
-      '<nav class="nxo-nav-links" aria-label="Navegación principal">'+
-        '<button type="button" class="nxo-nav-link '+(!isWorkspace?'active':'')+'" id="nxo-personal" '+(!isWorkspace?'aria-current="page"':'')+'>Mi espacio</button>'+
+      '<nav class="nxo-nav-links" aria-label="'+esc(ui('Navegación principal','Main navigation'))+'">'+
+        '<button type="button" class="nxo-nav-link '+(!isWorkspace?'active':'')+'" id="nxo-personal" '+(!isWorkspace?'aria-current="page"':'')+'>'+esc(ui('Mi espacio','My space'))+'</button>'+
         (isWorkspace?'<button type="button" class="nxo-nav-link active" aria-current="page">'+esc(wsName)+'</button>':'')+
-        '<button type="button" class="nxo-nav-link" id="nxo-nav-development">Centro de desarrollo</button>'+
+        '<button type="button" class="nxo-nav-link" id="nxo-nav-development">'+esc(ui('Centro de desarrollo','Development Center'))+'</button>'+
       '</nav>'+
-      '<div class="nxo-nav-menu-utilities">'+
-        '<button type="button" class="nxo-theme-button" id="nxo-theme-toggle" aria-label="Cambiar tema" aria-pressed="false"></button>'+
-      '</div>'+
     '</div>'+
     '<div class="nxo-nav-primary-utils">'+
+      quickSettings+
       notification+
       '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
-        '<span class="nxo-avatar">'+(profilePhoto?'<img src="'+esc(profilePhoto)+'" alt="'+esc(name+' foto de perfil')+'">':esc(initials(name)))+'</span>'+
+        '<span class="nxo-avatar">'+(profilePhoto?'<img src="'+esc(profilePhoto)+'" alt="'+esc(name+' '+ui('foto de perfil','profile photo'))+'">':esc(initials(name)))+'</span>'+
         '<span class="nxo-nav-account-copy">'+
           '<span class="nxo-nav-account-name-row"><strong>'+esc(name)+'</strong><small class="nxo-nav-account-role">'+esc(role)+'</small></span>'+
           (email?'<small class="nxo-nav-account-email">'+esc(email)+'</small>':'')+
@@ -1216,13 +1251,13 @@ function topbar(mode){
         '<span class="nxo-nav-caret">⌄</span>'+
       '</button>'+
       '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
-        '<button type="button" data-account-action="settings">Ajustes de perfil</button>'+
-        '<button type="button" data-account-action="switch">Cambiar cuenta</button>'+
-        '<button type="button" class="danger" data-account-action="logout">Cerrar sesión</button>'+
+        '<button type="button" data-account-action="settings">'+esc(ui('Ajustes de perfil','Profile settings'))+'</button>'+
+        '<button type="button" data-account-action="switch">'+esc(ui('Cambiar cuenta','Switch account'))+'</button>'+
+        '<button type="button" class="danger" data-account-action="logout">'+esc(ui('Cerrar sesión','Sign out'))+'</button>'+
       '</div>'+
       '<input type="file" id="nxo-profile-photo-input" class="nxo-profile-photo-input" accept="image/png,image/jpeg,image/webp" hidden>'+
     '</div>'+
-    '<button type="button" class="nxo-mobile-menu-button" id="nxo-mobile-menu-button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nxo-nav-collapse"><span></span><span></span><span></span></button>'+
+    '<button type="button" class="nxo-mobile-menu-button" id="nxo-mobile-menu-button" aria-label="'+esc(ui('Abrir menú','Open menu'))+'" aria-expanded="false" aria-controls="nxo-nav-collapse"><span></span><span></span><span></span></button>'+
     workspaceQuickActions+
   '</header>'
 }
@@ -1234,6 +1269,9 @@ function bindTopbar(mode){
   const bell=document.getElementById('nxo-notification-button');
   const bellMenu=document.getElementById('nxo-notification-menu');
   const themeButton=document.getElementById('nxo-theme-toggle');
+  const languageButton=document.getElementById('nxo-language-toggle');
+  const quickSettingsButton=document.getElementById('nxo-quick-settings-button');
+  const quickSettingsMenu=document.getElementById('nxo-quick-settings-menu');
   const mobileButton=document.getElementById('nxo-mobile-menu-button');
   const mobileMenu=document.getElementById('nxo-nav-collapse');
   const profilePhotoInput=document.getElementById('nxo-profile-photo-input');
@@ -1243,7 +1281,17 @@ function bindTopbar(mode){
     mobileButton?.setAttribute('aria-label','Abrir menú');
   };
   applyTheme(document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),false);
-  themeButton?.addEventListener('click',e=>{e.stopPropagation();toggleTheme()});
+  applyLanguage(personal?.profile?.locale||storedLanguage(),true);
+  themeButton?.addEventListener('click',e=>{e.stopPropagation();toggleTheme();quickSettingsMenu?.classList.remove('open');quickSettingsButton?.setAttribute('aria-expanded','false');if(workspace)renderWorkspace();else renderPersonal()});
+  languageButton?.addEventListener('click',e=>{e.stopPropagation();setGlobalLanguage(currentLanguage()==='es'?'en':'es')});
+  quickSettingsButton?.addEventListener('click',e=>{
+    e.stopPropagation();
+    const open=quickSettingsMenu?.classList.toggle('open')===true;
+    quickSettingsButton.setAttribute('aria-expanded',open?'true':'false');
+    bellMenu?.classList.remove('open');bell?.setAttribute('aria-expanded','false');
+    menu?.classList.remove('open');account?.setAttribute('aria-expanded','false');
+    closeMobileMenu()
+  });
   mobileButton?.addEventListener('click',e=>{
     e.stopPropagation();
     const open=mobileMenu?.classList.toggle('open')===true;
@@ -1252,8 +1300,14 @@ function bindTopbar(mode){
     if(open){
       bellMenu?.classList.remove('open');
       bell?.setAttribute('aria-expanded','false');
+      quickSettingsMenu?.classList.remove('open');
+      quickSettingsButton?.setAttribute('aria-expanded','false');
       menu?.classList.remove('open');
       account?.setAttribute('aria-expanded','false');
+      quickSettingsMenu?.classList.remove('open');
+      quickSettingsButton?.setAttribute('aria-expanded','false');
+      quickSettingsMenu?.classList.remove('open');
+      quickSettingsButton?.setAttribute('aria-expanded','false');
     }
   });
 
@@ -1308,6 +1362,10 @@ function bindTopbar(mode){
     if(bellMenu&&bell&&!bellMenu.contains(e.target)&&!bell.contains(e.target)){
       bellMenu.classList.remove('open');
       bell.setAttribute('aria-expanded','false');
+    }
+    if(quickSettingsMenu&&quickSettingsButton&&!quickSettingsMenu.contains(e.target)&&!quickSettingsButton.contains(e.target)){
+      quickSettingsMenu.classList.remove('open');
+      quickSettingsButton.setAttribute('aria-expanded','false');
     }
   },{once:true});
 
@@ -1438,6 +1496,7 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='BOOTSTRAP';
   personal=await api('bootstrap');
+  applyLanguage(personal?.profile?.locale||new URLSearchParams(location.search).get('nxoLang')||storedLanguage(),true);
 
   const params=new URLSearchParams(location.search);
   const inviteToken=String(params.get('nxoJoin')||'').trim();
