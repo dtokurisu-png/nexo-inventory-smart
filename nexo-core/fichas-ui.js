@@ -1,10 +1,10 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-theme-contract-20261001-26';
-const ENGINE_REVISION='theme-unified-20261001-24';
+const ACCESS_REVISION='fichas-theme-contract-20261001-27';
+const ENGINE_REVISION='theme-unified-20261001-25';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-deep-search-20260930-1';
-const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-1';
+const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
