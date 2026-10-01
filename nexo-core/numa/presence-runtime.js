@@ -108,9 +108,7 @@ function numaApplyCoreLayout(state="idle"){
   shell.style.setProperty("--nma-belly-w",belly[2]+"%");
   shell.style.setProperty("--nma-belly-h",belly[3]+"%");
 }
-function numaLifeRgb(){
-  return getTheme()==="night"?{r:255,g:190,b:56}:{r:38,g:76,b:143};
-}
+function numaLifeRgb(){return {r:92,g:218,b:255}}
 function numaLauncherRgb(){
   return getTheme()==="night"?{r:255,g:190,b:56}:{r:57,g:169,b:255};
 }
