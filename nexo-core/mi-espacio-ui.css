@@ -3897,3 +3897,70 @@ html[data-nxo-theme] .nxo-select:focus,html[data-nxo-theme] .nxo-input:focus,htm
   border-color:var(--nxo-theme-interaction)!important;
   color:#111827!important
 }
+
+/* NOTIFICATION BELL ATTENTION · 2026-10-01 */
+.nxo-notification-button.nxo-has-unread{
+  isolation:isolate;
+  overflow:hidden;
+  border-color:var(--nxo-theme-interaction)!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--nxo-theme-interaction) 20%,transparent),0 0 18px color-mix(in srgb,var(--nxo-theme-interaction) 28%,transparent)
+}
+.nxo-notification-button.nxo-has-unread::before{
+  content:"";
+  position:absolute;
+  inset:1px;
+  z-index:0;
+  pointer-events:none;
+  border-radius:9px;
+  background:linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 30%,
+    rgba(255,255,255,.08) 35%,
+    rgba(132,228,255,.38) 40%,
+    rgba(255,170,224,.30) 45%,
+    rgba(255,241,166,.42) 50%,
+    rgba(160,255,203,.28) 55%,
+    rgba(255,255,255,.18) 60%,
+    transparent 67%,
+    transparent 100%
+  );
+  background-size:240% 100%;
+  background-position:155% 50%;
+  mix-blend-mode:screen;
+  opacity:0;
+  animation:nxo-bell-foil 1.35s ease-in-out 3
+}
+.nxo-notification-button.nxo-has-unread .nxo-notification-icon{
+  position:relative;
+  z-index:2;
+  transform-origin:50% 12%;
+  animation:nxo-bell-nudge .72s ease-in-out 3
+}
+.nxo-notification-button.nxo-has-unread .nxo-notification-badge{
+  z-index:3
+}
+@keyframes nxo-bell-foil{
+  0%{background-position:155% 50%;opacity:0}
+  18%{opacity:.8}
+  55%{opacity:.95}
+  100%{background-position:-55% 50%;opacity:0}
+}
+@keyframes nxo-bell-nudge{
+  0%,100%{transform:rotate(0deg)}
+  18%{transform:rotate(-9deg)}
+  36%{transform:rotate(8deg)}
+  54%{transform:rotate(-5deg)}
+  72%{transform:rotate(4deg)}
+  88%{transform:rotate(0deg)}
+}
+@media(prefers-reduced-motion:reduce){
+  .nxo-notification-button.nxo-has-unread::before{
+    animation:none;
+    opacity:.22;
+    background-position:50% 50%
+  }
+  .nxo-notification-button.nxo-has-unread .nxo-notification-icon{
+    animation:none
+  }
+}
