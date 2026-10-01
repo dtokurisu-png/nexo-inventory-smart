@@ -413,13 +413,9 @@ function numaRenderMessages(messages=[]){
 }
 function numaSetStatus(value,state=''){
   const el=document.getElementById('nma-status');
-  if(el){
-    el.textContent=value||'';
-    el.dataset.state=state;
-  }
-  if(state==='loading')numaSetVisualState('thinking');
-  else if(state==='error')numaSetVisualState('error');
-  else numaSetVisualState('idle');
+  if(!el)return;
+  el.textContent=value||'';
+  el.dataset.state=state;
 }
 function numaSyncHeader(){
   const ctx=numaState?.context;
@@ -462,22 +458,25 @@ function numaOpen(){
   const panel=document.getElementById('nma-panel');
   if(!panel)return;
   numaSyncVisualTheme();
-  numaSetVisualState('idle');
   panel.dataset.greetingHold='1';
-  numaSpeak('Hola, ¿en qué puedo ayudarte?');
   panel.classList.add('open');
   panel.setAttribute('aria-hidden','false');
   document.getElementById('nma-launcher')?.setAttribute('aria-expanded','true');
+  numaSetVisualState('success','speak',1500);
+  numaSpeak('Hola, ¿en qué puedo ayudarte?',{expression:'speak',duration:1500});
+  numaMountLifeParticles();
   numaLoad(false);
   setTimeout(()=>{
     panel.dataset.greetingHold='0';
+    if(!numaSending)numaSetVisualState('idle','none');
     document.getElementById('nma-input')?.focus();
-  },900);
+  },1500);
 }
 function numaClose(){
   document.getElementById('nma-panel')?.classList.remove('open');
   document.getElementById('nma-panel')?.setAttribute('aria-hidden','true');
   document.getElementById('nma-launcher')?.setAttribute('aria-expanded','false');
+  numaSetVisualState('idle','none');
 }
 function toolUrl(routePath){
   const route=String(routePath||'').trim();
@@ -537,6 +536,7 @@ async function numaSend(){
   ];
   numaRenderMessages(optimistic);
   numaSetStatus('Numa está buscando…','loading');
+  numaSetVisualState('thinking','thinking');
   try{
     const localSheetContext=numaLocalSheetContext(message);
     const data=await api('numa.send',{input:{...numaContextInput(),message,localSheetContext}});
@@ -548,12 +548,17 @@ async function numaSend(){
     numaSyncHeader();
     numaRenderMessages(numaState.messages);
     numaSetStatus(data?.provider==='openai'?'IA conectada':(data?.provider==='openai_error'?'OpenAI requiere atención':(data?.provider==='local_only'?'Modo local · sin consumo API':'Búsqueda local activa')),data?.provider==='openai'?'online':(data?.provider==='openai_error'?'error':'local'));
-    if(data?.action)setTimeout(()=>numaPerformAction(data.action),350);
+    const visual=numaVisualFromResponse(data);
+    numaSetVisualState(visual.state,visual.expression,visual.duration);
+    numaSpeak(data?.message?.content||'Listo.',{expression:visual.expression,duration:visual.duration||0});
+    if(data?.action)setTimeout(()=>numaPerformAction(data.action),900);
   }catch(error){
     const failed=[...optimistic,{role:'assistant',content:'No pude completar esa solicitud: '+(error?.message||String(error)),at:new Date().toISOString()}];
     numaState={...(numaState||{}),messages:failed};
     numaRenderMessages(failed);
     numaSetStatus('No se pudo completar la solicitud','error');
+    numaSetVisualState('error','error',3000);
+    numaSpeak(failed[failed.length-1]?.content||'No pude completar esa solicitud.',{expression:'error',duration:3000});
   }finally{
     numaSending=false;
     if(input){input.disabled=false;input.focus()}
@@ -572,7 +577,7 @@ function mountNuma(){
     launcher.type='button';
     launcher.setAttribute('aria-label','Abrir Numa');
     launcher.setAttribute('aria-expanded','false');
-    launcher.innerHTML='<span class="nma-launch-stream" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="nma-launch-core" aria-hidden="true"></span>';
+    launcher.innerHTML='<canvas id="nma-launcher-canvas" class="nma-launcher-canvas" aria-hidden="true"></canvas><span class="nma-launch-core" aria-hidden="true"></span>';
     document.body.appendChild(launcher);
     launcher.onclick=()=>document.getElementById('nma-panel')?.classList.contains('open')?numaClose():numaOpen();
   }
@@ -597,13 +602,32 @@ function mountNuma(){
     document.body.appendChild(panel);
     panel.querySelector('#nma-close').onclick=numaClose;
     panel.querySelector('#nma-send').onclick=numaSend;
-    panel.querySelector('#nma-input').addEventListener('keydown',event=>{
+    const nmaInput=panel.querySelector('#nma-input');
+    nmaInput.addEventListener('keydown',event=>{
       if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();numaSend()}
       if(event.key==='Escape')numaClose();
     });
+    nmaInput.addEventListener('focus',()=>{
+      if(!numaSending&&String(nmaInput.value||'').trim()==='')numaSetVisualState('attentive','none');
+    });
+    nmaInput.addEventListener('input',()=>{
+      if(numaSending)return;
+      if(numaTypingTimer)clearTimeout(numaTypingTimer);
+      const hasText=String(nmaInput.value||'').trim().length>0;
+      numaSetVisualState(hasText?'listening':'attentive',hasText?'listening':'none');
+      numaTypingTimer=setTimeout(()=>{
+        numaTypingTimer=0;
+        if(!numaSending&&document.activeElement===nmaInput)numaSetVisualState('attentive','none');
+      },850);
+    });
+    nmaInput.addEventListener('blur',()=>{
+      if(!numaSending)setTimeout(()=>{if(!numaSending)numaSetVisualState('idle','none')},120);
+    });
   }
   numaSyncVisualTheme();
-  numaSetVisualState('idle');
+  numaSetVisualState('idle','none');
+  numaMountLauncherParticles();
+  numaMountLifeParticles();
   numaSyncHeader();
 }
 function clearRequestedSheetParams(){
