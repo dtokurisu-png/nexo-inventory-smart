@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=cleanup-audit-role-session-20261001-54';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=pending-add-side-center-20261001-55';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -1774,21 +1774,24 @@ async function loadWorkspacePendingNotes(){
     workspacePendingNotes=await api('workspace.pending-notes',{workspaceId:workspace.workspace.id});
     const rows=Array.isArray(workspacePendingNotes?.notes)?workspacePendingNotes.notes:[];
     const validStyles=new Set(['yellow','peach','blue','mint']);
+    const noteBoard=rows.length
+      ?'<div class="nxo-note-board">'+rows.map(r=>{
+        const style=validStyles.has(String(r.styleKey||''))?String(r.styleKey):'yellow';
+        return '<button type="button" class="nxo-pinned-note style-'+esc(style)+'" data-pending-note="'+esc(r.id)+'">'+
+          '<span class="nxo-note-pin" aria-hidden="true"></span>'+
+          '<span class="nxo-note-label">PENDIENTE</span>'+
+          '<strong>'+esc(r.title||'Pendiente')+'</strong>'+
+        '</button>'
+      }).join('')+'</div>'
+      :'<div class="nxo-empty nxo-pending-empty">No hay notas pendientes.</div>';
     zone.innerHTML=
       '<div class="nxo-section-head">'+
         '<div><div class="nxo-pending-title-row"><h3>Pendientes</h3><span class="nxo-chip nxo-pending-count">'+rows.length+'</span></div><p>Notas que permanecen en el Workspace hasta resolverlas.</p></div>'+
-        '<div class="nxo-pending-head-actions"><button type="button" class="nxo-pending-add" id="nxo-pending-add" aria-label="Crear pendiente" title="Crear pendiente">+</button></div>'+
       '</div>'+
-      (rows.length
-        ?'<div class="nxo-note-board">'+rows.map(r=>{
-          const style=validStyles.has(String(r.styleKey||''))?String(r.styleKey):'yellow';
-          return '<button type="button" class="nxo-pinned-note style-'+esc(style)+'" data-pending-note="'+esc(r.id)+'">'+
-            '<span class="nxo-note-pin" aria-hidden="true"></span>'+
-            '<span class="nxo-note-label">PENDIENTE</span>'+
-            '<strong>'+esc(r.title||'Pendiente')+'</strong>'+
-          '</button>'
-        }).join('')+'</div>'
-        :'<div class="nxo-empty">No hay notas pendientes.</div>');
+      '<div class="nxo-pending-board-layout">'+
+        noteBoard+
+        '<div class="nxo-pending-add-slot"><button type="button" class="nxo-pending-add" id="nxo-pending-add" aria-label="Crear pendiente" title="Crear pendiente">+</button></div>'+
+      '</div>';
     zone.querySelectorAll('[data-pending-note]').forEach(b=>b.onclick=()=>openPendingNote(b.dataset.pendingNote));
     document.getElementById('nxo-pending-add')?.addEventListener('click',openManualPendingModal)
   }catch(e){
