@@ -209,6 +209,7 @@
   top:var(--nma-head-y);
   width:var(--nma-head-w);
   height:var(--nma-head-h);
+  transform:translate(-50%,calc(-50% + 25px));
 }
 .nma-core-belly{
   left:var(--nma-belly-x);
@@ -224,11 +225,11 @@
   display:block;
 }
 .nma-panel[data-theme="day"] .nma-core-zone{
-  opacity:.78;
-  mix-blend-mode:multiply;
+  opacity:.51;
+  mix-blend-mode:screen;
 }
 .nma-panel[data-theme="night"] .nma-core-zone{
-  opacity:.68;
+  opacity:.44;
   mix-blend-mode:screen;
 }
 .nma-expression-layer{
