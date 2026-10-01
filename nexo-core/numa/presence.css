@@ -225,7 +225,7 @@
   display:block;
 }
 .nma-panel[data-theme="day"] .nma-core-zone{
-  opacity:.51;
+  opacity:.78;
   mix-blend-mode:screen;
 }
 .nma-panel[data-theme="night"] .nma-core-zone{
