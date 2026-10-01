@@ -44,9 +44,14 @@ function applyTheme(theme,persist=true){
   const b=document.getElementById('nxo-theme-toggle');
   if(b){
     const night=t==='night';
-    b.textContent=night?'☀':'☾';
-    b.setAttribute('aria-label',night?'Cambiar a modo diurno':'Cambiar a modo nocturno');
-    b.setAttribute('title',night?'Modo diurno':'Modo nocturno');
+    if(b.classList.contains('nxo-quick-setting-row')){
+      const value=b.querySelector('strong');
+      if(value)value.textContent=night?ui('Oscuro','Dark'):ui('Claro','Light');
+    }else{
+      b.textContent=night?'☀':'☾';
+    }
+    b.setAttribute('aria-label',night?ui('Cambiar a modo diurno','Switch to light mode'):ui('Cambiar a modo nocturno','Switch to dark mode'));
+    b.setAttribute('title',night?ui('Modo diurno','Light mode'):ui('Modo nocturno','Dark mode'));
     b.setAttribute('aria-pressed',night?'true':'false');
   }
   return t;
