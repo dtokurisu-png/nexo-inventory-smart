@@ -3254,3 +3254,21 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   MOBILE WORKSPACE SETTINGS NAV · 2026-10-01
+   Settings stays a desktop tab and moves into hamburger on mobile.
+========================================================= */
+.nxo-mobile-settings-link{
+  display:none!important
+}
+@media(max-width:760px){
+  .nxo-settings-tab{
+    display:none!important
+  }
+  .nxo-mobile-settings-link{
+    display:flex!important;
+    width:100%!important;
+    justify-content:flex-start!important
+  }
+}
+
