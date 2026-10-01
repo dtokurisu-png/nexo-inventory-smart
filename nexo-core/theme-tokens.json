@@ -1,0 +1,53 @@
+{
+  "version": "2026-10-01-v1",
+  "purpose": "Canonical semantic color tokens for Nexo Group UI. New components must use semantic tokens instead of arbitrary text/surface colors.",
+  "governance": {
+    "rule1": "Day and night themes must define the same semantic token names.",
+    "rule2": "Text on dark surfaces must use night text tokens; text on light surfaces must use day text tokens.",
+    "rule3": "Gold is primarily a night-mode emphasis color. Day mode uses Nexo blue/green/orange.",
+    "rule4": "Role badges, quick settings, modals, overlays, tabs, buttons and future architecture changes must consume these semantic tokens.",
+    "rule5": "Do not introduce new literal text/surface colors without first updating this token file and docs/NEXO_VISUAL_SYSTEM.md."
+  },
+  "themes": {
+    "day": {
+      "background": "#F3F6FF",
+      "backgroundAlt": "#EEF4FF",
+      "surface": "#FFFFFF",
+      "surfaceRaised": "#F8FBFF",
+      "border": "#B9CBED",
+      "borderStrong": "#172755",
+      "textPrimary": "#111827",
+      "textSecondary": "#34405F",
+      "textMuted": "#66738D",
+      "accent": "#2F4F93",
+      "accentSoft": "#DCE7F7",
+      "accentContrast": "#FFFFFF",
+      "positive": "#246B36",
+      "interaction": "#E79069",
+      "danger": "#B94242",
+      "roleText": "#264C8F",
+      "roleBackground": "#EEF4FF",
+      "roleBorder": "#B9CBED"
+    },
+    "night": {
+      "background": "#080B10",
+      "backgroundAlt": "#0D121A",
+      "surface": "#121923",
+      "surfaceRaised": "#18212E",
+      "border": "rgba(145,160,181,.22)",
+      "borderStrong": "rgba(184,197,216,.34)",
+      "textPrimary": "#F2F5F8",
+      "textSecondary": "#B8C5D8",
+      "textMuted": "#91A0B5",
+      "accent": "#E1BD69",
+      "accentSoft": "rgba(225,189,105,.10)",
+      "accentContrast": "#17130C",
+      "positive": "#55C985",
+      "interaction": "#D7B45F",
+      "danger": "#FF7070",
+      "roleText": "#F0CE83",
+      "roleBackground": "rgba(225,189,105,.08)",
+      "roleBorder": "rgba(225,189,105,.22)"
+    }
+  }
+}
