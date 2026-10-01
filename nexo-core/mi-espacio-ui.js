@@ -14,7 +14,7 @@ function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
 let workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
-let scheduleWeekStart='',scheduleData=null;
+let scheduleWeekStart='',scheduleData=null,scheduleImportData=null;
 const NEXO_THEME_KEY='nexoTheme:v1';
 const NEXO_LANGUAGE_KEY='nexoLanguage:v1';
 function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
@@ -1891,25 +1891,80 @@ function scheduleDay(value){
 function renderScheduleData(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!scheduleData)return;
   const d=scheduleData,s=d.schedule,actor=d.actor||{},rows=d.shifts||[];
+  const importBox=actor.canImport
+    ?'<div class="nxo-panel" style="padding:18px;margin-bottom:16px">'+
+       '<div class="nxo-section-head"><div><h3>'+esc(ui('Crear horario desde imagen','Create schedule from image'))+'</h3><p>'+esc(ui('Sube la imagen del horario que ya preparaste. Nexo detectará nombres, días y horas y los relacionará con los miembros de este espacio de trabajo.','Upload the schedule image you already prepared. Nexo will detect names, days and times and match them to Workspace members.'))+'</p></div></div>'+
+       '<div class="nxo-field"><label>'+esc(ui('Semana del horario','Schedule week'))+'</label><input id="nxo-schedule-import-week" class="nxo-input" type="date" value="'+esc(d.weekStart)+'"></div>'+
+       '<label class="nxo-btn nxo-btn-gold nxo-native-file-picker" style="display:inline-flex;align-items:center;gap:8px"><span>'+esc(ui('Subir imagen del horario','Upload schedule image'))+'</span><input id="nxo-schedule-image-input" type="file" accept="image/png,image/jpeg,image/webp" aria-label="'+esc(ui('Subir imagen del horario','Upload schedule image'))+'"></label>'+
+       '<p class="nxo-muted" style="margin:10px 0 0">'+esc(ui('Formatos: PNG, JPG o WEBP. La imagen se analizará antes de crear los turnos.','Formats: PNG, JPG or WEBP. The image is analyzed before shifts are created.'))+'</p>'+
+     '</div>'
+    :'';
   const controls='<div class="nxo-section-actions">'+
     '<button class="nxo-btn" id="nxo-schedule-prev">‹ '+esc(ui('Semana anterior','Previous week'))+'</button>'+
     '<button class="nxo-btn" id="nxo-schedule-today">'+esc(ui('Esta semana','This week'))+'</button>'+
     '<button class="nxo-btn" id="nxo-schedule-next">'+esc(ui('Semana siguiente','Next week'))+' ›</button>'+
-    (actor.canManage&&!s?'<button class="nxo-btn nxo-btn-gold" id="nxo-schedule-create">'+esc(ui('Crear horario','Create schedule'))+'</button>':'')+
-    (actor.canManage&&s?'<button class="nxo-btn nxo-btn-gold" id="nxo-schedule-add">'+esc(ui('Añadir turno','Add shift'))+'</button>':'')+
-    (actor.canManage&&s?'<button class="nxo-btn" id="nxo-schedule-validate">'+esc(ui('Validar','Validate'))+'</button>':'')+
-    (actor.canPublish&&s&&String(s.status).toUpperCase()!=='PUBLISHED'?'<button class="nxo-btn nxo-btn-gold" id="nxo-schedule-publish">'+esc(ui('Publicar','Publish'))+'</button>':'')+
+    (actor.canPublish&&s&&String(s.status).toUpperCase()!=='PUBLISHED'?'<button class="nxo-btn nxo-btn-gold" id="nxo-schedule-publish">'+esc(ui('Publicar horario','Publish schedule'))+'</button>':'')+
   '</div>';
-  const table=rows.length?'<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">'+esc(ui('Día','Day'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Miembro','Member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Puesto','Position'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Entrada','Start'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Salida','End'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Descanso','Break'))+'</th>'+(actor.canManage?'<th></th>':'')+'</tr></thead><tbody>'+rows.map(r=>'<tr style="border-top:1px solid rgba(127,127,127,.2)"><td style="padding:10px">'+esc(scheduleDay(r.date))+'</td><td style="padding:10px">'+esc(r.memberNameSnapshot||r.memberId)+'</td><td style="padding:10px">'+esc(r.positionLabel||'—')+'</td><td style="padding:10px">'+esc(scheduleTime(r.startAt))+'</td><td style="padding:10px">'+esc(scheduleTime(r.endAt))+'</td><td style="padding:10px">'+esc(String(r.breakMinutes||0))+' min</td>'+(actor.canManage?'<td style="padding:10px"><button class="nxo-btn" data-schedule-remove="'+esc(r.id)+'">'+esc(ui('Eliminar','Remove'))+'</button></td>':'')+'</tr>').join('')+'</tbody></table></div>':'<div class="nxo-empty">'+esc(s?ui('Este horario todavía no tiene turnos.','This schedule has no shifts yet.'):ui('Todavía no existe un horario para esta semana.','There is no schedule for this week yet.'))+'</div>';
-  zone.innerHTML='<div class="nxo-section-head"><div><h3>'+esc(ui('Horarios','Schedule'))+'</h3><p>'+esc(scheduleDay(d.weekStart))+' — '+esc(scheduleDay(d.weekEnd))+'</p></div><span class="nxo-chip">'+esc(scheduleStatusLabel(s?.status))+'</span></div>'+controls+table;
+  const table=rows.length?'<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">'+esc(ui('Día','Day'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Colaborador','Member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Puesto','Position'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Entrada','Start'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Salida','End'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Descanso','Break'))+'</th></tr></thead><tbody>'+rows.map(r=>'<tr style="border-top:1px solid rgba(127,127,127,.2)"><td style="padding:10px">'+esc(scheduleDay(r.date))+'</td><td style="padding:10px">'+esc(r.memberNameSnapshot||r.memberId)+'</td><td style="padding:10px">'+esc(r.positionLabel||'—')+'</td><td style="padding:10px">'+esc(scheduleTime(r.startAt))+'</td><td style="padding:10px">'+esc(scheduleTime(r.endAt))+'</td><td style="padding:10px">'+esc(String(r.breakMinutes||0))+' min</td></tr>').join('')+'</tbody></table></div>':'<div class="nxo-empty">'+esc(s?ui('Este horario todavía no tiene turnos. Puedes reemplazarlo importando una imagen nueva.','This schedule has no shifts yet. You can replace it by importing a new image.'):ui('Todavía no existe un horario para esta semana. Sube una imagen para crearlo.','There is no schedule for this week yet. Upload an image to create it.'))+'</div>';
+  zone.innerHTML='<div class="nxo-section-head"><div><h3>'+esc(ui('Horarios','Schedule'))+'</h3><p>'+esc(scheduleDay(d.weekStart))+' — '+esc(scheduleDay(d.weekEnd))+'</p></div><span class="nxo-chip">'+esc(scheduleStatusLabel(s?.status))+'</span></div>'+importBox+controls+table+'<div id="nxo-schedule-import-preview"></div>';
   document.getElementById('nxo-schedule-prev')?.addEventListener('click',()=>scheduleShiftWeek(-7));
   document.getElementById('nxo-schedule-next')?.addEventListener('click',()=>scheduleShiftWeek(7));
-  document.getElementById('nxo-schedule-today')?.addEventListener('click',()=>{scheduleWeekStart=scheduleMonday();loadSchedule()});
-  document.getElementById('nxo-schedule-create')?.addEventListener('click',createScheduleDraftUi);
-  document.getElementById('nxo-schedule-add')?.addEventListener('click',openScheduleShiftModal);
-  document.getElementById('nxo-schedule-validate')?.addEventListener('click',validateScheduleUi);
+  document.getElementById('nxo-schedule-today')?.addEventListener('click',()=>{scheduleWeekStart=scheduleMonday();scheduleImportData=null;loadSchedule()});
   document.getElementById('nxo-schedule-publish')?.addEventListener('click',publishScheduleUi);
-  document.querySelectorAll('[data-schedule-remove]').forEach(b=>b.onclick=()=>removeScheduleShiftUi(b.dataset.scheduleRemove))
+  document.getElementById('nxo-schedule-image-input')?.addEventListener('change',e=>{
+    const file=e.target.files?.[0]||null;e.target.value='';
+    if(file)uploadAndAnalyzeScheduleImage(file)
+  });
+  if(scheduleImportData)renderScheduleImportPreview()
+}
+function renderScheduleImportPreview(){
+  const zone=document.getElementById('nxo-schedule-import-preview');if(!zone||!scheduleImportData)return;
+  const data=scheduleImportData,rows=data.rows||[],members=data.members||[];
+  const memberMap=new Map(members.map(m=>[m.memberId,m.displayName||m.workName||m.memberId]));
+  const unresolved=rows.filter(r=>!r.memberId||['UNMATCHED','AMBIGUOUS'].includes(String(r.mappingStatus||'').toUpperCase()));
+  const rowHtml=rows.map(r=>{
+    const matched=r.memberId?memberMap.get(r.memberId)||r.memberId:ui('Sin coincidencia','No match');
+    const status=String(r.mappingStatus||'').toUpperCase();
+    const badge=status==='MATCHED'?'✓':(status==='REVIEW'?'?':'!');
+    return '<tr style="border-top:1px solid rgba(127,127,127,.2)"><td style="padding:10px">'+esc(r.rawName||'—')+'</td><td style="padding:10px"><strong>'+esc(badge+' '+matched)+'</strong><div class="nxo-muted">'+esc(status)+'</div></td><td style="padding:10px">'+esc(scheduleDay(r.date))+'</td><td style="padding:10px">'+esc(r.status==='OFF'?ui('Libre','Off'):(r.start+' – '+r.end))+'</td><td style="padding:10px">'+esc(r.position||'—')+'</td></tr>'
+  }).join('');
+  zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-top:16px">'+
+    '<div class="nxo-section-head"><div><h3>'+esc(ui('Vista previa detectada','Detected preview'))+'</h3><p>'+esc(ui('Revisa cómo la imagen fue interpretada antes de generar el horario.','Review how the image was interpreted before generating the schedule.'))+'</p></div><span class="nxo-chip">'+rows.length+' '+esc(ui('filas','rows'))+'</span></div>'+
+    '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">'+esc(ui('Nombre detectado','Detected name'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Miembro vinculado','Matched member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Día','Day'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Horario','Hours'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Puesto','Position'))+'</th></tr></thead><tbody>'+rowHtml+'</tbody></table></div>'+
+    (unresolved.length?'<div class="nxo-empty" style="margin-top:12px">'+esc(ui('Hay ','There are '))+unresolved.length+' '+esc(ui('fila(s) cuyo nombre todavía no coincide de forma segura con un miembro. En esta primera versión deben resolverse antes de confirmar.','row(s) whose name does not yet safely match a member. In this first version they must be resolved before confirmation.'))+'</div>':'')+
+    '<div class="nxo-modal-actions"><button id="nxo-schedule-import-confirm" class="nxo-btn nxo-btn-gold" '+(unresolved.length?'disabled':'')+'>'+esc(ui('Confirmar y generar horario','Confirm and generate schedule'))+'</button></div>'+
+  '</div>';
+  document.getElementById('nxo-schedule-import-confirm')?.addEventListener('click',confirmScheduleImportUi)
+}
+async function uploadAndAnalyzeScheduleImage(file){
+  const allowed=['image/png','image/jpeg','image/webp'],mime=String(file.type||'').toLowerCase();
+  if(!allowed.includes(mime)){toast(ui('Usa una imagen PNG, JPG o WEBP','Use a PNG, JPG or WEBP image'));return}
+  if(file.size>12*1024*1024){toast(ui('La imagen supera 12 MB','The image exceeds 12 MB'));return}
+  const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleMonday();
+  try{
+    loading(ui('Analizando imagen del horario…','Analyzing schedule image…'));
+    const ticket=await api('schedule.image.upload-url',{workspaceId:workspace.workspace.id,input:{fileName:file.name||'schedule.png',mimeType:mime,sizeInBytes:file.size}});
+    const response=await fetch(String(ticket.uploadUrl||''),{method:'PUT',headers:{'Content-Type':mime},body:file});
+    let body={};try{body=await response.json()}catch(_){}
+    if(!response.ok)throw new Error(String(body?.message||body?.error||('UPLOAD_HTTP_'+response.status)));
+    const fileId=String(body?.file?.id||body?.file?._id||body?.id||body?._id||'');
+    if(!fileId)throw new Error(ui('Wix no devolvió el archivo subido','Wix did not return the uploaded file'));
+    scheduleWeekStart=week;
+    scheduleImportData=await api('schedule.import.analyze',{workspaceId:workspace.workspace.id,input:{fileId,fileName:file.name||'schedule.png',mimeType:mime,weekStart:week}});
+    scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
+    renderWorkspace();
+    toast(ui('Imagen analizada','Image analyzed'))
+  }catch(e){renderWorkspace();toast(e.message||String(e))}
+}
+async function confirmScheduleImportUi(){
+  if(!scheduleImportData?.importId)return;
+  const button=document.getElementById('nxo-schedule-import-confirm');if(button)button.disabled=true;
+  try{
+    await api('schedule.import.confirm',{workspaceId:workspace.workspace.id,importId:scheduleImportData.importId,input:{weekStart:scheduleImportData.weekStart||scheduleWeekStart,forceNew:true}});
+    scheduleImportData=null;
+    toast(ui('Horario generado desde la imagen','Schedule generated from image'));
+    await loadSchedule()
+  }catch(e){if(button)button.disabled=false;toast(e.message||String(e))}
 }
 async function loadSchedule(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!workspace?.workspace?.id)return;
