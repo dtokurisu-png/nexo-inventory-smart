@@ -3626,3 +3626,78 @@ body[data-nxo-theme="night"],
   flex-wrap:wrap
 }
 
+/* =========================================================
+   COLOR LOGIC CONSOLIDATION v1 · 2026-10-01
+   Canon: nexo-core/theme-tokens.json
+   Authoritative final cascade for generic secondary actions,
+   form controls and modals in both day and night themes.
+========================================================= */
+.nxo-app[data-theme="day"],html[data-nxo-theme="day"]{
+  --nxo-sem-background:#F3F6FF;--nxo-sem-background-alt:#EEF4FF;
+  --nxo-sem-surface:#FFFFFF;--nxo-sem-surface-raised:#F8FBFF;
+  --nxo-sem-border:#B9CBED;--nxo-sem-border-strong:#172755;
+  --nxo-sem-text:#111827;--nxo-sem-text-secondary:#34405F;--nxo-sem-text-muted:#66738D;
+  --nxo-sem-accent:#2F4F93;--nxo-sem-accent-soft:#DCE7F7;--nxo-sem-accent-contrast:#FFFFFF;
+  --nxo-sem-positive:#246B36;--nxo-sem-interaction:#E79069;--nxo-sem-danger:#B94242;
+  --nxo-sem-focus-ring:rgba(231,144,105,.18);
+  --nxo-button-secondary-bg:#EEF4FF;--nxo-button-secondary-text:#2F4F93;--nxo-button-secondary-border:#B9CBED;
+  --nxo-modal-shadow:0 26px 68px rgba(23,39,85,.28)
+}
+.nxo-app[data-theme="night"],html[data-nxo-theme="night"]{
+  --nxo-sem-background:#080B10;--nxo-sem-background-alt:#0D121A;
+  --nxo-sem-surface:#121923;--nxo-sem-surface-raised:#18212E;
+  --nxo-sem-border:rgba(145,160,181,.22);--nxo-sem-border-strong:rgba(184,197,216,.34);
+  --nxo-sem-text:#F2F5F8;--nxo-sem-text-secondary:#B8C5D8;--nxo-sem-text-muted:#91A0B5;
+  --nxo-sem-accent:#E1BD69;--nxo-sem-accent-soft:rgba(225,189,105,.10);--nxo-sem-accent-contrast:#17130C;
+  --nxo-sem-positive:#55C985;--nxo-sem-interaction:#D7B45F;--nxo-sem-danger:#FF7070;
+  --nxo-sem-focus-ring:rgba(225,189,105,.12);
+  --nxo-button-secondary-bg:rgba(184,197,216,.06);--nxo-button-secondary-text:#F2F5F8;--nxo-button-secondary-border:rgba(184,197,216,.24);
+  --nxo-modal-shadow:0 28px 76px rgba(0,0,0,.42)
+}
+.nxo-app[data-theme] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger),
+html[data-nxo-theme] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger){
+  color:var(--nxo-button-secondary-text)!important;background:var(--nxo-button-secondary-bg)!important;border-color:var(--nxo-button-secondary-border)!important
+}
+.nxo-app[data-theme="day"] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger):hover,
+.nxo-app[data-theme="day"] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger):focus-visible,
+html[data-nxo-theme="day"] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger):hover,
+html[data-nxo-theme="day"] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger):focus-visible{
+  color:var(--nxo-sem-text)!important;background:var(--nxo-sem-interaction)!important;border-color:var(--nxo-sem-border-strong)!important
+}
+.nxo-app[data-theme="night"] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger):hover,
+.nxo-app[data-theme="night"] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger):focus-visible,
+html[data-nxo-theme="night"] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger):hover,
+html[data-nxo-theme="night"] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger):focus-visible{
+  color:var(--nxo-sem-text)!important;background:var(--nxo-sem-accent-soft)!important;border-color:var(--nxo-sem-interaction)!important;box-shadow:0 0 0 3px var(--nxo-sem-focus-ring)!important
+}
+.nxo-app[data-theme] .nxo-select,.nxo-app[data-theme] .nxo-input,.nxo-app[data-theme] .nxo-textarea,
+html[data-nxo-theme] .nxo-select,html[data-nxo-theme] .nxo-input,html[data-nxo-theme] .nxo-textarea{
+  color:var(--nxo-sem-text)!important;background:var(--nxo-sem-surface-raised)!important;border-color:var(--nxo-sem-border)!important
+}
+.nxo-app[data-theme] .nxo-input::placeholder,.nxo-app[data-theme] .nxo-textarea::placeholder,
+html[data-nxo-theme] .nxo-input::placeholder,html[data-nxo-theme] .nxo-textarea::placeholder{color:var(--nxo-sem-text-muted)!important;opacity:1}
+.nxo-app[data-theme] .nxo-select:focus,.nxo-app[data-theme] .nxo-input:focus,.nxo-app[data-theme] .nxo-textarea:focus,
+html[data-nxo-theme] .nxo-select:focus,html[data-nxo-theme] .nxo-input:focus,html[data-nxo-theme] .nxo-textarea:focus{
+  color:var(--nxo-sem-text)!important;background:var(--nxo-sem-surface)!important;border-color:var(--nxo-sem-interaction)!important;box-shadow:0 0 0 3px var(--nxo-sem-focus-ring)!important
+}
+.nxo-app[data-theme] .nxo-select option,html[data-nxo-theme] .nxo-select option{color:var(--nxo-sem-text)!important;background:var(--nxo-sem-surface)!important}
+.nxo-app[data-theme] .nxo-field label,html[data-nxo-theme] .nxo-field label{color:var(--nxo-sem-text-secondary)!important}
+.nxo-app[data-theme] .nxo-check,html[data-nxo-theme] .nxo-check{
+  color:var(--nxo-sem-text)!important;background:var(--nxo-sem-surface-raised)!important;border-color:var(--nxo-sem-border)!important
+}
+.nxo-app[data-theme] .nxo-check:hover,html[data-nxo-theme] .nxo-check:hover{background:var(--nxo-sem-accent-soft)!important;border-color:var(--nxo-sem-interaction)!important}
+.nxo-app[data-theme] .nxo-check small,html[data-nxo-theme] .nxo-check small{color:var(--nxo-sem-text-muted)!important}
+.nxo-app[data-theme] .nxo-check input,html[data-nxo-theme] .nxo-check input{accent-color:var(--nxo-sem-positive)!important}
+.nxo-app[data-theme="night"] .nxo-switch,html[data-nxo-theme="night"] .nxo-switch{background:var(--nxo-sem-surface-raised)!important;border-color:var(--nxo-sem-border)!important}
+.nxo-app[data-theme="night"] .nxo-switch span,html[data-nxo-theme="night"] .nxo-switch span{background:var(--nxo-sem-text-muted)!important}
+.nxo-app[data-theme] .nxo-switch.on,html[data-nxo-theme] .nxo-switch.on{background:var(--nxo-sem-positive)!important;border-color:var(--nxo-sem-positive)!important}
+.nxo-app[data-theme="day"] .nxo-switch.on span,html[data-nxo-theme="day"] .nxo-switch.on span{background:var(--nxo-sem-surface)!important}
+.nxo-app[data-theme="night"] .nxo-switch.on span,html[data-nxo-theme="night"] .nxo-switch.on span{background:var(--nxo-sem-text)!important}
+.nxo-app[data-theme] .nxo-modal,html[data-nxo-theme] .nxo-modal{
+  color:var(--nxo-sem-text)!important;background:var(--nxo-sem-surface-raised)!important;border-color:var(--nxo-sem-border-strong)!important;box-shadow:var(--nxo-modal-shadow)!important
+}
+.nxo-app[data-theme] .nxo-modal-head,html[data-nxo-theme] .nxo-modal-head{
+  color:var(--nxo-sem-text)!important;background:var(--nxo-sem-surface)!important;border-color:var(--nxo-sem-border)!important
+}
+.nxo-app[data-theme] .nxo-modal-body,html[data-nxo-theme] .nxo-modal-body{color:var(--nxo-sem-text)!important}
+

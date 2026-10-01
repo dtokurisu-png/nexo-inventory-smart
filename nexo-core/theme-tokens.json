@@ -1,12 +1,13 @@
 {
-  "version": "2026-10-01-v1",
+  "version": "2026-10-01-v2",
   "purpose": "Canonical semantic color tokens for Nexo Group UI. New components must use semantic tokens instead of arbitrary text/surface colors.",
   "governance": {
     "rule1": "Day and night themes must define the same semantic token names.",
     "rule2": "Text on dark surfaces must use night text tokens; text on light surfaces must use day text tokens.",
     "rule3": "Gold is primarily a night-mode emphasis color. Day mode uses Nexo blue/green/orange.",
     "rule4": "Role badges, quick settings, modals, overlays, tabs, buttons and future architecture changes must consume these semantic tokens.",
-    "rule5": "Do not introduce new literal text/surface colors without first updating this token file and docs/NEXO_VISUAL_SYSTEM.md."
+    "rule5": "Do not introduce new literal text/surface colors without first updating this token file and docs/NEXO_VISUAL_SYSTEM.md.",
+    "rule6": "Generic secondary buttons use buttonSecondaryBg, buttonSecondaryText and buttonSecondaryBorder; forms and modals reuse the shared semantic surface, text and border tokens in both themes."
   },
   "themes": {
     "day": {
@@ -27,7 +28,10 @@
       "danger": "#B94242",
       "roleText": "#264C8F",
       "roleBackground": "#EEF4FF",
-      "roleBorder": "#B9CBED"
+      "roleBorder": "#B9CBED",
+      "buttonSecondaryBg": "#EEF4FF",
+      "buttonSecondaryText": "#2F4F93",
+      "buttonSecondaryBorder": "#B9CBED"
     },
     "night": {
       "background": "#080B10",
@@ -47,7 +51,10 @@
       "danger": "#FF7070",
       "roleText": "#F0CE83",
       "roleBackground": "rgba(225,189,105,.08)",
-      "roleBorder": "rgba(225,189,105,.22)"
+      "roleBorder": "rgba(225,189,105,.22)",
+      "buttonSecondaryBg": "rgba(184,197,216,.06)",
+      "buttonSecondaryText": "#F2F5F8",
+      "buttonSecondaryBorder": "rgba(184,197,216,.24)"
     }
   }
 }
