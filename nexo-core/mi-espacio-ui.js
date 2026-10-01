@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=pending-styles-tool-identity-20261001-49';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=pending-styles-tool-identity-20261001-50';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-20260927-3';
@@ -1193,10 +1193,10 @@ function toolLaunchUrl(t){
   if(!wsid)return launched;
   try{
     const u=new URL(launched,location.href);
-    const customName=String(t.workspaceName||'').trim();
-    const customDescription=String(t.workspaceDescription||'').trim();
-    if(customName)u.searchParams.set('nxoToolName',customName);
-    if(customDescription)u.searchParams.set('nxoToolDescription',customDescription);
+    const effectiveName=String(t.workspaceName||t.nameEs||t.nameEn||t.toolKey||'').trim();
+    const effectiveDescription=String(t.workspaceDescription||t.descriptionEs||'').trim();
+    if(effectiveName)u.searchParams.set('nxoToolName',effectiveName);
+    if(effectiveDescription)u.searchParams.set('nxoToolDescription',effectiveDescription);
     return u.href
   }catch(_){return launched}
 }
