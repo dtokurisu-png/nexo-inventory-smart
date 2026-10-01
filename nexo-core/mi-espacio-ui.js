@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=color-logic-day-night-20261001-51';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=development-back-context-20261001-52';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-20260927-3';
@@ -1200,7 +1200,7 @@ function toolLaunchUrl(t){
     return u.href
   }catch(_){return launched}
 }
-function centerDevelopmentUrl(){return launchWithBack(siteBase(),'Mi espacio','')}
+function centerDevelopmentUrl(){const wsid=workspace?.workspace?.id||'';const label=wsid?(workspace?.workspace?.name||ui('Workspace','Workspace')):ui('Mi espacio','My space');return launchWithBack(siteBase(),label,wsid)}
 function setWorkspaceReturnParam(id){try{const u=new URL(location.href);if(id)u.searchParams.set('nxoWorkspace',id);else u.searchParams.delete('nxoWorkspace');history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
 function clearWorkspaceReturnParam(){setWorkspaceReturnParam('')}
 function statusText(s){return s==='ACTIVE'?'Activo':s==='BUILDING'?'En desarrollo':s==='PLANNED'?'Próximamente':s||''}
