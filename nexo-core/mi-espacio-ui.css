@@ -4019,3 +4019,49 @@ html[data-nxo-theme] .nxo-select:focus,html[data-nxo-theme] .nxo-input:focus,htm
   border-color:var(--nxo-theme-role-border)!important;
   color:var(--nxo-theme-role-text)!important
 }
+
+/* WORKSPACE AVATAR DIRECT EDIT · 2026-10-01 */
+button.nxo-workspace-logo-edit{
+  position:relative;
+  appearance:none;
+  padding:0;
+  cursor:pointer;
+  font:inherit;
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease
+}
+button.nxo-workspace-logo-edit::after{
+  content:"✎";
+  position:absolute;
+  right:-5px;
+  bottom:-5px;
+  width:18px;
+  height:18px;
+  display:grid;
+  place-items:center;
+  border:2px solid var(--nxo-theme-surface);
+  border-radius:999px;
+  background:var(--nxo-theme-interaction);
+  color:#111827;
+  font:900 10px/1 Inter,system-ui,sans-serif;
+  box-shadow:0 4px 10px rgba(0,0,0,.16);
+  pointer-events:none
+}
+button.nxo-workspace-logo-edit:hover,
+button.nxo-workspace-logo-edit:focus-visible{
+  outline:none;
+  transform:translateY(-1px) scale(1.03);
+  border-color:var(--nxo-theme-interaction)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--nxo-theme-interaction) 18%,transparent)
+}
+button.nxo-workspace-logo-edit.uploading{
+  cursor:progress;
+  opacity:.72;
+  animation:nxo-workspace-logo-upload 1s ease-in-out infinite alternate
+}
+@keyframes nxo-workspace-logo-upload{
+  from{transform:scale(.98)}
+  to{transform:scale(1.03)}
+}
+@media(prefers-reduced-motion:reduce){
+  button.nxo-workspace-logo-edit.uploading{animation:none}
+}
