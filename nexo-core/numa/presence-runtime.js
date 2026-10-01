@@ -345,7 +345,7 @@ function numaVisualFromResponse(data){
   return{state:"idle",expression:"speak",duration:Math.max(1300,Math.min(3200,700+reply.length*18))};
 }
 function numaClearVisualDemo(){numaVisualDemoTimers.forEach(id=>clearTimeout(id));numaVisualDemoTimers=[]}
-function numaCanVisualQa(){return canQa()};return ctx.canDevelop===true||ctx.roleKey==="owner"||ctx.roleKey==="developer"}
+function numaCanVisualQa(){return canQa()}
 function numaRunVisualDemo(){
   numaClearVisualDemo();
   const scenes=[[0,"success","speak","Hola. Dime qué receta, preparación o producto buscas."],[1900,"attentive","question","¿En qué puedo ayudarte?"],[3800,"listening","listening","Te estoy escuchando."],[5700,"thinking","thinking","Déjame pensar…"],[7600,"success","success","Listo. Todo salió bien."],[9500,"attentive","confused","No entendí eso del todo."],[11400,"error","error","Aquí verías mi estado de error."],[13300,"idle","none","Prueba visual terminada."]];
