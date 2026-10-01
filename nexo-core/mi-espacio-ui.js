@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=mobile-settings-in-hamburger-20261001-47';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=profile-workname-theme-tokens-20261001-48';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-20260927-3';
@@ -40,6 +40,8 @@ function applyTheme(theme,persist=true){
   const t=theme==='night'?'night':'day';
   const r=document.getElementById('nxo-app');
   if(r)r.dataset.theme=t;
+  document.documentElement.dataset.nxoTheme=t;
+  if(document.body)document.body.dataset.nxoTheme=t;
   if(persist)try{localStorage.setItem(NEXO_THEME_KEY,t)}catch(_){}
   const b=document.getElementById('nxo-theme-toggle');
   if(b){
@@ -1252,8 +1254,9 @@ function topbar(mode){
       '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
         '<span class="nxo-avatar">'+(profilePhoto?'<img src="'+esc(profilePhoto)+'" alt="'+esc(name+' '+ui('foto de perfil','profile photo'))+'">':esc(initials(name)))+'</span>'+
         '<span class="nxo-nav-account-copy">'+
-          '<span class="nxo-nav-account-name-row"><strong>'+esc(name)+'</strong><small class="nxo-nav-account-role">'+esc(role)+'</small></span>'+
+          '<span class="nxo-nav-account-name-row"><strong>'+esc(name)+'</strong></span>'+
           (email?'<small class="nxo-nav-account-email">'+esc(email)+'</small>':'')+
+          '<small class="nxo-nav-account-role">'+esc(role)+'</small>'+
         '</span>'+
         '<span class="nxo-nav-caret">⌄</span>'+
       '</button>'+
@@ -1509,6 +1512,9 @@ async function start(){
   accessStage='BOOTSTRAP';
   personal=await api('bootstrap');
   applyLanguage(personal?.profile?.locale||new URLSearchParams(location.search).get('nxoLang')||storedLanguage(),true);
+  if(!String(personal?.profile?.workName||'').trim()){
+    await requireWorkNameOnboarding();
+  }
 
   const params=new URLSearchParams(location.search);
   const inviteToken=String(params.get('nxoJoin')||'').trim();
@@ -1578,14 +1584,15 @@ async function refreshPersonal(){personal=await api('personal.refresh');renderPe
 async function respondInvite(id,decision){try{loading(decision==='accept'?'Aceptando invitación…':'Actualizando invitación…');personal=await api('invitation.respond',{invitationId:id,decision});toast(decision==='accept'?'Invitación aceptada':'Invitación rechazada');renderPersonal()}catch(e){errorView(e)}}
 function modal(title,body,onReady){const o=document.createElement('div');o.className='nxo-overlay';o.innerHTML='<div class="nxo-modal"><div class="nxo-modal-head"><strong>'+esc(title)+'</strong><button class="nxo-btn" data-close>✕</button></div><div class="nxo-modal-body">'+body+'</div></div>';document.body.appendChild(o);o.querySelector('[data-close]').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};if(onReady)onReady(o);return o}
 function openProfileSettings(inWorkspace=false){
-  const name=personal?.profile?.displayName||'Usuario Nexo';
+  const name=personal?.profile?.displayName||ui('Usuario Nexo','Nexo user');
+  const workName=personal?.profile?.workName||name;
   const photo=String(personal?.profile?.photoImage?.url||'').trim();
   const locale=String(personal?.profile?.locale||'es').toLowerCase();
   const language=locale.startsWith('en')?'English':'Español';
-  const role=inWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):'Cuenta personal';
-  const context=inWorkspace?(workspace?.workspace?.name||'Workspace'):'Mi espacio';
-  const avatar=photo?'<img src="'+esc(photo)+'" alt="'+esc(name+' foto de perfil')+'">':'<span>'+esc(initials(name))+'</span>';
-  modal('Ajustes de perfil',
+  const role=inWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):ui('Cuenta personal','Personal account');
+  const context=inWorkspace?(workspace?.workspace?.name||'Workspace'):ui('Mi espacio','My space');
+  const avatar=photo?'<img src="'+esc(photo)+'" alt="'+esc(name+' '+ui('foto de perfil','profile photo'))+'">':'<span>'+esc(initials(name))+'</span>';
+  modal(ui('Ajustes de perfil','Profile settings'),
     '<div class="nxo-profile-settings">'+
       '<section class="nxo-profile-settings-hero">'+
         '<div class="nxo-profile-settings-avatar">'+avatar+'</div>'+
@@ -1594,31 +1601,101 @@ function openProfileSettings(inWorkspace=false){
           '<span>'+esc(role)+'</span>'+
           '<small>'+esc(context)+'</small>'+
         '</div>'+
-        '<button type="button" class="nxo-btn" id="nxo-profile-settings-photo">Cambiar foto</button>'+
+        '<button type="button" class="nxo-btn" id="nxo-profile-settings-photo">'+esc(ui('Cambiar foto','Change photo'))+'</button>'+
       '</section>'+
       '<section class="nxo-profile-settings-section">'+
-        '<div class="nxo-profile-settings-section-head"><strong>Perfil</strong><span>Información visible dentro de Nexo.</span></div>'+
-        '<div class="nxo-profile-settings-list">'+
-          '<div class="nxo-profile-settings-row"><span>Nombre mostrado</span><strong>'+esc(name)+'</strong></div>'+
-          '<div class="nxo-profile-settings-row"><span>Rol actual</span><strong>'+esc(role)+'</strong></div>'+
+        '<div class="nxo-profile-settings-section-head"><strong>'+esc(ui('Perfil','Profile'))+'</strong><span>'+esc(ui('Información visible dentro de Nexo.','Information visible inside Nexo.'))+'</span></div>'+
+        '<div class="nxo-profile-settings-form">'+
+          '<label class="nxo-field nxo-profile-work-name-field">'+
+            '<span>'+esc(ui('Nombre de trabajo','Work name'))+'</span>'+
+            '<input id="nxo-profile-work-name" class="nxo-input" maxlength="120" value="'+esc(workName)+'" autocomplete="name">'+
+            '<small>'+esc(ui('Es el nombre que mostramos al equipo y el que Nexo usará para reconocerte en automatizaciones, como la lectura de tu Schedule.','This is the name shown to your team and the identity Nexo will use for automations such as Schedule matching.'))+'</small>'+
+          '</label>'+
+          '<div class="nxo-profile-settings-row nxo-profile-role-row"><span>'+esc(ui('Rol actual','Current role'))+'</span><div><strong>'+esc(role)+'</strong><small>'+esc(ui('El rol se administra desde Miembros por un propietario o administrador.','Roles are managed from Members by an owner or administrator.'))+'</small></div></div>'+
+          '<div class="nxo-profile-settings-actions"><button type="button" class="nxo-btn nxo-btn-gold" id="nxo-profile-settings-save">'+esc(ui('Guardar perfil','Save profile'))+'</button></div>'+
         '</div>'+
       '</section>'+
       '<section class="nxo-profile-settings-section">'+
-        '<div class="nxo-profile-settings-section-head"><strong>Preferencias</strong><span>Configuración personal de la cuenta.</span></div>'+
+        '<div class="nxo-profile-settings-section-head"><strong>'+esc(ui('Preferencias','Preferences'))+'</strong><span>'+esc(ui('Configuración personal de la cuenta.','Personal account settings.'))+'</span></div>'+
         '<div class="nxo-profile-settings-list">'+
-          '<div class="nxo-profile-settings-row"><span>Idioma</span><strong>'+esc(language)+'</strong></div>'+
+          '<div class="nxo-profile-settings-row"><span>'+esc(ui('Idioma','Language'))+'</span><strong>'+esc(language)+'</strong></div>'+
         '</div>'+
       '</section>'+
-      '<p class="nxo-profile-settings-note">Este panel queda preparado para añadir más ajustes de perfil sin recargar el menú principal.</p>'+
     '</div>',
     o=>{
+      const input=o.querySelector('#nxo-profile-work-name');
+      const save=o.querySelector('#nxo-profile-settings-save');
       o.querySelector('#nxo-profile-settings-photo')?.addEventListener('click',()=>{
         o.remove();
         document.getElementById('nxo-profile-photo-input')?.click();
       });
+      save?.addEventListener('click',async()=>{
+        const value=String(input?.value||'').trim().replace(/\s+/g,' ');
+        if(value.length<2){
+          toast(ui('Escribe tu nombre de trabajo','Enter your work name'));
+          input?.focus();
+          return
+        }
+        save.disabled=true;
+        save.textContent=ui('Guardando…','Saving…');
+        try{
+          personal=await api('profile.identity.set',{input:{workName:value}});
+          o.remove();
+          toast(ui('Perfil actualizado','Profile updated'));
+          if(inWorkspace&&workspace)renderWorkspace();else renderPersonal()
+        }catch(e){
+          save.disabled=false;
+          save.textContent=ui('Guardar perfil','Save profile');
+          toast(e.message||String(e))
+        }
+      })
     }
   )
 }
+
+function requireWorkNameOnboarding(){
+  return new Promise(resolve=>{
+    renderPersonal();
+    const o=document.createElement('div');
+    o.className='nxo-overlay nxo-onboarding-overlay';
+    const current=String(personal?.profile?.displayName||'').trim();
+    o.innerHTML=
+      '<div class="nxo-modal nxo-onboarding-modal">'+
+        '<div class="nxo-modal-body">'+
+          '<div class="nxo-onboarding-icon">ID</div>'+
+          '<div class="nxo-eyebrow">'+esc(ui('Configura tu identidad','Set up your identity'))+'</div>'+
+          '<h2>'+esc(ui('¿Cuál es tu nombre de trabajo?','What is your work name?'))+'</h2>'+
+          '<p>'+esc(ui('Sirve para poder tener clara tu identidad cuando el sistema realiza ajustes automáticos, por ejemplo reconocer tu nombre al analizar un Schedule.','This helps Nexo identify you clearly when it performs automatic tasks, for example matching your name when a Schedule is analyzed.'))+'</p>'+
+          '<label class="nxo-field"><span>'+esc(ui('Nombre de trabajo','Work name'))+'</span><input id="nxo-onboarding-work-name" class="nxo-input" maxlength="120" value="'+esc(current)+'" autocomplete="name"></label>'+
+          '<button type="button" id="nxo-onboarding-save" class="nxo-btn nxo-btn-gold">'+esc(ui('Continuar','Continue'))+'</button>'+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(o);
+    const input=o.querySelector('#nxo-onboarding-work-name');
+    const save=o.querySelector('#nxo-onboarding-save');
+    setTimeout(()=>input?.focus(),50);
+    save?.addEventListener('click',async()=>{
+      const value=String(input?.value||'').trim().replace(/\s+/g,' ');
+      if(value.length<2){
+        toast(ui('Escribe tu nombre de trabajo','Enter your work name'));
+        input?.focus();
+        return
+      }
+      save.disabled=true;
+      save.textContent=ui('Guardando…','Saving…');
+      try{
+        personal=await api('profile.identity.set',{input:{workName:value}});
+        o.remove();
+        resolve()
+      }catch(e){
+        save.disabled=false;
+        save.textContent=ui('Continuar','Continue');
+        toast(e.message||String(e))
+      }
+    })
+  })
+}
+
 function createWorkspaceModal(){modal('Crear Workspace','<div class="nxo-field"><label>Nombre</label><input id="nxo-ws-name" class="nxo-input" placeholder="Ej. Old Hickory"></div><div class="nxo-field"><label>Descripción</label><textarea id="nxo-ws-desc" class="nxo-textarea" placeholder="Describe el propósito de este espacio."></textarea></div><div class="nxo-modal-actions"><button class="nxo-btn nxo-btn-gold" id="nxo-ws-save">Crear Workspace</button></div>',o=>{o.querySelector('#nxo-ws-save').onclick=async()=>{const name=o.querySelector('#nxo-ws-name').value.trim(),description=o.querySelector('#nxo-ws-desc').value.trim();if(!name){toast('Escribe un nombre');return}try{o.remove();loading('Creando Workspace…');workspace=await api('workspace.create',{input:{name,description}});await openWorkspace(workspace.workspace.id,true)}catch(e){errorView(e)}}})}
 function joinWorkspaceModal(){modal('Unirse a un Workspace','<div class="nxo-field"><label>Código de invitación</label><input id="nxo-join-code" class="nxo-input" placeholder="NEXO-ABCDE-12345" autocomplete="off" autocapitalize="characters"></div><p class="nxo-muted" style="margin:0;line-height:1.55">Pega el código que te compartió un administrador del Workspace. Los códigos son de un solo uso.</p><div class="nxo-modal-actions"><button id="nxo-join-submit" class="nxo-btn nxo-btn-gold">Unirme al Workspace</button></div>',o=>{const input=o.querySelector('#nxo-join-code'),button=o.querySelector('#nxo-join-submit');input?.focus();button.onclick=async()=>{const code=input.value.trim();if(!code){toast('Escribe el código de invitación');return}button.disabled=true;button.textContent='Validando…';try{workspace=await api('workspace.join.code',{code});o.remove();setWorkspaceReturnParam(workspace?.workspace?.id||'');workspaceTab='tools';toast('Te uniste a '+(workspace?.workspace?.name||'Workspace'));renderWorkspace()}catch(e){button.disabled=false;button.textContent='Unirme al Workspace';toast(e.message||String(e))}}})}
 async function openWorkspace(id,alreadyOpen=false){try{loading('Abriendo Workspace…');workspace=alreadyOpen&&workspace?workspace:await api('workspace.open',{workspaceId:id});workspaceRecipeComments=null;workspacePendingNotes=null;setWorkspaceReturnParam(workspace?.workspace?.id||id);workspaceTab='tools';renderWorkspace()}catch(e){errorView(e)}}
