@@ -14,7 +14,7 @@ function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
 let workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
-let scheduleWeekStart='',scheduleData=null,scheduleImportData=null;
+let scheduleWeekStart='',scheduleData=null,scheduleImportData=null,scheduleDebug=null,scheduleAnalysisBusy=false;
 const NEXO_THEME_KEY='nexoTheme:v1';
 const NEXO_LANGUAGE_KEY='nexoLanguage:v1';
 function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
@@ -1888,83 +1888,136 @@ function scheduleTime(value){
 function scheduleDay(value){
   try{return new Date(value+'T12:00:00').toLocaleDateString(currentLanguage()==='en'?'en-US':'es-US',{weekday:'short',month:'short',day:'numeric'})}catch(_){return value}
 }
+function scheduleDebugIcon(state){
+  return state==='done'?'✓':state==='error'?'✕':state==='working'?'◌':'○'
+}
+function scheduleDebugRow(label,state,detail=''){
+  return '<div style="display:grid;grid-template-columns:28px minmax(150px,220px) 1fr;gap:8px;align-items:start;padding:7px 0;border-bottom:1px solid rgba(127,127,127,.12)"><strong>'+esc(scheduleDebugIcon(state))+'</strong><strong>'+esc(label)+'</strong><span class="nxo-muted">'+esc(detail)+'</span></div>'
+}
+function renderScheduleDebugPanel(){
+  const zone=document.getElementById('nxo-schedule-debug');if(!zone)return;
+  const dbg=scheduleDebug||{};
+  const aiDone=dbg.aiCompleted===true;
+  const hasError=Boolean(dbg.error);
+  const structure=scheduleImportData?.structure||{};
+  const dayLabels=Array.isArray(structure.days)?structure.days.filter(Boolean):[];
+  const collaborators=Array.isArray(structure.collaborators)?structure.collaborators.filter(Boolean):[];
+  const positions=Array.isArray(structure.positions)?structure.positions.filter(Boolean):[];
+  zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-top:16px">'+
+    '<div class="nxo-section-head"><div><h3>'+esc(ui('Debug del análisis IA','AI analysis debug'))+'</h3><p>'+esc(ui('Este panel muestra únicamente etapas que realmente se completaron.','This panel only marks stages that actually completed.'))+'</p></div>'+(scheduleAnalysisBusy?'<span class="nxo-chip">'+esc(ui('Procesando','Processing'))+'</span>':'')+'</div>'+
+    scheduleDebugRow(ui('Imagen subida','Image uploaded'),dbg.uploaded?'done':(dbg.uploading?'working':'pending'),dbg.uploaded?ui('El archivo llegó a Wix.','The file reached Wix.'):ui('Esperando archivo.','Waiting for file.'))+
+    scheduleDebugRow(ui('Importación registrada','Import registered'),dbg.imageReceived?'done':(dbg.uploaded?'working':'pending'),dbg.importId?('ID: '+dbg.importId):ui('Todavía no existe un registro de importación.','No import record yet.'))+
+    scheduleDebugRow(ui('IA analizando estructura','AI analyzing structure'),hasError?'error':(aiDone?'done':(dbg.aiStarted||scheduleAnalysisBusy?'working':'pending')),hasError?String(dbg.error):(aiDone?ui('La IA devolvió una estructura válida.','AI returned a valid structure.'):ui('Buscando colaborador, puesto, día/fecha y horario.','Looking for member, position, day/date and hours.')))+
+    scheduleDebugRow(ui('Días / fechas','Days / dates'),aiDone?(Number(dbg.daysDetected||0)>0?'done':'error'):'pending',(dbg.daysDetected||0)+(dayLabels.length?' · '+dayLabels.join(', '):''))+
+    scheduleDebugRow(ui('Colaboradores','Members'),aiDone?(Number(dbg.collaboratorsDetected||0)>0?'done':'error'):'pending',(dbg.collaboratorsDetected||0)+(collaborators.length?' · '+collaborators.join(', '):''))+
+    scheduleDebugRow(ui('Puestos','Positions'),aiDone?(Number(dbg.positionsDetected||0)>0?'done':'error'):'pending',(dbg.positionsDetected||0)+(positions.length?' · '+positions.join(', '):''))+
+    scheduleDebugRow(ui('Turnos / horarios','Shifts / hours'),aiDone?(Number(dbg.shiftsDetected||0)>0?'done':'error'):'pending',String(dbg.shiftsDetected||0))+
+    scheduleDebugRow(ui('Miembros vinculados','Matched members'),aiDone?(Number(dbg.unresolvedRows||0)===0&&Number(dbg.shiftsDetected||0)>0?'done':'error'):'pending',(dbg.membersMatched||0)+' '+ui('miembro(s) vinculado(s) · ','matched member(s) · ')+(dbg.unresolvedRows||0)+' '+ui('fila(s) pendiente(s)','pending row(s)'))+
+    (hasError?'<div class="nxo-empty" style="margin-top:12px"><strong>'+esc(ui('Error real del análisis: ','Actual analysis error: '))+'</strong>'+esc(String(dbg.error))+'</div>':'')+
+    '<div class="nxo-empty" style="margin-top:12px">'+esc(dbg.readyForConfirmation?ui('✓ El análisis está completo. Puedes confirmar el resultado para generar el horario.','✓ Analysis is complete. You can confirm the result to generate the schedule.'):ui('Publicar permanecerá bloqueado hasta que la imagen se analice, se vinculen los miembros y el resultado sea confirmado.','Publish remains locked until the image is analyzed, members are matched, and the result is confirmed.'))+'</div>'+
+  '</div>'
+}
 function renderScheduleData(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!scheduleData)return;
   const d=scheduleData,s=d.schedule,actor=d.actor||{},rows=d.shifts||[];
+  const publishReady=d.publishReady===true&&s&&rows.length>0&&String(s.sourceType||'').toUpperCase()==='IMAGE';
   const importBox=actor.canImport
     ?'<div class="nxo-panel" style="padding:18px;margin-bottom:16px">'+
-       '<div class="nxo-section-head"><div><h3>'+esc(ui('Crear horario desde imagen','Create schedule from image'))+'</h3><p>'+esc(ui('Sube la imagen del horario que ya preparaste. Nexo detectará nombres, días y horas y los relacionará con los miembros de este espacio de trabajo.','Upload the schedule image you already prepared. Nexo will detect names, days and times and match them to Workspace members.'))+'</p></div></div>'+
-       '<div class="nxo-field"><label>'+esc(ui('Semana del horario','Schedule week'))+'</label><input id="nxo-schedule-import-week" class="nxo-input" type="date" value="'+esc(d.weekStart)+'"></div>'+
-       '<label class="nxo-btn nxo-btn-gold nxo-native-file-picker" style="display:inline-flex;align-items:center;gap:8px"><span>'+esc(ui('Subir imagen del horario','Upload schedule image'))+'</span><input id="nxo-schedule-image-input" type="file" accept="image/png,image/jpeg,image/webp" aria-label="'+esc(ui('Subir imagen del horario','Upload schedule image'))+'"></label>'+
-       '<p class="nxo-muted" style="margin:10px 0 0">'+esc(ui('Formatos: PNG, JPG o WEBP. La imagen se analizará antes de crear los turnos.','Formats: PNG, JPG or WEBP. The image is analyzed before shifts are created.'))+'</p>'+
+       '<div class="nxo-section-head"><div><h3>'+esc(ui('Crear horario desde imagen','Create schedule from image'))+'</h3><p>'+esc(ui('Sube cualquier formato visual de horario. La IA debe identificar colaborador, puesto, día/fecha y horario antes de generar el Schedule.','Upload any visual schedule format. AI must identify member, position, day/date, and hours before generating the Schedule.'))+'</p></div></div>'+
+       '<div class="nxo-field"><label>'+esc(ui('Semana del horario','Schedule week'))+'</label><input id="nxo-schedule-import-week" class="nxo-input" type="date" value="'+esc(d.weekStart)+'" '+(scheduleAnalysisBusy?'disabled':'')+'></div>'+
+       '<label class="nxo-btn nxo-btn-gold nxo-native-file-picker" style="display:inline-flex;align-items:center;gap:8px;'+(scheduleAnalysisBusy?'opacity:.6;pointer-events:none':'')+'"><span>'+esc(scheduleAnalysisBusy?ui('Analizando…','Analyzing…'):ui('Subir imagen del horario','Upload schedule image'))+'</span><input id="nxo-schedule-image-input" type="file" accept="image/png,image/jpeg,image/webp" '+(scheduleAnalysisBusy?'disabled':'')+' aria-label="'+esc(ui('Subir imagen del horario','Upload schedule image'))+'"></label>'+
      '</div>'
+    :'';
+  const publishButton=actor.canPublish
+    ?'<button class="nxo-btn nxo-btn-gold" id="nxo-schedule-publish" '+(publishReady?'':'disabled title="'+esc(ui('Primero analiza y confirma correctamente una imagen del horario.','First analyze and confirm a schedule image successfully.'))+'"')+'>'+esc(publishReady?ui('Publicar horario','Publish schedule'):ui('Publicar · bloqueado','Publish · locked'))+'</button>'
     :'';
   const controls='<div class="nxo-section-actions">'+
     '<button class="nxo-btn" id="nxo-schedule-prev">‹ '+esc(ui('Semana anterior','Previous week'))+'</button>'+
     '<button class="nxo-btn" id="nxo-schedule-today">'+esc(ui('Esta semana','This week'))+'</button>'+
     '<button class="nxo-btn" id="nxo-schedule-next">'+esc(ui('Semana siguiente','Next week'))+' ›</button>'+
-    (actor.canPublish&&s&&String(s.status).toUpperCase()!=='PUBLISHED'?'<button class="nxo-btn nxo-btn-gold" id="nxo-schedule-publish">'+esc(ui('Publicar horario','Publish schedule'))+'</button>':'')+
+    publishButton+
   '</div>';
-  const table=rows.length?'<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">'+esc(ui('Día','Day'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Colaborador','Member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Puesto','Position'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Entrada','Start'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Salida','End'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Descanso','Break'))+'</th></tr></thead><tbody>'+rows.map(r=>'<tr style="border-top:1px solid rgba(127,127,127,.2)"><td style="padding:10px">'+esc(scheduleDay(r.date))+'</td><td style="padding:10px">'+esc(r.memberNameSnapshot||r.memberId)+'</td><td style="padding:10px">'+esc(r.positionLabel||'—')+'</td><td style="padding:10px">'+esc(scheduleTime(r.startAt))+'</td><td style="padding:10px">'+esc(scheduleTime(r.endAt))+'</td><td style="padding:10px">'+esc(String(r.breakMinutes||0))+' min</td></tr>').join('')+'</tbody></table></div>':'<div class="nxo-empty">'+esc(s?ui('Este horario todavía no tiene turnos. Puedes reemplazarlo importando una imagen nueva.','This schedule has no shifts yet. You can replace it by importing a new image.'):ui('Todavía no existe un horario para esta semana. Sube una imagen para crearlo.','There is no schedule for this week yet. Upload an image to create it.'))+'</div>';
-  zone.innerHTML='<div class="nxo-section-head"><div><h3>'+esc(ui('Horarios','Schedule'))+'</h3><p>'+esc(scheduleDay(d.weekStart))+' — '+esc(scheduleDay(d.weekEnd))+'</p></div><span class="nxo-chip">'+esc(scheduleStatusLabel(s?.status))+'</span></div>'+importBox+controls+table+'<div id="nxo-schedule-import-preview"></div>';
-  document.getElementById('nxo-schedule-prev')?.addEventListener('click',()=>scheduleShiftWeek(-7));
-  document.getElementById('nxo-schedule-next')?.addEventListener('click',()=>scheduleShiftWeek(7));
-  document.getElementById('nxo-schedule-today')?.addEventListener('click',()=>{scheduleWeekStart=scheduleMonday();scheduleImportData=null;loadSchedule()});
-  document.getElementById('nxo-schedule-publish')?.addEventListener('click',publishScheduleUi);
+  const table=rows.length?'<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">'+esc(ui('Día','Day'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Colaborador','Member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Puesto','Position'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Entrada','Start'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Salida','End'))+'</th></tr></thead><tbody>'+rows.map(r=>'<tr style="border-top:1px solid rgba(127,127,127,.2)"><td style="padding:10px">'+esc(scheduleDay(r.date))+'</td><td style="padding:10px">'+esc(r.memberNameSnapshot||r.memberId)+'</td><td style="padding:10px">'+esc(r.positionLabel||'—')+'</td><td style="padding:10px">'+esc(scheduleTime(r.startAt))+'</td><td style="padding:10px">'+esc(scheduleTime(r.endAt))+'</td></tr>').join('')+'</tbody></table></div>':'<div class="nxo-empty">'+esc(ui('No hay un horario generado y confirmado para esta semana.','There is no generated and confirmed schedule for this week.'))+'</div>';
+  zone.innerHTML='<div class="nxo-section-head"><div><h3>'+esc(ui('Horarios','Schedule'))+'</h3><p>'+esc(scheduleDay(d.weekStart))+' — '+esc(scheduleDay(d.weekEnd))+'</p></div><span class="nxo-chip">'+esc(scheduleStatusLabel(s?.status))+'</span></div>'+importBox+controls+'<div id="nxo-schedule-debug"></div><div id="nxo-schedule-import-preview"></div>'+table;
+  document.getElementById('nxo-schedule-prev')?.addEventListener('click',()=>{if(!scheduleAnalysisBusy){scheduleImportData=null;scheduleDebug=null;scheduleShiftWeek(-7)}});
+  document.getElementById('nxo-schedule-next')?.addEventListener('click',()=>{if(!scheduleAnalysisBusy){scheduleImportData=null;scheduleDebug=null;scheduleShiftWeek(7)}});
+  document.getElementById('nxo-schedule-today')?.addEventListener('click',()=>{if(!scheduleAnalysisBusy){scheduleWeekStart=scheduleMonday();scheduleImportData=null;scheduleDebug=null;loadSchedule()}});
+  if(publishReady)document.getElementById('nxo-schedule-publish')?.addEventListener('click',publishScheduleUi);
   document.getElementById('nxo-schedule-image-input')?.addEventListener('change',e=>{
     const file=e.target.files?.[0]||null;e.target.value='';
     if(file)uploadAndAnalyzeScheduleImage(file)
   });
-  if(scheduleImportData)renderScheduleImportPreview()
+  if(scheduleDebug)renderScheduleDebugPanel();
+  if(scheduleImportData?.rows)renderScheduleImportPreview()
 }
 function renderScheduleImportPreview(){
-  const zone=document.getElementById('nxo-schedule-import-preview');if(!zone||!scheduleImportData)return;
-  const data=scheduleImportData,rows=data.rows||[],members=data.members||[];
+  const zone=document.getElementById('nxo-schedule-import-preview');if(!zone||!scheduleImportData?.rows)return;
+  const data=scheduleImportData,rows=data.rows||[],members=data.members||[],dbg=data.debug||scheduleDebug||{};
   const memberMap=new Map(members.map(m=>[m.memberId,m.displayName||m.workName||m.memberId]));
-  const unresolved=rows.filter(r=>!r.memberId||['UNMATCHED','AMBIGUOUS'].includes(String(r.mappingStatus||'').toUpperCase()));
+  const unresolved=rows.filter(r=>!r.memberId||['UNMATCHED','AMBIGUOUS','REVIEW'].includes(String(r.mappingStatus||'').toUpperCase())||(Array.isArray(r.warnings)&&r.warnings.length));
   const rowHtml=rows.map(r=>{
     const matched=r.memberId?memberMap.get(r.memberId)||r.memberId:ui('Sin coincidencia','No match');
     const status=String(r.mappingStatus||'').toUpperCase();
-    const badge=status==='MATCHED'?'✓':(status==='REVIEW'?'?':'!');
-    return '<tr style="border-top:1px solid rgba(127,127,127,.2)"><td style="padding:10px">'+esc(r.rawName||'—')+'</td><td style="padding:10px"><strong>'+esc(badge+' '+matched)+'</strong><div class="nxo-muted">'+esc(status)+'</div></td><td style="padding:10px">'+esc(scheduleDay(r.date))+'</td><td style="padding:10px">'+esc(r.status==='OFF'?ui('Libre','Off'):(r.start+' – '+r.end))+'</td><td style="padding:10px">'+esc(r.position||'—')+'</td></tr>'
+    const warning=(r.warnings||[]).join(', ');
+    const badge=status==='MATCHED'&&!warning?'✓':'!';
+    return '<tr style="border-top:1px solid rgba(127,127,127,.2)"><td style="padding:10px">'+esc(r.rawName||'—')+'</td><td style="padding:10px"><strong>'+esc(badge+' '+matched)+'</strong><div class="nxo-muted">'+esc(status+(warning?' · '+warning:''))+'</div></td><td style="padding:10px">'+esc(r.date?scheduleDay(r.date):(r.day||'—'))+'</td><td style="padding:10px">'+esc(r.status==='OFF'?ui('Libre','Off'):((r.start||'—')+' – '+(r.end||'—')))+'</td><td style="padding:10px">'+esc(r.position||'—')+'</td></tr>'
   }).join('');
+  const canConfirm=dbg.readyForConfirmation===true&&unresolved.length===0&&rows.length>0;
   zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-top:16px">'+
-    '<div class="nxo-section-head"><div><h3>'+esc(ui('Vista previa detectada','Detected preview'))+'</h3><p>'+esc(ui('Revisa cómo la imagen fue interpretada antes de generar el horario.','Review how the image was interpreted before generating the schedule.'))+'</p></div><span class="nxo-chip">'+rows.length+' '+esc(ui('filas','rows'))+'</span></div>'+
-    '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">'+esc(ui('Nombre detectado','Detected name'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Miembro vinculado','Matched member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Día','Day'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Horario','Hours'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Puesto','Position'))+'</th></tr></thead><tbody>'+rowHtml+'</tbody></table></div>'+
-    (unresolved.length?'<div class="nxo-empty" style="margin-top:12px">'+esc(ui('Hay ','There are '))+unresolved.length+' '+esc(ui('fila(s) cuyo nombre todavía no coincide de forma segura con un miembro. En esta primera versión deben resolverse antes de confirmar.','row(s) whose name does not yet safely match a member. In this first version they must be resolved before confirmation.'))+'</div>':'')+
-    '<div class="nxo-modal-actions"><button id="nxo-schedule-import-confirm" class="nxo-btn nxo-btn-gold" '+(unresolved.length?'disabled':'')+'>'+esc(ui('Confirmar y generar horario','Confirm and generate schedule'))+'</button></div>'+
+    '<div class="nxo-section-head"><div><h3>'+esc(ui('Resultado detectado','Detected result'))+'</h3><p>'+esc(ui('Esta es la interpretación real devuelta por la IA.','This is the actual interpretation returned by AI.'))+'</p></div><span class="nxo-chip">'+rows.length+' '+esc(ui('turnos','shifts'))+'</span></div>'+
+    '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">'+esc(ui('Nombre detectado','Detected name'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Miembro vinculado','Matched member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Día / fecha','Day / date'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Horario','Hours'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Puesto','Position'))+'</th></tr></thead><tbody>'+rowHtml+'</tbody></table></div>'+
+    '<div class="nxo-modal-actions"><button id="nxo-schedule-import-confirm" class="nxo-btn nxo-btn-gold" '+(canConfirm?'':'disabled')+'>'+esc(canConfirm?ui('Confirmar análisis y generar horario','Confirm analysis and generate schedule'):ui('Confirmar · revisión pendiente','Confirm · review pending'))+'</button></div>'+
   '</div>';
-  document.getElementById('nxo-schedule-import-confirm')?.addEventListener('click',confirmScheduleImportUi)
+  if(canConfirm)document.getElementById('nxo-schedule-import-confirm')?.addEventListener('click',confirmScheduleImportUi)
 }
 async function uploadAndAnalyzeScheduleImage(file){
   const allowed=['image/png','image/jpeg','image/webp'],mime=String(file.type||'').toLowerCase();
   if(!allowed.includes(mime)){toast(ui('Usa una imagen PNG, JPG o WEBP','Use a PNG, JPG or WEBP image'));return}
   if(file.size>12*1024*1024){toast(ui('La imagen supera 12 MB','The image exceeds 12 MB'));return}
   const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleMonday();
+  scheduleAnalysisBusy=true;
+  scheduleImportData=null;
+  scheduleDebug={uploading:true,uploaded:false,imageReceived:false,aiStarted:false,aiCompleted:false,daysDetected:0,collaboratorsDetected:0,positionsDetected:0,shiftsDetected:0,membersMatched:0,unresolvedRows:0,readyForConfirmation:false,error:''};
+  renderScheduleData();
   try{
-    loading(ui('Analizando imagen del horario…','Analyzing schedule image…'));
     const ticket=await api('schedule.image.upload-url',{workspaceId:workspace.workspace.id,input:{fileName:file.name||'schedule.png',mimeType:mime,sizeInBytes:file.size}});
     const response=await fetch(String(ticket.uploadUrl||''),{method:'PUT',headers:{'Content-Type':mime},body:file});
     let body={};try{body=await response.json()}catch(_){}
     if(!response.ok)throw new Error(String(body?.message||body?.error||('UPLOAD_HTTP_'+response.status)));
     const fileId=String(body?.file?.id||body?.file?._id||body?.id||body?._id||'');
     if(!fileId)throw new Error(ui('Wix no devolvió el archivo subido','Wix did not return the uploaded file'));
+    scheduleDebug={...scheduleDebug,uploading:false,uploaded:true};
+    renderScheduleDebugPanel();
+
+    const started=await api('schedule.import.start',{workspaceId:workspace.workspace.id,input:{fileId,fileName:file.name||'schedule.png',mimeType:mime,weekStart:week}});
     scheduleWeekStart=week;
-    scheduleImportData=await api('schedule.import.analyze',{workspaceId:workspace.workspace.id,input:{fileId,fileName:file.name||'schedule.png',mimeType:mime,weekStart:week}});
-    scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
-    renderWorkspace();
-    toast(ui('Imagen analizada','Image analyzed'))
-  }catch(e){renderWorkspace();toast(e.message||String(e))}
+    scheduleImportData=started;
+    scheduleDebug={...scheduleDebug,...(started.debug||{}),importId:started.importId,uploaded:true,imageReceived:true,aiStarted:true};
+    renderScheduleDebugPanel();
+
+    const analyzed=await api('schedule.import.analyze',{workspaceId:workspace.workspace.id,input:{importId:started.importId,weekStart:week}});
+    scheduleImportData=analyzed;
+    scheduleDebug={...scheduleDebug,...(analyzed.debug||{}),importId:analyzed.importId,uploaded:true,imageReceived:true,aiStarted:true,aiCompleted:true,error:''};
+    scheduleAnalysisBusy=false;
+    renderScheduleData();
+    toast(ui('Análisis IA terminado. Revisa el debug y la vista previa.','AI analysis finished. Review the debug and preview.'))
+  }catch(e){
+    scheduleAnalysisBusy=false;
+    scheduleDebug={...(scheduleDebug||{}),aiStarted:Boolean(scheduleDebug?.imageReceived),aiCompleted:false,readyForConfirmation:false,error:e.message||String(e)};
+    renderScheduleData();
+    toast(e.message||String(e))
+  }
 }
 async function confirmScheduleImportUi(){
   if(!scheduleImportData?.importId)return;
   const button=document.getElementById('nxo-schedule-import-confirm');if(button)button.disabled=true;
   try{
     await api('schedule.import.confirm',{workspaceId:workspace.workspace.id,importId:scheduleImportData.importId,input:{weekStart:scheduleImportData.weekStart||scheduleWeekStart,forceNew:true}});
+    scheduleDebug={...(scheduleDebug||{}),readyForConfirmation:false,confirmed:true,error:''};
     scheduleImportData=null;
-    toast(ui('Horario generado desde la imagen','Schedule generated from image'));
+    toast(ui('Análisis confirmado. El horario ya puede validarse para publicación.','Analysis confirmed. The schedule can now be validated for publication.'));
     await loadSchedule()
-  }catch(e){if(button)button.disabled=false;toast(e.message||String(e))}
+  }catch(e){if(button)button.disabled=false;scheduleDebug={...(scheduleDebug||{}),error:e.message||String(e)};renderScheduleDebugPanel();toast(e.message||String(e))}
 }
 async function loadSchedule(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!workspace?.workspace?.id)return;
