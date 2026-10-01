@@ -27,7 +27,7 @@ const launchQuery=new URLSearchParams(location.search);
 const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
 const workspaceToolName=String(launchQuery.get('nxoToolName')||'Fichas Técnicas Dinámicas').trim()||'Fichas Técnicas Dinámicas';
 const workspaceToolDescription=String(launchQuery.get('nxoToolDescription')||'').trim();
-let workspaceTheme=launchQuery.get('nxoTheme')==='night'?'night':'day';
+let workspaceTheme=launchQuery.get('nxoTheme')==='night'?'night':launchQuery.get('nxoTheme')==='day'?'day':(()=>{try{return localStorage.getItem('nexoTheme:v1')==='night'?'night':'day'}catch(_){return'day'}})();
 let UI_THEME=null;
 
 function ensureThemeRuntime(){
