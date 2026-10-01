@@ -1926,12 +1926,13 @@ function renderScheduleDebugPanel(){
     if(!hasError&&stage===name&&scheduleAnalysisBusy)return'working';
     return'pending'
   };
+  const sent=Number(dbg.chunksSent||0),total=Number(dbg.totalChunks||0);
   zone.innerHTML='<div>'+
-    '<div class="nxo-section-head"><div><h3 style="margin:0">'+esc(ui('Diagnóstico de carga y análisis','Upload and analysis diagnostics'))+'</h3><p>'+esc(ui('Se marca cada etapa únicamente cuando realmente ocurre.','Each stage is marked only when it actually happens.'))+'</p></div>'+(scheduleAnalysisBusy?'<span class="nxo-chip">'+esc(ui('Procesando','Processing'))+'</span>':'')+'</div>'+
+    '<div class="nxo-section-head"><div><h3 style="margin:0">'+esc(ui('Diagnóstico de carga y análisis','Upload and analysis diagnostics'))+'</h3><p>'+esc(ui('La imagen se envía por fragmentos internos de Nexo para evitar fallos de carga del navegador móvil.','The image is sent through internal Nexo chunks to avoid mobile browser upload failures.'))+'</p></div>'+(scheduleAnalysisBusy?'<span class="nxo-chip">'+esc(ui('Procesando','Processing'))+'</span>':'')+'</div>'+
     scheduleDebugRow(ui('Importación registrada','Import registered'),stateFor('register',dbg.importRegistered),dbg.importId?('ID: '+dbg.importId):ui('Creando registro…','Creating record…'))+
-    scheduleDebugRow(ui('Preparando subida','Preparing upload'),stateFor('ticket',dbg.uploadTicketReady),dbg.uploadTicketReady?ui('URL segura de Wix preparada.','Secure Wix URL prepared.'):ui('Esperando URL de subida.','Waiting for upload URL.'))+
-    scheduleDebugRow(ui('Transfiriendo imagen','Uploading image'),stateFor('upload',dbg.uploaded),dbg.uploaded?ui('La imagen llegó a Wix.','The image reached Wix.'):(dbg.uploadAttempt?ui('Intento ','Attempt ')+dbg.uploadAttempt+'/2':ui('Esperando transferencia.','Waiting for transfer.')))+
-    scheduleDebugRow(ui('Archivo confirmado','File confirmed'),stateFor('attach',dbg.imageReceived),dbg.imageReceived?ui('Wix confirmó que el archivo está disponible.','Wix confirmed the file is available.'):ui('Esperando confirmación del archivo.','Waiting for file confirmation.'))+
+    scheduleDebugRow(ui('Preparando imagen','Preparing image'),stateFor('prepare',dbg.imagePrepared),dbg.imagePrepared?(Math.round(Number(dbg.base64Bytes||0)/1024)+' KB '+ui('preparados','prepared')):ui('Leyendo la imagen local.','Reading local image.'))+
+    scheduleDebugRow(ui('Enviando fragmentos','Sending chunks'),stateFor('chunks',dbg.chunksUploaded),dbg.chunksUploaded?total+'/'+total:(sent+'/'+(total||'…')))+
+    scheduleDebugRow(ui('Imagen reconstruida','Image reconstructed'),stateFor('complete',dbg.imageReceived),dbg.imageReceived?ui('El backend confirmó la imagen completa.','Backend confirmed the complete image.'):ui('Esperando todos los fragmentos.','Waiting for all chunks.'))+
     scheduleDebugRow(ui('IA analizando estructura','AI analyzing structure'),stateFor('ai',aiDone),aiDone?ui('La IA devolvió una estructura válida.','AI returned a valid structure.'):ui('Buscando colaborador, puesto, día/fecha y horario.','Looking for member, position, day/date and hours.'))+
     scheduleDebugRow(ui('Días / fechas','Days / dates'),aiDone?(Number(dbg.daysDetected||0)>0?'done':'error'):'pending',(dbg.daysDetected||0)+(dayLabels.length?' · '+dayLabels.join(', '):''))+
     scheduleDebugRow(ui('Colaboradores','Members'),aiDone?(Number(dbg.collaboratorsDetected||0)>0?'done':'error'):'pending',(dbg.collaboratorsDetected||0)+(collaborators.length?' · '+collaborators.join(', '):''))+
@@ -1957,32 +1958,32 @@ async function scheduleApiRetry(action,payload,attempts=2){
   }
   throw last||new Error('NETWORK_ERROR')
 }
-async function uploadScheduleBinary(ticket,file,mime){
-  const base=String(ticket?.uploadUrl||'');
-  if(!base)throw new Error(ui('Wix no devolvió la URL de subida','Wix did not return an upload URL'));
-  let target=base;
-  try{
-    const u=new URL(base);
-    if(!u.searchParams.has('filename'))u.searchParams.set('filename',String(ticket?.fileName||file?.name||'schedule-image'));
-    target=u.href
-  }catch(_){}
-  let last=null;
-  for(let attempt=1;attempt<=2;attempt+=1){
-    scheduleDebug={...(scheduleDebug||{}),stage:'upload',stageLabel:ui('transferencia de imagen','image transfer'),uploadAttempt:attempt};
-    renderScheduleDebugPanel();
-    try{
-      const response=await fetch(target,{method:'PUT',headers:{'Content-Type':mime},body:file,mode:'cors',credentials:'omit',cache:'no-store'});
-      let body={};try{body=await response.json()}catch(_){}
-      if(!response.ok)throw new Error(String(body?.message||body?.error||('UPLOAD_HTTP_'+response.status)));
-      const fileId=String(body?.file?.id||body?.file?._id||body?.id||body?._id||'');
-      if(!fileId)throw new Error(ui('Wix no devolvió el ID del archivo','Wix did not return the file ID'));
-      return {fileId,body}
-    }catch(e){
-      last=e;
-      if(attempt<2)await new Promise(r=>setTimeout(r,900))
-    }
+function scheduleFileBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error(ui('No se pudo leer la imagen seleccionada','Could not read the selected image')));
+    reader.onload=()=>{
+      const value=String(reader.result||''),comma=value.indexOf(',');
+      if(comma<0)return reject(new Error(ui('La imagen no pudo prepararse','The image could not be prepared')));
+      resolve(value.slice(comma+1))
+    };
+    reader.readAsDataURL(file)
+  })
+}
+async function uploadScheduleChunks(importId,base64){
+  const chunkSize=220000,total=Math.ceil(base64.length/chunkSize);
+  if(total<1||total>100)throw new Error(ui('La imagen requiere demasiados fragmentos','The image requires too many chunks'));
+  scheduleDebug={...(scheduleDebug||{}),stage:'chunks',stageLabel:ui('envío de fragmentos','chunk upload'),totalChunks:total,chunksSent:0};
+  renderScheduleDebugPanel();
+  for(let i=0;i<total;i+=1){
+    const chunkData=base64.slice(i*chunkSize,(i+1)*chunkSize);
+    await scheduleApiRetry('schedule.import.chunk',{workspaceId:workspace.workspace.id,importId,input:{chunkIndex:i,totalChunks:total,chunkData}},3);
+    scheduleDebug={...(scheduleDebug||{}),stage:'chunks',chunksSent:i+1,totalChunks:total};
+    renderScheduleDebugPanel()
   }
-  throw last||new Error(ui('No se pudo transferir la imagen a Wix','Could not transfer the image to Wix'))
+  scheduleDebug={...(scheduleDebug||{}),chunksUploaded:true,chunksSent:total,totalChunks:total,stage:'complete',stageLabel:ui('reconstrucción de imagen','image reconstruction')};
+  renderScheduleDebugPanel();
+  return total
 }
 
 function renderScheduleData(){
@@ -2044,34 +2045,33 @@ async function uploadAndAnalyzeScheduleImage(file){
   const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleMonday();
   scheduleAnalysisBusy=true;
   scheduleImportData=null;
-  scheduleDebug={stage:'register',stageLabel:ui('registro de importación','import registration'),importRegistered:false,uploadTicketReady:false,uploaded:false,imageReceived:false,aiStarted:false,aiCompleted:false,daysDetected:0,collaboratorsDetected:0,positionsDetected:0,shiftsDetected:0,membersMatched:0,unresolvedRows:0,readyForConfirmation:false,error:''};
+  scheduleDebug={stage:'register',stageLabel:ui('registro de importación','import registration'),importRegistered:false,imagePrepared:false,chunksUploaded:false,chunksSent:0,totalChunks:0,imageReceived:false,aiStarted:false,aiCompleted:false,daysDetected:0,collaboratorsDetected:0,positionsDetected:0,shiftsDetected:0,membersMatched:0,unresolvedRows:0,readyForConfirmation:false,error:''};
   renderScheduleData();
   openScheduleDebugModal();
   let importId='';
   try{
     const started=await scheduleApiRetry('schedule.import.start',{workspaceId:workspace.workspace.id,input:{fileName:file.name||'schedule.png',mimeType:mime,sizeInBytes:file.size,weekStart:week}},2);
     importId=String(started?.importId||'');
+    if(!importId)throw new Error(ui('No se pudo crear la importación','Could not create the import'));
     scheduleWeekStart=week;
     scheduleImportData=started;
-    scheduleDebug={...scheduleDebug,...(started.debug||{}),stage:'ticket',stageLabel:ui('preparación de subida','upload preparation'),importId,importRegistered:true,error:''};
+    scheduleDebug={...scheduleDebug,...(started.debug||{}),stage:'prepare',stageLabel:ui('preparación de imagen','image preparation'),importId,importRegistered:true,error:''};
     renderScheduleDebugPanel();
 
-    const ticket=await scheduleApiRetry('schedule.image.upload-url',{workspaceId:workspace.workspace.id,input:{fileName:started.fileName||file.name||'schedule.png',mimeType:mime,sizeInBytes:file.size}},2);
-    scheduleDebug={...scheduleDebug,stage:'upload',stageLabel:ui('transferencia de imagen','image transfer'),uploadTicketReady:true};
+    const base64=await scheduleFileBase64(file);
+    scheduleDebug={...scheduleDebug,stage:'chunks',stageLabel:ui('envío de fragmentos','chunk upload'),imagePrepared:true,base64Bytes:base64.length};
     renderScheduleDebugPanel();
 
-    const uploaded=await uploadScheduleBinary(ticket,file,mime);
-    scheduleDebug={...scheduleDebug,stage:'attach',stageLabel:ui('confirmación del archivo','file confirmation'),uploaded:true};
-    renderScheduleDebugPanel();
+    await uploadScheduleChunks(importId,base64);
 
-    const attached=await scheduleApiRetry('schedule.import.attach',{workspaceId:workspace.workspace.id,importId,input:{fileId:uploaded.fileId}},2);
-    scheduleImportData={...scheduleImportData,...attached};
-    scheduleDebug={...scheduleDebug,...(attached.debug||{}),stage:'ai',stageLabel:ui('análisis de inteligencia artificial','AI analysis'),importId,importRegistered:true,uploadTicketReady:true,uploaded:true,imageReceived:true,aiStarted:true,error:''};
+    const completed=await scheduleApiRetry('schedule.import.chunks.complete',{workspaceId:workspace.workspace.id,importId},2);
+    scheduleImportData={...scheduleImportData,...completed};
+    scheduleDebug={...scheduleDebug,...(completed.debug||{}),stage:'ai',stageLabel:ui('análisis de inteligencia artificial','AI analysis'),importId,importRegistered:true,imagePrepared:true,chunksUploaded:true,imageReceived:true,aiStarted:true,error:''};
     renderScheduleDebugPanel();
 
     const analyzed=await scheduleApiRetry('schedule.import.analyze',{workspaceId:workspace.workspace.id,input:{importId,weekStart:week}},2);
     scheduleImportData=analyzed;
-    scheduleDebug={...scheduleDebug,...(analyzed.debug||{}),stage:'done',stageLabel:ui('análisis terminado','analysis complete'),importId,importRegistered:true,uploadTicketReady:true,uploaded:true,imageReceived:true,aiStarted:true,aiCompleted:true,error:''};
+    scheduleDebug={...scheduleDebug,...(analyzed.debug||{}),stage:'done',stageLabel:ui('análisis terminado','analysis complete'),importId,importRegistered:true,imagePrepared:true,chunksUploaded:true,imageReceived:true,aiStarted:true,aiCompleted:true,error:''};
     scheduleAnalysisBusy=false;
     renderScheduleData();
     renderScheduleDebugPanel();
