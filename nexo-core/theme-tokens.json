@@ -1,13 +1,15 @@
 {
-  "version": "2026-10-01-v2",
-  "purpose": "Canonical semantic color tokens for Nexo Group UI. New components must use semantic tokens instead of arbitrary text/surface colors.",
+  "version": "2026-10-01-v3",
+  "purpose": "Canonical semantic color tokens for Nexo Group UI. This file is the single source of truth for theme values and system semantic colors; runtime consumers must not maintain independent day/night palettes.",
   "governance": {
     "rule1": "Day and night themes must define the same semantic token names.",
     "rule2": "Text on dark surfaces must use night text tokens; text on light surfaces must use day text tokens.",
     "rule3": "Gold is primarily a night-mode emphasis color. Day mode uses Nexo blue/green/orange.",
     "rule4": "Role badges, quick settings, modals, overlays, tabs, buttons and future architecture changes must consume these semantic tokens.",
     "rule5": "Do not introduce new literal text/surface colors without first updating this token file and docs/NEXO_VISUAL_SYSTEM.md.",
-    "rule6": "Generic secondary buttons use buttonSecondaryBg, buttonSecondaryText and buttonSecondaryBorder; forms and modals reuse the shared semantic surface, text and border tokens in both themes."
+    "rule6": "Generic secondary buttons use buttonSecondaryBg, buttonSecondaryText and buttonSecondaryBorder; forms and modals reuse the shared semantic surface, text and border tokens in both themes.",
+    "rule7": "Theme values are injected through nexo-core/theme-runtime.js. Product modules may map selectors to semantic variables, but must not redefine day/night color values.",
+    "rule8": "Product-specific semantic colors that must remain meaningful across themes live under systems and are injected by the same runtime."
   },
   "themes": {
     "day": {
@@ -31,7 +33,27 @@
       "roleBorder": "#B9CBED",
       "buttonSecondaryBg": "#EEF4FF",
       "buttonSecondaryText": "#2F4F93",
-      "buttonSecondaryBorder": "#B9CBED"
+      "buttonSecondaryBorder": "#B9CBED",
+      "surfaceGlass": "rgba(255,255,255,.315)",
+      "surfaceGlassHover": "rgba(255,244,236,.345)",
+      "controlBackground": "rgba(255,255,255,.92)",
+      "overlay": "rgba(23,39,85,.28)",
+      "headerBackground": "#2F4F93",
+      "headerBorder": "#172755",
+      "headerText": "#FFFFFF",
+      "headerMuted": "#DCE7F7",
+      "focusRing": "rgba(47,79,147,.14)",
+      "shadow": "rgba(23,39,85,.18)",
+      "interactionContrast": "#111827",
+      "positiveSoft": "#EAF6EC",
+      "positiveContrast": "#FFFFFF",
+      "dangerSoft": "#FFF2F2",
+      "dangerContrast": "#FFFFFF",
+      "warning": "#B57B1E",
+      "warningSoft": "#FFF4DD",
+      "warningContrast": "#111827",
+      "mediaBackground": "#E9EEF7",
+      "headerActive": "#E79069"
     },
     "night": {
       "background": "#080B10",
@@ -54,7 +76,48 @@
       "roleBorder": "rgba(225,189,105,.22)",
       "buttonSecondaryBg": "rgba(184,197,216,.06)",
       "buttonSecondaryText": "#F2F5F8",
-      "buttonSecondaryBorder": "rgba(184,197,216,.24)"
+      "buttonSecondaryBorder": "rgba(184,197,216,.24)",
+      "surfaceGlass": "rgba(18,25,35,.315)",
+      "surfaceGlassHover": "rgba(24,30,42,.345)",
+      "controlBackground": "rgba(18,25,35,.72)",
+      "overlay": "rgba(2,4,8,.72)",
+      "headerBackground": "rgba(6,9,14,.94)",
+      "headerBorder": "rgba(255,255,255,.08)",
+      "headerText": "#F2F5F8",
+      "headerMuted": "#91A0B5",
+      "focusRing": "rgba(225,189,105,.16)",
+      "shadow": "rgba(0,0,0,.28)",
+      "interactionContrast": "#17130C",
+      "positiveSoft": "rgba(85,201,133,.10)",
+      "positiveContrast": "#07160D",
+      "dangerSoft": "rgba(255,112,112,.10)",
+      "dangerContrast": "#180707",
+      "warning": "#E3B85F",
+      "warningSoft": "rgba(227,184,95,.10)",
+      "warningContrast": "#17130C",
+      "mediaBackground": "#080C13",
+      "headerActive": "#E1BD69"
+    }
+  },
+  "systems": {
+    "technicalSheets": {
+      "taxonomy": {
+        "dish": "#A84635",
+        "preparation": "#267263",
+        "product": "#B57B1E"
+      },
+      "units": {
+        "metricMass": "#315C9E",
+        "imperialMass": "#76539A",
+        "metricVolume": "#207D87",
+        "count": "#159FB7",
+        "spoon": "#747120",
+        "cup": "#A34670",
+        "bunch": "#8C6F3D",
+        "instruction": "#6F6B65",
+        "other": "#6F6B65"
+      },
+      "contrast": "#FFFFFF"
     }
   }
 }
