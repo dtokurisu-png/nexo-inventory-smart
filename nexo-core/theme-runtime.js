@@ -102,6 +102,8 @@ function applyVars(theme){
   Object.entries(SYSTEM_VARS).forEach(([key,varName])=>{
     if(semanticValues[key]!=null)root.setProperty(varName,String(semanticValues[key]));
   });
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta&&values.headerBackground)meta.setAttribute('content',String(values.headerBackground));
 }
 function setTheme(value,{persist=true,notify=true}={}){
   currentTheme=normalizeTheme(value);
