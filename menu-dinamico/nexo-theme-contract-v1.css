@@ -455,3 +455,26 @@ html.nexoMobile .nexoQuickSettingsMenu{
 .nexoLegendModal .modalHead{
   background:var(--nxo-surface)!important
 }
+
+/* RECIPE CARD MEDIA CROP CANON · 2026-10-01 */
+.recipeCard.cardDish > .thumb,
+.recipeCard.cardPrep > .thumb,
+.taxonomyCategory .recipeCard.cardDish > .thumb,
+.taxonomyCategory .recipeCard.cardPrep > .thumb{
+  position:relative!important;
+  overflow:hidden!important;
+  background:var(--nxo-media-background)!important
+}
+.recipeCard.cardDish > .thumb > img,
+.recipeCard.cardPrep > .thumb > img,
+.taxonomyCategory .recipeCard.cardDish > .thumb > img,
+.taxonomyCategory .recipeCard.cardPrep > .thumb > img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:100%!important;
+  min-height:100%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  margin:0!important
+}
