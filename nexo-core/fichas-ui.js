@@ -172,6 +172,31 @@ function numaExtractSheetQuery(message){
   q=q.replace(/^[¿?¡!.,;:\s]+|[¿?¡!.,;:\s]+$/g,'');
   return q.slice(0,300);
 }
+function numaEditSimilarity(a,b){
+  const x=numaSearchNorm(a),y=numaSearchNorm(b);
+  if(!x||!y)return 0;
+  if(x===y)return 1;
+  const row=new Array(y.length+1);
+  for(let j=0;j<=y.length;j++)row[j]=j;
+  for(let i=1;i<=x.length;i++){
+    let diagonal=row[0];row[0]=i;
+    for(let j=1;j<=y.length;j++){
+      const saved=row[j],cost=x[i-1]===y[j-1]?0:1;
+      row[j]=Math.min(row[j]+1,row[j-1]+1,diagonal+cost);
+      diagonal=saved;
+    }
+  }
+  return Math.max(0,1-row[y.length]/Math.max(x.length,y.length));
+}
+function numaTokenMatches(token,candidates){
+  if(!token)return false;
+  return candidates.some(candidate=>{
+    if(!candidate)return false;
+    if(candidate.includes(token)||token.includes(candidate))return true;
+    if(token.length<4||candidate.length<4)return false;
+    return numaEditSimilarity(token,candidate)>=.76;
+  });
+}
 function numaLocalSheetContext(message){
   const data=engineDataCache;
   const recipes=Array.isArray(data?.recipes)?data.recipes:[];
@@ -222,9 +247,12 @@ function numaLocalSheetContext(message){
     else if(titleEs.includes(q)||titleEn.includes(q))score+=75;
 
     const hay=numaSearchNorm(corpus.filter(Boolean).join(' '));
-    const matched=tokens.filter(token=>hay.includes(token)).length;
+    const hayTokens=hay.split(' ').filter(Boolean);
+    const matched=tokens.filter(token=>numaTokenMatches(token,hayTokens)).length;
     if(tokens.length&&matched===tokens.length)score+=45;
     else score+=matched*8;
+    const titleSimilarity=Math.max(numaEditSimilarity(q,titleEs),numaEditSimilarity(q,titleEn));
+    if(q.length>=4&&titleSimilarity>=.72)score+=Math.round(titleSimilarity*48);
     if(numaSearchNorm(recipe?.category).includes(q))score+=12;
     if(score<=0)continue;
 
@@ -233,6 +261,9 @@ function numaLocalSheetContext(message){
       title:recipe?.titleEs||recipe?.titleEn||id,
       titleEs:recipe?.titleEs||'',
       titleEn:recipe?.titleEn||'',
+      recipeType:recipe?.recipeType||'',
+      category:recipe?.category||'',
+      sourceTemplateId:recipe?.sourceTemplateId||'',
       score,
       exact:titleEs===q||titleEn===q
     });
