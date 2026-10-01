@@ -1,0 +1,416 @@
+/* Nexo Fichas Técnicas theme contract · 2026-10-01
+   Values come exclusively from nexo-core/theme-tokens.json through theme-runtime.js.
+   Product CSS may define structure; this file owns theme application. */
+
+:root{
+  --bg:var(--nxo-background);
+  --panel:var(--nxo-surface-glass);
+  --ink:var(--nxo-text-primary);
+  --muted:var(--nxo-text-muted);
+  --line:var(--nxo-border);
+  --accent:var(--nxo-accent);
+  --dish:var(--nxo-taxonomy-dish);
+  --prep:var(--nxo-taxonomy-preparation);
+  --product:var(--nxo-taxonomy-product);
+  --metricMass:var(--nxo-unit-metric-mass);
+  --imperialMass:var(--nxo-unit-imperial-mass);
+  --metricVolume:var(--nxo-unit-metric-volume);
+  --count:var(--nxo-unit-count);
+  --spoon:var(--nxo-unit-spoon);
+  --cup:var(--nxo-unit-cup);
+  --otherUnit:var(--nxo-unit-other);
+  --review:var(--nxo-danger);
+  --reviewBg:var(--nxo-danger-soft);
+  --done:var(--nxo-positive);
+}
+html:not([data-nexo-theme-ready="1"]):not([data-nexo-theme-ready="error"]) body{visibility:hidden}
+html[data-nexo-theme-ready="1"] body{visibility:visible}
+html,body{
+  background:var(--nxo-background)!important;
+  color:var(--nxo-text-primary)!important
+}
+body:before{background:transparent!important}
+.app{color:var(--nxo-text-primary)!important}
+
+/* Header */
+html[data-theme] body .topbar,
+html.nexoMobile[data-theme] body .topbar{
+  background:var(--nxo-header-background)!important;
+  border-bottom:1px solid var(--nxo-header-border)!important;
+  box-shadow:0 10px 30px var(--nxo-shadow)!important
+}
+html[data-theme] body .brand,
+html[data-theme] body .brandText strong{color:var(--nxo-header-text)!important}
+html[data-theme] body .brandText small{color:var(--nxo-header-muted)!important}
+html[data-theme] body .mark{
+  background:var(--nxo-accent)!important;
+  border-color:var(--nxo-header-border)!important;
+  color:var(--nxo-accent-contrast)!important
+}
+html[data-theme] body .nexoNavLink{
+  color:var(--nxo-header-muted)!important;
+  background:transparent!important
+}
+html[data-theme] body .nexoNavLink:hover,
+html[data-theme] body .nexoNavLink:focus-visible{
+  color:var(--nxo-header-text)!important
+}
+html[data-theme] body .nexoNavLink:hover:after,
+html[data-theme] body .nexoNavLink:focus-visible:after,
+html[data-theme] body .nexoNavLink.active:after{
+  background:var(--nxo-header-active)!important
+}
+html[data-theme] body .nexoNavLink.active{color:var(--nxo-header-active)!important}
+html[data-theme] body .icon,
+html[data-theme] body .lang,
+html[data-theme] body .installBtn,
+html[data-theme] body .nexoQuickSettingsButton{
+  background:transparent!important;
+  border-color:var(--nxo-header-border)!important;
+  color:var(--nxo-header-text)!important
+}
+html[data-theme] body .icon:hover,
+html[data-theme] body .lang:hover,
+html[data-theme] body .installBtn:hover,
+html[data-theme] body .nexoQuickSettingsButton:hover,
+html[data-theme] body .icon:focus-visible,
+html[data-theme] body .lang:focus-visible,
+html[data-theme] body .installBtn:focus-visible,
+html[data-theme] body .nexoQuickSettingsButton:focus-visible{
+  background:var(--nxo-interaction)!important;
+  border-color:var(--nxo-interaction)!important;
+  color:var(--nxo-interaction-contrast)!important
+}
+
+/* Universal quick settings */
+.nexoQuickSettings{position:relative;display:flex;align-items:center}
+.nexoQuickSettingsButton{width:42px;height:42px;border:1px solid;border-radius:11px;font:900 19px/1 Inter,system-ui,sans-serif;cursor:pointer}
+.nexoQuickSettingsMenu{
+  position:absolute;z-index:90;right:0;top:calc(100% + 9px);width:220px;padding:9px;
+  border:1px solid var(--nxo-border-strong);border-radius:14px;
+  background:var(--nxo-surface-raised);color:var(--nxo-text-primary);
+  box-shadow:0 18px 44px var(--nxo-shadow);display:none
+}
+.nexoQuickSettingsMenu.open{display:grid;gap:6px}
+.nexoQuickSettingsTitle{padding:5px 7px 7px;color:var(--nxo-text-muted);font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.nexoQuickSettingRow{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  border:1px solid var(--nxo-button-secondary-border);border-radius:10px;
+  background:var(--nxo-button-secondary-bg);color:var(--nxo-button-secondary-text);
+  padding:10px 11px;font:inherit;font-size:12px;font-weight:800;cursor:pointer
+}
+.nexoQuickSettingRow:hover,.nexoQuickSettingRow:focus-visible{
+  background:var(--nxo-interaction);border-color:var(--nxo-interaction);color:var(--nxo-interaction-contrast);outline:none
+}
+@media(max-width:720px){
+  .nexoQuickSettingsButton{width:46px;height:46px;font-size:20px}
+  .nexoQuickSettingsMenu{position:fixed;right:10px;top:calc(64px + env(safe-area-inset-top) + 8px);width:min(260px,calc(100vw - 20px))}
+}
+
+/* Shared surfaces and text */
+.title,.meta h3,.heroText h1,.section h2,.modalHead h2,.taxonomyMaster h2,
+.nexoWorkspaceLibraryHead h1,.nexoWorkspaceModalHead strong,.nexoBatchHead h2{
+  color:var(--nxo-text-primary)!important
+}
+.subtitle,.muted,.note,.modalText,.legendRow small,.taxonomyMaster p,.taxonomyCategoryHead p,
+.nexoWorkspaceLibraryHead p,.nexoWorkspaceModalCopy,.nexoWorkspaceProgress,.nexoWorkspacePreview p,
+.nexoBatchIntro,.nexoBatchHint,.calcHint,.timerField span,.timerName,.timerState,.timerAlarmHint,
+.timerNotifyText span{
+  color:var(--nxo-text-muted)!important
+}
+.card,.section,.modal,.photo,.heroImage,.empty,.taxonomyMaster,.nexoBatchPanel{
+  background:var(--nxo-surface-glass)!important;
+  border-color:var(--nxo-border)!important;
+  color:var(--nxo-text-primary)!important;
+  box-shadow:0 12px 28px var(--nxo-shadow)!important
+}
+.recipeCard:hover,.recipeCard:focus-visible,.taxonomyMaster:hover,.taxonomyMaster:focus-visible{
+  background:var(--nxo-surface-glass-hover)!important;
+  border-color:var(--nxo-interaction)!important
+}
+.thumb,.pic,.taxonomyMasterImage,.nexoPhotoPreview,.nexoPhotoVideo{
+  background:var(--nxo-media-background)!important
+}
+.row,.mopStep{border-bottom-color:var(--nxo-border)!important}
+
+/* Controls */
+.search,.yield,.secondary,.prep,.commentText,.timerField input,.timerQuick button,
+.timerActions button,.nexoBatchClose,.nexoBatchOption,.nexoBatchInput,.nexoPhotoChoice,
+.nexoPhotoSecondary,.nexoPhotoCancel{
+  background:var(--nxo-control-background)!important;
+  color:var(--nxo-text-primary)!important;
+  border-color:var(--nxo-border)!important
+}
+.search::placeholder,.commentText::placeholder,.nexoBatchInput::placeholder{color:var(--nxo-text-muted)!important}
+.search:focus,.commentText:focus,.timerField input:focus,.nexoBatchInput:focus{
+  border-color:var(--nxo-interaction)!important;
+  box-shadow:0 0 0 3px var(--nxo-focus-ring)!important;
+  outline:none!important
+}
+.chip{
+  background:var(--nxo-button-secondary-bg)!important;
+  color:var(--nxo-button-secondary-text)!important;
+  border-color:var(--nxo-button-secondary-border)!important
+}
+.chip.active{
+  background:var(--nxo-accent)!important;
+  color:var(--nxo-accent-contrast)!important;
+  border-color:var(--nxo-accent)!important
+}
+.primary,.timerAdd,.nexoPhotoPrimary,.nexoWorkspaceBtn.primary{
+  background:var(--nxo-positive)!important;
+  color:var(--nxo-positive-contrast)!important;
+  border-color:var(--nxo-positive)!important
+}
+.secondary,.nexoWorkspaceBtn{
+  background:var(--nxo-button-secondary-bg)!important;
+  color:var(--nxo-button-secondary-text)!important;
+  border-color:var(--nxo-button-secondary-border)!important
+}
+.primary:hover,.primary:focus-visible,.secondary:hover,.secondary:focus-visible,
+.nexoWorkspaceBtn:hover,.nexoWorkspaceBtn:focus-visible,.nexoPhotoChoice:hover,.nexoPhotoChoice:focus-visible,
+.nexoPhotoPrimary:hover,.nexoPhotoPrimary:focus-visible,.nexoPhotoSecondary:hover,.nexoPhotoSecondary:focus-visible,
+.nexoPhotoCancel:hover,.nexoPhotoCancel:focus-visible{
+  background:var(--nxo-interaction)!important;
+  border-color:var(--nxo-interaction)!important;
+  color:var(--nxo-interaction-contrast)!important;
+  outline:none!important
+}
+
+/* Modal/overlay/toast */
+.modalShade,#nexoWorkspaceLibraryLayer,#nexoPhotoLayer{
+  background:var(--nxo-overlay)!important
+}
+.modalHead,.nexoWorkspaceModalHead{
+  background:var(--nxo-surface-raised)!important;
+  color:var(--nxo-text-primary)!important;
+  border-bottom-color:var(--nxo-border)!important
+}
+.status{
+  background:var(--nxo-surface-raised)!important;
+  color:var(--nxo-text-primary)!important;
+  border:1px solid var(--nxo-border)!important;
+  box-shadow:0 12px 30px var(--nxo-shadow)!important
+}
+
+/* Fichas taxonomy semantics */
+.tagDish,.taxonomyMaster.dish .taxonomyLabel{color:var(--nxo-taxonomy-dish)!important}
+.tagPrep,.taxonomyMaster.prep .taxonomyLabel,.nameSubrecipe,.chevSubrecipe{color:var(--nxo-taxonomy-preparation)!important}
+.tagProduct,.taxonomyMaster.product .taxonomyLabel,.nameProduct,.chevProduct{color:var(--nxo-taxonomy-product)!important}
+.taxonomyMaster.dish{--masterStripe:var(--nxo-taxonomy-dish)!important}
+.taxonomyMaster.prep{--masterStripe:var(--nxo-taxonomy-preparation)!important}
+.taxonomyMaster.product{--masterStripe:var(--nxo-taxonomy-product)!important}
+.taxonomyCount{
+  background:var(--nxo-surface-raised)!important;
+  color:var(--nxo-text-primary)!important;
+  border:1px solid var(--nxo-border)!important
+}
+.taxonomyBackHint{
+  background:var(--nxo-button-secondary-bg)!important;
+  color:var(--nxo-button-secondary-text)!important;
+  border-color:var(--nxo-button-secondary-border)!important
+}
+.taxonomyBackHint:hover,.taxonomyBackHint:focus-visible,
+.taxonomyProductPhotoBtn:hover,.taxonomyProductPhotoBtn:focus-visible{
+  background:var(--nxo-interaction)!important;
+  color:var(--nxo-interaction-contrast)!important;
+  border-color:var(--nxo-interaction)!important
+}
+.taxonomyProductPhotoBtn{
+  background:var(--nxo-control-background)!important;
+  color:var(--nxo-taxonomy-product)!important;
+  border-color:var(--nxo-taxonomy-product)!important
+}
+.nexoNewStar{
+  background:var(--nxo-warning-soft)!important;
+  color:var(--nxo-warning)!important;
+  border-color:var(--nxo-warning)!important
+}
+.prep{
+  background:var(--nxo-control-background)!important;
+  color:var(--nxo-text-primary)!important
+}
+.prep.active{
+  background:var(--nxo-control-background)!important;
+  border-color:var(--nxo-taxonomy-product)!important;
+  color:var(--nxo-taxonomy-product)!important
+}
+
+/* Unit semantics */
+.unitMetricMass{background:var(--nxo-unit-metric-mass)!important}
+.unitImperialMass{background:var(--nxo-unit-imperial-mass)!important}
+.unitMetricVolume{background:var(--nxo-unit-metric-volume)!important}
+.unitCount{background:var(--nxo-unit-count)!important}
+.unitSpoon{background:var(--nxo-unit-spoon)!important}
+.unitCup{background:var(--nxo-unit-cup)!important}
+.unitOther{background:var(--nxo-unit-other)!important}
+.unitBtn{color:var(--nxo-semantic-contrast)!important}
+
+/* Workspace library */
+.nexoWorkspaceModal{
+  background:var(--nxo-surface-raised)!important;
+  color:var(--nxo-text-primary)!important;
+  border-color:var(--nxo-border-strong)!important;
+  box-shadow:0 28px 70px var(--nxo-shadow)!important
+}
+.nexoWorkspaceModalHead button{
+  background:var(--nxo-button-secondary-bg)!important;
+  color:var(--nxo-button-secondary-text)!important;
+  border-color:var(--nxo-button-secondary-border)!important
+}
+.nexoWorkspaceModalHead button:hover,.nexoWorkspaceModalHead button:focus-visible{
+  background:var(--nxo-interaction)!important;color:var(--nxo-interaction-contrast)!important;border-color:var(--nxo-interaction)!important
+}
+.nexoWorkspaceTabs{
+  background:var(--nxo-accent-soft)!important;
+  border:1px solid var(--nxo-border)!important
+}
+.nexoWorkspaceTabs button{color:var(--nxo-text-secondary)!important;background:transparent!important}
+.nexoWorkspaceTabs button.active{
+  background:var(--nxo-accent)!important;
+  color:var(--nxo-accent-contrast)!important
+}
+.nexoWorkspaceTabs button:hover,.nexoWorkspaceTabs button:focus-visible{
+  background:var(--nxo-interaction)!important;
+  color:var(--nxo-interaction-contrast)!important
+}
+.nexoWorkspaceEmpty{
+  background:var(--nxo-surface-raised)!important;
+  border-color:var(--nxo-border)!important
+}
+.nexoWorkspaceEmptyIcon{
+  background:var(--nxo-accent)!important;
+  color:var(--nxo-accent-contrast)!important
+}
+
+/* Workflow / batch */
+.reviewAlert{
+  background:var(--nxo-danger-soft)!important;
+  color:var(--nxo-danger)!important;
+  border-color:var(--nxo-danger)!important
+}
+.note.nexoReviewNote,.nexoBatchError{color:var(--nxo-danger)!important}
+.progressLegend,.miseCheck,.mopCheck{
+  background:var(--nxo-control-background)!important;
+  color:transparent!important;
+  border-color:var(--nxo-border)!important
+}
+.miseCheck:hover,.mopCheck:hover{border-color:var(--nxo-positive)!important}
+.miseCheck[aria-checked="true"],.mopCheck[aria-checked="true"]{
+  background:var(--nxo-positive)!important;
+  border-color:var(--nxo-positive)!important;
+  color:var(--nxo-positive-contrast)!important
+}
+.nexoBatchButton{
+  background:var(--nxo-button-secondary-bg)!important;
+  color:var(--nxo-taxonomy-preparation)!important;
+  border-color:var(--nxo-taxonomy-preparation)!important
+}
+.nexoBatchButton:hover,.nexoBatchButton:focus-visible{
+  background:var(--nxo-interaction)!important;color:var(--nxo-interaction-contrast)!important;border-color:var(--nxo-interaction)!important
+}
+.nexoBatchOption.is-active,.nexoBatchApply{
+  background:var(--nxo-taxonomy-preparation)!important;
+  color:var(--nxo-semantic-contrast)!important;
+  border-color:var(--nxo-taxonomy-preparation)!important
+}
+
+/* Calculator / comments */
+.calcScreen{
+  background:var(--nxo-background-alt)!important;
+  color:var(--nxo-text-primary)!important;
+  border-color:var(--nxo-border)!important
+}
+.calcExpr{color:var(--nxo-text-muted)!important}
+.calcKey{
+  background:var(--nxo-button-secondary-bg)!important;
+  color:var(--nxo-button-secondary-text)!important;
+  border-color:var(--nxo-button-secondary-border)!important
+}
+.calcKey.op{
+  background:var(--nxo-accent-soft)!important;
+  color:var(--nxo-accent)!important;
+  border-color:var(--nxo-border)!important
+}
+.calcKey.ac{
+  background:var(--nxo-danger-soft)!important;
+  color:var(--nxo-danger)!important;
+  border-color:var(--nxo-danger)!important
+}
+.calcKey.eq{
+  background:var(--nxo-positive)!important;
+  color:var(--nxo-positive-contrast)!important;
+  border-color:var(--nxo-positive)!important
+}
+.commentError{color:var(--nxo-danger)!important}
+
+/* Timers */
+.timerCreate,.timerItem,.timerNotify{
+  background:var(--nxo-surface-glass)!important;
+  border-color:var(--nxo-border)!important
+}
+.timerQuick button,.timerActions button{
+  background:var(--nxo-button-secondary-bg)!important;
+  color:var(--nxo-button-secondary-text)!important;
+  border-color:var(--nxo-button-secondary-border)!important
+}
+.timerActions button.primaryTimer,.timerNotify button:not([disabled]){
+  background:var(--nxo-positive)!important;
+  color:var(--nxo-positive-contrast)!important;
+  border-color:var(--nxo-positive)!important
+}
+.timerActions button.stopAlarm{
+  background:var(--nxo-danger)!important;
+  color:var(--nxo-danger-contrast)!important;
+  border-color:var(--nxo-danger)!important
+}
+.timerItem.ringing{
+  border-color:var(--nxo-danger)!important;
+  box-shadow:0 0 0 2px var(--nxo-danger-soft)!important
+}
+.timerItem.ringing .timerTime,.timerItem.ringing .timerState{color:var(--nxo-danger)!important}
+.timerTime,.timerNotifyText strong{color:var(--nxo-text-primary)!important}
+.timerNotify button[disabled]{
+  background:var(--nxo-button-secondary-bg)!important;
+  color:var(--nxo-text-muted)!important;
+  border-color:var(--nxo-border)!important
+}
+
+/* Photos */
+.nexoPhotoPanel{
+  background:var(--nxo-surface-raised)!important;
+  color:var(--nxo-text-primary)!important;
+  border:1px solid var(--nxo-border-strong)!important;
+  box-shadow:0 28px 90px var(--nxo-shadow)!important
+}
+.nexoPhotoPanel p{color:var(--nxo-text-muted)!important}
+.nexoPhotoHint{
+  background:var(--nxo-positive-soft)!important;
+  color:var(--nxo-positive)!important
+}
+#nexoPhotoSyncBar{
+  background:var(--nxo-surface-raised)!important;
+  color:var(--nxo-positive)!important;
+  border-color:var(--nxo-border)!important;
+  box-shadow:0 12px 34px var(--nxo-shadow)!important
+}
+#nexoPhotoSyncBar button{
+  background:var(--nxo-positive)!important;
+  color:var(--nxo-positive-contrast)!important
+}
+
+/* Reading magnifier */
+#nexoReadingMagnifier{
+  background:var(--nxo-surface-raised)!important;
+  color:var(--nxo-text-primary)!important;
+  border-color:var(--nxo-border-strong)!important;
+  box-shadow:0 18px 55px var(--nxo-shadow)!important
+}
+#nexoReadingMagnifier:after{
+  border-color:var(--nxo-border-strong)!important
+}
+
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+  .card,.recipeCard,.taxonomyMaster,.primary,.secondary,.nexoWorkspaceBtn,.nexoQuickSettingRow{transition:none!important}
+}
