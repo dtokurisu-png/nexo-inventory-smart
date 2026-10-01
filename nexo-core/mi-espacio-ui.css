@@ -2121,54 +2121,6 @@ html,body{margin:0}
   text-align:center
 }
 
-/* =========================================================
-   PROFILE ROLE PLACEMENT · 2026-09-30
-   Point 16: role belongs to the user profile, not the workspace heading.
-========================================================= */
-.nxo-nav-account-copy{
-  display:block!important;
-  min-width:0!important
-}
-.nxo-nav-account-name-row{
-  display:flex!important;
-  align-items:center!important;
-  gap:6px!important;
-  min-width:0!important
-}
-.nxo-nav-account-name-row > strong{
-  min-width:0!important;
-  max-width:150px!important
-}
-.nxo-nav-account-role{
-  display:inline-flex!important;
-  align-items:center!important;
-  flex:0 0 auto!important;
-  margin:0!important;
-  padding:2px 6px!important;
-  border:1px solid var(--nxo-line)!important;
-  border-radius:999px!important;
-  background:rgba(255,255,255,.055)!important;
-  color:var(--nxo-text-soft)!important;
-  font-size:8px!important;
-  font-weight:800!important;
-  line-height:1.2!important;
-  white-space:nowrap!important
-}
-.nxo-app[data-theme="day"] .nxo-nav-account-role{
-  background:rgba(24,38,56,.08)!important;
-  border-color:rgba(24,38,56,.15)!important;
-  color:var(--nxo-text-soft)!important
-}
-
-@media(max-width:760px){
-  .nxo-nav-account-name-row{
-    flex-wrap:wrap!important;
-    row-gap:3px!important
-  }
-  .nxo-nav-account-role{
-    font-size:8px!important
-  }
-}
 
 /* =========================================================
    PROFILE PHOTO · 2026-09-30
@@ -2517,16 +2469,11 @@ html,body{margin:0}
   border-color:#e9b39a!important
 }
 
-/* Avatar/profile role stay blue-neutral in daylight. */
+/* Avatar stays blue-neutral in daylight. */
 .nxo-app[data-theme="day"] .nxo-avatar{
   color:#fff!important;
   background:#3b579a!important;
   border-color:rgba(255,255,255,.32)!important
-}
-.nxo-app[data-theme="day"] .nxo-nav-account-role{
-  color:#34405f!important;
-  background:#eef4ff!important;
-  border-color:#b9cbed!important
 }
 
 /* =========================================================
@@ -2599,12 +2546,7 @@ html,body{margin:0}
   border-color:rgba(225,189,105,.18)!important
 }
 
-/* Profile role and small emphasis chips receive a restrained gold tint. */
-.nxo-app[data-theme="night"] .nxo-nav-account-role{
-  color:#f0ce83!important;
-  background:rgba(225,189,105,.08)!important;
-  border-color:rgba(225,189,105,.22)!important
-}
+/* Small emphasis chips receive a restrained gold tint. */
 .nxo-app[data-theme="night"] .nxo-pending-count{
   color:#e8d5a0!important;
   background:rgba(225,189,105,.07)!important;
@@ -3104,9 +3046,6 @@ html,body{margin:0}
   .nxo-nav-primary-utils .nxo-nav-account-name-row>strong{
     max-width:62px!important
   }
-  .nxo-nav-primary-utils .nxo-nav-account-role{
-    display:none!important
-  }
   .nxo-nav-primary-utils .nxo-nav-account-email{
     max-width:76px!important
   }
@@ -3375,16 +3314,41 @@ body[data-nxo-theme="night"],
   border-radius:999px!important;
   background:var(--nxo-theme-role-bg)!important;
   color:var(--nxo-theme-role-text)!important;
+  font-size:8px!important;
+  font-weight:800!important;
   line-height:1.15!important;
   white-space:nowrap!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important
 }
-.nxo-app[data-theme="day"] .nxo-nav-account-role{
-  color:#264c8f!important
+
+/* Day role/access identity. Night keeps the shared gold role treatment. */
+.nxo-app[data-theme="day"] .nxo-nav-account-role[data-role="owner"],
+.nxo-app[data-theme="day"] .nxo-nav-account-role[data-role="developer"]{
+  background:var(--nxo-theme-accent)!important;
+  border-color:var(--nxo-theme-border-strong)!important;
+  color:var(--nxo-theme-accent-contrast)!important
 }
-.nxo-app[data-theme="night"] .nxo-nav-account-role{
-  color:#f0ce83!important
+.nxo-app[data-theme="day"] .nxo-nav-account-role[data-role="admin"]{
+  background:var(--nxo-theme-positive)!important;
+  border-color:var(--nxo-theme-positive)!important;
+  color:var(--nxo-theme-accent-contrast)!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-account-role[data-role="collaborator"]{
+  background:var(--nxo-theme-interaction)!important;
+  border-color:var(--nxo-theme-interaction)!important;
+  color:var(--nxo-theme-text)!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-account-role[data-role="manager"]{
+  background:var(--nxo-theme-accent-soft)!important;
+  border-color:var(--nxo-theme-border)!important;
+  color:var(--nxo-theme-accent)!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-account-role[data-role="viewer"],
+.nxo-app[data-theme="day"] .nxo-nav-account-role[data-role="personal"]{
+  background:var(--nxo-theme-surface-raised)!important;
+  border-color:var(--nxo-theme-border)!important;
+  color:var(--nxo-theme-text-soft)!important
 }
 
 /* Quick settings: guaranteed readable in both themes. */
@@ -3729,5 +3693,31 @@ html[data-nxo-theme] .nxo-select:focus,html[data-nxo-theme] .nxo-input:focus,htm
   background:var(--nxo-theme-role-bg)!important;
   border-color:var(--nxo-theme-role-border)!important;
   color:var(--nxo-theme-role-text)!important;
+}
+.nxo-app[data-theme="day"] .nxo-role-badge[data-role="owner"],
+.nxo-app[data-theme="day"] .nxo-role-badge[data-role="developer"]{
+  background:var(--nxo-theme-accent)!important;
+  border-color:var(--nxo-theme-border-strong)!important;
+  color:var(--nxo-theme-accent-contrast)!important
+}
+.nxo-app[data-theme="day"] .nxo-role-badge[data-role="admin"]{
+  background:var(--nxo-theme-positive)!important;
+  border-color:var(--nxo-theme-positive)!important;
+  color:var(--nxo-theme-accent-contrast)!important
+}
+.nxo-app[data-theme="day"] .nxo-role-badge[data-role="collaborator"]{
+  background:var(--nxo-theme-interaction)!important;
+  border-color:var(--nxo-theme-interaction)!important;
+  color:var(--nxo-theme-text)!important
+}
+.nxo-app[data-theme="day"] .nxo-role-badge[data-role="manager"]{
+  background:var(--nxo-theme-accent-soft)!important;
+  border-color:var(--nxo-theme-border)!important;
+  color:var(--nxo-theme-accent)!important
+}
+.nxo-app[data-theme="day"] .nxo-role-badge[data-role="viewer"]{
+  background:var(--nxo-theme-surface-raised)!important;
+  border-color:var(--nxo-theme-border)!important;
+  color:var(--nxo-theme-text-soft)!important
 }
 
