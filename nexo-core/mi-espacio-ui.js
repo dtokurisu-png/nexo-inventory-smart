@@ -1170,13 +1170,9 @@ function numaRenderMessages(messages=[]){
 
 function numaSetStatus(textValue,state=""){
   const x=document.getElementById("nma-status");
-  if(x){
-    x.textContent=textValue||"";
-    x.dataset.state=state;
-  }
-  if(state==="loading")numaSetVisualState("thinking");
-  else if(state==="error")numaSetVisualState("error");
-  else numaSetVisualState("idle");
+  if(!x)return;
+  x.textContent=textValue||"";
+  x.dataset.state=state;
 }
 
 function numaSyncHeader(){
@@ -1223,17 +1219,19 @@ function numaOpen(){
   const launcher=document.getElementById("nma-launcher");
   if(!panel)return;
   numaSyncVisualTheme();
-  numaSetVisualState("idle");
   panel.dataset.greetingHold="1";
-  numaSpeak("Hola, ¿en qué puedo ayudarte?");
   panel.classList.add("open");
   panel.setAttribute("aria-hidden","false");
   launcher?.setAttribute("aria-expanded","true");
+  numaSetVisualState("success","speak",1500);
+  numaSpeak("Hola, ¿en qué puedo ayudarte?",{expression:"speak",duration:1500});
+  numaMountLifeParticles();
   numaLoad(false);
   setTimeout(()=>{
     panel.dataset.greetingHold="0";
+    if(!numaSending)numaSetVisualState("idle","none");
     document.getElementById("nma-input")?.focus();
-  },900);
+  },1500);
 }
 
 function numaClose(){
@@ -1241,6 +1239,7 @@ function numaClose(){
   panel?.classList.remove("open");
   panel?.setAttribute("aria-hidden","true");
   document.getElementById("nma-launcher")?.setAttribute("aria-expanded","false");
+  numaSetVisualState("idle","none");
 }
 
 function numaPerformAction(action){
@@ -1304,6 +1303,7 @@ async function numaSend(){
   ];
   numaRenderMessages(optimistic);
   numaSetStatus("Numa está procesando…","loading");
+  numaSetVisualState("thinking","thinking");
   try{
     const data=await api("numa.send",{input:{...numaContextInput(),message}});
     numaState={
@@ -1314,12 +1314,17 @@ async function numaSend(){
     numaSyncHeader();
     numaRenderMessages(numaState.messages);
     numaSetStatus(data?.provider==="openai"?"IA conectada":(data?.provider==="openai_error"?"OpenAI requiere atención":(data?.provider==="local_only"?"Modo local · sin consumo API":"Navegación local activa")),data?.provider==="openai"?"online":(data?.provider==="openai_error"?"error":"local"));
-    if(data?.action)setTimeout(()=>numaPerformAction(data.action),450);
+    const visual=numaVisualFromResponse(data);
+    numaSetVisualState(visual.state,visual.expression,visual.duration);
+    numaSpeak(data?.message?.content||"Listo.",{expression:visual.expression,duration:visual.duration||0});
+    if(data?.action)setTimeout(()=>numaPerformAction(data.action),900);
   }catch(e){
     const failed=[...optimistic,{role:"assistant",content:"No pude completar esa solicitud: "+(e.message||String(e)),at:new Date().toISOString()}];
     numaState={...(numaState||{}),messages:failed};
     numaRenderMessages(failed);
     numaSetStatus("No se pudo completar la solicitud","error");
+    numaSetVisualState("error","error",3000);
+    numaSpeak(failed[failed.length-1]?.content||"No pude completar esa solicitud.",{expression:"error",duration:3000});
   }finally{
     numaSending=false;
     if(input){input.disabled=false;input.focus()}
@@ -1343,7 +1348,7 @@ function mountNuma(){
     launcher.type="button";
     launcher.setAttribute("aria-label","Abrir Numa");
     launcher.setAttribute("aria-expanded","false");
-    launcher.innerHTML='<span class="nma-launch-stream" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="nma-launch-core" aria-hidden="true"></span>';
+    launcher.innerHTML='<canvas id="nma-launcher-canvas" class="nma-launcher-canvas" aria-hidden="true"></canvas><span class="nma-launch-core" aria-hidden="true"></span>';
     r.appendChild(launcher);
     launcher.addEventListener("click",()=>document.getElementById("nma-panel")?.classList.contains("open")?numaClose():numaOpen());
   }
@@ -1371,13 +1376,32 @@ function mountNuma(){
     r.appendChild(panel);
     panel.querySelector("#nma-close")?.addEventListener("click",numaClose);
     panel.querySelector("#nma-send")?.addEventListener("click",numaSend);
-    panel.querySelector("#nma-input")?.addEventListener("keydown",e=>{
+    const nmaInput=panel.querySelector("#nma-input");
+    nmaInput?.addEventListener("keydown",e=>{
       if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();numaSend()}
       if(e.key==="Escape")numaClose();
     });
+    nmaInput?.addEventListener("focus",()=>{
+      if(!numaSending&&String(nmaInput.value||"").trim()==="")numaSetVisualState("attentive","none");
+    });
+    nmaInput?.addEventListener("input",()=>{
+      if(numaSending)return;
+      if(numaTypingTimer)clearTimeout(numaTypingTimer);
+      const hasText=String(nmaInput.value||"").trim().length>0;
+      numaSetVisualState(hasText?"listening":"attentive",hasText?"listening":"none");
+      numaTypingTimer=setTimeout(()=>{
+        numaTypingTimer=0;
+        if(!numaSending&&document.activeElement===nmaInput)numaSetVisualState("attentive","none");
+      },850);
+    });
+    nmaInput?.addEventListener("blur",()=>{
+      if(!numaSending)setTimeout(()=>{if(!numaSending)numaSetVisualState("idle","none")},120);
+    });
   }
   numaSyncVisualTheme();
-  numaSetVisualState("idle");
+  numaSetVisualState("idle","none");
+  numaMountLauncherParticles();
+  numaMountLifeParticles();
   numaSyncHeader();
 }
 function html(v){
