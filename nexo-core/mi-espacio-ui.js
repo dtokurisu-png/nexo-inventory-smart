@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=welcome-close-20261001-56';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=pending-flow-slot-20261001-57';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -928,9 +928,8 @@ const NUMA_VISUAL_ASSETS={
     error:"https://static.wixstatic.com/media/8b64a8_d1c9c01f021d4b2c8dd0c2975f3c7342~mv2.png"
   }
 };
-const NUMA_VISUAL_RUNTIME_STATES=new Set(["idle","attentive","listening","thinking","success","error"]);
+const NUMA_VISUAL_RUNTIME_STATES=new Set(["idle"]);
 let numaVisualRequestedState="idle";
-let numaVisualTimer=0,numaTypingTimer=0,numaLauncherRaf=0,numaLifeRaf=0;
 let numaState=null,numaContextCacheKey="",numaLoading=false,numaSending=false;
 
 function numaVisualTheme(){
@@ -948,199 +947,37 @@ function numaSyncVisualTheme(){
   if(launcher)launcher.dataset.theme=theme;
   if(panel)panel.dataset.theme=theme;
   const img=document.getElementById("nma-character-img");
-  const src=numaVisualAsset(numaVisualRequestedState);
-  if(img&&img.src!==src)img.src=src;
-  const life=document.getElementById("nma-life-field");
-  if(life)life.style.setProperty("--nma-mask",'url("'+src+'")');
+  if(img)img.src=numaVisualAsset(numaVisualRequestedState);
 }
-function numaSetExpression(kind="none"){
-  const layer=document.getElementById("nma-expression-layer");
-  if(!layer)return;
-  layer.dataset.expression=kind||"none";
-  const markup={
-    speak:'<span class="nma-symbol nma-symbol-speak">!</span>',
-    question:'<span class="nma-symbol nma-symbol-question">?</span>',
-    listening:'<span class="nma-ellipsis"><i></i><i></i><i></i></span>',
-    thinking:'<span class="nma-think-mark">?</span><span class="nma-ellipsis nma-ellipsis-think"><i></i><i></i><i></i></span>',
-    confused:'<span class="nma-confused"><i>?</i><i>?</i><i>?</i></span>',
-    success:'<span class="nma-sparkles">'+Array.from({length:7},(_,i)=>'<i style="--i:'+i+'">✦</i>').join("")+'</span>',
-    error:'<span class="nma-error-orbit">'+Array.from({length:5},(_,i)=>'<i style="--i:'+i+'">✦</i>').join("")+'</span>'
-  };
-  layer.innerHTML=markup[kind]||"";
-}
-function numaSetVisualState(state="idle",expression="none",duration=0){
-  if(numaVisualTimer){clearTimeout(numaVisualTimer);numaVisualTimer=0}
-  numaVisualRequestedState=NUMA_VISUAL_RUNTIME_STATES.has(state)?state:"idle";
+function numaSetVisualState(state="idle"){
+  numaVisualRequestedState=state||"idle";
   const panel=document.getElementById("nma-panel");
+  const effective=NUMA_VISUAL_RUNTIME_STATES.has(numaVisualRequestedState)?numaVisualRequestedState:"idle";
   if(panel){
-    panel.dataset.state=numaVisualRequestedState;
+    panel.dataset.state=effective;
     panel.dataset.requestedState=numaVisualRequestedState;
   }
   const img=document.getElementById("nma-character-img");
-  const src=numaVisualAsset(numaVisualRequestedState);
-  if(img&&img.src!==src)img.src=src;
-  const life=document.getElementById("nma-life-field");
-  if(life)life.style.setProperty("--nma-mask",'url("'+src+'")');
-  numaSetExpression(expression);
-  if(duration>0){
-    numaVisualTimer=setTimeout(()=>{
-      numaVisualTimer=0;
-      if(!numaSending)numaSetVisualState("idle","none");
-    },duration);
-  }
+  if(img)img.src=numaVisualAsset(numaVisualRequestedState);
 }
-function numaSpeak(text,{expression="speak",duration=0}={}){
+function numaSpeak(text){
   const bubble=document.getElementById("nma-speech");
   if(!bubble)return;
-  const value=String(text||"").trim()||"Hola, ¿en qué puedo ayudarte?";
-  bubble.textContent=value;
-  bubble.classList.remove("speaking");
-  void bubble.offsetWidth;
-  bubble.classList.add("speaking");
-  if(expression&&expression!=="none")numaSetExpression(expression);
-  const ms=duration||Math.max(1100,Math.min(3200,650+value.length*18));
-  setTimeout(()=>bubble?.classList.remove("speaking"),ms);
+  bubble.textContent=String(text||"").trim()||"Hola, ¿en qué puedo ayudarte?";
 }
 function numaLifeFieldMarkup(){
-  return '<div class="nma-life-field" id="nma-life-field" aria-hidden="true"><canvas id="nma-life-canvas"></canvas></div>';
-}
-function numaRgb(){
-  return numaVisualTheme()==="night"?{r:255,g:190,b:56}:{r:45,g:161,b:255};
-}
-function numaMountLifeParticles(){
-  const canvas=document.getElementById("nma-life-canvas");
-  const stage=document.querySelector(".nma-character-stage");
-  if(!canvas||!stage||canvas.dataset.mounted==="1")return;
-  canvas.dataset.mounted="1";
-  const ctx=canvas.getContext("2d");
-  const reduce=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  const nodes=Array.from({length:13},(_,i)=>{
-    const head=i<8;
-    return {
-      zone:head?"head":"body",
-      ax:head?.5:.51,
-      ay:head?.37:.61,
-      rx:head?.19:.14,
-      ry:head?.14:.13,
-      phase:Math.random()*Math.PI*2,
-      speed:.00018+Math.random()*.00015,
-      amp:.012+Math.random()*.018,
-      size:.65+Math.random()*1.15
-    };
-  });
-  function resize(){
-    const rect=stage.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);
-    canvas.width=Math.max(1,Math.round(rect.width*dpr));
-    canvas.height=Math.max(1,Math.round(rect.height*dpr));
-    canvas.style.width=rect.width+"px";canvas.style.height=rect.height+"px";
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    return {w:rect.width,h:rect.height};
-  }
-  let size=resize();
-  const ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(()=>{size=resize()}):null;
-  ro?.observe(stage);
-  function frame(t){
-    if(!document.body.contains(canvas)){ro?.disconnect();return}
-    const {w,h}=size;
-    ctx.clearRect(0,0,w,h);
-    const rgb=numaRgb();
-    const points=nodes.map((n,i)=>{
-      const a=n.phase+t*n.speed;
-      const x=(n.ax+Math.cos(a*(1+(i%3)*.08))*n.rx*n.amp/.03)*w;
-      const y=(n.ay+Math.sin(a*.83+(i%2)*.7)*n.ry*n.amp/.03)*h;
-      return {x,y,size:n.size};
-    });
-    ctx.lineWidth=.65;
-    for(let i=0;i<points.length;i++){
-      let linked=0;
-      for(let j=i+1;j<points.length&&linked<2;j++){
-        const a=points[i],b=points[j],d=Math.hypot(a.x-b.x,a.y-b.y);
-        if(d<Math.min(w*.24,68)){
-          const alpha=(1-d/Math.min(w*.24,68))*.15;
-          ctx.strokeStyle="rgba("+rgb.r+","+rgb.g+","+rgb.b+","+alpha+")";
-          ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();linked++;
-        }
-      }
-    }
-    points.forEach((p,i)=>{
-      const pulse=.58+.42*Math.sin(t*.0024+i);
-      ctx.fillStyle="rgba(255,255,255,"+(.18+pulse*.26)+")";
-      ctx.shadowBlur=7;ctx.shadowColor="rgba("+rgb.r+","+rgb.g+","+rgb.b+",.45)";
-      ctx.beginPath();ctx.arc(p.x,p.y,p.size*(.72+pulse*.28),0,Math.PI*2);ctx.fill();
-    });
-    ctx.shadowBlur=0;
-    if(!reduce)numaLifeRaf=requestAnimationFrame(frame);
-  }
-  frame(performance.now());
-}
-function numaMountLauncherParticles(){
-  const canvas=document.getElementById("nma-launcher-canvas");
-  if(!canvas||canvas.dataset.mounted==="1")return;
-  canvas.dataset.mounted="1";
-  const ctx=canvas.getContext("2d"),reduce=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  const dpr=Math.min(devicePixelRatio||1,1.5),W=112,H=150;
-  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+"px";canvas.style.height=H+"px";
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  let last=0;const particles=[];
-  function spawn(t){
-    particles.push({
-      born:t,x:W*.5+(Math.random()-.5)*9,
-      sway:(Math.random()-.5)*16,
-      speed:16+Math.random()*8,
-      life:3100+Math.random()*900,
-      r:2.6+Math.random()*2.1
-    });
-  }
-  function frame(t){
-    if(!document.body.contains(canvas))return;
-    if(t-last>470&&particles.length<8){spawn(t);last=t}
-    ctx.clearRect(0,0,W,H);
-    const rgb=numaRgb(),alive=[];
-    const pts=[];
-    for(const p of particles){
-      const age=t-p.born,k=age/p.life;
-      if(k>=1)continue;
-      const y=H-24-k*112;
-      const x=p.x+Math.sin(k*Math.PI*1.6)*p.sway;
-      const r=p.r*(1-k*.7);
-      pts.push({x,y,r,k});
-      alive.push(p);
-    }
-    particles.splice(0,particles.length,...alive);
-    const origin={x:W*.5,y:H-18,r:5,k:0};
-    const all=[origin,...pts];
-    for(let i=0;i<all.length;i++){
-      let best=-1,bestD=999;
-      for(let j=i+1;j<all.length;j++){
-        const d=Math.hypot(all[i].x-all[j].x,all[i].y-all[j].y);
-        if(d<bestD&&d<34){best=j;bestD=d}
-      }
-      if(best>=0){
-        const alpha=.22*(1-Math.max(all[i].k,all[best].k));
-        ctx.strokeStyle="rgba("+rgb.r+","+rgb.g+","+rgb.b+","+alpha+")";
-        ctx.lineWidth=.7;
-        ctx.beginPath();ctx.moveTo(all[i].x,all[i].y);ctx.lineTo(all[best].x,all[best].y);ctx.stroke();
-      }
-    }
-    pts.forEach(p=>{
-      const alpha=.48*(1-p.k);
-      ctx.shadowBlur=8;ctx.shadowColor="rgba("+rgb.r+","+rgb.g+","+rgb.b+",.35)";
-      ctx.fillStyle="rgba("+rgb.r+","+rgb.g+","+rgb.b+","+alpha+")";
-      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
-    });
-    ctx.shadowBlur=0;
-    if(!reduce)numaLauncherRaf=requestAnimationFrame(frame);
-  }
-  if(reduce){spawn(performance.now());frame(performance.now()+600)}
-  else frame(performance.now());
-}
-function numaVisualFromResponse(data){
-  const reply=String(data?.message?.content||"");
-  if(data?.provider==="openai_error")return {state:"error",expression:"error",duration:2600};
-  if(/no pude (?:interpretar|relacionar|entender)/i.test(reply))return {state:"attentive",expression:"confused",duration:3200};
-  if(data?.dialogue?.awaiting)return {state:"attentive",expression:"question",duration:0};
-  if(data?.action)return {state:"success",expression:"success",duration:1800};
-  return {state:"idle",expression:"speak",duration:Math.max(1300,Math.min(3200,700+reply.length*18))};
+  return '<div class="nma-life-field" aria-hidden="true">'+
+    '<span class="nma-life-link" style="--x:38%;--y:34%;--w:48px;--r:18deg"></span>'+
+    '<span class="nma-life-link" style="--x:47%;--y:39%;--w:42px;--r:128deg"></span>'+
+    '<span class="nma-life-link" style="--x:44%;--y:57%;--w:38px;--r:20deg"></span>'+
+    '<span class="nma-life-link" style="--x:52%;--y:62%;--w:34px;--r:132deg"></span>'+
+    '<span class="nma-life-node" style="--x:38%;--y:34%;--d:-.2s"></span>'+
+    '<span class="nma-life-node" style="--x:55%;--y:39%;--d:-1.1s"></span>'+
+    '<span class="nma-life-node" style="--x:47%;--y:45%;--d:-1.9s"></span>'+
+    '<span class="nma-life-node" style="--x:44%;--y:57%;--d:-.7s"></span>'+
+    '<span class="nma-life-node" style="--x:57%;--y:62%;--d:-1.6s"></span>'+
+    '<span class="nma-life-node" style="--x:50%;--y:68%;--d:-2.3s"></span>'+
+  '</div>';
 }
 
 function numaContextInput(){
@@ -1170,9 +1007,13 @@ function numaRenderMessages(messages=[]){
 
 function numaSetStatus(textValue,state=""){
   const x=document.getElementById("nma-status");
-  if(!x)return;
-  x.textContent=textValue||"";
-  x.dataset.state=state;
+  if(x){
+    x.textContent=textValue||"";
+    x.dataset.state=state;
+  }
+  if(state==="loading")numaSetVisualState("thinking");
+  else if(state==="error")numaSetVisualState("error");
+  else numaSetVisualState("idle");
 }
 
 function numaSyncHeader(){
@@ -1219,19 +1060,17 @@ function numaOpen(){
   const launcher=document.getElementById("nma-launcher");
   if(!panel)return;
   numaSyncVisualTheme();
+  numaSetVisualState("idle");
   panel.dataset.greetingHold="1";
+  numaSpeak("Hola, ¿en qué puedo ayudarte?");
   panel.classList.add("open");
   panel.setAttribute("aria-hidden","false");
   launcher?.setAttribute("aria-expanded","true");
-  numaSetVisualState("success","speak",1500);
-  numaSpeak("Hola, ¿en qué puedo ayudarte?",{expression:"speak",duration:1500});
-  numaMountLifeParticles();
   numaLoad(false);
   setTimeout(()=>{
     panel.dataset.greetingHold="0";
-    if(!numaSending)numaSetVisualState("idle","none");
     document.getElementById("nma-input")?.focus();
-  },1500);
+  },900);
 }
 
 function numaClose(){
@@ -1239,7 +1078,6 @@ function numaClose(){
   panel?.classList.remove("open");
   panel?.setAttribute("aria-hidden","true");
   document.getElementById("nma-launcher")?.setAttribute("aria-expanded","false");
-  numaSetVisualState("idle","none");
 }
 
 function numaPerformAction(action){
@@ -1303,7 +1141,6 @@ async function numaSend(){
   ];
   numaRenderMessages(optimistic);
   numaSetStatus("Numa está procesando…","loading");
-  numaSetVisualState("thinking","thinking");
   try{
     const data=await api("numa.send",{input:{...numaContextInput(),message}});
     numaState={
@@ -1314,17 +1151,12 @@ async function numaSend(){
     numaSyncHeader();
     numaRenderMessages(numaState.messages);
     numaSetStatus(data?.provider==="openai"?"IA conectada":(data?.provider==="openai_error"?"OpenAI requiere atención":(data?.provider==="local_only"?"Modo local · sin consumo API":"Navegación local activa")),data?.provider==="openai"?"online":(data?.provider==="openai_error"?"error":"local"));
-    const visual=numaVisualFromResponse(data);
-    numaSetVisualState(visual.state,visual.expression,visual.duration);
-    numaSpeak(data?.message?.content||"Listo.",{expression:visual.expression,duration:visual.duration||0});
-    if(data?.action)setTimeout(()=>numaPerformAction(data.action),900);
+    if(data?.action)setTimeout(()=>numaPerformAction(data.action),450);
   }catch(e){
     const failed=[...optimistic,{role:"assistant",content:"No pude completar esa solicitud: "+(e.message||String(e)),at:new Date().toISOString()}];
     numaState={...(numaState||{}),messages:failed};
     numaRenderMessages(failed);
     numaSetStatus("No se pudo completar la solicitud","error");
-    numaSetVisualState("error","error",3000);
-    numaSpeak(failed[failed.length-1]?.content||"No pude completar esa solicitud.",{expression:"error",duration:3000});
   }finally{
     numaSending=false;
     if(input){input.disabled=false;input.focus()}
@@ -1348,7 +1180,7 @@ function mountNuma(){
     launcher.type="button";
     launcher.setAttribute("aria-label","Abrir Numa");
     launcher.setAttribute("aria-expanded","false");
-    launcher.innerHTML='<canvas id="nma-launcher-canvas" class="nma-launcher-canvas" aria-hidden="true"></canvas><span class="nma-launch-core" aria-hidden="true"></span>';
+    launcher.innerHTML='<span class="nma-launch-stream" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="nma-launch-core" aria-hidden="true"></span>';
     r.appendChild(launcher);
     launcher.addEventListener("click",()=>document.getElementById("nma-panel")?.classList.contains("open")?numaClose():numaOpen());
   }
@@ -1376,32 +1208,13 @@ function mountNuma(){
     r.appendChild(panel);
     panel.querySelector("#nma-close")?.addEventListener("click",numaClose);
     panel.querySelector("#nma-send")?.addEventListener("click",numaSend);
-    const nmaInput=panel.querySelector("#nma-input");
-    nmaInput?.addEventListener("keydown",e=>{
+    panel.querySelector("#nma-input")?.addEventListener("keydown",e=>{
       if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();numaSend()}
       if(e.key==="Escape")numaClose();
     });
-    nmaInput?.addEventListener("focus",()=>{
-      if(!numaSending&&String(nmaInput.value||"").trim()==="")numaSetVisualState("attentive","none");
-    });
-    nmaInput?.addEventListener("input",()=>{
-      if(numaSending)return;
-      if(numaTypingTimer)clearTimeout(numaTypingTimer);
-      const hasText=String(nmaInput.value||"").trim().length>0;
-      numaSetVisualState(hasText?"listening":"attentive",hasText?"listening":"none");
-      numaTypingTimer=setTimeout(()=>{
-        numaTypingTimer=0;
-        if(!numaSending&&document.activeElement===nmaInput)numaSetVisualState("attentive","none");
-      },850);
-    });
-    nmaInput?.addEventListener("blur",()=>{
-      if(!numaSending)setTimeout(()=>{if(!numaSending)numaSetVisualState("idle","none")},120);
-    });
   }
   numaSyncVisualTheme();
-  numaSetVisualState("idle","none");
-  numaMountLauncherParticles();
-  numaMountLifeParticles();
+  numaSetVisualState("idle");
   numaSyncHeader();
 }
 function html(v){
@@ -2037,22 +1850,20 @@ async function loadWorkspacePendingNotes(){
     workspacePendingNotes=await api('workspace.pending-notes',{workspaceId:workspace.workspace.id});
     const rows=Array.isArray(workspacePendingNotes?.notes)?workspacePendingNotes.notes:[];
     const validStyles=new Set(['yellow','peach','blue','mint']);
-    const noteBoard=rows.length
-      ?'<div class="nxo-note-board">'+rows.map(r=>{
-        const style=validStyles.has(String(r.styleKey||''))?String(r.styleKey):'yellow';
-        return '<button type="button" class="nxo-pinned-note style-'+esc(style)+'" data-pending-note="'+esc(r.id)+'">'+
-          '<span class="nxo-note-pin" aria-hidden="true"></span>'+
-          '<span class="nxo-note-label">PENDIENTE</span>'+
-          '<strong>'+esc(r.title||'Pendiente')+'</strong>'+
-        '</button>'
-      }).join('')+'</div>'
-      :'<div class="nxo-empty nxo-pending-empty">No hay notas pendientes.</div>';
+    const noteItems=rows.map(r=>{
+      const style=validStyles.has(String(r.styleKey||''))?String(r.styleKey):'yellow';
+      return '<button type="button" class="nxo-pinned-note style-'+esc(style)+'" data-pending-note="'+esc(r.id)+'">'+
+        '<span class="nxo-note-pin" aria-hidden="true"></span>'+
+        '<span class="nxo-note-label">PENDIENTE</span>'+
+        '<strong>'+esc(r.title||'Pendiente')+'</strong>'+
+      '</button>'
+    }).join('');
     zone.innerHTML=
       '<div class="nxo-section-head">'+
         '<div><div class="nxo-pending-title-row"><h3>Pendientes</h3><span class="nxo-chip nxo-pending-count">'+rows.length+'</span></div><p>Notas que permanecen en el Workspace hasta resolverlas.</p></div>'+
       '</div>'+
-      '<div class="nxo-pending-board-layout">'+
-        noteBoard+
+      '<div class="nxo-note-board nxo-pending-flow" data-pending-count="'+rows.length+'">'+
+        noteItems+
         '<div class="nxo-pending-add-slot"><button type="button" class="nxo-pending-add" id="nxo-pending-add" aria-label="Crear pendiente" title="Crear pendiente">+</button></div>'+
       '</div>';
     zone.querySelectorAll('[data-pending-note]').forEach(b=>b.onclick=()=>openPendingNote(b.dataset.pendingNote));
