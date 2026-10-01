@@ -406,7 +406,7 @@ async function numaSend(){
 }
 function mountNuma(){
   if(!sessionToken)return;
-  if(!numaPresence){ensureNumaPresenceRuntime().then(()=>mountNuma()).catch(error=>console.warn('NUMA_PRESENCE_RUNTIME',error));return;}
+  if(!numaPresence){ensureNumaPresenceRuntime().then(()=>{numaSyncVisualTheme();numaMountLauncherParticles();numaMountLifeParticles();}).catch(error=>console.warn('NUMA_PRESENCE_RUNTIME',error));}
   ensureNumaCss();
   let launcher=document.getElementById('nma-launcher');
   if(!launcher){
