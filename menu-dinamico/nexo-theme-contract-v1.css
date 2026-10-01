@@ -423,3 +423,35 @@ html.nexoMobile .nexoQuickSettingsMenu{
 @media(prefers-reduced-motion:reduce){
   .card,.recipeCard,.taxonomyMaster,.primary,.secondary,.nexoWorkspaceBtn,.nexoQuickSettingRow{transition:none!important}
 }
+
+/* MODAL CLOSE + GUIDE LEGIBILITY · 2026-10-01 */
+.modalHead .modalClose{
+  appearance:none!important;
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  border:1px solid var(--nxo-button-secondary-border)!important;
+  border-radius:10px!important;
+  background:var(--nxo-button-secondary-bg)!important;
+  color:var(--nxo-text-primary)!important;
+  font:800 24px/1 Inter,system-ui,sans-serif!important;
+  cursor:pointer!important
+}
+.modalHead .modalClose:hover,
+.modalHead .modalClose:focus-visible{
+  background:var(--nxo-interaction)!important;
+  border-color:var(--nxo-interaction)!important;
+  color:var(--nxo-interaction-contrast)!important;
+  outline:none!important
+}
+.nexoLegendModal{
+  background:var(--nxo-surface)!important;
+  border:1px solid var(--nxo-border-strong)!important;
+  box-shadow:0 24px 80px var(--nxo-shadow)!important
+}
+.nexoLegendModal .modalHead{
+  background:var(--nxo-surface)!important
+}
