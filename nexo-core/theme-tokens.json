@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v3",
+  "version": "2026-10-01-v3.1",
   "purpose": "Canonical semantic color tokens for Nexo Group UI. This file is the single source of truth for theme values and system semantic colors; runtime consumers must not maintain independent day/night palettes.",
   "governance": {
     "rule1": "Day and night themes must define the same semantic token names.",
