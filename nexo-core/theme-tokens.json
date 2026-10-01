@@ -104,7 +104,8 @@
       "taxonomy": {
         "dish": "#A84635",
         "preparation": "#267263",
-        "product": "#B57B1E"
+        "product": "#B57B1E",
+        "cut": "#D66F9F"
       },
       "units": {
         "metricMass": "#315C9E",
