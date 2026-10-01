@@ -4065,3 +4065,233 @@ button.nxo-workspace-logo-edit.uploading{
 @media(prefers-reduced-motion:reduce){
   button.nxo-workspace-logo-edit.uploading{animation:none}
 }
+
+/* =========================================================
+   MOBILE WORKSPACE ACTIONS + LIVE QA FIXES · 2026-10-01
+   Revision: mobile-live-crop-i18n-20261001-62
+   ========================================================= */
+
+/* Workspace create/join controls belong to the content flow, never the header. */
+.nxo-header-workspace-actions{
+  display:none!important
+}
+.nxo-workspace-mobile-actions{
+  display:none
+}
+@media(max-width:760px){
+  .nxo-workspace-mobile-actions{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:8px;
+    width:100%;
+    margin:0 0 14px;
+    padding:0;
+    align-items:stretch
+  }
+  .nxo-workspace-mobile-actions .nxo-btn{
+    width:100%;
+    min-height:40px;
+    justify-content:center;
+    text-align:center;
+    white-space:normal
+  }
+  .nxo-workspace-list-head{
+    width:100%!important;
+    justify-content:flex-start!important;
+    align-items:flex-start!important;
+    text-align:left!important
+  }
+  .nxo-workspace-list-head>div:first-child{
+    width:100%!important;
+    flex:1 1 100%!important;
+    margin:0!important;
+    text-align:left!important;
+    align-items:flex-start!important
+  }
+  .nxo-workspace-list-head h3,
+  .nxo-workspace-list-head p{
+    width:100%!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    text-align:left!important
+  }
+}
+
+/* Native file-picker surface for Workspace images. This avoids fragile synthetic
+   input.click() behavior on mobile browsers/embedded webviews. */
+.nxo-workspace-logo-edit{
+  position:relative!important;
+  appearance:none;
+  padding:0!important;
+  cursor:pointer!important;
+  font:inherit;
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease
+}
+.nxo-workspace-logo-edit::after{
+  content:"✎";
+  position:absolute;
+  right:-5px;
+  bottom:-5px;
+  width:18px;
+  height:18px;
+  display:grid;
+  place-items:center;
+  border:2px solid var(--nxo-theme-surface);
+  border-radius:999px;
+  background:var(--nxo-theme-interaction);
+  color:#111827;
+  font:900 10px/1 Inter,system-ui,sans-serif;
+  box-shadow:0 4px 10px rgba(0,0,0,.16);
+  pointer-events:none;
+  z-index:3
+}
+.nxo-workspace-logo-native-input{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  opacity:0!important;
+  cursor:pointer!important;
+  z-index:2!important;
+  font-size:0!important
+}
+.nxo-workspace-logo-edit:hover,
+.nxo-workspace-logo-edit:focus-within,
+.nxo-workspace-logo-edit:focus-visible{
+  outline:none;
+  transform:translateY(-1px) scale(1.03);
+  border-color:var(--nxo-theme-interaction)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--nxo-theme-interaction) 18%,transparent)
+}
+.nxo-workspace-logo-edit.uploading{
+  cursor:progress!important;
+  opacity:.72
+}
+.nxo-workspace-logo-edit.uploading .nxo-workspace-logo-native-input{
+  cursor:progress!important
+}
+
+.nxo-native-file-picker{
+  position:relative!important;
+  overflow:hidden!important;
+  cursor:pointer!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important
+}
+.nxo-native-file-picker>input[type="file"]{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  opacity:0!important;
+  cursor:pointer!important;
+  z-index:2!important;
+  font-size:0!important
+}
+.nxo-native-file-picker.uploading{
+  opacity:.72!important;
+  cursor:progress!important
+}
+
+/* Bell remains visibly active for as long as at least one unread notification exists. */
+.nxo-notification-button.nxo-has-unread::before{
+  animation:nxo-bell-foil 2.7s ease-in-out infinite!important
+}
+.nxo-notification-button.nxo-has-unread .nxo-notification-icon{
+  animation:nxo-bell-nudge 1.85s ease-in-out infinite!important
+}
+@media(prefers-reduced-motion:reduce){
+  .nxo-notification-button.nxo-has-unread::before{
+    animation:none!important;
+    opacity:.22!important
+  }
+  .nxo-notification-button.nxo-has-unread .nxo-notification-icon{
+    animation:none!important
+  }
+}
+
+/* Profile photo editor: square crop with circular avatar guide + thirds grid. */
+.nxo-photo-cropper{
+  display:grid;
+  gap:14px
+}
+.nxo-photo-crop-help{
+  margin:0;
+  color:var(--nxo-theme-text-soft,var(--nxo-muted));
+  font-size:12px;
+  line-height:1.55
+}
+.nxo-photo-crop-stage{
+  position:relative;
+  width:min(360px,78vw);
+  aspect-ratio:1/1;
+  margin:0 auto;
+  overflow:hidden;
+  border:1px solid var(--nxo-theme-border,var(--nxo-line));
+  border-radius:18px;
+  background:var(--nxo-theme-surface-strong,var(--nxo-panel));
+  touch-action:none;
+  cursor:grab;
+  user-select:none
+}
+.nxo-photo-crop-stage:active{
+  cursor:grabbing
+}
+.nxo-photo-crop-stage>img{
+  position:absolute;
+  display:block;
+  max-width:none!important;
+  max-height:none!important;
+  user-select:none;
+  pointer-events:none;
+  -webkit-user-drag:none
+}
+.nxo-photo-crop-grid,
+.nxo-photo-crop-circle{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:2
+}
+.nxo-photo-crop-grid{
+  background-image:
+    linear-gradient(to right,
+      transparent 33.1%,rgba(255,255,255,.52) 33.1%,rgba(255,255,255,.52) 33.55%,transparent 33.55%,
+      transparent 66.45%,rgba(255,255,255,.52) 66.45%,rgba(255,255,255,.52) 66.9%,transparent 66.9%),
+    linear-gradient(to bottom,
+      transparent 33.1%,rgba(255,255,255,.52) 33.1%,rgba(255,255,255,.52) 33.55%,transparent 33.55%,
+      transparent 66.45%,rgba(255,255,255,.52) 66.45%,rgba(255,255,255,.52) 66.9%,transparent 66.9%);
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))
+}
+.nxo-photo-crop-circle{
+  inset:7px;
+  border:2px solid rgba(255,255,255,.92);
+  border-radius:50%;
+  box-shadow:0 0 0 999px rgba(0,0,0,.22),inset 0 0 0 1px rgba(0,0,0,.16)
+}
+.nxo-photo-crop-zoom{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:12px;
+  width:min(420px,100%);
+  margin:0 auto;
+  color:var(--nxo-theme-text,var(--nxo-text));
+  font-size:11px;
+  font-weight:800
+}
+.nxo-photo-crop-zoom input[type="range"]{
+  width:100%;
+  accent-color:var(--nxo-theme-interaction)
+}
+@media(max-width:520px){
+  .nxo-photo-crop-stage{
+    width:min(320px,82vw);
+    border-radius:14px
+  }
+  .nxo-photo-crop-help{
+    font-size:11px
+  }
+}
+
