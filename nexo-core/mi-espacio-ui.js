@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=header-utility-family-20261001-59';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-avatar-edit-20261001-60';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-presence-interactive-20261001-4';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
@@ -1593,6 +1593,12 @@ function toolCard(t){const route=toolLaunchUrl(t),usable=!!route&&t.status!=='PL
 function workspaceCard(w,archived=false){
   const logo=mediaUrl(w.logoImage);
   const manageable=w.canManageWorkspace===true;
+  const editableLogo=manageable&&!archived;
+  const logoInner=(logo?'<img src="'+esc(logo)+'" alt="'+esc((w.name||'Workspace')+' logo')+'">':'<span>⌂</span>');
+  const logoControl=editableLogo
+    ?'<button type="button" class="nxo-workspace-logo nxo-workspace-logo-edit" data-workspace-logo-edit="'+esc(w.workspaceId)+'" aria-label="'+esc(ui('Cambiar imagen del Workspace','Change Workspace image'))+'" title="'+esc(ui('Cambiar imagen del Workspace','Change Workspace image'))+'">'+logoInner+'</button>'+
+     '<input type="file" data-workspace-logo-file="'+esc(w.workspaceId)+'" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>'
+    :'<div class="nxo-workspace-logo">'+logoInner+'</div>';
   const menu=manageable
     ?'<div class="nxo-workspace-actions">'+
        '<button type="button" class="nxo-workspace-menu-button" data-workspace-menu="'+esc(w.workspaceId)+'" aria-label="Opciones del Workspace" aria-expanded="false">☰</button>'+
@@ -1606,9 +1612,7 @@ function workspaceCard(w,archived=false){
      '</div>'
     :'';
   return '<article class="nxo-card nxo-workspace-card '+(archived?'archived':'clickable')+'" '+(!archived?'data-workspace="'+esc(w.workspaceId)+'"':'')+'>'+
-    '<div class="nxo-card-top"><div class="nxo-workspace-logo">'+
-      (logo?'<img src="'+esc(logo)+'" alt="'+esc((w.name||'Workspace')+' logo')+'">':'<span>⌂</span>')+
-    '</div><div class="nxo-workspace-card-tools"><span class="nxo-status '+(archived?'ARCHIVED':'ACTIVE')+'">'+(archived?'Archivado':'Activo')+'</span>'+menu+'</div></div>'+
+    '<div class="nxo-card-top">'+logoControl+'<div class="nxo-workspace-card-tools"><span class="nxo-status '+(archived?'ARCHIVED':'ACTIVE')+'">'+(archived?'Archivado':'Activo')+'</span>'+menu+'</div></div>'+
     '<h4>'+esc(w.name)+'</h4>'+
     '<p>'+esc(w.description||'Espacio de trabajo Nexo')+'</p>'+
     '<div class="nxo-card-footer"><span class="nxo-role">'+esc(roleName(w.roleKey,w.role))+'</span><span>'+(archived?'':'›')+'</span></div>'+
@@ -1626,7 +1630,7 @@ function closeWorkspaceMenus(except=''){
 
 function bindWorkspaceCards(){
   document.querySelectorAll('[data-workspace]').forEach(card=>card.onclick=e=>{
-    if(e.target.closest('[data-workspace-menu],[data-workspace-menu-panel]'))return;
+    if(e.target.closest('[data-workspace-menu],[data-workspace-menu-panel],[data-workspace-logo-edit],[data-workspace-logo-file]'))return;
     openWorkspace(card.dataset.workspace)
   });
   document.querySelectorAll('[data-workspace-menu]').forEach(button=>button.onclick=e=>{
@@ -1642,6 +1646,17 @@ function bindWorkspaceCards(){
     e.preventDefault();e.stopPropagation();
     closeWorkspaceMenus();
     workspaceCardAction(button.dataset.workspaceId,button.dataset.workspaceAction)
+  });
+  document.querySelectorAll('[data-workspace-logo-edit]').forEach(button=>button.onclick=e=>{
+    e.preventDefault();e.stopPropagation();
+    const id=button.dataset.workspaceLogoEdit;
+    document.querySelector('[data-workspace-logo-file="'+CSS.escape(id)+'"]')?.click()
+  });
+  document.querySelectorAll('[data-workspace-logo-file]').forEach(input=>input.onchange=e=>{
+    e.stopPropagation();
+    const file=input.files?.[0];
+    if(file)uploadWorkspaceCardLogo(input.dataset.workspaceLogoFile,file);
+    input.value=''
   })
 }
 
@@ -2406,27 +2421,47 @@ async function uploadProfilePhoto(file,inWorkspace=false){
     toast(e.message||String(e))
   }
 }
+async function commitWorkspaceLogoFile(workspaceId,file){
+  if(!workspaceId||!file)throw new Error('Falta el Workspace o la imagen');
+  const allowed=['image/png','image/jpeg','image/webp','image/svg+xml'];
+  const mime=String(file.type||'').toLowerCase();
+  if(!allowed.includes(mime))throw new Error('El logo debe ser PNG, JPG, WEBP o SVG');
+  if(file.size>8*1024*1024)throw new Error('El logo supera el límite de 8 MB');
+  const ticket=await api('workspace.logo.upload-url',{
+    workspaceId,
+    input:{fileName:file.name||'workspace-logo.png',mimeType:mime||'image/png',sizeInBytes:file.size}
+  });
+  const uploadUrl=String(ticket?.uploadUrl||'');
+  if(!uploadUrl)throw new Error('Wix no pudo preparar la subida del logo');
+  const response=await fetch(uploadUrl,{method:'PUT',headers:{'Content-Type':mime||'image/png'},body:file});
+  let body={};try{body=await response.json()}catch(_){}
+  if(!response.ok)throw new Error(String(body?.message||body?.error||('UPLOAD_HTTP_'+response.status)));
+  const fileId=String(body?.file?.id||body?.file?._id||body?.id||body?._id||'');
+  if(!fileId)throw new Error('Wix no devolvió el ID del logo');
+  return api('workspace.logo.commit',{workspaceId,input:{fileId}})
+}
+async function uploadWorkspaceCardLogo(workspaceId,file){
+  const item=(personal?.workspaces||[]).find(x=>x.workspaceId===workspaceId);
+  if(!item?.canManageWorkspace){toast('No tienes permiso para cambiar esta imagen');return}
+  const button=document.querySelector('[data-workspace-logo-edit="'+CSS.escape(workspaceId)+'"]');
+  if(button){button.disabled=true;button.classList.add('uploading');button.setAttribute('aria-busy','true')}
+  try{
+    await commitWorkspaceLogoFile(workspaceId,file);
+    personal=await api('personal.refresh');
+    toast('Imagen del Workspace actualizada');
+    renderPersonal()
+  }catch(e){
+    if(button){button.disabled=false;button.classList.remove('uploading');button.removeAttribute('aria-busy')}
+    toast(e.message||String(e))
+  }
+}
 async function uploadWorkspaceLogo(file){
   if(!file||!workspace?.workspace?.id)return;
   const button=document.getElementById('nxo-workspace-logo-change');
-  const allowed=['image/png','image/jpeg','image/webp','image/svg+xml'];
-  if(!allowed.includes(String(file.type||'').toLowerCase())){toast('El logo debe ser PNG, JPG, WEBP o SVG');return}
-  if(file.size>8*1024*1024){toast('El logo supera el límite de 8 MB');return}
   const oldText=button?.textContent||'Subir logo';
   if(button){button.disabled=true;button.textContent='Subiendo…'}
   try{
-    const ticket=await api('workspace.logo.upload-url',{
-      workspaceId:workspace.workspace.id,
-      input:{fileName:file.name||'workspace-logo.png',mimeType:file.type||'image/png',sizeInBytes:file.size}
-    });
-    const uploadUrl=String(ticket?.uploadUrl||'');
-    if(!uploadUrl)throw new Error('Wix no pudo preparar la subida del logo');
-    const response=await fetch(uploadUrl,{method:'PUT',headers:{'Content-Type':file.type||'image/png'},body:file});
-    let body={};try{body=await response.json()}catch(_){}
-    if(!response.ok)throw new Error(String(body?.message||body?.error||('UPLOAD_HTTP_'+response.status)));
-    const fileId=String(body?.file?.id||body?.file?._id||body?.id||body?._id||'');
-    if(!fileId)throw new Error('Wix no devolvió el ID del logo');
-    workspace=await api('workspace.logo.commit',{workspaceId:workspace.workspace.id,input:{fileId}});
+    workspace=await commitWorkspaceLogoFile(workspace.workspace.id,file);
     personal=await api('personal.refresh');
     toast('Logo del Workspace actualizado');
     renderWorkspace();
