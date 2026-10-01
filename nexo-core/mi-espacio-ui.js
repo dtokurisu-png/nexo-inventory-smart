@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-avatar-edit-20261001-60';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=mobile-live-crop-i18n-20261001-62';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-anchored-cores-20261001-6';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
@@ -12,7 +12,7 @@ let accessStage='WAITING_PAGE';
 function accessError(code){return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.')}
 function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r.style.display=visible?'none':'';document.body.classList.toggle('nxo-lock',!visible)}
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
-let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
+let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;\nlet workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
 const NEXO_THEME_KEY='nexoTheme:v1';
 const NEXO_LANGUAGE_KEY='nexoLanguage:v1';
 function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
@@ -1274,7 +1274,7 @@ function numaContextInput(){
   return {
     workspaceId:isWorkspace?workspace.workspace.id:"",
     currentToolKey:isWorkspace?"workspace":"mi-espacio",
-    currentToolLabel:isWorkspace?("Workspace · "+(workspace.workspace.name||"Nexo")):"Mi espacio"
+    currentToolLabel:isWorkspace?(ui('Espacio de trabajo','Workspace')+' · '+(workspace.workspace.name||'Nexo')):ui('Mi espacio','My space')
   };
 }
 
@@ -1372,7 +1372,7 @@ function numaClose(){
 function numaPerformAction(action){
   if(!action)return;
   if(action.type==="openWorkspace"){
-    if(!action.workspaceId){toast("Numa no recibió un Workspace válido.");return}
+    if(!action.workspaceId){toast(ui('Numa no recibió un espacio de trabajo válido.','Numa did not receive a valid Workspace.'));return}
     numaClose();
     openWorkspace(String(action.workspaceId));
     return;
@@ -1388,7 +1388,7 @@ function numaPerformAction(action){
     const route=routeUrl(action.routePath||"/blank-4");
     if(!route||!action.sheetId){toast("Numa no encontró una ficha disponible.");return}
     const wsid=workspace?.workspace?.id||"";
-    const label=wsid?(workspace?.workspace?.name||"Workspace"):"Mi espacio";
+    const label=wsid?(workspace?.workspace?.name||ui('Espacio de trabajo','Workspace')):ui('Mi espacio','My space');
     try{
       const u=new URL(launchWithBack(route,label,wsid),location.href);
       u.searchParams.set("numaSheet",String(action.sheetId));
@@ -1589,7 +1589,7 @@ function toolLaunchUrl(t){
     return u.href
   }catch(_){return launched}
 }
-function centerDevelopmentUrl(){const wsid=workspace?.workspace?.id||'';const label=wsid?(workspace?.workspace?.name||ui('Workspace','Workspace')):ui('Mi espacio','My space');return launchWithBack(siteBase(),label,wsid)}
+function centerDevelopmentUrl(){const wsid=workspace?.workspace?.id||'';const label=wsid?(workspace?.workspace?.name||ui('Espacio de trabajo','Workspace')):ui('Mi espacio','My space');return launchWithBack(siteBase(),label,wsid)}
 function setWorkspaceReturnParam(id){try{const u=new URL(location.href);if(id)u.searchParams.set('nxoWorkspace',id);else u.searchParams.delete('nxoWorkspace');history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
 function clearWorkspaceReturnParam(){setWorkspaceReturnParam('')}
 function statusText(s){return s==='ACTIVE'?'Activo':s==='BUILDING'?'En desarrollo':s==='PLANNED'?'Próximamente':s||''}
@@ -1603,7 +1603,7 @@ function topbar(mode){
   const name=personal?.profile?.displayName||ui('Usuario Nexo','Nexo user');
   const email=String(personal?.profile?.email||'').trim();
   const profilePhoto=String(personal?.profile?.photoImage?.url||'').trim();
-  const wsName=workspace?.workspace?.name||'Workspace';
+  const wsName=workspace?.workspace?.name||ui('Espacio de trabajo','Workspace');
   const role=isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):ui('Cuenta personal','Personal account');
   const roleKey=isWorkspace?String(workspace?.membership?.roleKey||'viewer').toLowerCase():'personal';
   const perms=workspace?.role?.permissions||[];
@@ -1612,13 +1612,6 @@ function topbar(mode){
   const contextLabel=isWorkspace?wsName:ui('Mi espacio','My space');
   const lang=currentLanguage();
   const theme=document.getElementById('nxo-app')?.dataset?.theme||storedTheme();
-
-  const workspaceQuickActions=!isWorkspace
-    ?'<div class="nxo-header-workspace-actions">'+
-       '<button type="button" class="nxo-header-action" id="nxo-join-workspace-mobile">'+esc(ui('Unirse a un Workspace','Join a Workspace'))+'</button>'+
-       '<button type="button" class="nxo-header-action primary" id="nxo-create-workspace-mobile">'+esc(ui('Nuevo Workspace','New Workspace'))+'</button>'+
-     '</div>'
-    :'';
 
   const notification=canAdmin
     ?'<div class="nxo-notification-wrap">'+
@@ -1672,7 +1665,6 @@ function topbar(mode){
       '<input type="file" id="nxo-profile-photo-input" class="nxo-profile-photo-input" accept="image/png,image/jpeg,image/webp" hidden>'+
     '</div>'+
     '<button type="button" class="nxo-mobile-menu-button" id="nxo-mobile-menu-button" aria-label="'+esc(ui('Abrir menú','Open menu'))+'" aria-expanded="false" aria-controls="nxo-nav-collapse"><span></span><span></span><span></span></button>'+
-    workspaceQuickActions+
   '</header>'
 }
 
@@ -1791,7 +1783,7 @@ function bindTopbar(mode){
   profilePhotoInput?.addEventListener('change',()=>{
     const file=profilePhotoInput.files?.[0]||null;
     profilePhotoInput.value='';
-    if(file)uploadProfilePhoto(file,isWorkspace);
+    if(file)openProfilePhotoCropper(file,isWorkspace);
   });
 
   document.querySelectorAll('[data-account-action]').forEach(button=>{
@@ -1816,27 +1808,31 @@ function workspaceCard(w,archived=false){
   const logo=mediaUrl(w.logoImage);
   const manageable=w.canManageWorkspace===true;
   const editableLogo=manageable&&!archived;
-  const logoInner=(logo?'<img src="'+esc(logo)+'" alt="'+esc((w.name||'Workspace')+' logo')+'">':'<span>⌂</span>');
+  const fallbackName=ui('Espacio de trabajo','Workspace');
+  const logoInner=(logo?'<img src="'+esc(logo)+'" alt="'+esc((w.name||fallbackName)+' logo')+'">':'<span>⌂</span>');
+  const changeImageLabel=ui('Cambiar imagen del espacio de trabajo','Change Workspace image');
   const logoControl=editableLogo
-    ?'<button type="button" class="nxo-workspace-logo nxo-workspace-logo-edit" data-workspace-logo-edit="'+esc(w.workspaceId)+'" aria-label="'+esc(ui('Cambiar imagen del Workspace','Change Workspace image'))+'" title="'+esc(ui('Cambiar imagen del Workspace','Change Workspace image'))+'">'+logoInner+'</button>'+
-     '<input type="file" data-workspace-logo-file="'+esc(w.workspaceId)+'" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>'
+    ?'<label class="nxo-workspace-logo nxo-workspace-logo-edit" data-workspace-logo-edit="'+esc(w.workspaceId)+'" role="button" tabindex="0" aria-label="'+esc(changeImageLabel)+'" title="'+esc(changeImageLabel)+'">'+
+       logoInner+
+       '<input type="file" class="nxo-workspace-logo-native-input" data-workspace-logo-file="'+esc(w.workspaceId)+'" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="'+esc(changeImageLabel)+'">'+
+     '</label>'
     :'<div class="nxo-workspace-logo">'+logoInner+'</div>';
   const menu=manageable
     ?'<div class="nxo-workspace-actions">'+
-       '<button type="button" class="nxo-workspace-menu-button" data-workspace-menu="'+esc(w.workspaceId)+'" aria-label="Opciones del Workspace" aria-expanded="false">☰</button>'+
+       '<button type="button" class="nxo-workspace-menu-button" data-workspace-menu="'+esc(w.workspaceId)+'" aria-label="'+esc(ui('Opciones del espacio de trabajo','Workspace options'))+'" aria-expanded="false">☰</button>'+
        '<div class="nxo-workspace-menu" data-workspace-menu-panel="'+esc(w.workspaceId)+'">'+
          (archived
-           ?'<button type="button" data-workspace-action="restore" data-workspace-id="'+esc(w.workspaceId)+'">Restaurar</button>'
-           :'<button type="button" data-workspace-action="duplicate" data-workspace-id="'+esc(w.workspaceId)+'">Duplicar</button>'+
-            '<button type="button" data-workspace-action="archive" data-workspace-id="'+esc(w.workspaceId)+'">Archivar</button>')+
-         (w.isOwner?'<button type="button" class="danger" data-workspace-action="delete" data-workspace-id="'+esc(w.workspaceId)+'">Eliminar</button>':'')+
+           ?'<button type="button" data-workspace-action="restore" data-workspace-id="'+esc(w.workspaceId)+'">'+esc(ui('Restaurar','Restore'))+'</button>'
+           :'<button type="button" data-workspace-action="duplicate" data-workspace-id="'+esc(w.workspaceId)+'">'+esc(ui('Duplicar','Duplicate'))+'</button>'+
+            '<button type="button" data-workspace-action="archive" data-workspace-id="'+esc(w.workspaceId)+'">'+esc(ui('Archivar','Archive'))+'</button>')+
+         (w.isOwner?'<button type="button" class="danger" data-workspace-action="delete" data-workspace-id="'+esc(w.workspaceId)+'">'+esc(ui('Eliminar','Delete'))+'</button>':'')+
        '</div>'+
      '</div>'
     :'';
   return '<article class="nxo-card nxo-workspace-card '+(archived?'archived':'clickable')+'" '+(!archived?'data-workspace="'+esc(w.workspaceId)+'"':'')+'>'+
-    '<div class="nxo-card-top">'+logoControl+'<div class="nxo-workspace-card-tools"><span class="nxo-status '+(archived?'ARCHIVED':'ACTIVE')+'">'+(archived?'Archivado':'Activo')+'</span>'+menu+'</div></div>'+
+    '<div class="nxo-card-top">'+logoControl+'<div class="nxo-workspace-card-tools"><span class="nxo-status '+(archived?'ARCHIVED':'ACTIVE')+'">'+esc(archived?ui('Archivado','Archived'):ui('Activo','Active'))+'</span>'+menu+'</div></div>'+
     '<h4>'+esc(w.name)+'</h4>'+
-    '<p>'+esc(w.description||'Espacio de trabajo Nexo')+'</p>'+
+    '<p>'+esc(w.description||ui('Espacio de trabajo Nexo','Nexo Workspace'))+'</p>'+
     '<div class="nxo-card-footer"><span class="nxo-role">'+esc(roleName(w.roleKey,w.role))+'</span><span>'+(archived?'':'›')+'</span></div>'+
   '</article>'
 }
@@ -1869,52 +1865,52 @@ function bindWorkspaceCards(){
     closeWorkspaceMenus();
     workspaceCardAction(button.dataset.workspaceId,button.dataset.workspaceAction)
   });
-  document.querySelectorAll('[data-workspace-logo-edit]').forEach(button=>button.onclick=e=>{
+  document.querySelectorAll('[data-workspace-logo-edit]').forEach(control=>control.onkeydown=e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
     e.preventDefault();e.stopPropagation();
-    const id=button.dataset.workspaceLogoEdit;
-    document.querySelector('[data-workspace-logo-file="'+CSS.escape(id)+'"]')?.click()
+    control.querySelector('[data-workspace-logo-file]')?.click()
   });
   document.querySelectorAll('[data-workspace-logo-file]').forEach(input=>input.onchange=e=>{
     e.stopPropagation();
     const file=input.files?.[0];
-    if(file)uploadWorkspaceCardLogo(input.dataset.workspaceLogoFile,file);
-    input.value=''
+    input.value='';
+    if(file)uploadWorkspaceCardLogo(input.dataset.workspaceLogoFile,file)
   })
 }
 
 async function workspaceCardAction(workspaceId,action){
   const item=(personal?.workspaces||[]).find(x=>x.workspaceId===workspaceId);
-  const name=item?.name||'este Workspace';
+  const name=item?.name||ui('este espacio de trabajo','this Workspace');
   try{
     if(action==='duplicate'){
       if(!confirm('¿Duplicar '+name+'? Se copiarán nombre, descripción, logo y configuración de herramientas. No se copiarán miembros ni datos operativos.'))return;
-      loading('Duplicando Workspace…');
+      loading(ui('Duplicando espacio de trabajo…','Duplicating Workspace…'));
       const result=await api('workspace.duplicate',{workspaceId});
       personal=result?.personal||await api('personal.refresh');
-      toast('Workspace duplicado');
+      toast(ui('Espacio de trabajo duplicado','Workspace duplicated'));
       renderPersonal();
       return
     }
     if(action==='archive'){
       if(!confirm('¿Archivar '+name+'? Podrás restaurarlo después desde Mi espacio.'))return;
-      loading('Archivando Workspace…');
+      loading(ui('Archivando espacio de trabajo…','Archiving Workspace…'));
       personal=await api('workspace.archive',{workspaceId});
-      toast('Workspace archivado');
+      toast(ui('Espacio de trabajo archivado','Workspace archived'));
       renderPersonal();
       return
     }
     if(action==='restore'){
-      loading('Restaurando Workspace…');
+      loading(ui('Restaurando espacio de trabajo…','Restoring Workspace…'));
       personal=await api('workspace.restore',{workspaceId});
-      toast('Workspace restaurado');
+      toast(ui('Espacio de trabajo restaurado','Workspace restored'));
       renderPersonal();
       return
     }
     if(action==='delete'){
-      if(!confirm('¿Eliminar '+name+'? Se ocultará y desactivará el Workspace. Sus datos no se borrarán en cascada.'))return;
-      loading('Eliminando Workspace…');
+      if(!confirm(ui('¿Eliminar '+name+'? Se ocultará y desactivará el espacio de trabajo. Sus datos no se borrarán en cascada.','Delete '+name+'? The Workspace will be hidden and disabled. Its data will not be cascade-deleted.')))return;
+      loading(ui('Eliminando espacio de trabajo…','Deleting Workspace…'));
       personal=await api('workspace.delete',{workspaceId});
-      toast('Workspace eliminado');
+      toast(ui('Espacio de trabajo eliminado','Workspace deleted'));
       renderPersonal()
     }
   }catch(e){errorView(e)}
@@ -1939,7 +1935,7 @@ async function start(){
   const inviteToken=String(params.get('nxoJoin')||'').trim();
   if(inviteToken){
     try{
-      loading('Uniéndote al Workspace…');
+      loading(ui('Uniéndote al espacio de trabajo…','Joining Workspace…'));
       workspace=await api('workspace.join.link',{token:inviteToken});
       const u=new URL(location.href);
       u.searchParams.delete('nxoJoin');
@@ -1947,7 +1943,7 @@ async function start(){
       history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
       workspaceTab='tools';
       renderWorkspace();
-      toast(workspace?.alreadyMember?'Workspace abierto':'Te uniste a '+(workspace?.workspace?.name||'Workspace'));
+      toast(workspace?.alreadyMember?ui('Espacio de trabajo abierto','Workspace opened'):ui('Te uniste a ','You joined ')+(workspace?.workspace?.name||ui('el espacio de trabajo','the Workspace')));
       return
     }catch(e){
       const u=new URL(location.href);
@@ -1989,16 +1985,34 @@ async function start(){
   }
   renderPersonal()
 }
-function renderPersonal(){workspace=null;workspaceMembers=null;workspaceRoles=null;workspaceToolConfig=null;workspaceRecipeComments=null;workspacePendingNotes=null;const tools=personal?.tools||[],spaces=personal?.workspaces||[],activeSpaces=spaces.filter(w=>String(w.status||'ACTIVE').toUpperCase()!=='ARCHIVED'),archivedSpaces=spaces.filter(w=>String(w.status||'').toUpperCase()==='ARCHIVED'),inv=personal?.invitations||[];let welcomeHidden=false;try{welcomeHidden=localStorage.getItem('nexoWelcomeDismissed:v1')==='1'}catch(_){}
-const welcome=welcomeHidden?'':'<section class="nxo-welcome"><button id="nxo-dismiss-welcome" class="nxo-welcome-close" aria-label="Cerrar">✕</button><div class="nxo-eyebrow">Mi espacio</div><h2>Hola, '+esc(personal?.profile?.displayName||'Usuario Nexo')+'</h2><p>Desde aquí administras tus herramientas personales y entras a los Workspaces donde colaboras. Puedes cerrar este mensaje cuando ya no lo necesites.</p></section>';
-const summary='<section class="nxo-summary-strip"><div class="nxo-summary-item"><strong>'+tools.length+'</strong><span>Mis herramientas</span></div><div class="nxo-summary-item"><strong>'+spaces.length+'</strong><span>Workspaces</span></div><div class="nxo-summary-item"><strong>'+inv.length+'</strong><span>Invitaciones</span></div><div class="nxo-summary-item"><strong>●</strong><span>Cuenta activa</span></div></section>';
-const legacyInvites=inv.length?'<section class="nxo-section"><div class="nxo-section-head"><div><h3>Invitaciones pendientes</h3><p>Invitaciones heredadas asociadas directamente a tu cuenta.</p></div></div>'+inv.map(i=>'<div class="nxo-invite"><div><strong>'+esc(i.workspaceName)+'</strong><p>Rol: '+esc(roleName(i.roleKey,i.role))+'</p></div><div class="nxo-invite-actions"><button class="nxo-btn" data-invite-decline="'+esc(i.id)+'">Rechazar</button><button class="nxo-btn nxo-btn-gold" data-invite-accept="'+esc(i.id)+'">Aceptar</button></div></div>').join('')+'</section>':'';
-const explore='<article class="nxo-card clickable nxo-explore-card" data-tool="'+esc(centerDevelopmentUrl())+'"><div class="nxo-card-top"><div class="nxo-tool-icon">＋</div><span class="nxo-status ACTIVE">Catálogo</span></div><h4>Explorar más herramientas</h4><p>Abre el Centro de desarrollo para conocer todas las herramientas activas de Nexo y, más adelante, probarlas o añadirlas mediante un plan.</p><div class="nxo-card-footer"><span class="nxo-role">Centro de desarrollo</span><span>›</span></div></article>';
-const personalTools='<section class="nxo-section"><div class="nxo-section-head"><div><h3>Mis herramientas</h3><p>Aquí aparecen únicamente las herramientas disponibles para tu cuenta.</p></div></div><div class="nxo-grid">'+tools.map(toolCard).join('')+explore+'</div></section>';
-const workspaceCards='<section class="nxo-section"><div class="nxo-section-head nxo-workspace-list-head"><div><h3>Mis Workspaces</h3><p>Espacios que creaste o a los que te uniste.</p></div><div class="nxo-section-actions nxo-workspace-desktop-actions"><button id="nxo-join-workspace" class="nxo-btn">Unirse a un Workspace</button><button id="nxo-create-workspace" class="nxo-btn nxo-btn-gold">Nuevo Workspace</button></div></div>'+(activeSpaces.length?'<div class="nxo-grid">'+activeSpaces.map(w=>workspaceCard(w,false)).join('')+'</div>':'<div class="nxo-empty">No tienes Workspaces activos.</div>')+'</section>';
-const archivedCards=archivedSpaces.length?'<section class="nxo-section nxo-archived-section"><div class="nxo-section-head"><div><h3>Archivados</h3><p>Workspaces guardados fuera de la vista activa. Puedes restaurarlos cuando quieras.</p></div><span class="nxo-chip">'+archivedSpaces.length+'</span></div><div class="nxo-grid">'+archivedSpaces.map(w=>workspaceCard(w,true)).join('')+'</div></section>':'';
-
-html('<div class="nxo-shell">'+topbar('personal')+'<main class="nxo-main">'+welcome+summary+legacyInvites+personalTools+workspaceCards+archivedCards+'</main></div>');bindTopbar('personal');bindTools();bindWorkspaceCards();document.getElementById('nxo-create-workspace')?.addEventListener('click',createWorkspaceModal);document.getElementById('nxo-join-workspace')?.addEventListener('click',joinWorkspaceModal);document.getElementById('nxo-create-workspace-mobile')?.addEventListener('click',createWorkspaceModal);document.getElementById('nxo-join-workspace-mobile')?.addEventListener('click',joinWorkspaceModal);document.getElementById('nxo-dismiss-welcome')?.addEventListener('click',()=>{try{localStorage.setItem('nexoWelcomeDismissed:v1','1')}catch(_){}renderPersonal()});document.querySelectorAll('[data-invite-accept]').forEach(b=>b.onclick=()=>respondInvite(b.dataset.inviteAccept,'accept'));document.querySelectorAll('[data-invite-decline]').forEach(b=>b.onclick=()=>respondInvite(b.dataset.inviteDecline,'decline'))};setTimeout(()=>document.addEventListener('click',()=>closeWorkspaceMenus(),{once:true}),0)
+function renderPersonal(){
+  stopWorkspaceNotificationPolling();
+  workspaceNotificationSignature='';
+  workspace=null;workspaceMembers=null;workspaceRoles=null;workspaceToolConfig=null;workspaceRecipeComments=null;workspacePendingNotes=null;
+  const tools=personal?.tools||[],spaces=personal?.workspaces||[];
+  const activeSpaces=spaces.filter(w=>String(w.status||'ACTIVE').toUpperCase()!=='ARCHIVED');
+  const archivedSpaces=spaces.filter(w=>String(w.status||'').toUpperCase()==='ARCHIVED');
+  const inv=personal?.invitations||[];
+  let welcomeHidden=false;try{welcomeHidden=localStorage.getItem('nexoWelcomeDismissed:v1')==='1'}catch(_){}
+  const welcome=welcomeHidden?'':'<section class="nxo-welcome"><button id="nxo-dismiss-welcome" class="nxo-welcome-close" aria-label="'+esc(ui('Cerrar','Close'))+'">✕</button><div class="nxo-eyebrow">'+esc(ui('Mi espacio','My space'))+'</div><h2>'+esc(ui('Hola, ','Hello, '))+esc(personal?.profile?.displayName||ui('Usuario Nexo','Nexo user'))+'</h2><p>'+esc(ui('Desde aquí administras tus herramientas personales y entras a los espacios de trabajo donde colaboras. Puedes cerrar este mensaje cuando ya no lo necesites.','Manage your personal tools here and enter the Workspaces where you collaborate. You can close this message when you no longer need it.'))+'</p></section>';
+  const summary='<section class="nxo-summary-strip"><div class="nxo-summary-item"><strong>'+tools.length+'</strong><span>'+esc(ui('Mis herramientas','My tools'))+'</span></div><div class="nxo-summary-item"><strong>'+spaces.length+'</strong><span>'+esc(ui('Espacios de trabajo','Workspaces'))+'</span></div><div class="nxo-summary-item"><strong>'+inv.length+'</strong><span>'+esc(ui('Invitaciones','Invitations'))+'</span></div><div class="nxo-summary-item"><strong>●</strong><span>'+esc(ui('Cuenta activa','Active account'))+'</span></div></section>';
+  const legacyInvites=inv.length?'<section class="nxo-section"><div class="nxo-section-head"><div><h3>'+esc(ui('Invitaciones pendientes','Pending invitations'))+'</h3><p>'+esc(ui('Invitaciones heredadas asociadas directamente a tu cuenta.','Legacy invitations linked directly to your account.'))+'</p></div></div>'+inv.map(i=>'<div class="nxo-invite"><div><strong>'+esc(i.workspaceName)+'</strong><p>'+esc(ui('Rol: ','Role: '))+esc(roleName(i.roleKey,i.role))+'</p></div><div class="nxo-invite-actions"><button class="nxo-btn" data-invite-decline="'+esc(i.id)+'">'+esc(ui('Rechazar','Decline'))+'</button><button class="nxo-btn nxo-btn-gold" data-invite-accept="'+esc(i.id)+'">'+esc(ui('Aceptar','Accept'))+'</button></div></div>').join('')+'</section>':'';
+  const explore='<article class="nxo-card clickable nxo-explore-card" data-tool="'+esc(centerDevelopmentUrl())+'"><div class="nxo-card-top"><div class="nxo-tool-icon">＋</div><span class="nxo-status ACTIVE">'+esc(ui('Catálogo','Catalog'))+'</span></div><h4>'+esc(ui('Explorar más herramientas','Explore more tools'))+'</h4><p>'+esc(ui('Abre el Centro de desarrollo para conocer todas las herramientas activas de Nexo y, más adelante, probarlas o añadirlas mediante un plan.','Open the Development Center to see all active Nexo tools and later try or add them through a plan.'))+'</p><div class="nxo-card-footer"><span class="nxo-role">'+esc(ui('Centro de desarrollo','Development Center'))+'</span><span>›</span></div></article>';
+  const personalTools='<section class="nxo-section"><div class="nxo-section-head"><div><h3>'+esc(ui('Mis herramientas','My tools'))+'</h3><p>'+esc(ui('Aquí aparecen únicamente las herramientas disponibles para tu cuenta.','Only tools available to your account appear here.'))+'</p></div></div><div class="nxo-grid">'+tools.map(toolCard).join('')+explore+'</div></section>';
+  const workspaceMobileActions='<div class="nxo-workspace-mobile-actions" aria-label="'+esc(ui('Acciones de espacios de trabajo','Workspace actions'))+'"><button id="nxo-join-workspace-mobile" class="nxo-btn">'+esc(ui('Unirse a un espacio de trabajo','Join a Workspace'))+'</button><button id="nxo-create-workspace-mobile" class="nxo-btn nxo-btn-gold">'+esc(ui('Nuevo espacio de trabajo','New Workspace'))+'</button></div>';
+  const workspaceCards='<section class="nxo-section"><div class="nxo-section-head nxo-workspace-list-head"><div><h3>'+esc(ui('Mis espacios de trabajo','My Workspaces'))+'</h3><p>'+esc(ui('Espacios de trabajo que creaste o a los que te uniste.','Workspaces you created or joined.'))+'</p></div><div class="nxo-section-actions nxo-workspace-desktop-actions"><button id="nxo-join-workspace" class="nxo-btn">'+esc(ui('Unirse a un espacio de trabajo','Join a Workspace'))+'</button><button id="nxo-create-workspace" class="nxo-btn nxo-btn-gold">'+esc(ui('Nuevo espacio de trabajo','New Workspace'))+'</button></div></div>'+(activeSpaces.length?'<div class="nxo-grid">'+activeSpaces.map(w=>workspaceCard(w,false)).join('')+'</div>':'<div class="nxo-empty">'+esc(ui('No tienes espacios de trabajo activos.','You have no active Workspaces.'))+'</div>')+'</section>';
+  const archivedCards=archivedSpaces.length?'<section class="nxo-section nxo-archived-section"><div class="nxo-section-head"><div><h3>'+esc(ui('Archivados','Archived'))+'</h3><p>'+esc(ui('Espacios de trabajo guardados fuera de la vista activa. Puedes restaurarlos cuando quieras.','Workspaces stored outside the active view. You can restore them at any time.'))+'</p></div><span class="nxo-chip">'+archivedSpaces.length+'</span></div><div class="nxo-grid">'+archivedSpaces.map(w=>workspaceCard(w,true)).join('')+'</div></section>':'';
+  html('<div class="nxo-shell">'+topbar('personal')+'<main class="nxo-main">'+welcome+summary+legacyInvites+personalTools+workspaceMobileActions+workspaceCards+archivedCards+'</main></div>');
+  bindTopbar('personal');bindTools();bindWorkspaceCards();
+  document.getElementById('nxo-create-workspace')?.addEventListener('click',createWorkspaceModal);
+  document.getElementById('nxo-join-workspace')?.addEventListener('click',joinWorkspaceModal);
+  document.getElementById('nxo-create-workspace-mobile')?.addEventListener('click',createWorkspaceModal);
+  document.getElementById('nxo-join-workspace-mobile')?.addEventListener('click',joinWorkspaceModal);
+  document.getElementById('nxo-dismiss-welcome')?.addEventListener('click',()=>{try{localStorage.setItem('nexoWelcomeDismissed:v1','1')}catch(_){}renderPersonal()});
+  document.querySelectorAll('[data-invite-accept]').forEach(b=>b.onclick=()=>respondInvite(b.dataset.inviteAccept,'accept'));
+  document.querySelectorAll('[data-invite-decline]').forEach(b=>b.onclick=()=>respondInvite(b.dataset.inviteDecline,'decline'));
+  setTimeout(()=>document.addEventListener('click',()=>closeWorkspaceMenus(),{once:true}),0)
+}
 async function refreshPersonal(){personal=await api('personal.refresh');renderPersonal()}
 async function respondInvite(id,decision){try{loading(decision==='accept'?'Aceptando invitación…':'Actualizando invitación…');personal=await api('invitation.respond',{invitationId:id,decision});toast(decision==='accept'?'Invitación aceptada':'Invitación rechazada');renderPersonal()}catch(e){errorView(e)}}
 function modal(title,body,onReady){const o=document.createElement('div');o.className='nxo-overlay';o.innerHTML='<div class="nxo-modal"><div class="nxo-modal-head"><strong>'+esc(title)+'</strong><button class="nxo-btn" data-close>✕</button></div><div class="nxo-modal-body">'+body+'</div></div>';document.body.appendChild(o);o.querySelector('[data-close]').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};if(onReady)onReady(o);return o}
@@ -2009,7 +2023,7 @@ function openProfileSettings(inWorkspace=false){
   const locale=String(personal?.profile?.locale||'es').toLowerCase();
   const language=locale.startsWith('en')?'English':'Español';
   const role=inWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):ui('Cuenta personal','Personal account');
-  const context=inWorkspace?(workspace?.workspace?.name||'Workspace'):ui('Mi espacio','My space');
+  const context=inWorkspace?(workspace?.workspace?.name||ui('Espacio de trabajo','Workspace')):ui('Mi espacio','My space');
   const avatar=photo?'<img src="'+esc(photo)+'" alt="'+esc(name+' '+ui('foto de perfil','profile photo'))+'">':'<span>'+esc(initials(name))+'</span>';
   modal(ui('Ajustes de perfil','Profile settings'),
     '<div class="nxo-profile-settings">'+
@@ -2115,50 +2129,106 @@ function requireWorkNameOnboarding(){
   })
 }
 
-function createWorkspaceModal(){modal('Crear Workspace','<div class="nxo-field"><label>Nombre</label><input id="nxo-ws-name" class="nxo-input" placeholder="Ej. Old Hickory"></div><div class="nxo-field"><label>Descripción</label><textarea id="nxo-ws-desc" class="nxo-textarea" placeholder="Describe el propósito de este espacio."></textarea></div><div class="nxo-modal-actions"><button class="nxo-btn nxo-btn-gold" id="nxo-ws-save">Crear Workspace</button></div>',o=>{o.querySelector('#nxo-ws-save').onclick=async()=>{const name=o.querySelector('#nxo-ws-name').value.trim(),description=o.querySelector('#nxo-ws-desc').value.trim();if(!name){toast('Escribe un nombre');return}try{o.remove();loading('Creando Workspace…');workspace=await api('workspace.create',{input:{name,description}});await openWorkspace(workspace.workspace.id,true)}catch(e){errorView(e)}}})}
-function joinWorkspaceModal(){modal('Unirse a un Workspace','<div class="nxo-field"><label>Código de invitación</label><input id="nxo-join-code" class="nxo-input" placeholder="NEXO-ABCDE-12345" autocomplete="off" autocapitalize="characters"></div><p class="nxo-muted" style="margin:0;line-height:1.55">Pega el código que te compartió un administrador del Workspace. Los códigos son de un solo uso.</p><div class="nxo-modal-actions"><button id="nxo-join-submit" class="nxo-btn nxo-btn-gold">Unirme al Workspace</button></div>',o=>{const input=o.querySelector('#nxo-join-code'),button=o.querySelector('#nxo-join-submit');input?.focus();button.onclick=async()=>{const code=input.value.trim();if(!code){toast('Escribe el código de invitación');return}button.disabled=true;button.textContent='Validando…';try{workspace=await api('workspace.join.code',{code});o.remove();setWorkspaceReturnParam(workspace?.workspace?.id||'');workspaceTab='tools';toast('Te uniste a '+(workspace?.workspace?.name||'Workspace'));renderWorkspace()}catch(e){button.disabled=false;button.textContent='Unirme al Workspace';toast(e.message||String(e))}}})}
-async function openWorkspace(id,alreadyOpen=false){try{loading('Abriendo Workspace…');workspace=alreadyOpen&&workspace?workspace:await api('workspace.open',{workspaceId:id});workspaceRecipeComments=null;workspacePendingNotes=null;setWorkspaceReturnParam(workspace?.workspace?.id||id);workspaceTab='tools';renderWorkspace()}catch(e){errorView(e)}}
+function createWorkspaceModal(){
+  modal(ui('Crear espacio de trabajo','Create Workspace'),
+    '<div class="nxo-field"><label>'+esc(ui('Nombre','Name'))+'</label><input id="nxo-ws-name" class="nxo-input" placeholder="Ej. Old Hickory"></div><div class="nxo-field"><label>'+esc(ui('Descripción','Description'))+'</label><textarea id="nxo-ws-desc" class="nxo-textarea" placeholder="'+esc(ui('Describe el propósito de este espacio.','Describe the purpose of this Workspace.'))+'"></textarea></div><div class="nxo-modal-actions"><button class="nxo-btn nxo-btn-gold" id="nxo-ws-save">'+esc(ui('Crear espacio de trabajo','Create Workspace'))+'</button></div>',
+    o=>{o.querySelector('#nxo-ws-save').onclick=async()=>{const name=o.querySelector('#nxo-ws-name').value.trim(),description=o.querySelector('#nxo-ws-desc').value.trim();if(!name){toast(ui('Escribe un nombre','Enter a name'));return}try{o.remove();loading(ui('Creando espacio de trabajo…','Creating Workspace…'));workspace=await api('workspace.create',{input:{name,description}});await openWorkspace(workspace.workspace.id,true)}catch(e){errorView(e)}}})
+}
+function joinWorkspaceModal(){
+  modal(ui('Unirse a un espacio de trabajo','Join a Workspace'),
+    '<div class="nxo-field"><label>'+esc(ui('Código de invitación','Invitation code'))+'</label><input id="nxo-join-code" class="nxo-input" placeholder="NEXO-ABCDE-12345" autocomplete="off" autocapitalize="characters"></div><p class="nxo-muted" style="margin:0;line-height:1.55">'+esc(ui('Pega el código que te compartió un administrador del espacio de trabajo. Los códigos son de un solo uso.','Paste the code shared by a Workspace administrator. Codes are single-use.'))+'</p><div class="nxo-modal-actions"><button id="nxo-join-submit" class="nxo-btn nxo-btn-gold">'+esc(ui('Unirme al espacio de trabajo','Join Workspace'))+'</button></div>',
+    o=>{const input=o.querySelector('#nxo-join-code'),button=o.querySelector('#nxo-join-submit');input?.focus();button.onclick=async()=>{const code=input.value.trim();if(!code){toast(ui('Escribe el código de invitación','Enter the invitation code'));return}button.disabled=true;button.textContent=ui('Validando…','Validating…');try{workspace=await api('workspace.join.code',{code});o.remove();setWorkspaceReturnParam(workspace?.workspace?.id||'');workspaceTab='tools';toast(ui('Te uniste a ','You joined ')+(workspace?.workspace?.name||ui('el espacio de trabajo','the Workspace')));renderWorkspace()}catch(e){button.disabled=false;button.textContent=ui('Unirme al espacio de trabajo','Join Workspace');toast(e.message||String(e))}}})
+}
+async function openWorkspace(id,alreadyOpen=false){try{stopWorkspaceNotificationPolling();workspaceNotificationSignature='';loading(ui('Abriendo espacio de trabajo…','Opening Workspace…'));workspace=alreadyOpen&&workspace?workspace:await api('workspace.open',{workspaceId:id});workspaceRecipeComments=null;workspacePendingNotes=null;setWorkspaceReturnParam(workspace?.workspace?.id||id);workspaceTab='tools';renderWorkspace()}catch(e){errorView(e)}}
 async function returnPersonal(){try{loading('Volviendo a Mi espacio…');personal=await api('workspace.return');clearWorkspaceReturnParam();renderPersonal()}catch(e){errorView(e)}}
-function renderWorkspace(){const ws=workspace?.workspace||{},role=workspace?.role||{},tools=workspace?.tools||[];const perms=role.permissions||[];const canMembers=workspace?.membership?.roleKey==='owner'||perms.some(x=>['members.view','members.manage','members.invite'].includes(x));const canTools=perms.includes('tools.configure');const canAdmin=workspace?.membership?.roleKey==='owner'||perms.some(x=>['workspace.manage','members.manage','tools.configure'].includes(x));const tabs=['<button class="nxo-tab '+(workspaceTab==='tools'?'active':'')+'" data-wtab="tools">Herramientas</button>'];if(canMembers)tabs.push('<button class="nxo-tab '+(workspaceTab==='members'?'active':'')+'" data-wtab="members">Miembros</button>');tabs.push('<button class="nxo-tab '+(workspaceTab==='access'?'active':'')+'" data-wtab="access">Mi acceso</button>');if(canTools)tabs.push('<button class="nxo-tab nxo-settings-tab '+(workspaceTab==='settings'?'active':'')+'" data-wtab="settings">'+esc(ui('Configuración','Settings'))+'</button>');let body='';if(workspaceTab==='tools')body=(canAdmin?renderPendingNotesShell():'')+renderWorkspaceTools(tools);else if(workspaceTab==='members')body='<div id="nxo-members-zone"><div class="nxo-empty">Cargando miembros…</div></div>';else if(workspaceTab==='settings')body='<div id="nxo-settings-zone"><div class="nxo-empty">Cargando configuración…</div></div>';else body=renderAccess(role);html('<div class="nxo-shell">'+topbar('workspace')+'<main class="nxo-main"><div class="nxo-workspace-header"><div><div class="nxo-eyebrow">Workspace</div><h2>'+esc(ws.name||'Workspace')+'</h2><p>'+esc(ws.description||'')+'</p></div></div><div class="nxo-tabs">'+tabs.join('')+'</div>'+body+'</main></div>');bindTopbar('workspace');document.querySelectorAll('[data-wtab]').forEach(b=>b.onclick=()=>{workspaceTab=b.dataset.wtab;renderWorkspace()});bindTools();if(workspaceTab==='tools'&&canAdmin)refreshWorkspaceAdminPanels();if(workspaceTab==='members')loadMembers();if(workspaceTab==='settings')loadWorkspaceSettings()}
+function renderWorkspace(){
+  const ws=workspace?.workspace||{},role=workspace?.role||{},tools=workspace?.tools||[];
+  const perms=role.permissions||[];
+  const canMembers=workspace?.membership?.roleKey==='owner'||perms.some(x=>['members.view','members.manage','members.invite'].includes(x));
+  const canTools=perms.includes('tools.configure');
+  const canAdmin=workspace?.membership?.roleKey==='owner'||perms.some(x=>['workspace.manage','members.manage','tools.configure'].includes(x));
+  const tabs=['<button class="nxo-tab '+(workspaceTab==='tools'?'active':'')+'" data-wtab="tools">'+esc(ui('Herramientas','Tools'))+'</button>'];
+  if(canMembers)tabs.push('<button class="nxo-tab '+(workspaceTab==='members'?'active':'')+'" data-wtab="members">'+esc(ui('Miembros','Members'))+'</button>');
+  tabs.push('<button class="nxo-tab '+(workspaceTab==='access'?'active':'')+'" data-wtab="access">'+esc(ui('Mi acceso','My access'))+'</button>');
+  if(canTools)tabs.push('<button class="nxo-tab nxo-settings-tab '+(workspaceTab==='settings'?'active':'')+'" data-wtab="settings">'+esc(ui('Configuración','Settings'))+'</button>');
+  let body='';
+  if(workspaceTab==='tools')body=(canAdmin?renderPendingNotesShell():'')+renderWorkspaceTools(tools);
+  else if(workspaceTab==='members')body='<div id="nxo-members-zone"><div class="nxo-empty">'+esc(ui('Cargando miembros…','Loading members…'))+'</div></div>';
+  else if(workspaceTab==='settings')body='<div id="nxo-settings-zone"><div class="nxo-empty">'+esc(ui('Cargando configuración…','Loading settings…'))+'</div></div>';
+  else body=renderAccess(role);
+  html('<div class="nxo-shell">'+topbar('workspace')+'<main class="nxo-main"><div class="nxo-workspace-header"><div><div class="nxo-eyebrow">'+esc(ui('Espacio de trabajo','Workspace'))+'</div><h2>'+esc(ws.name||ui('Espacio de trabajo','Workspace'))+'</h2><p>'+esc(ws.description||'')+'</p></div></div><div class="nxo-tabs">'+tabs.join('')+'</div>'+body+'</main></div>');
+  bindTopbar('workspace');
+  document.querySelectorAll('[data-wtab]').forEach(b=>b.onclick=()=>{workspaceTab=b.dataset.wtab;renderWorkspace()});
+  bindTools();
+  if(canAdmin){
+    if(workspaceTab==='tools')refreshWorkspaceAdminPanels();else loadWorkspaceRecipeComments();
+    startWorkspaceNotificationPolling()
+  }else stopWorkspaceNotificationPolling();
+  if(workspaceTab==='members')loadMembers();
+  if(workspaceTab==='settings')loadWorkspaceSettings()
+}
 function renderRecipeCommentNoticesShell(){return '<section class="nxo-section" style="margin-top:0"><div id="nxo-recipe-comment-notifications"><div class="nxo-section-head"><div><h3>Notificaciones</h3><p>Recomendaciones nuevas del equipo sobre las fichas técnicas.</p></div></div><div class="nxo-empty">Cargando avisos…</div></div></section>'}
 function renderPendingNotesShell(){return '<section class="nxo-section"><div id="nxo-pending-notes"><div class="nxo-section-head"><div><h3>Pendientes</h3><p>Notas persistentes guardadas para revisar después.</p></div></div><div class="nxo-empty">Cargando pendientes…</div></div></section>'}
 function nxoWhen(value){try{return value?new Date(value).toLocaleString('es-US',{dateStyle:'medium',timeStyle:'short'}):''}catch(_){return''}}
+function stopWorkspaceNotificationPolling(){
+  if(workspaceNotificationPollTimer){clearInterval(workspaceNotificationPollTimer);workspaceNotificationPollTimer=null}
+  workspaceNotificationPollWorkspaceId='';
+  workspaceNotificationPollInFlight=false
+}
+function startWorkspaceNotificationPolling(){
+  stopWorkspaceNotificationPolling();
+  const wsid=workspace?.workspace?.id||'';
+  if(!wsid||!document.getElementById('nxo-notification-button'))return;
+  workspaceNotificationPollWorkspaceId=wsid;
+  const tick=async()=>{
+    if(document.hidden||workspaceNotificationPollInFlight)return;
+    if(!workspace?.workspace?.id||workspace.workspace.id!==workspaceNotificationPollWorkspaceId){stopWorkspaceNotificationPolling();return}
+    workspaceNotificationPollInFlight=true;
+    try{await loadWorkspaceRecipeComments(true)}catch(_){}
+    finally{workspaceNotificationPollInFlight=false}
+  };
+  workspaceNotificationPollTimer=setInterval(tick,6500);
+  if(!workspaceNotificationVisibilityBound){
+    workspaceNotificationVisibilityBound=true;
+    const refreshVisible=()=>{
+      if(document.hidden||!workspaceNotificationPollWorkspaceId||!workspace?.workspace?.id)return;
+      if(workspace.workspace.id!==workspaceNotificationPollWorkspaceId)return;
+      loadWorkspaceRecipeComments(true).catch(()=>null)
+    };
+    document.addEventListener('visibilitychange',refreshVisible);
+    window.addEventListener('focus',refreshVisible)
+  }
+}
 async function refreshWorkspaceAdminPanels(){await Promise.allSettled([loadWorkspaceRecipeComments(),loadWorkspacePendingNotes()])}
-async function loadWorkspaceRecipeComments(){
+async function loadWorkspaceRecipeComments(silent=false){
   const zone=document.getElementById('nxo-recipe-comment-notifications');
   const badge=document.getElementById('nxo-notification-badge');
   if(!zone||!workspace?.workspace?.id)return;
   try{
-    workspaceRecipeComments=await api('workspace.recipe-comments',{workspaceId:workspace.workspace.id});
-    const rows=Array.isArray(workspaceRecipeComments?.comments)?workspaceRecipeComments.comments:[];
+    const next=await api('workspace.recipe-comments',{workspaceId:workspace.workspace.id});
+    const rows=Array.isArray(next?.comments)?next.comments:[];
     const visible=rows.slice(0,12);
     const unreadCount=rows.reduce((total,row)=>total+(row?.unread?1:0),0);
     const bell=document.getElementById('nxo-notification-button');
-
-    if(badge){
-      badge.textContent=String(unreadCount);
-      badge.hidden=unreadCount===0;
-    }
+    const signature=rows.map(r=>[r?.id||'',r?.status||'',r?.unread?1:0,r?.changeJobId||'',r?.commentedAt||'',r?.comment||''].join('~')).join('|');
+    workspaceRecipeComments=next;
+    if(badge){badge.textContent=String(unreadCount);badge.hidden=unreadCount===0}
     if(bell){
       bell.classList.toggle('nxo-has-unread',unreadCount>0);
-      bell.setAttribute('aria-label',unreadCount>0
-        ?ui('Notificaciones · '+unreadCount+' nueva'+(unreadCount===1?'':'s'),'Notifications · '+unreadCount+' new')
-        :ui('Notificaciones','Notifications'));
+      bell.setAttribute('aria-label',unreadCount>0?ui('Notificaciones · '+unreadCount+' nueva'+(unreadCount===1?'':'s'),'Notifications · '+unreadCount+' new'):ui('Notificaciones','Notifications'))
     }
-
+    if(silent&&signature===workspaceNotificationSignature)return;
+    workspaceNotificationSignature=signature;
     zone.innerHTML=
-      '<div class="nxo-notification-head"><div><strong>Notificaciones</strong><small>Recomendaciones pendientes</small></div><span class="nxo-notification-count">'+rows.length+'</span></div>'+
-      (visible.length
-        ?'<div class="nxo-notification-list">'+visible.map(r=>{
-          const when=nxoWhen(r.commentedAt),working=r.status==='applying',failed=r.status==='change_failed';
-          return '<article class="nxo-notification-item '+(r.unread?'nxo-notification-unread':'')+'" data-notification-id="'+esc(r.id)+'">'+
-            '<div class="nxo-avatar">'+esc(initials(r.authorName))+'</div>'+
-            '<div class="nxo-notification-copy"><strong>'+esc(r.recipeTitle||'Ficha técnica')+'</strong><span>'+esc(r.authorName||'Miembro Nexo')+'</span><p>'+esc(r.comment||'')+'</p>'+(when?'<small>'+esc(when)+'</small>':'')+(failed?'<em>La actualización anterior no se completó.</em>':'')+'</div>'+
-            '<div class="nxo-notification-action">'+(working&&r.changeJobId?'<button class="nxo-btn" data-job-watch="'+esc(r.changeJobId)+'">Progreso</button>':'<button class="nxo-btn nxo-btn-gold" data-comment-review="'+esc(r.id)+'">Abrir</button>')+'</div>'+
-          '</article>'
-        }).join('')+'</div>'
-        :'<div class="nxo-notification-empty">No hay recomendaciones nuevas por revisar.</div>');
-
+      '<div class="nxo-notification-head"><div><strong>'+esc(ui('Notificaciones','Notifications'))+'</strong><small>'+esc(ui('Recomendaciones pendientes','Pending recommendations'))+'</small></div><span class="nxo-notification-count">'+rows.length+'</span></div>'+
+      (visible.length?'<div class="nxo-notification-list">'+visible.map(r=>{
+        const when=nxoWhen(r.commentedAt),working=r.status==='applying',failed=r.status==='change_failed';
+        return '<article class="nxo-notification-item '+(r.unread?'nxo-notification-unread':'')+'" data-notification-id="'+esc(r.id)+'">'+
+          '<div class="nxo-avatar">'+esc(initials(r.authorName))+'</div>'+
+          '<div class="nxo-notification-copy"><strong>'+esc(r.recipeTitle||ui('Ficha técnica','Technical sheet'))+'</strong><span>'+esc(r.authorName||ui('Miembro Nexo','Nexo member'))+'</span><p>'+esc(r.comment||'')+'</p>'+(when?'<small>'+esc(when)+'</small>':'')+(failed?'<em>'+esc(ui('La actualización anterior no se completó.','The previous update did not complete.'))+'</em>':'')+'</div>'+
+          '<div class="nxo-notification-action">'+(working&&r.changeJobId?'<button class="nxo-btn" data-job-watch="'+esc(r.changeJobId)+'">'+esc(ui('Progreso','Progress'))+'</button>':'<button class="nxo-btn nxo-btn-gold" data-comment-review="'+esc(r.id)+'">'+esc(ui('Abrir','Open'))+'</button>')+'</div>'+
+        '</article>'
+      }).join('')+'</div>':'<div class="nxo-notification-empty">'+esc(ui('No hay recomendaciones nuevas por revisar.','There are no new recommendations to review.'))+'</div>');
     zone.querySelectorAll('[data-comment-review]').forEach(b=>b.onclick=()=>{
       const id=b.dataset.commentReview;
       document.getElementById('nxo-notification-menu')?.classList.remove('open');
@@ -2169,22 +2239,19 @@ async function loadWorkspaceRecipeComments(){
         const remainingUnread=(workspaceRecipeComments?.comments||[]).filter(x=>x?.unread).length;
         const badgeNow=document.getElementById('nxo-notification-badge');
         const bellNow=document.getElementById('nxo-notification-button');
-        if(badgeNow){
-          badgeNow.textContent=String(remainingUnread);
-          badgeNow.hidden=remainingUnread===0;
-        }
+        if(badgeNow){badgeNow.textContent=String(remainingUnread);badgeNow.hidden=remainingUnread===0}
         bellNow?.classList.toggle('nxo-has-unread',remainingUnread>0);
-        api('comment.seen',{commentId:id}).catch(()=>{row.unread=true;loadWorkspaceRecipeComments()});
+        workspaceNotificationSignature='';
+        api('comment.seen',{commentId:id}).catch(()=>{row.unread=true;loadWorkspaceRecipeComments()})
       }
-      openRecipeRecommendation(id);
+      openRecipeRecommendation(id)
     });
-    zone.querySelectorAll('[data-job-watch]').forEach(b=>b.onclick=()=>{
-      document.getElementById('nxo-notification-menu')?.classList.remove('open');
-      watchRecipeChange(b.dataset.jobWatch);
-    });
+    zone.querySelectorAll('[data-job-watch]').forEach(b=>b.onclick=()=>{document.getElementById('nxo-notification-menu')?.classList.remove('open');watchRecipeChange(b.dataset.jobWatch)})
   }catch(e){
-    if(badge)badge.hidden=true;
-    zone.innerHTML='<div class="nxo-notification-head"><strong>Notificaciones</strong></div><div class="nxo-notification-empty">'+esc(e.message||e)+'</div>';
+    if(!silent){
+      if(badge)badge.hidden=true;
+      zone.innerHTML='<div class="nxo-notification-head"><strong>'+esc(ui('Notificaciones','Notifications'))+'</strong></div><div class="nxo-notification-empty">'+esc(e.message||e)+'</div>'
+    }
   }
 }
 async function loadWorkspacePendingNotes(){
@@ -2204,7 +2271,7 @@ async function loadWorkspacePendingNotes(){
     }).join('');
     zone.innerHTML=
       '<div class="nxo-section-head">'+
-        '<div><div class="nxo-pending-title-row"><h3>Pendientes</h3><span class="nxo-chip nxo-pending-count">'+rows.length+'</span></div><p>Notas que permanecen en el Workspace hasta resolverlas.</p></div>'+
+        '<div><div class="nxo-pending-title-row"><h3>'+esc(ui('Pendientes','Pending'))+'</h3><span class="nxo-chip nxo-pending-count">'+rows.length+'</span></div><p>'+esc(ui('Notas que permanecen en el espacio de trabajo hasta resolverlas.','Notes that remain in the Workspace until they are resolved.'))+'</p></div>'+
       '</div>'+
       '<div class="nxo-note-board nxo-pending-flow" data-pending-count="'+rows.length+'">'+
         noteItems+
@@ -2226,10 +2293,10 @@ function updateProgressModal(o,job){if(!o||!document.body.contains(o))return;con
 async function startRecipeChange(input){let job;try{job=await api('recipe-change.start',{input});}catch(e){toast(e.message||String(e));return}const o=progressModal(job.recipeTitle||'Ficha técnica');updateProgressModal(o,job);api('recipe-change.process',{jobId:job.id}).catch(()=>null);await pollRecipeChange(o,job.id)}
 async function watchRecipeChange(jobId){const o=progressModal('actualización');await pollRecipeChange(o,jobId)}
 async function pollRecipeChange(o,jobId){let job=null;for(let i=0;i<180;i++){try{job=await api('recipe-change.status',{jobId});updateProgressModal(o,job)}catch(e){if(document.body.contains(o)){const d=o.querySelector('#nxo-change-detail');if(d)d.textContent=e.message||String(e)}return}if(job?.status==='completed'||job?.status==='failed')break;await new Promise(r=>setTimeout(r,800))}if(!job)return;const result=o.querySelector('#nxo-change-result');if(job.status==='completed'){let summary='Actualización completada.';try{const parsed=JSON.parse(job.resultJson||'{}');if(parsed.summary)summary=parsed.summary}catch(_){}if(result)result.innerHTML='<div class="nxo-change-success"><strong>✓ Actualización hecha</strong><p>'+esc(summary)+'</p><button id="nxo-change-close" class="nxo-btn nxo-btn-gold">Cerrar</button></div>';o.querySelector('#nxo-change-close')?.addEventListener('click',async()=>{o.remove();await refreshWorkspaceAdminPanels()})}else if(job.status==='failed'){if(result)result.innerHTML='<div class="nxo-change-failed"><strong>No se aplicaron todos los cambios.</strong><p>'+esc(job.error||'La IA no pudo completar esta recomendación con seguridad.')+'</p><button id="nxo-change-close" class="nxo-btn">Cerrar</button></div>';o.querySelector('#nxo-change-close')?.addEventListener('click',async()=>{o.remove();await refreshWorkspaceAdminPanels()})}}
-function renderWorkspaceTools(tools){return '<section class="nxo-section"><div class="nxo-section-head"><div><h3>Herramientas del Workspace</h3><p>Estas herramientas trabajan con el contexto y los datos de '+esc(workspace?.workspace?.name||'este Workspace')+'.</p></div></div>'+(tools.length?'<div class="nxo-grid">'+tools.map(toolCard).join('')+'</div>':'<div class="nxo-empty">No hay herramientas habilitadas para este Workspace.</div>')+'</section>'}
-function renderAccess(role){const perms=role?.permissions||[],roleKey=String(workspace?.membership?.roleKey||'viewer').toLowerCase();return '<div class="nxo-panel" style="padding:18px"><div class="nxo-section-head"><div><h3>Tu acceso en este Workspace</h3><p>Los permisos se aplican en backend, no solo en la interfaz.</p></div></div><div class="nxo-role-badge" data-role="'+esc(roleKey)+'">'+esc(roleName(roleKey,role))+'</div><div class="nxo-perms">'+(perms.length?perms.map(p=>'<span class="nxo-perm">'+esc(p)+'</span>').join(''):'<span class="nxo-muted">Sin permisos adicionales.</span>')+'</div></div>'}
+function renderWorkspaceTools(tools){return '<section class="nxo-section"><div class="nxo-section-head"><div><h3>'+esc(ui('Herramientas del espacio de trabajo','Workspace tools'))+'</h3><p>'+esc(ui('Estas herramientas trabajan con el contexto y los datos de ','These tools use the context and data from '))+esc(workspace?.workspace?.name||ui('este espacio de trabajo','this Workspace'))+'.</p></div></div>'+(tools.length?'<div class="nxo-grid">'+tools.map(toolCard).join('')+'</div>':'<div class="nxo-empty">'+esc(ui('No hay herramientas habilitadas para este espacio de trabajo.','No tools are enabled for this Workspace.'))+'</div>')+'</section>'}
+function renderAccess(role){const perms=role?.permissions||[],roleKey=String(workspace?.membership?.roleKey||'viewer').toLowerCase();return '<div class="nxo-panel" style="padding:18px"><div class="nxo-section-head"><div><h3>'+esc(ui('Tu acceso en este espacio de trabajo','Your access in this Workspace'))+'</h3><p>'+esc(ui('Los permisos se aplican en backend, no solo en la interfaz.','Permissions are enforced in the backend, not only in the interface.'))+'</p></div></div><div class="nxo-role-badge" data-role="'+esc(roleKey)+'">'+esc(roleName(roleKey,role))+'</div><div class="nxo-perms">'+(perms.length?perms.map(p=>'<span class="nxo-perm">'+esc(p)+'</span>').join(''):'<span class="nxo-muted">'+esc(ui('Sin permisos adicionales.','No additional permissions.'))+'</span>')+'</div></div>'}
 async function loadMembers(){const zone=document.getElementById('nxo-members-zone');if(!zone)return;try{const wsid=workspace.workspace.id;workspaceMembers=await api('workspace.members',{workspaceId:wsid});const rolePerms=workspace?.role?.permissions||[];const canInvite=rolePerms.includes('members.invite')||rolePerms.includes('members.manage');const canAssign=rolePerms.includes('roles.assign');const canRemove=rolePerms.includes('members.remove')||rolePerms.includes('members.manage');if(canAssign||canInvite){try{workspaceRoles=await api('workspace.roles',{workspaceId:wsid})}catch(_){workspaceRoles=[]}}else workspaceRoles=[];zone.innerHTML='<div class="nxo-section-head"><div><h3>Miembros</h3><p>'+workspaceMembers.members.length+' miembro'+(workspaceMembers.members.length===1?'':'s')+' activo'+(workspaceMembers.members.length===1?'':'s')+'.</p></div>'+(canInvite?'<button id="nxo-invite-member" class="nxo-btn nxo-btn-gold">Invitar miembro</button>':'')+'</div><div class="nxo-member-list">'+workspaceMembers.members.map(m=>memberRow(m,canAssign,canRemove)).join('')+'</div>';document.getElementById('nxo-invite-member')?.addEventListener('click',inviteModal);document.querySelectorAll('[data-member-role]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.memberRole,sel.value));document.querySelectorAll('[data-member-remove]').forEach(btn=>btn.onclick=()=>removeMember(btn.dataset.memberRemove))}catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||e)+'</div>'}}
-function memberRow(m,canAssign,canRemove){const actorRank=Number(workspaceMembers?.currentRole?.rank||workspace?.role?.rank||0),targetRank=Number(m.role?.rank||0),canAct=!m.isWorkspaceOwner&&targetRank<actorRank;const options=(workspaceRoles||[]).map(r=>'<option value="'+esc(r.roleKey)+'" '+(r.roleKey===m.roleKey?'selected':'')+'>'+esc(r.nameEs||r.roleKey)+'</option>').join('');return '<div class="nxo-member"><div class="nxo-member-left"><div class="nxo-avatar">'+esc(initials(m.displayName))+'</div><div style="min-width:0"><div class="nxo-member-name">'+esc(m.displayName)+'</div><div class="nxo-member-sub">'+esc(roleName(m.roleKey,m.role))+(m.isWorkspaceOwner?' · propietario del Workspace':'')+'</div></div></div><div class="nxo-member-actions">'+(canAct&&canAssign&&options?'<select class="nxo-select" style="width:auto;min-width:145px" data-member-role="'+esc(m.memberId)+'">'+options+'</select>':'<span class="nxo-role-badge" data-role="'+esc(String(m.roleKey||'viewer').toLowerCase())+'">'+esc(roleName(m.roleKey,m.role))+'</span>')+(canAct&&canRemove?'<button class="nxo-btn nxo-btn-danger" data-member-remove="'+esc(m.memberId)+'">Quitar</button>':'')+'</div></div>'}
+function memberRow(m,canAssign,canRemove){const actorRank=Number(workspaceMembers?.currentRole?.rank||workspace?.role?.rank||0),targetRank=Number(m.role?.rank||0),canAct=!m.isWorkspaceOwner&&targetRank<actorRank;const options=(workspaceRoles||[]).map(r=>'<option value="'+esc(r.roleKey)+'" '+(r.roleKey===m.roleKey?'selected':'')+'>'+esc(r.nameEs||r.roleKey)+'</option>').join('');return '<div class="nxo-member"><div class="nxo-member-left"><div class="nxo-avatar">'+esc(initials(m.displayName))+'</div><div style="min-width:0"><div class="nxo-member-name">'+esc(m.displayName)+'</div><div class="nxo-member-sub">'+esc(roleName(m.roleKey,m.role))+(m.isWorkspaceOwner?ui(' · propietario del espacio de trabajo',' · Workspace owner'):'')+'</div></div></div><div class="nxo-member-actions">'+(canAct&&canAssign&&options?'<select class="nxo-select" style="width:auto;min-width:145px" data-member-role="'+esc(m.memberId)+'">'+options+'</select>':'<span class="nxo-role-badge" data-role="'+esc(String(m.roleKey||'viewer').toLowerCase())+'">'+esc(roleName(m.roleKey,m.role))+'</span>')+(canAct&&canRemove?'<button class="nxo-btn nxo-btn-danger" data-member-remove="'+esc(m.memberId)+'">Quitar</button>':'')+'</div></div>'}
 async function copyInviteCode(value){try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value);return true}const t=document.createElement('textarea');t.value=value;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.focus();t.select();const ok=document.execCommand('copy');t.remove();return ok}catch(_){return false}}
 
 function workspaceInviteUrl(token){
@@ -2281,8 +2348,8 @@ async function renderWorkspaceInviteQr(zone,url){
 }
 
 async function shareWorkspaceInvite(invite,url){
-  const title='Únete a '+(invite.workspaceName||'mi Workspace');
-  const text='Únete al Workspace '+(invite.workspaceName||'de Nexo')+' desde este enlace.';
+  const title=ui('Únete a ','Join ')+(invite.workspaceName||ui('mi espacio de trabajo','my Workspace'));
+  const text=ui('Únete al espacio de trabajo ','Join the Workspace ')+(invite.workspaceName||ui('de Nexo','Nexo'))+ui(' desde este enlace.',' from this link.');
   try{
     if(navigator.share){
       await navigator.share({title,text,url});
@@ -2375,10 +2442,10 @@ async function downloadWorkspaceInviteImage(invite,url,qrZone){
   ctx.textAlign='center';
   ctx.fillStyle='#111827';
   ctx.font='900 48px Arial, sans-serif';
-  wrapCanvasText(ctx,invite.workspaceName||'Workspace Nexo',600,360,980,58,2);
+  wrapCanvasText(ctx,invite.workspaceName||ui('Espacio de trabajo Nexo','Nexo Workspace'),600,360,980,58,2);
   ctx.fillStyle='#5b6780';
   ctx.font='700 30px Arial, sans-serif';
-  ctx.fillText('Escanea para unirte al Workspace',600,480);
+  ctx.fillText(ui('Escanea para unirte al espacio de trabajo','Scan to join the Workspace'),600,480);
 
   ctx.fillStyle='#ffffff';
   ctx.strokeStyle='#d4deef';
@@ -2395,7 +2462,7 @@ async function downloadWorkspaceInviteImage(invite,url,qrZone){
   ctx.fillText('Inicia sesión o crea tu cuenta y entrarás automáticamente.',600,1365);
   ctx.fillStyle='#66738d';
   ctx.font='600 20px Arial, sans-serif';
-  ctx.fillText('Nexo Group · Invitación de Workspace',600,1415);
+  ctx.fillText(ui('Nexo Group · Invitación de espacio de trabajo','Nexo Group · Workspace invitation'),600,1415);
 
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png',.95));
   if(!blob){toast('No se pudo crear la imagen');return}
@@ -2414,16 +2481,16 @@ function inviteModal(){
   const defaultRole=roles.find(r=>r.roleKey==='collaborator')?.roleKey||roles[0]?.roleKey||'collaborator';
   const opts=roles.map(r=>'<option value="'+esc(r.roleKey)+'" '+(r.roleKey===defaultRole?'selected':'')+'>'+esc(r.nameEs||r.roleKey)+'</option>').join('');
 
-  modal('Invitar al Workspace',
+  modal(ui('Invitar al espacio de trabajo','Invite to Workspace'),
     '<div class="nxo-invite-share">'+
       '<div class="nxo-invite-share-head">'+
         '<div class="nxo-invite-share-logo" id="nxo-invite-share-logo"></div>'+
-        '<div><strong>'+esc(workspace?.workspace?.name||'Workspace')+'</strong><span>Invitación por QR y enlace</span></div>'+
+        '<div><strong>'+esc(workspace?.workspace?.name||ui('Espacio de trabajo','Workspace'))+'</strong><span>'+esc(ui('Invitación por QR y enlace','Invitation by QR and link'))+'</span></div>'+
       '</div>'+
       '<div class="nxo-field"><label>Rol que recibirán quienes entren con este QR</label><select id="nxo-invite-role" class="nxo-select">'+opts+'</select></div>'+
       '<div class="nxo-invite-qr-card">'+
         '<div id="nxo-invite-qr" class="nxo-invite-qr"><div class="nxo-qr-loading">Preparando invitación…</div></div>'+
-        '<p>Escanea este QR para iniciar sesión o crear una cuenta y entrar automáticamente al Workspace.</p>'+
+        '<p>'+esc(ui('Escanea este QR para iniciar sesión o crear una cuenta y entrar automáticamente al espacio de trabajo.','Scan this QR to sign in or create an account and automatically enter the Workspace.'))+'</p>'+
       '</div>'+
       '<div class="nxo-invite-link-row"><input id="nxo-invite-link" class="nxo-input" readonly value=""><button id="nxo-copy-invite-link" class="nxo-btn">Copiar</button></div>'+
       '<div class="nxo-invite-share-actions">'+
@@ -2455,7 +2522,7 @@ function inviteModal(){
         url=workspaceInviteUrl(invite.token);
         linkInput.value=url;
         const logo=mediaUrl(invite.workspaceLogoImage||workspace?.workspace?.logoImage);
-        logoZone.innerHTML=logo?'<img src="'+esc(logo)+'" alt="'+esc((invite.workspaceName||'Workspace')+' logo')+'">':'<span>⌂</span>';
+        logoZone.innerHTML=logo?'<img src="'+esc(logo)+'" alt="'+esc((invite.workspaceName||ui('Espacio de trabajo','Workspace'))+' logo')+'">':'<span>⌂</span>';
         await renderWorkspaceInviteQr(qrZone,url)
       };
 
@@ -2538,32 +2605,35 @@ function inviteModal(){
 }
 
 async function changeRole(memberId,roleKey){try{await api('workspace.role',{workspaceId:workspace.workspace.id,targetMemberId:memberId,roleKey});toast('Rol actualizado');await loadMembers()}catch(e){toast(e.message||String(e));await loadMembers()}}
-async function removeMember(memberId){if(!confirm('¿Quitar a este miembro del Workspace?'))return;try{await api('workspace.remove',{workspaceId:workspace.workspace.id,targetMemberId:memberId});toast('Miembro removido');await loadMembers()}catch(e){toast(e.message||String(e))}}
+async function removeMember(memberId){if(!confirm(ui('¿Quitar a este miembro del espacio de trabajo?','Remove this member from the Workspace?')))return;try{await api('workspace.remove',{workspaceId:workspace.workspace.id,targetMemberId:memberId});toast('Miembro removido');await loadMembers()}catch(e){toast(e.message||String(e))}}
 async function loadWorkspaceSettings(){
   const zone=document.getElementById('nxo-settings-zone');
   if(!zone)return;
   try{
     workspaceToolConfig=await api('workspace.tools',{workspaceId:workspace.workspace.id});
     const ws=workspace.workspace||{},logo=mediaUrl(ws.logoImage);
+    const logoAction=logo?ui('Cambiar logo','Change logo'):ui('Subir logo','Upload logo');
     zone.innerHTML=
       '<div class="nxo-panel" style="padding:18px;margin-bottom:14px">'+
-        '<div class="nxo-section-head"><div><h3>Información del Workspace</h3><p>Nombre, descripción y logo visibles para sus miembros.</p></div></div>'+
-        '<div class="nxo-workspace-logo-settings"><div class="nxo-workspace-logo-preview">'+(logo?'<img src="'+esc(logo)+'" alt="'+esc((ws.name||'Workspace')+' logo')+'">':'<span>⌂</span>')+'</div><div class="nxo-workspace-logo-copy"><strong>Logo del Workspace</strong><p>PNG, JPG, WEBP o SVG · máximo 8 MB.</p><input id="nxo-workspace-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden><button id="nxo-workspace-logo-change" class="nxo-btn" type="button">'+(logo?'Cambiar logo':'Subir logo')+'</button></div></div>'+
-        '<div class="nxo-field"><label>Nombre</label><input id="nxo-settings-name" class="nxo-input" value="'+esc(ws.name||'')+'"></div>'+
-        '<div class="nxo-field"><label>Descripción</label><textarea id="nxo-settings-desc" class="nxo-textarea">'+esc(ws.description||'')+'</textarea></div>'+
-        '<div class="nxo-modal-actions"><button id="nxo-settings-save" class="nxo-btn nxo-btn-gold">Guardar cambios</button></div>'+
+        '<div class="nxo-section-head"><div><h3>'+esc(ui('Información del espacio de trabajo','Workspace information'))+'</h3><p>'+esc(ui('Nombre, descripción y logo visibles para sus miembros.','Name, description and logo visible to its members.'))+'</p></div></div>'+
+        '<div class="nxo-workspace-logo-settings"><div class="nxo-workspace-logo-preview">'+(logo?'<img src="'+esc(logo)+'" alt="'+esc((ws.name||ui('Espacio de trabajo','Workspace'))+' logo')+'">':'<span>⌂</span>')+'</div><div class="nxo-workspace-logo-copy"><strong>'+esc(ui('Logo del espacio de trabajo','Workspace logo'))+'</strong><p>PNG, JPG, WEBP '+esc(ui('o','or'))+' SVG · '+esc(ui('máximo','maximum'))+' 8 MB.</p><label id="nxo-workspace-logo-change" class="nxo-btn nxo-native-file-picker"><span class="nxo-native-file-picker-text">'+esc(logoAction)+'</span><input id="nxo-workspace-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="'+esc(logoAction)+'"></label></div></div>'+
+        '<div class="nxo-field"><label>'+esc(ui('Nombre','Name'))+'</label><input id="nxo-settings-name" class="nxo-input" value="'+esc(ws.name||'')+'"></div>'+
+        '<div class="nxo-field"><label>'+esc(ui('Descripción','Description'))+'</label><textarea id="nxo-settings-desc" class="nxo-textarea">'+esc(ws.description||'')+'</textarea></div>'+
+        '<div class="nxo-modal-actions"><button id="nxo-settings-save" class="nxo-btn nxo-btn-gold">'+esc(ui('Guardar cambios','Save changes'))+'</button></div>'+
       '</div>'+
       '<div class="nxo-panel" style="padding:18px">'+
-        '<div class="nxo-section-head"><div><h3>Herramientas del Workspace</h3><p>Activa herramientas, personaliza cómo se presentan y decide quién puede verlas.</p></div></div>'+
+        '<div class="nxo-section-head"><div><h3>'+esc(ui('Herramientas del espacio de trabajo','Workspace tools'))+'</h3><p>'+esc(ui('Activa herramientas, personaliza cómo se presentan y decide quién puede verlas.','Enable tools, customize how they appear, and decide who can see them.'))+'</p></div></div>'+
         '<div class="nxo-tool-config">'+workspaceToolConfig.tools.map(t=>{
-          const mode=t.accessMode==='restricted'?'Restringido · '+(t.allowedMemberIds||[]).length+' miembro'+((t.allowedMemberIds||[]).length===1?'':'s'):'Todo el Workspace';
+          const mode=t.accessMode==='restricted'
+            ?ui('Restringido · ','Restricted · ')+(t.allowedMemberIds||[]).length+' '+ui('miembro','member')+((t.allowedMemberIds||[]).length===1?'':'s')
+            :ui('Todo el espacio de trabajo','Entire Workspace');
           const displayName=t.customName||t.nameEs||t.toolKey;
           const displayDescription=t.customDescription||t.descriptionEs||'';
           return '<div class="nxo-tool-toggle">'+
             '<div><h4>'+esc(displayName)+'</h4><p>'+esc(displayDescription)+' · '+esc(statusText(t.status))+'</p><div class="nxo-access-summary">'+esc(mode)+'</div></div>'+
             '<div class="nxo-tool-actions">'+
-              '<button class="nxo-btn" data-tool-identity="'+esc(t.toolKey)+'">Personalizar</button>'+
-              '<button class="nxo-btn" data-tool-access="'+esc(t.toolKey)+'" '+(t.enabled?'':'disabled')+'>Parámetros de acceso</button>'+
+              '<button class="nxo-btn" data-tool-identity="'+esc(t.toolKey)+'">'+esc(ui('Personalizar','Customize'))+'</button>'+
+              '<button class="nxo-btn" data-tool-access="'+esc(t.toolKey)+'" '+(t.enabled?'':'disabled')+'>'+esc(ui('Parámetros de acceso','Access settings'))+'</button>'+
               '<div class="nxo-switch '+(t.enabled?'on':'')+'" data-tool-toggle="'+esc(t.toolKey)+'" data-enabled="'+(t.enabled?'1':'0')+'"><span></span></div>'+
             '</div>'+
           '</div>'
@@ -2571,8 +2641,11 @@ async function loadWorkspaceSettings(){
       '</div>';
     document.getElementById('nxo-settings-save')?.addEventListener('click',saveWorkspaceSettings);
     const logoInput=document.getElementById('nxo-workspace-logo-file');
-    document.getElementById('nxo-workspace-logo-change')?.addEventListener('click',()=>logoInput?.click());
-    logoInput?.addEventListener('change',()=>{const file=logoInput.files?.[0];if(file)uploadWorkspaceLogo(file)});
+    logoInput?.addEventListener('change',()=>{
+      const file=logoInput.files?.[0];
+      logoInput.value='';
+      if(file)uploadWorkspaceLogo(file)
+    });
     document.querySelectorAll('[data-tool-toggle]').forEach(x=>x.onclick=()=>toggleTool(x.dataset.toolToggle,x.dataset.enabled!=='1'));
     document.querySelectorAll('[data-tool-access]').forEach(x=>x.onclick=()=>toolAccessModal(x.dataset.toolAccess));
     document.querySelectorAll('[data-tool-identity]').forEach(x=>x.onclick=()=>toolIdentityModal(x.dataset.toolIdentity))
@@ -2580,16 +2653,15 @@ async function loadWorkspaceSettings(){
     zone.innerHTML='<div class="nxo-empty">'+esc(e.message||e)+'</div>'
   }
 }
-
 function toolIdentityModal(toolKey){
   const tool=(workspaceToolConfig?.tools||[]).find(t=>t.toolKey===toolKey);
   if(!tool)return;
   const baseName=tool.nameEs||tool.nameEn||tool.toolKey;
   const baseDescription=tool.descriptionEs||'';
   modal('Personalizar herramienta · '+baseName,
-    '<div class="nxo-field"><label>Nombre en este Workspace</label><input id="nxo-tool-custom-name" class="nxo-input" maxlength="120" value="'+esc(tool.customName||'')+'" placeholder="'+esc(baseName)+'"></div>'+
+    '<div class="nxo-field"><label>'+esc(ui('Nombre en este espacio de trabajo','Name in this Workspace'))+'</label><input id="nxo-tool-custom-name" class="nxo-input" maxlength="120" value="'+esc(tool.customName||'')+'" placeholder="'+esc(baseName)+'"></div>'+
     '<div class="nxo-field"><label>Descripción general</label><textarea id="nxo-tool-custom-description" class="nxo-textarea" maxlength="600" placeholder="'+esc(baseDescription)+'">'+esc(tool.customDescription||'')+'</textarea></div>'+
-    '<p class="nxo-muted" style="line-height:1.5">Si dejas un campo vacío, Nexo utilizará el nombre o descripción original de la herramienta. Este cambio solo afecta a este Workspace.</p>'+
+    '<p class="nxo-muted" style="line-height:1.5">'+esc(ui('Si dejas un campo vacío, Nexo utilizará el nombre o descripción original de la herramienta. Este cambio solo afecta a este espacio de trabajo.','If you leave a field empty, Nexo will use the original tool name or description. This change only affects this Workspace.'))+'</p>'+
     '<div class="nxo-modal-actions"><button id="nxo-tool-identity-save" class="nxo-btn nxo-btn-gold">Guardar personalización</button></div>',
     o=>{
       const save=o.querySelector('#nxo-tool-identity-save');
@@ -2614,7 +2686,64 @@ function toolIdentityModal(toolKey){
   )
 }
 
-async function toolAccessModal(toolKey){const tool=(workspaceToolConfig?.tools||[]).find(t=>t.toolKey===toolKey);if(!tool)return;try{if(!workspaceMembers)workspaceMembers=await api('workspace.members',{workspaceId:workspace.workspace.id});const current=new Set(tool.allowedMemberIds||[]);const members=workspaceMembers?.members||[];modal('Parámetros de acceso · '+(tool.nameEs||tool.toolKey),'<div class="nxo-field"><label>Disponibilidad</label><select id="nxo-access-mode" class="nxo-select"><option value="workspace" '+(tool.accessMode!=='restricted'?'selected':'')+'>Todo el Workspace</option><option value="restricted" '+(tool.accessMode==='restricted'?'selected':'')+'>Solo miembros seleccionados</option></select></div><div id="nxo-access-members" class="nxo-access-list">'+members.map(m=>'<label class="nxo-check"><input type="checkbox" value="'+esc(m.memberId)+'" '+(current.has(m.memberId)?'checked':'')+'><span><strong>'+esc(m.displayName)+'</strong><small>'+esc(roleName(m.roleKey,m.role))+'</small></span></label>').join('')+'</div><p class="nxo-muted" style="line-height:1.5;margin:10px 0 0">Los administradores con permiso de configurar herramientas conservan visibilidad para poder administrarlas.</p><div class="nxo-modal-actions"><button id="nxo-access-save" class="nxo-btn nxo-btn-gold">Guardar acceso</button></div>',o=>{const select=o.querySelector('#nxo-access-mode'),list=o.querySelector('#nxo-access-members'),save=o.querySelector('#nxo-access-save');const sync=()=>{list.style.display=select.value==='restricted'?'grid':'none'};select.onchange=sync;sync();save.onclick=async()=>{const mode=select.value;const allowed=mode==='restricted'?[...o.querySelectorAll('#nxo-access-members input:checked')].map(x=>x.value):[];if(mode==='restricted'&&!allowed.length){toast('Selecciona al menos un miembro');return}save.disabled=true;try{await api('workspace.tool.access',{workspaceId:workspace.workspace.id,toolKey,input:{accessMode:mode,allowedMemberIds:allowed}});o.remove();toast('Acceso actualizado');workspace=await api('workspace.open',{workspaceId:workspace.workspace.id});await loadWorkspaceSettings()}catch(e){save.disabled=false;toast(e.message||String(e))}}})}catch(e){toast(e.message||String(e))}}
+async function toolAccessModal(toolKey){const tool=(workspaceToolConfig?.tools||[]).find(t=>t.toolKey===toolKey);if(!tool)return;try{if(!workspaceMembers)workspaceMembers=await api('workspace.members',{workspaceId:workspace.workspace.id});const current=new Set(tool.allowedMemberIds||[]);const members=workspaceMembers?.members||[];modal('Parámetros de acceso · '+(tool.nameEs||tool.toolKey),'<div class="nxo-field"><label>Disponibilidad</label><select id="nxo-access-mode" class="nxo-select"><option value="workspace" '+(tool.accessMode!=='restricted'?'selected':'')+'>'+esc(ui('Todo el espacio de trabajo','Entire Workspace'))+'</option><option value="restricted" '+(tool.accessMode==='restricted'?'selected':'')+'>Solo miembros seleccionados</option></select></div><div id="nxo-access-members" class="nxo-access-list">'+members.map(m=>'<label class="nxo-check"><input type="checkbox" value="'+esc(m.memberId)+'" '+(current.has(m.memberId)?'checked':'')+'><span><strong>'+esc(m.displayName)+'</strong><small>'+esc(roleName(m.roleKey,m.role))+'</small></span></label>').join('')+'</div><p class="nxo-muted" style="line-height:1.5;margin:10px 0 0">Los administradores con permiso de configurar herramientas conservan visibilidad para poder administrarlas.</p><div class="nxo-modal-actions"><button id="nxo-access-save" class="nxo-btn nxo-btn-gold">Guardar acceso</button></div>',o=>{const select=o.querySelector('#nxo-access-mode'),list=o.querySelector('#nxo-access-members'),save=o.querySelector('#nxo-access-save');const sync=()=>{list.style.display=select.value==='restricted'?'grid':'none'};select.onchange=sync;sync();save.onclick=async()=>{const mode=select.value;const allowed=mode==='restricted'?[...o.querySelectorAll('#nxo-access-members input:checked')].map(x=>x.value):[];if(mode==='restricted'&&!allowed.length){toast('Selecciona al menos un miembro');return}save.disabled=true;try{await api('workspace.tool.access',{workspaceId:workspace.workspace.id,toolKey,input:{accessMode:mode,allowedMemberIds:allowed}});o.remove();toast('Acceso actualizado');workspace=await api('workspace.open',{workspaceId:workspace.workspace.id});await loadWorkspaceSettings()}catch(e){save.disabled=false;toast(e.message||String(e))}}})}catch(e){toast(e.message||String(e))}}
+function openProfilePhotoCropper(file,inWorkspace=false){
+  if(!file)return;
+  const allowed=['image/png','image/jpeg','image/webp'];
+  const mime=String(file.type||'').toLowerCase();
+  if(!allowed.includes(mime)){toast(ui('La foto debe ser PNG, JPG o WEBP','The photo must be PNG, JPG or WEBP'));return}
+  if(file.size>8*1024*1024){toast(ui('La foto supera el límite de 8 MB','The photo exceeds the 8 MB limit'));return}
+  const objectUrl=URL.createObjectURL(file);
+  const body=
+    '<div class="nxo-photo-cropper">'+
+      '<p class="nxo-photo-crop-help">'+esc(ui('Arrastra la imagen para colocarla. Usa el control de zoom para agrandarla o achicarla. La cuadrícula muestra el encuadre que se guardará.','Drag the image to position it. Use the zoom control to enlarge or reduce it. The grid shows the crop that will be saved.'))+'</p>'+
+      '<div class="nxo-photo-crop-stage" id="nxo-photo-crop-stage"><img id="nxo-photo-crop-image" alt="" draggable="false"><div class="nxo-photo-crop-grid" aria-hidden="true"></div><div class="nxo-photo-crop-circle" aria-hidden="true"></div></div>'+
+      '<label class="nxo-photo-crop-zoom"><span>'+esc(ui('Zoom','Zoom'))+'</span><input id="nxo-photo-crop-range" type="range" min="1" max="3" value="1" step="0.01"></label>'+
+      '<div class="nxo-modal-actions"><button type="button" class="nxo-btn" id="nxo-photo-crop-cancel">'+esc(ui('Cancelar','Cancel'))+'</button><button type="button" class="nxo-btn nxo-btn-gold" id="nxo-photo-crop-save">'+esc(ui('Usar esta foto','Use this photo'))+'</button></div>'+
+    '</div>';
+  modal(ui('Ajustar foto de perfil','Adjust profile photo'),body,o=>{
+    const stage=o.querySelector('#nxo-photo-crop-stage'),image=o.querySelector('#nxo-photo-crop-image'),range=o.querySelector('#nxo-photo-crop-range'),save=o.querySelector('#nxo-photo-crop-save'),cancel=o.querySelector('#nxo-photo-crop-cancel');
+    let naturalWidth=0,naturalHeight=0,baseScale=1,zoom=1,tx=0,ty=0,dragging=false,startX=0,startY=0,startTx=0,startTy=0,cleaned=false;
+    const cleanup=()=>{if(cleaned)return;cleaned=true;try{URL.revokeObjectURL(objectUrl)}catch(_){}};
+    const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+    const render=()=>{
+      if(!naturalWidth||!naturalHeight||!stage)return;
+      const size=stage.clientWidth||300,scale=baseScale*zoom,width=naturalWidth*scale,height=naturalHeight*scale;
+      tx=clamp(tx,-Math.max(0,(width-size)/2),Math.max(0,(width-size)/2));
+      ty=clamp(ty,-Math.max(0,(height-size)/2),Math.max(0,(height-size)/2));
+      image.style.width=width+'px';image.style.height=height+'px';image.style.left=((size-width)/2+tx)+'px';image.style.top=((size-height)/2+ty)+'px'
+    };
+    image.addEventListener('load',()=>{naturalWidth=image.naturalWidth||1;naturalHeight=image.naturalHeight||1;const size=stage.clientWidth||300;baseScale=Math.max(size/naturalWidth,size/naturalHeight);zoom=Number(range.value||1);tx=0;ty=0;render()});
+    image.src=objectUrl;
+    range.addEventListener('input',()=>{zoom=Number(range.value||1);render()});
+    stage.addEventListener('pointerdown',e=>{if(!naturalWidth)return;dragging=true;startX=e.clientX;startY=e.clientY;startTx=tx;startTy=ty;stage.setPointerCapture?.(e.pointerId)});
+    stage.addEventListener('pointermove',e=>{if(!dragging)return;tx=startTx+(e.clientX-startX);ty=startTy+(e.clientY-startY);render()});
+    const endDrag=e=>{dragging=false;try{stage.releasePointerCapture?.(e.pointerId)}catch(_){}};
+    stage.addEventListener('pointerup',endDrag);stage.addEventListener('pointercancel',endDrag);
+    cancel.addEventListener('click',()=>{cleanup();o.remove()});
+    o.querySelector('[data-close]')?.addEventListener('click',cleanup,{once:true});
+    o.addEventListener('click',e=>{if(e.target===o)cleanup()});
+    save.addEventListener('click',()=>{
+      if(!naturalWidth||!naturalHeight){toast(ui('Espera a que la imagen termine de cargar','Wait for the image to finish loading'));return}
+      save.disabled=true;save.textContent=ui('Preparando…','Preparing…');
+      const size=stage.clientWidth||300,scale=baseScale*zoom,renderedWidth=naturalWidth*scale,renderedHeight=naturalHeight*scale,left=(size-renderedWidth)/2+tx,top=(size-renderedHeight)/2+ty;
+      const sx=clamp((-left)/renderedWidth*naturalWidth,0,naturalWidth),sy=clamp((-top)/renderedHeight*naturalHeight,0,naturalHeight);
+      const sw=Math.min(naturalWidth-sx,size/renderedWidth*naturalWidth),sh=Math.min(naturalHeight-sy,size/renderedHeight*naturalHeight),sourceSize=Math.min(sw,sh);
+      const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=1024;const ctx=canvas.getContext('2d');
+      if(!ctx){save.disabled=false;save.textContent=ui('Usar esta foto','Use this photo');toast(ui('No se pudo preparar el recorte','The crop could not be prepared'));return}
+      ctx.drawImage(image,sx,sy,sourceSize,sourceSize,0,0,1024,1024);
+      const outType=mime==='image/png'?'image/png':(mime==='image/webp'?'image/webp':'image/jpeg');
+      canvas.toBlob(async blob=>{
+        if(!blob){save.disabled=false;save.textContent=ui('Usar esta foto','Use this photo');toast(ui('No se pudo crear la foto recortada','The cropped photo could not be created'));return}
+        const ext=outType==='image/png'?'png':(outType==='image/webp'?'webp':'jpg');
+        const base=(String(file.name||'profile-photo').replace(/\.[^.]+$/,'').replace(/[^a-z0-9_-]+/gi,'-').slice(0,70)||'profile-photo');
+        const cropped=new File([blob],base+'-crop.'+ext,{type:outType,lastModified:Date.now()});
+        cleanup();o.remove();await uploadProfilePhoto(cropped,inWorkspace)
+      },outType,outType==='image/png'?undefined:.92)
+    })
+  })
+}
+
 async function uploadProfilePhoto(file,inWorkspace=false){
   if(!file)return;
   const allowed=['image/png','image/jpeg','image/webp'];
@@ -2644,7 +2773,7 @@ async function uploadProfilePhoto(file,inWorkspace=false){
   }
 }
 async function commitWorkspaceLogoFile(workspaceId,file){
-  if(!workspaceId||!file)throw new Error('Falta el Workspace o la imagen');
+  if(!workspaceId||!file)throw new Error(ui('Falta el espacio de trabajo o la imagen','The Workspace or image is missing'));
   const allowed=['image/png','image/jpeg','image/webp','image/svg+xml'];
   const mime=String(file.type||'').toLowerCase();
   if(!allowed.includes(mime))throw new Error('El logo debe ser PNG, JPG, WEBP o SVG');
@@ -2664,35 +2793,44 @@ async function commitWorkspaceLogoFile(workspaceId,file){
 }
 async function uploadWorkspaceCardLogo(workspaceId,file){
   const item=(personal?.workspaces||[]).find(x=>x.workspaceId===workspaceId);
-  if(!item?.canManageWorkspace){toast('No tienes permiso para cambiar esta imagen');return}
-  const button=document.querySelector('[data-workspace-logo-edit="'+CSS.escape(workspaceId)+'"]');
-  if(button){button.disabled=true;button.classList.add('uploading');button.setAttribute('aria-busy','true')}
+  if(!item?.canManageWorkspace){toast(ui('No tienes permiso para cambiar esta imagen','You do not have permission to change this image'));return}
+  const control=document.querySelector('[data-workspace-logo-edit="'+CSS.escape(workspaceId)+'"]');
+  const input=control?.querySelector('[data-workspace-logo-file]');
+  if(control){control.classList.add('uploading');control.setAttribute('aria-busy','true')}
+  if(input)input.disabled=true;
   try{
     await commitWorkspaceLogoFile(workspaceId,file);
     personal=await api('personal.refresh');
-    toast('Imagen del Workspace actualizada');
+    toast(ui('Imagen del espacio de trabajo actualizada','Workspace image updated'));
     renderPersonal()
   }catch(e){
-    if(button){button.disabled=false;button.classList.remove('uploading');button.removeAttribute('aria-busy')}
+    if(input)input.disabled=false;
+    if(control){control.classList.remove('uploading');control.removeAttribute('aria-busy')}
     toast(e.message||String(e))
   }
 }
 async function uploadWorkspaceLogo(file){
   if(!file||!workspace?.workspace?.id)return;
-  const button=document.getElementById('nxo-workspace-logo-change');
-  const oldText=button?.textContent||'Subir logo';
-  if(button){button.disabled=true;button.textContent='Subiendo…'}
+  const picker=document.getElementById('nxo-workspace-logo-change');
+  const input=document.getElementById('nxo-workspace-logo-file');
+  const textNode=picker?.querySelector('.nxo-native-file-picker-text');
+  const oldText=textNode?.textContent||ui('Subir logo','Upload logo');
+  if(input)input.disabled=true;
+  if(picker){picker.classList.add('uploading');picker.setAttribute('aria-busy','true')}
+  if(textNode)textNode.textContent=ui('Subiendo…','Uploading…');
   try{
     workspace=await commitWorkspaceLogoFile(workspace.workspace.id,file);
     personal=await api('personal.refresh');
-    toast('Logo del Workspace actualizado');
-    renderWorkspace();
+    toast(ui('Logo del espacio de trabajo actualizado','Workspace logo updated'));
+    renderWorkspace()
   }catch(e){
-    if(button){button.disabled=false;button.textContent=oldText}
+    if(input)input.disabled=false;
+    if(picker){picker.classList.remove('uploading');picker.removeAttribute('aria-busy')}
+    if(textNode)textNode.textContent=oldText;
     toast(e.message||String(e))
   }
 }
-async function saveWorkspaceSettings(){const name=document.getElementById('nxo-settings-name')?.value.trim()||'',description=document.getElementById('nxo-settings-desc')?.value.trim()||'';if(!name){toast('El nombre es obligatorio');return}try{workspace=await api('workspace.update',{workspaceId:workspace.workspace.id,input:{name,description}});toast('Workspace actualizado');renderWorkspace()}catch(e){toast(e.message||String(e))}}
+async function saveWorkspaceSettings(){const name=document.getElementById('nxo-settings-name')?.value.trim()||'',description=document.getElementById('nxo-settings-desc')?.value.trim()||'';if(!name){toast('El nombre es obligatorio');return}try{workspace=await api('workspace.update',{workspaceId:workspace.workspace.id,input:{name,description}});toast(ui('Espacio de trabajo actualizado','Workspace updated'));renderWorkspace()}catch(e){toast(e.message||String(e))}}
 async function toggleTool(toolKey,enabled){try{await api('workspace.tool.set',{workspaceId:workspace.workspace.id,toolKey,enabled});toast(enabled?'Herramienta habilitada':'Herramienta deshabilitada');workspace=await api('workspace.open',{workspaceId:workspace.workspace.id});await loadWorkspaceSettings()}catch(e){toast(e.message||String(e))}}
 start().catch(errorView);
 })();
