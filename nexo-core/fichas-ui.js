@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-workspace-identity-20261001-22';
-const ENGINE_REVISION='workspace-tool-identity-20261001-22';
+const ACCESS_REVISION='fichas-numa-continuation-20261001-23';
+const ENGINE_REVISION='workspace-numa-continuation-20261001-23';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-deep-search-20260930-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
