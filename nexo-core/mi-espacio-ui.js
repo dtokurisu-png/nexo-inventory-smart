@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-qr-invite-20260930-44';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=mobile-header-primary-utils-20260930-45';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-20260927-3';
@@ -1166,12 +1166,14 @@ function hasPerm(key){const list=workspace?.role?.permissions||workspace?.member
 function topbar(mode){
   const isWorkspace=mode==='workspace';
   const name=personal?.profile?.displayName||'Usuario Nexo';
+  const email=String(personal?.profile?.email||'').trim();
   const profilePhoto=String(personal?.profile?.photoImage?.url||'').trim();
   const wsName=workspace?.workspace?.name||'Workspace';
   const role=isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):'Cuenta personal';
   const perms=workspace?.role?.permissions||[];
   const canAdmin=isWorkspace&&(workspace?.membership?.roleKey==='owner'||perms.some(x=>['workspace.manage','members.manage','tools.configure'].includes(x)));
   const contextLabel=isWorkspace?wsName:'Mi espacio';
+
   const workspaceQuickActions=!isWorkspace
     ?'<div class="nxo-header-workspace-actions">'+
        '<button type="button" class="nxo-header-action" id="nxo-join-workspace-mobile">Unirse a un Workspace</button>'+
@@ -1192,31 +1194,36 @@ function topbar(mode){
     :'';
 
   return '<header class="nxo-topbar nxo-workspace-nav">'+
-    '<div class="nxo-nav-brand" id="nxo-nav-home"><span class="nxo-nav-mark"><img src="' + esc(NEXO_LOGO) + '" alt="Nexo Group"></span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div>'+
-    '<button type="button" class="nxo-mobile-menu-button" id="nxo-mobile-menu-button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nxo-nav-collapse"><span></span><span></span><span></span></button>'+
+    '<div class="nxo-nav-brand" id="nxo-nav-home"><span class="nxo-nav-mark"><img src="'+esc(NEXO_LOGO)+'" alt="Nexo Group"></span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div>'+
     '<div class="nxo-nav-collapse" id="nxo-nav-collapse">'+
       '<nav class="nxo-nav-links" aria-label="Navegación principal">'+
         '<button type="button" class="nxo-nav-link '+(!isWorkspace?'active':'')+'" id="nxo-personal" '+(!isWorkspace?'aria-current="page"':'')+'>Mi espacio</button>'+
         (isWorkspace?'<button type="button" class="nxo-nav-link active" aria-current="page">'+esc(wsName)+'</button>':'')+
         '<button type="button" class="nxo-nav-link" id="nxo-nav-development">Centro de desarrollo</button>'+
       '</nav>'+
-      '<div class="nxo-nav-account-wrap">'+
-        workspaceQuickActions+
+      '<div class="nxo-nav-menu-utilities">'+
         '<button type="button" class="nxo-theme-button" id="nxo-theme-toggle" aria-label="Cambiar tema" aria-pressed="false"></button>'+
-        notification+
-        '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
-          '<span class="nxo-avatar">'+(profilePhoto?'<img src="'+esc(profilePhoto)+'" alt="'+esc(name+' foto de perfil')+'">':esc(initials(name)))+'</span>'+
-          '<span class="nxo-nav-account-copy"><span class="nxo-nav-account-name-row"><strong>'+esc(name)+'</strong><small class="nxo-nav-account-role">'+esc(role)+'</small></span></span>'+
-          '<span class="nxo-nav-caret">⌄</span>'+
-        '</button>'+
-        '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
-          '<button type="button" data-account-action="settings">Ajustes de perfil</button>'+
-          '<button type="button" data-account-action="switch">Cambiar cuenta</button>'+
-          '<button type="button" class="danger" data-account-action="logout">Cerrar sesión</button>'+
-          '<input type="file" id="nxo-profile-photo-input" class="nxo-profile-photo-input" accept="image/png,image/jpeg,image/webp" hidden>'+
-        '</div>'+
       '</div>'+
     '</div>'+
+    '<div class="nxo-nav-primary-utils">'+
+      notification+
+      '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
+        '<span class="nxo-avatar">'+(profilePhoto?'<img src="'+esc(profilePhoto)+'" alt="'+esc(name+' foto de perfil')+'">':esc(initials(name)))+'</span>'+
+        '<span class="nxo-nav-account-copy">'+
+          '<span class="nxo-nav-account-name-row"><strong>'+esc(name)+'</strong><small class="nxo-nav-account-role">'+esc(role)+'</small></span>'+
+          (email?'<small class="nxo-nav-account-email">'+esc(email)+'</small>':'')+
+        '</span>'+
+        '<span class="nxo-nav-caret">⌄</span>'+
+      '</button>'+
+      '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
+        '<button type="button" data-account-action="settings">Ajustes de perfil</button>'+
+        '<button type="button" data-account-action="switch">Cambiar cuenta</button>'+
+        '<button type="button" class="danger" data-account-action="logout">Cerrar sesión</button>'+
+      '</div>'+
+      '<input type="file" id="nxo-profile-photo-input" class="nxo-profile-photo-input" accept="image/png,image/jpeg,image/webp" hidden>'+
+    '</div>'+
+    '<button type="button" class="nxo-mobile-menu-button" id="nxo-mobile-menu-button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nxo-nav-collapse"><span></span><span></span><span></span></button>'+
+    workspaceQuickActions+
   '</header>'
 }
 
