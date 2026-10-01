@@ -21,6 +21,7 @@ let numaContextKey='';
 let numaLoading=false;
 let numaSending=false;
 let requestedSheetOpened=false;
+let engineDataCache=null;
 const launchQuery=new URLSearchParams(location.search);
 const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
 const workspaceToolName=String(launchQuery.get('nxoToolName')||'Fichas Técnicas Dinámicas').trim()||'Fichas Técnicas Dinámicas';
@@ -43,6 +44,103 @@ function numaContextInput(){
     currentToolKey:'dynamic-specs',
     currentToolLabel:workspaceToolName
   };
+}
+function numaSearchNorm(value){
+  try{
+    return String(value??'')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g,' ')
+      .trim();
+  }catch(_){return String(value??'').toLowerCase().trim()}
+}
+function numaExtractSheetQuery(message){
+  let q=String(message||'').trim();
+  const related=q.match(/(?:fichas?|recetas?).*?(?:relacionad[oa]s?\s+con|sobre|que\s+tengan?)\s+(.+)$/i);
+  if(related?.[1])q=related[1];
+  else{
+    q=q.replace(/^.*?\b(?:abre|abrir|busca|buscar|encuentra|encontrar|muestra|mostrar|ve\s+a|ir\s+a)\b\s*/i,'');
+    q=q.replace(/^(?:la|el|los|las|una|un)\s+/i,'');
+    q=q.replace(/^(?:ficha(?:\s+t[eé]cnica)?|receta|plato|preparaci[oó]n)\s*(?:de|llamada?|que\s+se\s+llama)?\s*/i,'');
+  }
+  q=q.replace(/\s+(?:en\s+)?(?:fichas(?:\s+t[eé]cnicas)?|recetario)\s*$/i,'');
+  q=q.replace(/\s+(?:o\s+no|por\s+favor|porfa|si\s+puedes|si\s+puede)\s*[?!.]*$/i,'');
+  q=q.replace(/^[¿?¡!.,;:\s]+|[¿?¡!.,;:\s]+$/g,'');
+  return q.slice(0,300);
+}
+function numaLocalSheetContext(message){
+  const data=engineDataCache;
+  const recipes=Array.isArray(data?.recipes)?data.recipes:[];
+  const query=numaExtractSheetQuery(message);
+  const sample=recipes.slice(0,10).map(row=>row?.titleEs||row?.titleEn||row?._id).filter(Boolean);
+  if(!query)return {query:'',matches:[],total:recipes.length,sample};
+
+  const sectionsByRecipe=new Map();
+  for(const section of Array.isArray(data?.sections)?data.sections:[]){
+    const recipeId=String(section?.recipeId||'');
+    if(!recipeId)continue;
+    if(!sectionsByRecipe.has(recipeId))sectionsByRecipe.set(recipeId,[]);
+    sectionsByRecipe.get(recipeId).push(section);
+  }
+  const ingredients=new Map((Array.isArray(data?.ingredients)?data.ingredients:[]).map(row=>[String(row?._id||''),row]));
+  const preparations=new Map((Array.isArray(data?.preparations)?data.preparations:[]).map(row=>[String(row?._id||''),row]));
+  const recipesById=new Map(recipes.map(row=>[String(row?._id||''),row]));
+  const q=numaSearchNorm(query);
+  const tokens=q.split(' ').filter(Boolean);
+  const matches=[];
+
+  for(const recipe of recipes){
+    const id=String(recipe?._id||'');
+    if(!id)continue;
+    const titleEs=numaSearchNorm(recipe?.titleEs);
+    const titleEn=numaSearchNorm(recipe?.titleEn);
+    const sections=sectionsByRecipe.get(id)||[];
+    const sectionIds=new Set(sections.map(section=>String(section?._id||'')).filter(Boolean));
+    const corpus=[
+      recipe?.titleEs,recipe?.titleEn,recipe?.category,recipe?.recipeType,
+      recipe?.notesEs,recipe?.notesEn,recipe?.methodEs,recipe?.methodEn
+    ];
+    for(const section of sections)corpus.push(section?.titleEs,section?.titleEn,section?.sectionType);
+    for(const component of Array.isArray(data?.components)?data.components:[]){
+      if(String(component?.recipeId||'')!==id&&!sectionIds.has(String(component?.sectionId||'')))continue;
+      corpus.push(component?.displayEs,component?.displayEn,component?.noteEs,component?.noteEn);
+      const ingredient=ingredients.get(String(component?.targetIngredientId||''));
+      if(ingredient)corpus.push(ingredient?.nameEs,ingredient?.nameEn,ingredient?.descriptionEs,ingredient?.descriptionEn);
+      const preparation=preparations.get(String(component?.targetPreparationId||''));
+      if(preparation)corpus.push(preparation?.nameEs,preparation?.nameEn,preparation?.descriptionEs,preparation?.descriptionEn);
+      const subRecipe=recipesById.get(String(component?.targetRecipeId||''));
+      if(subRecipe)corpus.push(subRecipe?.titleEs,subRecipe?.titleEn);
+    }
+
+    let score=0;
+    if(titleEs===q||titleEn===q)score+=120;
+    else if(titleEs.startsWith(q)||titleEn.startsWith(q))score+=90;
+    else if(titleEs.includes(q)||titleEn.includes(q))score+=75;
+
+    const hay=numaSearchNorm(corpus.filter(Boolean).join(' '));
+    const matched=tokens.filter(token=>hay.includes(token)).length;
+    if(tokens.length&&matched===tokens.length)score+=45;
+    else score+=matched*8;
+    if(numaSearchNorm(recipe?.category).includes(q))score+=12;
+    if(score<=0)continue;
+
+    matches.push({
+      id,
+      title:recipe?.titleEs||recipe?.titleEn||id,
+      titleEs:recipe?.titleEs||'',
+      titleEn:recipe?.titleEn||'',
+      score,
+      exact:titleEs===q||titleEn===q
+    });
+  }
+
+  matches.sort((a,b)=>
+    Number(b.exact)-Number(a.exact)||
+    Number(b.score)-Number(a.score)||
+    String(a.title).localeCompare(String(b.title),'es')
+  );
+  return {query,matches:matches.slice(0,8),total:recipes.length,sample};
 }
 function numaTime(value){
   try{return new Date(value||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}catch(_){return''}
@@ -178,7 +276,8 @@ async function numaSend(){
   numaRenderMessages(optimistic);
   numaSetStatus('Numa está buscando…','loading');
   try{
-    const data=await api('numa.send',{input:{...numaContextInput(),message}});
+    const localSheetContext=numaLocalSheetContext(message);
+    const data=await api('numa.send',{input:{...numaContextInput(),message,localSheetContext}});
     numaState={
       ...(numaState||{}),
       context:data?.context||numaState?.context||null,
@@ -240,9 +339,16 @@ function mountNuma(){
   }
   numaSyncHeader();
 }
+function clearRequestedSheetParams(){
+  try{
+    const u=new URL(location.href);
+    u.searchParams.delete('numaSheet');
+    u.searchParams.delete('numaSheetTitle');
+    history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
+  }catch(_){}
+}
 function openRequestedSheet(){
   if(requestedSheetOpened||!requestedSheetId)return;
-  requestedSheetOpened=true;
   postToEngine('NUMA_OPEN_RECIPE',{sheetId:requestedSheetId,title:requestedSheetTitle});
 }
 function accessError(code){
@@ -385,6 +491,7 @@ async function pushEngineData(){
   loadingData=true;
   try{
     const data=await api('engine.data');
+    engineDataCache=data||null;
     postToEngine('DM_MENU_DATA',{ok:true,...data});
   }catch(error){
     postToEngine('DM_MENU_DATA',{ok:false,error:String(error?.message||error)});
@@ -666,6 +773,19 @@ function handleEngineMessage(event){
   }
   if(!message?.type)return;
   const payload=message.payload||{};
+  if(message.type==='NUMA_RECIPE_OPENED'){
+    const openedId=String(payload.sheetId||payload.recipeId||'');
+    if(!requestedSheetId||openedId===String(requestedSheetId)){
+      requestedSheetOpened=true;
+      clearRequestedSheetParams();
+      numaSetStatus('Ficha abierta','local');
+    }
+    return;
+  }
+  if(message.type==='NUMA_RECIPE_OPEN_FAILED'){
+    numaSetStatus(payload.error||'No se pudo abrir la ficha solicitada.','error');
+    return;
+  }
   if(message.type==='NEXO_LANGUAGE_CHANGED'){
     workspaceLanguage=String(payload.language||payload.lang||'').toLowerCase()==='en'?'en':'es';
     api('profile.locale.set',{locale:workspaceLanguage}).catch(()=>{});
