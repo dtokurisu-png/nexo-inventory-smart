@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-numa-deep-search-20260930-20';
-const ENGINE_REVISION='workspace-numa-deep-search-20260930-20';
+const ACCESS_REVISION='fichas-global-language-20260930-21';
+const ENGINE_REVISION='workspace-global-language-20260930-21';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-deep-search-20260930-1';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -24,6 +24,7 @@ let requestedSheetOpened=false;
 const launchQuery=new URLSearchParams(location.search);
 const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
 const workspaceTheme=launchQuery.get('nxoTheme')==='night'?'night':'day';
+let workspaceLanguage=launchQuery.get('nxoLang')==='en'?'en':'es';
 const requestedSheetId=launchQuery.get('numaSheet')||'';
 const requestedSheetTitle=launchQuery.get('numaSheetTitle')||'';
 
@@ -341,12 +342,19 @@ function workspaceReturnUrl(){
   if(raw){
     try{
       const u=new URL(raw,location.href);
-      if(u.origin===location.origin)return u.href;
+      if(u.origin===location.origin){
+        u.searchParams.set('nxoLang',workspaceLanguage);
+        u.searchParams.set('nxoTheme',workspaceTheme);
+        return u.href
+      }
     }catch(_){}
   }
   const parts=location.pathname.replace(/\/+$/,'').split('/').filter(Boolean);
   const siteRoot=location.origin+(parts.length?'/'+parts[0]:'');
-  return siteRoot+'/blank-8';
+  const u=new URL(siteRoot+'/blank-8');
+  u.searchParams.set('nxoLang',workspaceLanguage);
+  u.searchParams.set('nxoTheme',workspaceTheme);
+  return u.href;
 }
 function exitToWorkspace(){
   location.assign(workspaceReturnUrl());
@@ -356,10 +364,16 @@ function siteBase(){
   return (location.origin+p.replace(/\/blank-4$/,'')).replace(/\/$/,'');
 }
 function openPersonalSpace(){
-  location.assign(siteBase()+'/blank-8');
+  const u=new URL(siteBase()+'/blank-8',location.href);
+  u.searchParams.set('nxoLang',workspaceLanguage);
+  u.searchParams.set('nxoTheme',workspaceTheme);
+  location.assign(u.href);
 }
 function openDevelopmentCenter(){
-  location.assign(siteBase()||location.origin);
+  const u=new URL(siteBase()||location.origin,location.href);
+  u.searchParams.set('nxoLang',workspaceLanguage);
+  u.searchParams.set('nxoTheme',workspaceTheme);
+  location.assign(u.href);
 }
 function postToEngine(type,payload={}){
   try{frame?.contentWindow?.postMessage({type,payload},'*')}catch(_){}
@@ -650,6 +664,11 @@ function handleEngineMessage(event){
   }
   if(!message?.type)return;
   const payload=message.payload||{};
+  if(message.type==='NEXO_LANGUAGE_CHANGED'){
+    workspaceLanguage=String(payload.language||payload.lang||'').toLowerCase()==='en'?'en':'es';
+    api('profile.locale.set',{locale:workspaceLanguage}).catch(()=>{});
+    return;
+  }
   if(message.type==='DM_LOAD_MENU_DATA'){
     pushEngineData().catch(showError);
     return;
@@ -708,12 +727,12 @@ function mountEngine(){
   root.innerHTML='';
   frame=document.createElement('iframe');
   frame.id='nexo-dm-engine';
-  frame.src=ENGINE;
-  frame.title='Fichas Técnicas Dinámicas';
+  frame.src=ENGINE+'&nxoLang='+encodeURIComponent(workspaceLanguage);
+  frame.title=workspaceLanguage==='en'?'Dynamic Technical Sheets':'Fichas Técnicas Dinámicas';
   frame.allow='camera; notifications';
   frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#eef3fb;';
   frame.addEventListener('load',()=>{
-    postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,theme:workspaceTheme});
+    postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,theme:workspaceTheme,language:workspaceLanguage});
     setTimeout(openRequestedSheet,180);
   });
   root.appendChild(frame);
