@@ -106,6 +106,15 @@ html[data-theme] body .nexoQuickSettingsButton:focus-visible{
   .nexoQuickSettingsButton{width:46px;height:46px;font-size:20px}
   .nexoQuickSettingsMenu{position:fixed;right:10px;top:calc(64px + env(safe-area-inset-top) + 8px);width:min(260px,calc(100vw - 20px))}
 }
+html.nexoMobile .nexoQuickSettingsButton{
+  width:23px!important;height:23px!important;min-width:23px!important;min-height:23px!important;
+  border-radius:5px!important;font-size:11px!important
+}
+html.nexoMobile .nexoQuickSettingsMenu{
+  top:calc(31px + env(safe-area-inset-top))!important;
+  right:5px!important;
+  width:min(240px,calc(100vw - 10px))!important
+}
 
 /* Shared surfaces and text */
 .title,.meta h3,.heroText h1,.section h2,.modalHead h2,.taxonomyMaster h2,
