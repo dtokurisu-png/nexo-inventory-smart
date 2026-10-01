@@ -3272,3 +3272,262 @@ html,body{margin:0}
   }
 }
 
+/* =========================================================
+   NEXO SEMANTIC THEME TOKENS · CANONICAL · 2026-10-01
+   Source of truth: nexo-core/theme-tokens.json + docs/NEXO_VISUAL_SYSTEM.md
+   New UI must consume semantic tokens instead of inventing text/surface colors.
+========================================================= */
+html[data-nxo-theme="day"],
+body[data-nxo-theme="day"],
+.nxo-app[data-theme="day"]{
+  --nxo-theme-bg:#f3f6ff;
+  --nxo-theme-bg-alt:#eef4ff;
+  --nxo-theme-surface:#ffffff;
+  --nxo-theme-surface-raised:#f8fbff;
+  --nxo-theme-border:#b9cbed;
+  --nxo-theme-border-strong:#172755;
+  --nxo-theme-text:#111827;
+  --nxo-theme-text-soft:#34405f;
+  --nxo-theme-text-muted:#66738d;
+  --nxo-theme-accent:#2f4f93;
+  --nxo-theme-accent-soft:#dce7f7;
+  --nxo-theme-accent-contrast:#ffffff;
+  --nxo-theme-positive:#246b36;
+  --nxo-theme-interaction:#e79069;
+  --nxo-theme-danger:#b94242;
+  --nxo-theme-role-text:#264c8f;
+  --nxo-theme-role-bg:#eef4ff;
+  --nxo-theme-role-border:#b9cbed;
+
+  --nxo-text:var(--nxo-theme-text);
+  --nxo-text-soft:var(--nxo-theme-text-soft);
+  --nxo-muted:var(--nxo-theme-text-muted);
+  --nxo-panel:var(--nxo-theme-surface);
+  --nxo-panel2:var(--nxo-theme-surface-raised);
+  --nxo-line:var(--nxo-theme-border);
+  --nxo-line2:var(--nxo-theme-border-strong)
+}
+
+html[data-nxo-theme="night"],
+body[data-nxo-theme="night"],
+.nxo-app[data-theme="night"]{
+  --nxo-theme-bg:#080b10;
+  --nxo-theme-bg-alt:#0d121a;
+  --nxo-theme-surface:#121923;
+  --nxo-theme-surface-raised:#18212e;
+  --nxo-theme-border:rgba(145,160,181,.22);
+  --nxo-theme-border-strong:rgba(184,197,216,.34);
+  --nxo-theme-text:#f2f5f8;
+  --nxo-theme-text-soft:#b8c5d8;
+  --nxo-theme-text-muted:#91a0b5;
+  --nxo-theme-accent:#e1bd69;
+  --nxo-theme-accent-soft:rgba(225,189,105,.10);
+  --nxo-theme-accent-contrast:#17130c;
+  --nxo-theme-positive:#55c985;
+  --nxo-theme-interaction:#d7b45f;
+  --nxo-theme-danger:#ff7070;
+  --nxo-theme-role-text:#f0ce83;
+  --nxo-theme-role-bg:rgba(225,189,105,.08);
+  --nxo-theme-role-border:rgba(225,189,105,.22);
+
+  --nxo-text:var(--nxo-theme-text);
+  --nxo-text-soft:var(--nxo-theme-text-soft);
+  --nxo-muted:var(--nxo-theme-text-muted);
+  --nxo-panel:var(--nxo-theme-surface);
+  --nxo-panel2:var(--nxo-theme-surface-raised);
+  --nxo-line:var(--nxo-theme-border);
+  --nxo-line2:var(--nxo-theme-border-strong)
+}
+
+/* Account hierarchy: name -> email -> role. */
+.nxo-nav-account-copy{
+  display:grid!important;
+  align-content:center!important;
+  justify-items:start!important;
+  min-width:0!important;
+  row-gap:1px!important
+}
+.nxo-nav-account-name-row{
+  display:block!important;
+  min-width:0!important;
+  width:100%!important
+}
+.nxo-nav-account-name-row>strong{
+  display:block!important;
+  max-width:170px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important
+}
+.nxo-nav-account-email{
+  display:block!important;
+  max-width:170px!important;
+  color:var(--nxo-theme-text-muted)!important
+}
+.nxo-nav-account-role{
+  display:inline-flex!important;
+  width:auto!important;
+  max-width:120px!important;
+  margin:3px 0 0!important;
+  padding:2px 6px!important;
+  align-items:center!important;
+  border:1px solid var(--nxo-theme-role-border)!important;
+  border-radius:999px!important;
+  background:var(--nxo-theme-role-bg)!important;
+  color:var(--nxo-theme-role-text)!important;
+  line-height:1.15!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important
+}
+.nxo-app[data-theme="day"] .nxo-nav-account-role{
+  color:#264c8f!important
+}
+.nxo-app[data-theme="night"] .nxo-nav-account-role{
+  color:#f0ce83!important
+}
+
+/* Quick settings: guaranteed readable in both themes. */
+.nxo-quick-settings-menu{
+  color:var(--nxo-theme-text)!important;
+  background:var(--nxo-theme-surface-raised)!important;
+  border-color:var(--nxo-theme-border)!important
+}
+.nxo-quick-settings-title{
+  color:var(--nxo-theme-text-muted)!important
+}
+.nxo-quick-setting-row{
+  color:var(--nxo-theme-text)!important;
+  border-color:var(--nxo-theme-border)!important
+}
+.nxo-quick-setting-row strong{
+  color:var(--nxo-theme-text-soft)!important;
+  border-color:var(--nxo-theme-border)!important;
+  background:var(--nxo-theme-accent-soft)!important
+}
+.nxo-app[data-theme="day"] .nxo-quick-setting-row:hover,
+.nxo-app[data-theme="day"] .nxo-quick-setting-row:focus-visible{
+  color:var(--nxo-theme-text)!important;
+  background:#eaf1ff!important
+}
+.nxo-app[data-theme="night"] .nxo-quick-setting-row:hover,
+.nxo-app[data-theme="night"] .nxo-quick-setting-row:focus-visible{
+  color:var(--nxo-theme-accent-contrast)!important;
+  background:var(--nxo-theme-accent)!important
+}
+.nxo-app[data-theme="night"] .nxo-quick-setting-row:hover strong,
+.nxo-app[data-theme="night"] .nxo-quick-setting-row:focus-visible strong{
+  color:var(--nxo-theme-accent-contrast)!important;
+  border-color:rgba(23,19,12,.28)!important;
+  background:rgba(255,255,255,.22)!important
+}
+
+/* Profile identity editor. */
+.nxo-profile-settings-form{
+  display:grid;
+  gap:0
+}
+.nxo-profile-work-name-field{
+  margin:0!important;
+  padding:14px
+}
+.nxo-profile-work-name-field>span{
+  display:block;
+  margin-bottom:6px;
+  color:var(--nxo-theme-text-soft);
+  font-size:11px;
+  font-weight:800
+}
+.nxo-profile-work-name-field>small{
+  display:block;
+  margin-top:7px;
+  color:var(--nxo-theme-text-muted);
+  font-size:10px;
+  line-height:1.45
+}
+.nxo-profile-role-row{
+  border-top:1px solid var(--nxo-theme-border)!important
+}
+.nxo-profile-role-row>div{
+  display:grid;
+  justify-items:end;
+  gap:3px
+}
+.nxo-profile-role-row>div>small{
+  max-width:280px;
+  color:var(--nxo-theme-text-muted);
+  font-size:9px;
+  line-height:1.35;
+  text-align:right
+}
+.nxo-profile-settings-actions{
+  display:flex;
+  justify-content:flex-end;
+  padding:12px 14px;
+  border-top:1px solid var(--nxo-theme-border)
+}
+
+/* Mandatory first-run work identity. */
+.nxo-onboarding-overlay{
+  z-index:2147483646!important
+}
+.nxo-onboarding-modal{
+  width:min(500px,100%)!important
+}
+.nxo-onboarding-modal .nxo-modal-body{
+  display:grid;
+  gap:12px;
+  color:var(--nxo-theme-text)
+}
+.nxo-onboarding-modal h2{
+  margin:0;
+  color:var(--nxo-theme-text);
+  font-size:21px
+}
+.nxo-onboarding-modal p{
+  margin:0 0 4px;
+  color:var(--nxo-theme-text-soft);
+  font-size:12px;
+  line-height:1.55
+}
+.nxo-onboarding-icon{
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  color:var(--nxo-theme-accent-contrast);
+  background:var(--nxo-theme-accent);
+  font-size:13px;
+  font-weight:950
+}
+
+/* Narrow mobile: keep role below email, never hide it. */
+@media(max-width:390px){
+  .nxo-nav-primary-utils .nxo-nav-account-role{
+    display:inline-flex!important;
+    max-width:82px!important;
+    margin-top:1px!important;
+    padding:1px 4px!important;
+    font-size:6px!important
+  }
+  .nxo-nav-primary-utils .nxo-nav-account-name-row>strong{
+    max-width:82px!important
+  }
+  .nxo-nav-primary-utils .nxo-nav-account-email{
+    max-width:82px!important
+  }
+}
+
+@media(max-width:560px){
+  .nxo-profile-role-row>div{
+    justify-items:start
+  }
+  .nxo-profile-role-row>div>small{
+    text-align:left
+  }
+  .nxo-profile-settings-actions .nxo-btn{
+    width:100%
+  }
+}
+
