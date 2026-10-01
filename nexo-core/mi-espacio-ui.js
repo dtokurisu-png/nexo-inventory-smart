@@ -930,6 +930,14 @@ const NUMA_VISUAL_ASSETS={
   }
 };
 const NUMA_VISUAL_RUNTIME_STATES=new Set(["idle","attentive","listening","thinking","success","error"]);
+const NUMA_CORE_LAYOUTS={
+  idle:{head:[50,34,38,27],belly:[50,60,30,23]},
+  attentive:{head:[50,34,38,27],belly:[50,60,30,23]},
+  listening:{head:[50,34,38,27],belly:[50,60,30,23]},
+  thinking:{head:[50,32,36,25],belly:[50,60,29,22]},
+  success:{head:[50,34,38,27],belly:[50,60,30,23]},
+  error:{head:[50,35,39,28],belly:[50,61,30,23]}
+};
 let numaVisualRequestedState="idle";
 let numaVisualTimer=0,numaTypingTimer=0,numaLauncherRaf=0,numaLifeRaf=0,numaSwapToken=0;
 let numaVisualDemoTimers=[];
@@ -945,8 +953,8 @@ function numaPreloadVisuals(){
   Object.values(NUMA_VISUAL_ASSETS[theme]||{}).forEach(src=>{const im=new Image();im.decoding="async";im.src=src});
 }
 function numaSwapCharacter(state="idle",immediate=false){
-  const img=document.getElementById("nma-character-img"),life=document.getElementById("nma-life-field"),src=numaVisualAsset(state);
-  if(life)life.style.setProperty("--nma-mask",'url("'+src+'")');
+  const img=document.getElementById("nma-character-img"),src=numaVisualAsset(state);
+  numaApplyCoreLayout(state);
   if(!img||img.dataset.nmaSrc===src)return;
   const token=++numaSwapToken;
   const apply=()=>{if(token!==numaSwapToken)return;img.src=src;img.dataset.nmaSrc=src;requestAnimationFrame(()=>img.classList.remove("changing"))};
@@ -988,7 +996,25 @@ function numaSpeak(text,{expression="speak",duration=0}={}){
   const ms=duration||Math.max(1100,Math.min(3200,650+value.length*18));
   setTimeout(()=>bubble?.classList.remove("speaking"),ms);
 }
-function numaLifeFieldMarkup(){return '<div class="nma-life-field" id="nma-life-field" aria-hidden="true"><canvas id="nma-life-canvas"></canvas></div>'}
+function numaLifeFieldMarkup(){
+  return '<div class="nma-core-zone nma-core-head" aria-hidden="true"><canvas class="nma-core-canvas" data-core="head"></canvas></div>'+
+    '<div class="nma-core-zone nma-core-belly" aria-hidden="true"><canvas class="nma-core-canvas" data-core="belly"></canvas></div>';
+}
+function numaApplyCoreLayout(state="idle"){
+  const shell=document.getElementById("nma-character-shell");
+  if(!shell)return;
+  const layout=NUMA_CORE_LAYOUTS[state]||NUMA_CORE_LAYOUTS.idle;
+  const head=layout.head||NUMA_CORE_LAYOUTS.idle.head;
+  const belly=layout.belly||NUMA_CORE_LAYOUTS.idle.belly;
+  shell.style.setProperty("--nma-head-x",head[0]+"%");
+  shell.style.setProperty("--nma-head-y",head[1]+"%");
+  shell.style.setProperty("--nma-head-w",head[2]+"%");
+  shell.style.setProperty("--nma-head-h",head[3]+"%");
+  shell.style.setProperty("--nma-belly-x",belly[0]+"%");
+  shell.style.setProperty("--nma-belly-y",belly[1]+"%");
+  shell.style.setProperty("--nma-belly-w",belly[2]+"%");
+  shell.style.setProperty("--nma-belly-h",belly[3]+"%");
+}
 function numaLifeRgb(){
   return numaVisualTheme()==="night"?{r:255,g:190,b:56}:{r:38,g:76,b:143};
 }
@@ -996,140 +1022,153 @@ function numaLauncherRgb(){
   return numaVisualTheme()==="night"?{r:255,g:190,b:56}:{r:57,g:169,b:255};
 }
 function numaMountLifeParticles(){
-  const canvas=document.getElementById("nma-life-canvas"),stage=document.querySelector(".nma-character-stage");
-  if(!canvas||!stage||canvas.dataset.mounted==="1")return;
-  canvas.dataset.mounted="1";
-  const ctx=canvas.getContext("2d"),reduce=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  let size={w:1,h:1},lastSpawn=0,nextSpawn=420,groupSeq=0;
-  const groups=[],nodes=[],links=[];
+  const canvases=[...document.querySelectorAll(".nma-core-canvas")];
+  if(!canvases.length)return;
+  const reduce=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
   const rand=(a,b)=>Math.random()*(b-a)+a;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const ease=t=>1-Math.pow(1-clamp(t,0,1),3);
 
-  function resize(){
-    const rect=stage.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);
-    size={w:Math.max(1,rect.width),h:Math.max(1,rect.height)};
-    canvas.width=Math.max(1,Math.round(size.w*dpr));
-    canvas.height=Math.max(1,Math.round(size.h*dpr));
-    canvas.style.width=size.w+"px";canvas.style.height=size.h+"px";
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
-  resize();
-  const ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(resize):null;
-  ro?.observe(stage);
+  function mountCore(canvas){
+    if(canvas.dataset.mounted==="1")return;
+    canvas.dataset.mounted="1";
+    const kind=canvas.dataset.core==="head"?"head":"belly";
+    const zone=canvas.parentElement;
+    const ctx=canvas.getContext("2d");
+    let size={w:1,h:1},lastSpawn=0,nextSpawn=kind==="head"?720:980,seq=0;
+    const groups=[],nodes=[],links=[];
 
-  function zonePoint(zone){
-    const head=zone==="head";
-    const cx=size.w*(head?.50:.50),cy=size.h*(head?.355:.615);
-    const rx=size.w*(head?.165:.135),ry=size.h*(head?.105:.105);
-    const a=rand(0,Math.PI*2),d=Math.sqrt(Math.random())*.68;
-    return {x:cx+Math.cos(a)*rx*d,y:cy+Math.sin(a)*ry*d,cx,cy,rx,ry};
-  }
-  function insideZone(x,y,zone){
-    const p=zonePoint(zone),dx=(x-p.cx)/p.rx,dy=(y-p.cy)/p.ry;
-    return dx*dx+dy*dy<=.92;
-  }
-  function addNode(group,parent,x,y,tx,ty,generation,t){
-    const n={
-      id:group.id+"-"+(group.nodeSeq++),groupId:group.id,parentId:parent?.id||"",
-      zone:group.zone,generation,
-      sx:x,sy:y,tx,ty,x,y,born:t,
-      grow:rand(430,760),r:rand(generation?2.0:2.6,generation?3.2:3.8),
-      branchAt:t+rand(360,720),branched:false,
-      phase:rand(0,Math.PI*2)
-    };
-    nodes.push(n);
-    if(parent)links.push({groupId:group.id,a:parent.id,b:n.id,born:t,phase:rand(0,1)});
-    return n;
-  }
-  function spawnGroup(t){
-    if(groups.length>=3)return;
-    const zone=Math.random()<.57?"head":"body",root=zonePoint(zone);
-    const group={id:"g"+(++groupSeq),zone,born:t,life:rand(5200,7600),nodeSeq:0};
-    groups.push(group);
-    addNode(group,null,root.x,root.y,root.x,root.y,0,t);
-  }
-  function nodeById(id){return nodes.find(n=>n.id===id)}
-  function branchNode(n,t){
-    if(n.branched||n.generation>=3)return;
-    n.branched=true;
-    const group=groups.find(g=>g.id===n.groupId);
-    if(!group)return;
-    const count=n.generation===0?2:(Math.random()<.48?2:1);
-    for(let i=0;i<count;i++){
-      let target=null;
-      for(let tries=0;tries<18;tries++){
-        const angle=rand(0,Math.PI*2);
-        const dist=rand(n.generation===0?18:14,n.generation===0?32:26);
-        const tx=n.x+Math.cos(angle)*dist,ty=n.y+Math.sin(angle)*dist*.76;
-        if(insideZone(tx,ty,n.zone)){target={x:tx,y:ty};break}
+    function resize(){
+      const rect=zone.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);
+      size={w:Math.max(1,rect.width),h:Math.max(1,rect.height)};
+      canvas.width=Math.max(1,Math.round(size.w*dpr));
+      canvas.height=Math.max(1,Math.round(size.h*dpr));
+      canvas.style.width=size.w+"px";
+      canvas.style.height=size.h+"px";
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    resize();
+    const ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(resize):null;
+    ro?.observe(zone);
+
+    function inside(x,y){
+      const cx=size.w*.5,cy=size.h*.5,rx=size.w*.46,ry=size.h*.44;
+      const dx=(x-cx)/Math.max(1,rx),dy=(y-cy)/Math.max(1,ry);
+      return dx*dx+dy*dy<=.9;
+    }
+    function addNode(group,parent,tx,ty,generation,t){
+      const sx=parent?parent.x:size.w*.5+rand(-size.w*.05,size.w*.05);
+      const sy=parent?parent.y:size.h*.5+rand(-size.h*.05,size.h*.05);
+      const n={
+        id:group.id+"-"+(++seq),groupId:group.id,generation,
+        sx,sy,tx,ty,x:sx,y:sy,born:t,
+        grow:rand(380,680),
+        r:kind==="head"?rand(generation?2.0:2.6,generation?3.2:3.9):rand(generation?2.2:2.9,generation?3.5:4.4),
+        branchAt:t+rand(300,620),branched:false,phase:rand(0,Math.PI*2)
+      };
+      nodes.push(n);
+      if(parent)links.push({groupId:group.id,a:parent.id,b:n.id,phase:rand(0,1)});
+      return n;
+    }
+    function spawnGroup(t){
+      const limit=kind==="head"?2:2;
+      if(groups.length>=limit)return;
+      const group={id:kind+"-"+(++seq),born:t,life:rand(kind==="head"?4300:5000,kind==="head"?6200:7000)};
+      groups.push(group);
+      const root=addNode(group,null,size.w*.5+rand(-size.w*.08,size.w*.08),size.h*.5+rand(-size.h*.08,size.h*.08),0,t);
+      root.x=root.sx;root.y=root.sy;
+    }
+    function byId(id){return nodes.find(n=>n.id===id)}
+    function branch(n,t){
+      if(n.branched||n.generation>=3)return;
+      n.branched=true;
+      const group=groups.find(g=>g.id===n.groupId);
+      if(!group)return;
+      const count=n.generation===0?2:(Math.random()<.58?2:1);
+      for(let i=0;i<count;i++){
+        let target=null;
+        for(let tries=0;tries<18;tries++){
+          const angle=rand(0,Math.PI*2);
+          const dist=rand(kind==="head"?11:12,kind==="head"?22:24)*(1-n.generation*.08);
+          const tx=n.x+Math.cos(angle)*dist;
+          const ty=n.y+Math.sin(angle)*dist*.78;
+          if(inside(tx,ty)){target={x:tx,y:ty};break}
+        }
+        if(target)addNode(group,n,target.x,target.y,n.generation+1,t+rand(0,110));
       }
-      if(target)addNode(group,n,n.x,n.y,target.x,target.y,n.generation+1,t+rand(0,130));
     }
-  }
-  function groupAlpha(group,t){
-    const age=t-group.born;
-    if(age<0||age>group.life)return 0;
-    const appear=clamp(age/700,0,1);
-    const fade=clamp((group.life-age)/1500,0,1);
-    return Math.min(appear,fade);
-  }
-  function cleanup(t){
-    const dead=new Set(groups.filter(g=>t-g.born>g.life).map(g=>g.id));
-    if(!dead.size)return;
-    for(let i=groups.length-1;i>=0;i--)if(dead.has(groups[i].id))groups.splice(i,1);
-    for(let i=nodes.length-1;i>=0;i--)if(dead.has(nodes[i].groupId))nodes.splice(i,1);
-    for(let i=links.length-1;i>=0;i--)if(dead.has(links[i].groupId))links.splice(i,1);
-  }
-  function drawLink(link,t,rgb){
-    const a=nodeById(link.a),b=nodeById(link.b),group=groups.find(g=>g.id===link.groupId);
-    if(!a||!b||!group)return;
-    const ga=groupAlpha(group,t),growth=ease((t-b.born)/b.grow);
-    if(ga<=0||growth<=0)return;
-    const bx=a.x+(b.x-a.x)*growth,by=a.y+(b.y-a.y)*growth;
-    const grad=ctx.createLinearGradient(a.x,a.y,bx,by);
-    grad.addColorStop(0,"rgba("+rgb.r+","+rgb.g+","+rgb.b+",0)");
-    grad.addColorStop(.34,"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.26)+")");
-    grad.addColorStop(.68,"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.38)+")");
-    grad.addColorStop(1,"rgba("+rgb.r+","+rgb.g+","+rgb.b+",0)");
-    ctx.strokeStyle=grad;ctx.lineWidth=.85;ctx.lineCap="round";
-    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(bx,by);ctx.stroke();
-    if(growth>.96){
-      const q=(t*.00022+link.phase)%1,px=a.x+(b.x-a.x)*q,py=a.y+(b.y-a.y)*q;
-      ctx.fillStyle="rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.58)+")";
-      ctx.beginPath();ctx.arc(px,py,1.05,0,Math.PI*2);ctx.fill();
+    function alpha(group,t){
+      const age=t-group.born;
+      if(age<0||age>group.life)return 0;
+      return Math.min(clamp(age/620,0,1),clamp((group.life-age)/1300,0,1));
     }
+    function cleanup(t){
+      const dead=new Set(groups.filter(g=>t-g.born>g.life).map(g=>g.id));
+      for(let i=groups.length-1;i>=0;i--)if(dead.has(groups[i].id))groups.splice(i,1);
+      for(let i=nodes.length-1;i>=0;i--)if(dead.has(nodes[i].groupId))nodes.splice(i,1);
+      for(let i=links.length-1;i>=0;i--)if(dead.has(links[i].groupId))links.splice(i,1);
+    }
+    function frame(t){
+      if(!document.body.contains(canvas)){ro?.disconnect();return}
+      if(!reduce&&t-lastSpawn>nextSpawn){
+        spawnGroup(t);
+        lastSpawn=t;
+        nextSpawn=rand(kind==="head"?900:1200,kind==="head"?1450:1750);
+      }
+      cleanup(t);
+      ctx.clearRect(0,0,size.w,size.h);
+      const rgb=numaLifeRgb();
+
+      links.forEach(link=>{
+        const a=byId(link.a),b=byId(link.b),group=groups.find(g=>g.id===link.groupId);
+        if(!a||!b||!group)return;
+        const ga=alpha(group,t),growth=ease((t-b.born)/b.grow);
+        if(ga<=0||growth<=0)return;
+        const bx=a.x+(b.x-a.x)*growth,by=a.y+(b.y-a.y)*growth;
+        const grad=ctx.createLinearGradient(a.x,a.y,bx,by);
+        grad.addColorStop(0,"rgba("+rgb.r+","+rgb.g+","+rgb.b+",0)");
+        grad.addColorStop(.32,"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.30)+")");
+        grad.addColorStop(.68,"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.48)+")");
+        grad.addColorStop(1,"rgba("+rgb.r+","+rgb.g+","+rgb.b+",0)");
+        ctx.strokeStyle=grad;ctx.lineWidth=kind==="head"?.9:1.0;ctx.lineCap="round";
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(bx,by);ctx.stroke();
+        if(growth>.96){
+          const q=(t*.00024+link.phase)%1;
+          const px=a.x+(b.x-a.x)*q,py=a.y+(b.y-a.y)*q;
+          ctx.fillStyle="rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.64)+")";
+          ctx.beginPath();ctx.arc(px,py,1.15,0,Math.PI*2);ctx.fill();
+        }
+      });
+
+      nodes.forEach(n=>{
+        const group=groups.find(g=>g.id===n.groupId);
+        if(!group)return;
+        const ga=alpha(group,t),growth=ease((t-n.born)/n.grow);
+        if(ga<=0||growth<=0)return;
+        n.x=n.sx+(n.tx-n.sx)*growth;
+        n.y=n.sy+(n.ty-n.sy)*growth;
+        if(!n.branched&&growth>.9&&t>=n.branchAt)branch(n,t);
+        const pulse=.86+.14*Math.sin(t*.0022+n.phase);
+        const rr=n.r*growth*pulse;
+        const aura=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*3.0);
+        aura.addColorStop(0,"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.30)+")");
+        aura.addColorStop(1,"rgba("+rgb.r+","+rgb.g+","+rgb.b+",0)");
+        ctx.fillStyle=aura;
+        ctx.beginPath();ctx.arc(n.x,n.y,rr*3,0,Math.PI*2);ctx.fill();
+        ctx.shadowBlur=7;ctx.shadowColor="rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.34)+")";
+        ctx.fillStyle="rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.82)+")";
+        ctx.beginPath();ctx.arc(n.x,n.y,rr,0,Math.PI*2);ctx.fill();
+        ctx.shadowBlur=0;
+      });
+
+      if(!reduce)requestAnimationFrame(frame);
+    }
+
+    if(reduce){spawnGroup(performance.now());frame(performance.now()+900)}
+    else requestAnimationFrame(frame);
   }
-  function drawNode(n,t,rgb){
-    const group=groups.find(g=>g.id===n.groupId);if(!group)return;
-    const ga=groupAlpha(group,t),growth=ease((t-n.born)/n.grow);
-    if(ga<=0||growth<=0)return;
-    n.x=n.sx+(n.tx-n.sx)*growth;n.y=n.sy+(n.ty-n.sy)*growth;
-    if(!n.branched&&growth>.92&&t>=n.branchAt)branchNode(n,t);
-    const pulse=.88+.12*Math.sin(t*.002+n.phase),rr=n.r*growth*pulse;
-    const aura=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,rr*3.2);
-    aura.addColorStop(0,"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.28)+")");
-    aura.addColorStop(1,"rgba("+rgb.r+","+rgb.g+","+rgb.b+",0)");
-    ctx.fillStyle=aura;ctx.beginPath();ctx.arc(n.x,n.y,rr*3.2,0,Math.PI*2);ctx.fill();
-    const body=ctx.createRadialGradient(n.x-rr*.18,n.y-rr*.18,0,n.x,n.y,Math.max(.1,rr));
-    body.addColorStop(0,"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.96)+")");
-    body.addColorStop(.55,"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.70)+")");
-    body.addColorStop(1,"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.28)+")");
-    ctx.fillStyle=body;ctx.shadowBlur=8;ctx.shadowColor="rgba("+rgb.r+","+rgb.g+","+rgb.b+","+(ga*.34)+")";
-    ctx.beginPath();ctx.arc(n.x,n.y,rr,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-  }
-  function frame(t){
-    if(!document.body.contains(canvas)){ro?.disconnect();return}
-    if(!reduce&&t-lastSpawn>nextSpawn){spawnGroup(t);lastSpawn=t;nextSpawn=rand(760,1220)}
-    cleanup(t);
-    ctx.clearRect(0,0,size.w,size.h);
-    const rgb=numaLifeRgb();
-    links.forEach(link=>drawLink(link,t,rgb));
-    nodes.forEach(n=>drawNode(n,t,rgb));
-    if(!reduce)numaLifeRaf=requestAnimationFrame(frame);
-  }
-  if(reduce){spawnGroup(performance.now());frame(performance.now()+1000)}
-  else numaLifeRaf=requestAnimationFrame(frame);
+
+  canvases.forEach(mountCore);
 }
 function numaMountLauncherParticles(){
   const canvas=document.getElementById("nma-launcher-canvas");
@@ -1452,9 +1491,11 @@ function mountNuma(){
     panel.innerHTML=
       '<button id="nma-close" class="nma-presence-close" type="button" aria-label="Cerrar Numa">✕</button>'+
       '<div class="nma-character-stage" aria-label="Numa">'+
-        '<img id="nma-character-img" class="nma-character" alt="" draggable="false">'+
-        numaLifeFieldMarkup()+
-        '<div class="nma-expression-layer" id="nma-expression-layer" aria-hidden="true"></div>'+
+        '<div class="nma-character-shell" id="nma-character-shell">'+
+          '<img id="nma-character-img" class="nma-character" alt="" draggable="false">'+
+          numaLifeFieldMarkup()+
+          '<div class="nma-expression-layer" id="nma-expression-layer" aria-hidden="true"></div>'+
+        '</div>'+
       '</div>'+
       '<div class="nma-speech" id="nma-speech" role="status" aria-live="polite">Hola. Dime qué receta, preparación o producto buscas.</div>'+
       '<div class="nma-status-row"><span class="nma-status-dot"></span><span id="nma-status">Modo local · sin consumo API</span></div>'+
