@@ -1142,7 +1142,7 @@ async function numaSend(){
 
 function mountNuma(){
   if(!sessionToken)return;
-  if(!numaPresence){ensureNumaPresenceRuntime().then(()=>mountNuma()).catch(error=>console.warn('NUMA_PRESENCE_RUNTIME',error));return;}
+  if(!numaPresence){ensureNumaPresenceRuntime().then(()=>{numaSyncVisualTheme();numaMountLauncherParticles();numaMountLifeParticles();}).catch(error=>console.warn('NUMA_PRESENCE_RUNTIME',error));}
   const r=root();
   const contextKey=numaContextKey();
   if(numaContextCacheKey&&numaContextCacheKey!==contextKey){
