@@ -1,0 +1,471 @@
+/* NUMA PRESENCE v3 · interactive visual system
+   Shared by Mi espacio / Workspace / Fichas.
+   States: idle, attentive, listening, thinking, success, error.
+*/
+.nma-launcher,.nma-panel{
+  --nma-energy:#39a9ff;
+  --nma-energy-rgb:57,169,255;
+  --nma-text:#101828;
+  --nma-muted:#65738a;
+  --nma-glass:rgba(248,252,255,.76);
+  --nma-glass-strong:rgba(247,251,255,.88);
+  --nma-line:rgba(38,76,143,.20);
+  --nma-shadow:rgba(9,24,48,.20);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.nma-launcher[data-theme="night"],.nma-panel[data-theme="night"]{
+  --nma-energy:#ffbd38;
+  --nma-energy-rgb:255,189,56;
+  --nma-text:#f7f8fb;
+  --nma-muted:#b8c1ce;
+  --nma-glass:rgba(8,13,22,.67);
+  --nma-glass-strong:rgba(9,15,25,.82);
+  --nma-line:rgba(255,211,116,.20);
+  --nma-shadow:rgba(0,0,0,.34);
+}
+
+/* Launcher: only an energy sphere, no label or letter. */
+.nma-launcher{
+  position:fixed!important;
+  right:22px!important;
+  bottom:22px!important;
+  z-index:2147483638!important;
+  width:54px!important;
+  height:54px!important;
+  min-width:54px!important;
+  min-height:54px!important;
+  padding:0!important;
+  margin:0!important;
+  border:1px solid rgba(var(--nma-energy-rgb),.34)!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle at 34% 28%,rgba(255,255,255,.74) 0 3%,transparent 15%),
+    radial-gradient(circle at 48% 52%,rgba(var(--nma-energy-rgb),.23),transparent 57%),
+    rgba(255,255,255,.075)!important;
+  color:transparent!important;
+  box-shadow:
+    0 0 0 6px rgba(var(--nma-energy-rgb),.055),
+    0 11px 32px var(--nma-shadow),
+    inset 0 1px 0 rgba(255,255,255,.35)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(135%)!important;
+  backdrop-filter:blur(18px) saturate(135%)!important;
+  overflow:visible!important;
+  display:block!important;
+  cursor:pointer!important;
+  transition:opacity .22s ease,transform .22s ease,box-shadow .22s ease!important;
+}
+.nma-launcher:hover,.nma-launcher:focus-visible{
+  transform:translateY(-2px) scale(1.035)!important;
+  outline:none!important;
+  box-shadow:
+    0 0 0 7px rgba(var(--nma-energy-rgb),.075),
+    0 14px 38px var(--nma-shadow),
+    0 0 22px rgba(var(--nma-energy-rgb),.22),
+    inset 0 1px 0 rgba(255,255,255,.46)!important;
+}
+.nma-launcher[aria-expanded="true"]{
+  opacity:0!important;
+  transform:translateY(8px) scale(.72)!important;
+  pointer-events:none!important;
+}
+.nma-launch-core{
+  position:absolute;
+  z-index:2;
+  inset:8px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 43% 37%,rgba(255,255,255,.88) 0 5%,transparent 18%),
+    radial-gradient(circle at 50% 56%,rgba(var(--nma-energy-rgb),.92) 0 7%,rgba(var(--nma-energy-rgb),.30) 27%,transparent 68%);
+  filter:drop-shadow(0 0 7px rgba(var(--nma-energy-rgb),.72));
+  animation:nmaCoreBreath 3s ease-in-out infinite;
+  pointer-events:none;
+}
+.nma-launcher-canvas{
+  position:absolute;
+  z-index:1;
+  width:112px!important;
+  height:150px!important;
+  left:50%;
+  bottom:-8px;
+  transform:translateX(-50%);
+  pointer-events:none;
+  overflow:visible;
+}
+.nma-launcher strong,.nma-launcher>.nma-orb,.nma-launch-stream{display:none!important}
+
+/* Character presence. */
+.nma-panel{
+  position:fixed!important;
+  right:18px!important;
+  bottom:18px!important;
+  z-index:2147483639!important;
+  width:min(318px,calc(100vw - 24px))!important;
+  height:auto!important;
+  min-height:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:var(--nma-text)!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  gap:8px!important;
+  overflow:visible!important;
+  opacity:0;
+  transform:translateY(18px) scale(.94);
+  transform-origin:85% 100%;
+  pointer-events:none;
+  transition:opacity .24s ease,transform .32s cubic-bezier(.2,.8,.2,1)!important;
+}
+.nma-panel.open{
+  opacity:1!important;
+  transform:translateY(0) scale(1)!important;
+  pointer-events:auto!important;
+}
+.nma-presence-close{
+  position:absolute;
+  z-index:8;
+  right:2px;
+  top:52px;
+  width:29px;
+  height:29px;
+  border:1px solid var(--nma-line);
+  border-radius:50%;
+  background:var(--nma-glass);
+  color:var(--nma-muted);
+  -webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);
+  box-shadow:0 8px 20px var(--nma-shadow);
+  cursor:pointer;
+  font:700 13px/1 Inter,system-ui,sans-serif;
+  transition:transform .16s ease,border-color .16s ease,color .16s ease;
+}
+.nma-presence-close:hover,.nma-presence-close:focus-visible{
+  outline:none;
+  color:var(--nma-text);
+  border-color:rgba(var(--nma-energy-rgb),.5);
+  transform:scale(1.05);
+}
+.nma-character-stage{
+  position:relative;
+  width:252px;
+  height:336px;
+  display:grid;
+  place-items:center;
+  isolation:isolate;
+  pointer-events:none;
+}
+.nma-character-shell{
+  --nma-head-x:50%;
+  --nma-head-y:34%;
+  --nma-head-w:38%;
+  --nma-head-h:27%;
+  --nma-belly-x:50%;
+  --nma-belly-y:60%;
+  --nma-belly-w:30%;
+  --nma-belly-h:23%;
+  position:absolute;
+  inset:0;
+  transform-origin:50% 76%;
+  animation:nmaIdleFloat 5.1s ease-in-out infinite;
+  pointer-events:none;
+}
+.nma-character{
+  position:absolute;
+  z-index:1;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+  filter:drop-shadow(0 17px 27px rgba(5,13,27,.17));
+  user-select:none;
+  -webkit-user-drag:none;
+  pointer-events:none;
+  transition:opacity .15s ease,filter .2s ease,transform .24s ease;
+}
+.nma-character.changing{
+  opacity:.42;
+  filter:blur(.8px) drop-shadow(0 17px 27px rgba(5,13,27,.12));
+}
+.nma-core-zone{
+  position:absolute;
+  z-index:2;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  overflow:hidden;
+  pointer-events:none;
+  background:transparent;
+  -webkit-mask-image:radial-gradient(circle at center,#000 0 58%,rgba(0,0,0,.92) 72%,rgba(0,0,0,.5) 86%,transparent 100%);
+  mask-image:radial-gradient(circle at center,#000 0 58%,rgba(0,0,0,.92) 72%,rgba(0,0,0,.5) 86%,transparent 100%);
+  transition:left .24s ease,top .24s ease,width .24s ease,height .24s ease,opacity .2s ease;
+}
+.nma-core-head{
+  left:var(--nma-head-x);
+  top:var(--nma-head-y);
+  width:var(--nma-head-w);
+  height:var(--nma-head-h);
+}
+.nma-core-belly{
+  left:var(--nma-belly-x);
+  top:var(--nma-belly-y);
+  width:var(--nma-belly-w);
+  height:var(--nma-belly-h);
+}
+.nma-core-canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+}
+.nma-panel[data-theme="day"] .nma-core-zone{
+  opacity:.78;
+  mix-blend-mode:multiply;
+}
+.nma-panel[data-theme="night"] .nma-core-zone{
+  opacity:.68;
+  mix-blend-mode:screen;
+}
+.nma-expression-layer{
+  position:absolute;
+  z-index:5;
+  inset:0;
+  pointer-events:none;
+  color:var(--nma-energy);
+  text-shadow:0 0 8px rgba(var(--nma-energy-rgb),.68),0 0 20px rgba(var(--nma-energy-rgb),.25);
+}
+/* Expression overlay, independent from pose. */
+.nma-symbol{
+  position:absolute;
+  right:34px;
+  top:82px;
+  display:grid;
+  place-items:center;
+  width:32px;
+  height:38px;
+  font:900 32px/1 Inter,system-ui,sans-serif;
+  animation:nmaSymbolPulse 1.35s ease-in-out infinite;
+}
+.nma-symbol-question{font-size:30px}
+.nma-ellipsis{
+  position:absolute;
+  right:28px;
+  top:92px;
+  width:54px;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+.nma-ellipsis i{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--nma-energy);
+  box-shadow:0 0 8px rgba(var(--nma-energy-rgb),.55);
+  opacity:.24;
+  animation:nmaDotListen 1.25s ease-in-out infinite;
+}
+.nma-ellipsis i:nth-child(2){animation-delay:.18s}
+.nma-ellipsis i:nth-child(3){animation-delay:.36s}
+.nma-think-mark{
+  position:absolute;
+  right:52px;
+  top:70px;
+  font:900 31px/1 Inter,system-ui,sans-serif;
+  animation:nmaQuestionFloat 1.8s ease-in-out infinite;
+}
+.nma-ellipsis-think{right:14px;top:104px;transform:scale(.82)}
+.nma-confused{
+  position:absolute;
+  right:20px;
+  top:64px;
+  width:76px;
+  height:66px;
+}
+.nma-confused i{
+  position:absolute;
+  font-style:normal;
+  font-weight:900;
+  animation:nmaConfusedPulse 1.45s ease-in-out infinite;
+}
+.nma-confused i:nth-child(1){left:2px;top:27px;font-size:18px;animation-delay:-.2s}
+.nma-confused i:nth-child(2){left:29px;top:3px;font-size:32px}
+.nma-confused i:nth-child(3){right:0;top:31px;font-size:19px;animation-delay:-.45s}
+.nma-sparkles{
+  position:absolute;
+  inset:40px 14px 64px;
+}
+.nma-sparkles i{
+  --x:50%;
+  position:absolute;
+  left:var(--x);
+  bottom:28%;
+  font-style:normal;
+  font-size:14px;
+  opacity:0;
+  animation:nmaSparkleRise 1.65s ease-out infinite;
+  animation-delay:calc(var(--i) * -.19s);
+}
+.nma-sparkles i:nth-child(1){--x:18%}.nma-sparkles i:nth-child(2){--x:34%}.nma-sparkles i:nth-child(3){--x:49%}
+.nma-sparkles i:nth-child(4){--x:64%}.nma-sparkles i:nth-child(5){--x:78%}.nma-sparkles i:nth-child(6){--x:27%}.nma-sparkles i:nth-child(7){--x:70%}
+.nma-error-orbit{
+  position:absolute;
+  left:50%;
+  top:36%;
+  width:142px;
+  height:98px;
+  transform:translate(-50%,-50%);
+  animation:nmaOrbit 2.35s linear infinite;
+}
+.nma-error-orbit i{
+  position:absolute;
+  left:50%;
+  top:50%;
+  font-style:normal;
+  font-size:13px;
+  transform:rotate(calc(var(--i)*72deg)) translateX(62px);
+  transform-origin:0 0;
+}
+
+/* Response bubble. Only the current response is visible. */
+.nma-speech{
+  position:relative;
+  width:min(286px,100%);
+  min-height:38px;
+  max-height:min(190px,28vh);
+  overflow:auto;
+  padding:10px 13px;
+  border:1px solid var(--nma-line);
+  border-radius:17px 17px 17px 7px;
+  background:var(--nma-glass);
+  color:var(--nma-text);
+  -webkit-backdrop-filter:blur(18px) saturate(132%);
+  backdrop-filter:blur(18px) saturate(132%);
+  box-shadow:0 12px 32px var(--nma-shadow),inset 0 1px 0 rgba(255,255,255,.32);
+  font-size:12.5px;
+  line-height:1.43;
+  text-align:left;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  transition:transform .18s ease,border-color .18s ease;
+}
+.nma-speech.speaking{
+  border-color:rgba(var(--nma-energy-rgb),.30);
+  animation:nmaSpeechBreath 1.4s ease-in-out infinite;
+}
+
+/* Status stays in DOM for accessibility/debug but not as visual chrome. */
+.nma-status-row{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:hidden!important;
+  clip:rect(0 0 0 0)!important;
+  clip-path:inset(50%)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
+.nma-status-dot{display:none!important}
+
+/* Micro input. */
+.nma-compose{
+  width:100%!important;
+  padding:6px!important;
+  border:1px solid var(--nma-line)!important;
+  border-radius:999px!important;
+  background:var(--nma-glass-strong)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(132%)!important;
+  backdrop-filter:blur(20px) saturate(132%)!important;
+  box-shadow:0 13px 35px var(--nma-shadow),inset 0 1px 0 rgba(255,255,255,.32)!important;
+  display:grid!important;
+  grid-template-columns:1fr 40px!important;
+  gap:6px!important;
+  align-items:center!important;
+}
+.nma-compose textarea{
+  width:100%!important;
+  min-height:40px!important;
+  max-height:88px!important;
+  resize:none!important;
+  border:0!important;
+  border-radius:999px!important;
+  padding:10px 12px!important;
+  background:transparent!important;
+  color:var(--nma-text)!important;
+  font:inherit!important;
+  font-size:12.5px!important;
+  outline:none!important;
+  box-shadow:none!important;
+}
+.nma-compose textarea::placeholder{color:var(--nma-muted)!important}
+.nma-compose button{
+  width:40px!important;
+  height:40px!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:rgba(var(--nma-energy-rgb),.88)!important;
+  color:#fff!important;
+  cursor:pointer!important;
+  font-size:16px!important;
+  font-weight:900!important;
+  box-shadow:0 7px 18px rgba(var(--nma-energy-rgb),.22)!important;
+  transition:transform .16s ease,filter .16s ease!important;
+}
+.nma-compose button:hover,.nma-compose button:focus-visible{transform:translateY(-1px)!important;filter:brightness(1.04);outline:none!important}
+.nma-compose button:disabled,.nma-compose textarea:disabled{opacity:.55!important;cursor:not-allowed!important}
+
+/* Legacy chat chrome is intentionally hidden. */
+.nma-head,.nma-identity,.nma-head-actions,.nma-messages,.nma-empty,.nma-role,.nma-icon-btn{display:none!important}
+
+/* Pose-specific motion remains subtle. */
+.nma-panel[data-state="attentive"] .nma-character-shell{animation-duration:4.35s}
+.nma-panel[data-state="listening"] .nma-character-shell{animation-duration:3.9s}
+.nma-panel[data-state="thinking"] .nma-character-shell{animation:nmaThinkingFloat 3.6s ease-in-out infinite}
+.nma-panel[data-state="success"] .nma-character-shell{animation:nmaSuccessFloat 2.5s ease-in-out infinite}
+.nma-panel[data-state="error"] .nma-character-shell{animation:nmaErrorFloat 2.7s ease-in-out infinite}
+
+/* Animations. */
+@keyframes nmaCoreBreath{0%,100%{transform:scale(.92);opacity:.78}50%{transform:scale(1.07);opacity:1}}
+@keyframes nmaIdleFloat{0%,100%{transform:translateY(2px) rotate(-.28deg)}50%{transform:translateY(-7px) rotate(.35deg)}}
+@keyframes nmaThinkingFloat{0%,100%{transform:translateY(1px) rotate(-.65deg)}50%{transform:translateY(-5px) rotate(.65deg)}}
+@keyframes nmaSuccessFloat{0%,100%{transform:translateY(1px) scale(1)}50%{transform:translateY(-6px) scale(1.012)}}
+@keyframes nmaErrorFloat{0%,100%{transform:translateY(2px) rotate(-1deg)}50%{transform:translateY(-3px) rotate(1deg)}}
+@keyframes nmaLifeBreath{0%,100%{filter:brightness(.94)}50%{filter:brightness(1.08)}}
+@keyframes nmaSymbolPulse{0%,100%{transform:scale(.88);opacity:.65}50%{transform:scale(1.08);opacity:1}}
+@keyframes nmaDotListen{0%,60%,100%{transform:translateY(2px) scale(.72);opacity:.25}28%{transform:translateY(-2px) scale(1.05);opacity:1}}
+@keyframes nmaQuestionFloat{0%,100%{transform:translateY(1px) rotate(-3deg);opacity:.72}50%{transform:translateY(-4px) rotate(3deg);opacity:1}}
+@keyframes nmaConfusedPulse{0%,100%{transform:scale(.84);opacity:.52}50%{transform:scale(1.08);opacity:1}}
+@keyframes nmaSparkleRise{0%{transform:translate(0,14px) scale(.55) rotate(0);opacity:0}18%{opacity:.9}100%{transform:translate(5px,-88px) scale(.22) rotate(55deg);opacity:0}}
+@keyframes nmaOrbit{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes nmaSpeechBreath{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
+
+@media(max-width:640px){
+  .nma-launcher{right:14px!important;bottom:14px!important;width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important}
+  .nma-panel{right:10px!important;bottom:12px!important;width:min(292px,calc(100vw - 20px))!important}
+  .nma-character-stage{width:222px;height:296px}
+  .nma-presence-close{right:1px;top:42px}
+  .nma-symbol{right:27px;top:72px}
+  .nma-ellipsis{right:20px;top:82px}
+  .nma-think-mark{right:45px;top:60px}
+  .nma-confused{right:14px;top:56px}
+}
+@media(max-height:650px){
+  .nma-character-stage{width:190px;height:254px}
+  .nma-panel{gap:5px!important}
+  .nma-speech{font-size:11.5px;padding:8px 11px;max-height:100px}
+  .nma-compose textarea{min-height:36px!important;padding:8px 10px!important}
+  .nma-compose button{width:36px!important;height:36px!important}
+  .nma-compose{grid-template-columns:1fr 36px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .nma-launch-core,.nma-character-shell,.nma-symbol,.nma-ellipsis i,.nma-think-mark,.nma-confused i,.nma-sparkles i,.nma-error-orbit,.nma-speech{animation:none!important}
+}
