@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=notification-attention-20261001-58';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=header-utility-family-20261001-59';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -1405,10 +1405,6 @@ function bindTopbar(mode){
       quickSettingsButton?.setAttribute('aria-expanded','false');
       menu?.classList.remove('open');
       account?.setAttribute('aria-expanded','false');
-      quickSettingsMenu?.classList.remove('open');
-      quickSettingsButton?.setAttribute('aria-expanded','false');
-      quickSettingsMenu?.classList.remove('open');
-      quickSettingsButton?.setAttribute('aria-expanded','false');
     }
   });
 
@@ -1447,6 +1443,8 @@ function bindTopbar(mode){
       bell.setAttribute('aria-expanded',open?'true':'false');
       menu?.classList.remove('open');
       account?.setAttribute('aria-expanded','false');
+      quickSettingsMenu?.classList.remove('open');
+      quickSettingsButton?.setAttribute('aria-expanded','false');
     });
   }
 
@@ -1457,6 +1455,8 @@ function bindTopbar(mode){
       account.setAttribute('aria-expanded',open?'true':'false');
       bellMenu?.classList.remove('open');
       bell?.setAttribute('aria-expanded','false');
+      quickSettingsMenu?.classList.remove('open');
+      quickSettingsButton?.setAttribute('aria-expanded','false');
     });
   }
 
