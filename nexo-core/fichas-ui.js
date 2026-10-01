@@ -43,7 +43,8 @@ const NUMA_VISUAL_ASSETS={
 };
 const NUMA_VISUAL_RUNTIME_STATES=new Set(['idle','attentive','listening','thinking','success','error']);
 let numaVisualRequestedState='idle';
-let numaVisualTimer=0,numaTypingTimer=0,numaLauncherRaf=0,numaLifeRaf=0;
+let numaVisualTimer=0,numaTypingTimer=0,numaLauncherRaf=0,numaLifeRaf=0,numaSwapToken=0;
+let numaVisualDemoTimers=[];
 const launchQuery=new URLSearchParams(location.search);
 const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
 const workspaceToolName=String(launchQuery.get('nxoToolName')||'Fichas Técnicas Dinámicas').trim()||'Fichas Técnicas Dinámicas';
@@ -125,16 +126,23 @@ function numaVisualAsset(state='idle'){
   const effective=NUMA_VISUAL_RUNTIME_STATES.has(state)?state:'idle';
   return NUMA_VISUAL_ASSETS[workspaceTheme]?.[effective]||NUMA_VISUAL_ASSETS.day.idle;
 }
+function numaPreloadVisuals(){
+  Object.values(NUMA_VISUAL_ASSETS[workspaceTheme]||{}).forEach(src=>{const im=new Image();im.decoding='async';im.src=src});
+}
+function numaSwapCharacter(state='idle',immediate=false){
+  const img=document.getElementById('nma-character-img'),life=document.getElementById('nma-life-field'),src=numaVisualAsset(state);
+  if(life)life.style.setProperty('--nma-mask','url("'+src+'")');
+  if(!img||img.dataset.nmaSrc===src)return;
+  const token=++numaSwapToken;
+  const apply=()=>{if(token!==numaSwapToken)return;img.src=src;img.dataset.nmaSrc=src;requestAnimationFrame(()=>img.classList.remove('changing'))};
+  if(immediate){img.classList.remove('changing');apply();return}
+  img.classList.add('changing');setTimeout(apply,70);
+}
 function numaSyncVisualTheme(){
-  const launcher=document.getElementById('nma-launcher');
-  const panel=document.getElementById('nma-panel');
+  const launcher=document.getElementById('nma-launcher'),panel=document.getElementById('nma-panel');
   if(launcher)launcher.dataset.theme=workspaceTheme;
   if(panel)panel.dataset.theme=workspaceTheme;
-  const img=document.getElementById('nma-character-img');
-  const src=numaVisualAsset(numaVisualRequestedState);
-  if(img&&img.src!==src)img.src=src;
-  const life=document.getElementById('nma-life-field');
-  if(life)life.style.setProperty('--nma-mask','url("'+src+'")');
+  numaPreloadVisuals();numaSwapCharacter(numaVisualRequestedState,true);
 }
 function numaSetExpression(kind='none'){
   const layer=document.getElementById('nma-expression-layer');
@@ -159,11 +167,7 @@ function numaSetVisualState(state='idle',expression='none',duration=0){
     panel.dataset.state=numaVisualRequestedState;
     panel.dataset.requestedState=numaVisualRequestedState;
   }
-  const img=document.getElementById('nma-character-img');
-  const src=numaVisualAsset(numaVisualRequestedState);
-  if(img&&img.src!==src)img.src=src;
-  const life=document.getElementById('nma-life-field');
-  if(life)life.style.setProperty('--nma-mask','url("'+src+'")');
+  numaSwapCharacter(numaVisualRequestedState,false);
   numaSetExpression(expression);
   if(duration>0){
     numaVisualTimer=setTimeout(()=>{
@@ -297,6 +301,24 @@ function numaVisualFromResponse(data){
   if(data?.dialogue?.awaiting)return {state:'attentive',expression:'question',duration:0};
   if(data?.action)return {state:'success',expression:'success',duration:1800};
   return {state:'idle',expression:'speak',duration:Math.max(1300,Math.min(3200,700+reply.length*18))};
+}
+
+function numaClearVisualDemo(){numaVisualDemoTimers.forEach(id=>clearTimeout(id));numaVisualDemoTimers=[]}
+function numaCanVisualQa(){const ctx=numaState?.context||{};return ctx.canDevelop===true||ctx.roleKey==='owner'||ctx.roleKey==='developer'}
+function numaRunVisualDemo(){
+  numaClearVisualDemo();
+  const scenes=[[0,'success','speak','Hola. Soy Numa.'],[1900,'attentive','question','¿En qué puedo ayudarte?'],[3800,'listening','listening','Te estoy escuchando.'],[5700,'thinking','thinking','Déjame pensar…'],[7600,'success','success','Listo. Todo salió bien.'],[9500,'attentive','confused','No entendí eso del todo.'],[11400,'error','error','Aquí verías mi estado de error.'],[13300,'idle','none','Prueba visual terminada.']];
+  scenes.forEach(([delay,state,expression,text])=>numaVisualDemoTimers.push(setTimeout(()=>{numaSetVisualState(state,expression,0);numaSpeak(text,{expression,duration:0})},delay)));
+}
+function numaHandleVisualQaCommand(message){
+  const cmd=String(message||'').trim().toLowerCase();if(!cmd.startsWith('/numa'))return false;
+  if(!numaCanVisualQa()){numaSetVisualState('attentive','question',2400);numaSpeak('El modo de prueba visual está reservado al propietario o desarrollador.',{expression:'question',duration:2400});return true}
+  if(/^\/numa\s+(demo|prueba|test)$/.test(cmd)){numaRunVisualDemo();return true}
+  const map={idle:['idle','none'],reposo:['idle','none'],atento:['attentive','question'],attentive:['attentive','question'],escuchando:['listening','listening'],listening:['listening','listening'],pensando:['thinking','thinking'],thinking:['thinking','thinking'],exito:['success','success'],'éxito':['success','success'],success:['success','success'],confundida:['attentive','confused'],confusion:['attentive','confused'],'confusión':['attentive','confused'],error:['error','error']};
+  const key=cmd.replace(/^\/numa\s+/,'');const target=map[key];
+  if(target){numaClearVisualDemo();numaSetVisualState(target[0],target[1],0);numaSpeak('Prueba visual: '+key+'.',{expression:target[1],duration:0})}
+  else{numaSetVisualState('attentive','question',3000);numaSpeak('Usa /numa demo o /numa idle, atento, escuchando, pensando, exito, confusion o error.',{expression:'question',duration:3000})}
+  return true;
 }
 
 function numaContextInput(){
@@ -473,6 +495,7 @@ function numaOpen(){
   },1500);
 }
 function numaClose(){
+  numaClearVisualDemo();
   document.getElementById('nma-panel')?.classList.remove('open');
   document.getElementById('nma-panel')?.setAttribute('aria-hidden','true');
   document.getElementById('nma-launcher')?.setAttribute('aria-expanded','false');
@@ -527,6 +550,7 @@ async function numaSend(){
   const button=document.getElementById('nma-send');
   const message=String(input?.value||'').trim();
   if(!message)return;
+  if(numaHandleVisualQaCommand(message)){if(input)input.value='';return}
   numaSending=true;
   if(input){input.value='';input.disabled=true}
   if(button)button.disabled=true;
@@ -608,7 +632,8 @@ function mountNuma(){
       if(event.key==='Escape')numaClose();
     });
     nmaInput.addEventListener('focus',()=>{
-      if(!numaSending&&String(nmaInput.value||'').trim()==='')numaSetVisualState('attentive','none');
+      const expression=document.getElementById('nma-expression-layer')?.dataset?.expression||'none';
+      if(!numaSending&&expression==='none'&&String(nmaInput.value||'').trim()==='')numaSetVisualState('attentive','none');
     });
     nmaInput.addEventListener('input',()=>{
       if(numaSending)return;
