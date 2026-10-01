@@ -3964,3 +3964,58 @@ html[data-nxo-theme] .nxo-select:focus,html[data-nxo-theme] .nxo-input:focus,htm
     animation:none
   }
 }
+
+/* HEADER UTILITY FAMILY CANON · 2026-10-01 */
+.nxo-app[data-theme="day"]{
+  --nxo-header-utility-bg:rgba(255,255,255,.07);
+  --nxo-header-utility-border:rgba(255,255,255,.12);
+  --nxo-header-utility-text:#ffffff
+}
+.nxo-app[data-theme="night"]{
+  --nxo-header-utility-bg:rgba(255,255,255,.045);
+  --nxo-header-utility-border:rgba(255,255,255,.10);
+  --nxo-header-utility-text:#f2f5f8
+}
+.nxo-nav-primary-utils .nxo-quick-settings-button,
+.nxo-nav-primary-utils .nxo-notification-button,
+.nxo-nav-primary-utils .nxo-nav-account{
+  background:var(--nxo-header-utility-bg)!important;
+  border:1px solid var(--nxo-header-utility-border)!important;
+  color:var(--nxo-header-utility-text)!important;
+  box-shadow:none!important;
+  transition:background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease!important
+}
+.nxo-nav-primary-utils .nxo-quick-settings-button:hover,
+.nxo-nav-primary-utils .nxo-quick-settings-button:focus-visible,
+.nxo-nav-primary-utils .nxo-quick-settings-button[aria-expanded="true"],
+.nxo-nav-primary-utils .nxo-notification-button:hover,
+.nxo-nav-primary-utils .nxo-notification-button:focus-visible,
+.nxo-nav-primary-utils .nxo-notification-button[aria-expanded="true"],
+.nxo-nav-primary-utils .nxo-nav-account:hover,
+.nxo-nav-primary-utils .nxo-nav-account:focus-visible,
+.nxo-nav-primary-utils .nxo-nav-account[aria-expanded="true"]{
+  background:var(--nxo-theme-interaction)!important;
+  border-color:var(--nxo-theme-interaction)!important;
+  color:#111827!important;
+  outline:none!important;
+  box-shadow:0 7px 16px rgba(0,0,0,.12)!important
+}
+.nxo-nav-primary-utils .nxo-nav-account:hover .nxo-nav-account-name-row>strong,
+.nxo-nav-primary-utils .nxo-nav-account:focus-visible .nxo-nav-account-name-row>strong,
+.nxo-nav-primary-utils .nxo-nav-account[aria-expanded="true"] .nxo-nav-account-name-row>strong,
+.nxo-nav-primary-utils .nxo-nav-account:hover .nxo-nav-account-email,
+.nxo-nav-primary-utils .nxo-nav-account:focus-visible .nxo-nav-account-email,
+.nxo-nav-primary-utils .nxo-nav-account[aria-expanded="true"] .nxo-nav-account-email,
+.nxo-nav-primary-utils .nxo-nav-account:hover .nxo-nav-caret,
+.nxo-nav-primary-utils .nxo-nav-account:focus-visible .nxo-nav-caret,
+.nxo-nav-primary-utils .nxo-nav-account[aria-expanded="true"] .nxo-nav-caret{
+  color:#111827!important
+}
+/* Role chip keeps its own authorization semantics inside the shared account container. */
+.nxo-nav-primary-utils .nxo-nav-account:hover .nxo-nav-account-role,
+.nxo-nav-primary-utils .nxo-nav-account:focus-visible .nxo-nav-account-role,
+.nxo-nav-primary-utils .nxo-nav-account[aria-expanded="true"] .nxo-nav-account-role{
+  background:var(--nxo-theme-role-bg)!important;
+  border-color:var(--nxo-theme-role-border)!important;
+  color:var(--nxo-theme-role-text)!important
+}
