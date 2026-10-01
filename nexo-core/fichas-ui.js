@@ -3,7 +3,7 @@ if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
 const ACCESS_REVISION='fichas-theme-contract-20261001-28';
 const ENGINE_REVISION='theme-unified-20261001-26';
-const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-deep-search-20260930-1';
+const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa-overlay.css?v=numa-presence-idle-20261001-2';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -23,6 +23,26 @@ let numaLoading=false;
 let numaSending=false;
 let requestedSheetOpened=false;
 let engineDataCache=null;
+const NUMA_VISUAL_ASSETS={
+  day:{
+    idle:'https://static.wixstatic.com/media/8b64a8_0ea89ddfe6f9485cb51cc818bbc28587~mv2.png',
+    attentive:'https://static.wixstatic.com/media/8b64a8_664b5ce8535143ae83d866ef22339f26~mv2.png',
+    listening:'https://static.wixstatic.com/media/8b64a8_431c1faecd1d40518baba43f648de9dc~mv2.png',
+    thinking:'https://static.wixstatic.com/media/8b64a8_05317e113b054caead2a8672f59167af~mv2.png',
+    success:'https://static.wixstatic.com/media/8b64a8_b673e3b346d845ffa38e21c660eea254~mv2.png',
+    error:'https://static.wixstatic.com/media/8b64a8_0f51f83f717a4cf88888da0ffa3485c9~mv2.png'
+  },
+  night:{
+    idle:'https://static.wixstatic.com/media/8b64a8_1afdaa040eae4947951ca6233fb4b979~mv2.png',
+    attentive:'https://static.wixstatic.com/media/8b64a8_c6cc56b0eb584dbd8d4858ce7418e7d3~mv2.png',
+    listening:'https://static.wixstatic.com/media/8b64a8_ce4b32fa64324cdf8b2a03adccfe5252~mv2.png',
+    thinking:'https://static.wixstatic.com/media/8b64a8_fe4d5fa2ddf840e5b5ae1840138fd915~mv2.png',
+    success:'https://static.wixstatic.com/media/8b64a8_fe372358c9964067b096b3a0b775ecca~mv2.png',
+    error:'https://static.wixstatic.com/media/8b64a8_d1c9c01f021d4b2c8dd0c2975f3c7342~mv2.png'
+  }
+};
+const NUMA_VISUAL_RUNTIME_STATES=new Set(['idle']);
+let numaVisualRequestedState='idle';
 const launchQuery=new URLSearchParams(location.search);
 const workspaceLabel=launchQuery.get('nxoBackLabel')||'Workspace';
 const workspaceToolName=String(launchQuery.get('nxoToolName')||'Fichas Técnicas Dinámicas').trim()||'Fichas Técnicas Dinámicas';
@@ -79,6 +99,7 @@ function applyWorkspaceTheme(theme,{persist=true,notifyEngine=true}={}){
   const launcher=document.getElementById('nma-launcher'),panel=document.getElementById('nma-panel');
   if(launcher)launcher.dataset.theme=workspaceTheme;
   if(panel)panel.dataset.theme=workspaceTheme;
+  numaSyncVisualTheme();
   applyImportThemeVars();
   try{
     const u=new URL(location.href);
@@ -98,6 +119,48 @@ function ensureNumaCss(){
   link.rel='stylesheet';
   link.href=NUMA_CSS;
   document.head.appendChild(link);
+}
+function numaVisualAsset(state='idle'){
+  const effective=NUMA_VISUAL_RUNTIME_STATES.has(state)?state:'idle';
+  return NUMA_VISUAL_ASSETS[workspaceTheme]?.[effective]||NUMA_VISUAL_ASSETS.day.idle;
+}
+function numaSyncVisualTheme(){
+  const launcher=document.getElementById('nma-launcher');
+  const panel=document.getElementById('nma-panel');
+  if(launcher)launcher.dataset.theme=workspaceTheme;
+  if(panel)panel.dataset.theme=workspaceTheme;
+  const img=document.getElementById('nma-character-img');
+  if(img)img.src=numaVisualAsset(numaVisualRequestedState);
+}
+function numaSetVisualState(state='idle'){
+  numaVisualRequestedState=state||'idle';
+  const panel=document.getElementById('nma-panel');
+  const effective=NUMA_VISUAL_RUNTIME_STATES.has(numaVisualRequestedState)?numaVisualRequestedState:'idle';
+  if(panel){
+    panel.dataset.state=effective;
+    panel.dataset.requestedState=numaVisualRequestedState;
+  }
+  const img=document.getElementById('nma-character-img');
+  if(img)img.src=numaVisualAsset(numaVisualRequestedState);
+}
+function numaSpeak(value){
+  const bubble=document.getElementById('nma-speech');
+  if(!bubble)return;
+  bubble.textContent=String(value||'').trim()||'Hola, ¿en qué puedo ayudarte?';
+}
+function numaLifeFieldMarkup(){
+  return '<div class="nma-life-field" aria-hidden="true">'+
+    '<span class="nma-life-link" style="--x:38%;--y:34%;--w:48px;--r:18deg"></span>'+
+    '<span class="nma-life-link" style="--x:47%;--y:39%;--w:42px;--r:128deg"></span>'+
+    '<span class="nma-life-link" style="--x:44%;--y:57%;--w:38px;--r:20deg"></span>'+
+    '<span class="nma-life-link" style="--x:52%;--y:62%;--w:34px;--r:132deg"></span>'+
+    '<span class="nma-life-node" style="--x:38%;--y:34%;--d:-.2s"></span>'+
+    '<span class="nma-life-node" style="--x:55%;--y:39%;--d:-1.1s"></span>'+
+    '<span class="nma-life-node" style="--x:47%;--y:45%;--d:-1.9s"></span>'+
+    '<span class="nma-life-node" style="--x:44%;--y:57%;--d:-.7s"></span>'+
+    '<span class="nma-life-node" style="--x:57%;--y:62%;--d:-1.6s"></span>'+
+    '<span class="nma-life-node" style="--x:50%;--y:68%;--d:-2.3s"></span>'+
+  '</div>';
 }
 function numaContextInput(){
   return {
@@ -206,25 +269,20 @@ function numaTime(value){
   try{return new Date(value||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}catch(_){return''}
 }
 function numaRenderMessages(messages=[]){
-  const zone=document.getElementById('nma-messages');
-  if(!zone)return;
-  if(!messages.length){
-    zone.innerHTML='<div class="nma-empty"><strong>Hola, soy Numa.</strong><span>Estoy dentro de Fichas Técnicas Dinámicas. Puedo buscar, listar y abrir fichas visibles sin consumir API.</span><small>Prueba: “¿Cuántas fichas tengo?”, “Busca la sopa de cebolla” o “Regresa”.</small></div>';
-    return;
-  }
-  zone.innerHTML=messages.map(m=>
-    '<div class="nma-message '+(m.role==='user'?'user':'assistant')+'">'+
-      '<div class="nma-message-body">'+esc(m.content||'')+'</div>'+
-      '<small>'+esc(numaTime(m.at))+'</small>'+
-    '</div>'
-  ).join('');
-  requestAnimationFrame(()=>{zone.scrollTop=zone.scrollHeight});
+  const panel=document.getElementById('nma-panel');
+  if(panel?.dataset?.greetingHold==='1')return;
+  const latest=[...(messages||[])].reverse().find(m=>m?.role==='assistant'&&String(m?.content||'').trim());
+  numaSpeak(latest?.content||'Hola, ¿en qué puedo ayudarte?');
 }
 function numaSetStatus(value,state=''){
   const el=document.getElementById('nma-status');
-  if(!el)return;
-  el.textContent=value||'';
-  el.dataset.state=state;
+  if(el){
+    el.textContent=value||'';
+    el.dataset.state=state;
+  }
+  if(state==='loading')numaSetVisualState('thinking');
+  else if(state==='error')numaSetVisualState('error');
+  else numaSetVisualState('idle');
 }
 function numaSyncHeader(){
   const ctx=numaState?.context;
@@ -266,11 +324,18 @@ async function numaLoad(force=false){
 function numaOpen(){
   const panel=document.getElementById('nma-panel');
   if(!panel)return;
+  numaSyncVisualTheme();
+  numaSetVisualState('idle');
+  panel.dataset.greetingHold='1';
+  numaSpeak('Hola, ¿en qué puedo ayudarte?');
   panel.classList.add('open');
   panel.setAttribute('aria-hidden','false');
   document.getElementById('nma-launcher')?.setAttribute('aria-expanded','true');
   numaLoad(false);
-  setTimeout(()=>document.getElementById('nma-input')?.focus(),80);
+  setTimeout(()=>{
+    panel.dataset.greetingHold='0';
+    document.getElementById('nma-input')?.focus();
+  },900);
 }
 function numaClose(){
   document.getElementById('nma-panel')?.classList.remove('open');
@@ -370,7 +435,7 @@ function mountNuma(){
     launcher.type='button';
     launcher.setAttribute('aria-label','Abrir Numa');
     launcher.setAttribute('aria-expanded','false');
-    launcher.innerHTML='<span class="nma-orb" aria-hidden="true">N</span><strong>Numa</strong>';
+    launcher.innerHTML='<span class="nma-launch-stream" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="nma-launch-core" aria-hidden="true"></span>';
     document.body.appendChild(launcher);
     launcher.onclick=()=>document.getElementById('nma-panel')?.classList.contains('open')?numaClose():numaOpen();
   }
@@ -380,15 +445,18 @@ function mountNuma(){
     panel.id='nma-panel';
     panel.className='nma-panel';
     panel.dataset.theme=workspaceTheme;
+    panel.dataset.state='idle';
     panel.setAttribute('aria-hidden','true');
     panel.innerHTML=
-      '<div class="nma-head">'+
-        '<div class="nma-identity"><span class="nma-orb" aria-hidden="true">N</span><div><strong>Numa</strong><small id="nma-context">'+esc(workspaceToolName)+'</small></div></div>'+
-        '<div class="nma-head-actions"><span class="nma-role" id="nma-role" hidden></span><button id="nma-close" class="nma-icon-btn" type="button" aria-label="Cerrar Numa">✕</button></div>'+
+      '<button id="nma-close" class="nma-presence-close" type="button" aria-label="Cerrar Numa">✕</button>'+
+      '<div class="nma-character-stage" aria-label="Numa">'+
+        '<img id="nma-character-img" class="nma-character" alt="" draggable="false">'+
+        numaLifeFieldMarkup()+
+        '<div class="nma-expression-layer" id="nma-expression-layer" aria-hidden="true"></div>'+
       '</div>'+
-      '<div class="nma-status-row"><span class="nma-status-dot"></span><span id="nma-status">Preparando Numa…</span></div>'+
-      '<div class="nma-messages" id="nma-messages"></div>'+
-      '<div class="nma-compose"><textarea id="nma-input" rows="2" maxlength="8000" placeholder="Busca una ficha o pregúntale a Numa…"></textarea><button id="nma-send" type="button" aria-label="Enviar mensaje">➤</button></div>';
+      '<div class="nma-speech" id="nma-speech" role="status" aria-live="polite">Hola, ¿en qué puedo ayudarte?</div>'+
+      '<div class="nma-status-row"><span class="nma-status-dot"></span><span id="nma-status">Modo local · sin consumo API</span></div>'+
+      '<div class="nma-compose"><textarea id="nma-input" rows="1" maxlength="8000" placeholder="Escribe a Numa…"></textarea><button id="nma-send" type="button" aria-label="Enviar mensaje">➤</button></div>';
     document.body.appendChild(panel);
     panel.querySelector('#nma-close').onclick=numaClose;
     panel.querySelector('#nma-send').onclick=numaSend;
@@ -397,6 +465,8 @@ function mountNuma(){
       if(event.key==='Escape')numaClose();
     });
   }
+  numaSyncVisualTheme();
+  numaSetVisualState('idle');
   numaSyncHeader();
 }
 function clearRequestedSheetParams(){
