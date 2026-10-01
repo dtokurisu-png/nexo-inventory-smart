@@ -1067,15 +1067,19 @@ function numaPerformAction(action){
   if(action.type==="openTechnicalSheet"){
     const route=routeUrl(action.routePath||"/blank-4");
     if(!route||!action.sheetId){toast("Numa no encontró una ficha disponible.");return}
-    const wsid=workspace?.workspace?.id||"";
-    const label=wsid?(workspace?.workspace?.name||ui('Espacio de trabajo','Workspace')):ui('Mi espacio','My space');
+    const currentWorkspaceId=workspace?.workspace?.id||"";
+    const targetWorkspaceId=String(action.workspaceId||currentWorkspaceId||"");
+    const targetWorkspaceName=String(action.workspaceName||(targetWorkspaceId===currentWorkspaceId?workspace?.workspace?.name:"")||"");
+    const backLabel=currentWorkspaceId?(workspace?.workspace?.name||ui('Espacio de trabajo','Workspace')):ui('Mi espacio','My space');
     try{
-      const u=new URL(launchWithBack(route,label,wsid),location.href);
+      const u=new URL(launchWithBack(route,backLabel,currentWorkspaceId),location.href);
       u.searchParams.set("numaSheet",String(action.sheetId));
       if(action.title)u.searchParams.set("numaSheetTitle",String(action.title));
+      if(targetWorkspaceId)u.searchParams.set("nxoWorkspace",targetWorkspaceId);
+      if(targetWorkspaceName)u.searchParams.set("nxoWorkspaceName",targetWorkspaceName);
       location.assign(u.href);
     }catch(_){
-      location.assign(launchWithBack(route,label,wsid));
+      location.assign(launchWithBack(route,backLabel,currentWorkspaceId));
     }
     return;
   }
