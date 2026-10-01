@@ -155,13 +155,13 @@ function numaSearchNorm(value){
 function numaExtractSheetQuery(message){
   let q=String(message||'').trim();
   q=q.replace(/^[¿?¡!.,;:\s]+/g,'').replace(/^numa\s*[,;:\-]?\s*/i,'');
-  const related=q.match(/(?:fichas?|recetas?|platos?|preparaciones?|algo).*?(?:relacionad[oa]s?\s+con|sobre|con|que\s+tengan?|que\s+lleven?)\s+(.+)$/i);
+  const related=q.match(/(?:fichas?|recetas?|platos?|preparaci[oó]n|preparaciones|algo).*?(?:relacionad[oa]s?\s+con|sobre|con|que\s+tengan?|que\s+lleven?)\s+(.+)$/i);
   if(related?.[1])q=related[1];
   else{
     q=q.replace(/^.*?\b(?:abre|abrir|busca|buscar|búscame|buscame|busco|encuentra|encontrar|muestra|mostrar|muéstrame|muestrame|enséñame|enseñame|quiero|quisiera|necesito|dame|tienes|hay|ve\s+a|ir\s+a)\b\s*/i,'');
     q=q.replace(/^(?:me\s+)?(?:puedes|podrias|podrías)\s+(?:buscar|mostrar|enseñar|ensenar|abrir)\s+/i,'');
     q=q.replace(/^(?:la|el|los|las|una|un|alguna|algún|algun)\s+/i,'');
-    q=q.replace(/^(?:fichas?(?:\s+t[eé]cnicas?)?|recetas?|platos?|preparaciones?)\s*(?:de|del|con|sobre|llamad[oa]s?|que\s+se\s+llam[ae]n?)?\s*/i,'');
+    q=q.replace(/^(?:fichas?(?:\s+t[eé]cnicas?)?|recetas?|platos?|(?:preparaci[oó]n|preparaciones))\s*(?:de|del|con|sobre|llamad[oa]s?|que\s+se\s+llam[ae]n?)?\s*/i,'');
     q=q.replace(/^(?:algo)\s+(?:de|con|sobre)\s+/i,'');
   }
   q=q.replace(/\s+(?:en\s+)?(?:fichas(?:\s+t[eé]cnicas)?|recetario)\s*$/i,'');
