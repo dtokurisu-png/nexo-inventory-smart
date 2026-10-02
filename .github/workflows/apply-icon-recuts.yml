@@ -1,0 +1,48 @@
+name: Apply corrected Nexo icon recuts
+
+on:
+  push:
+    paths:
+      - '.github/icon-recut-manifest.json'
+      - '.github/workflows/apply-icon-recuts.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replace canonical icon files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import pathlib
+          import urllib.request
+          manifest = json.load(open('.github/icon-recut-manifest.json', encoding='utf-8'))
+          root = pathlib.Path('assets/icons/nexo')
+          root.mkdir(parents=True, exist_ok=True)
+          for name, url in manifest.items():
+              target = root / name
+              with urllib.request.urlopen(url, timeout=60) as src, open(target, 'wb') as dst:
+                  dst.write(src.read())
+          print(f"Replaced {len(manifest)} icon files")
+          PY
+
+      - name: Commit replacement and remove transfer files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/icon-recut-manifest.json .github/workflows/apply-icon-recuts.yml
+          git add assets/icons/nexo
+          git commit -m "assets(icons): replace gallery with corrected recuts"
+          git push
