@@ -4595,3 +4595,99 @@ button.nxo-workspace-logo-edit.uploading{
 .nxo-schedule-person em{
   color:var(--nxo-theme-text-soft)!important
 }
+
+
+/* =========================================================
+   WORKSPACE · TODAY SHIFT CARD · 2026-10-02
+   Personal current-day summary shown above Tools for every member.
+   ========================================================= */
+.nxo-today-shift-section{
+  margin-top:0!important;
+  margin-bottom:14px
+}
+.nxo-today-shift-card{
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  gap:10px;
+  padding:16px 18px;
+  border:1px solid var(--nxo-theme-border);
+  border-radius:16px;
+  background:
+    linear-gradient(145deg,
+      color-mix(in srgb,var(--nxo-theme-accent-soft) 48%,var(--nxo-theme-surface) 52%),
+      var(--nxo-theme-surface-raised));
+  box-shadow:0 10px 28px color-mix(in srgb,var(--nxo-theme-bg) 68%,transparent)
+}
+.nxo-today-shift-card::after{
+  content:"";
+  position:absolute;
+  width:120px;
+  height:120px;
+  right:-48px;
+  top:-58px;
+  border-radius:50%;
+  background:color-mix(in srgb,var(--nxo-theme-accent) 14%,transparent);
+  filter:blur(1px);
+  pointer-events:none
+}
+.nxo-today-shift-card.is-loading{
+  opacity:.78
+}
+.nxo-today-shift-head{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px
+}
+.nxo-today-shift-eyebrow{
+  color:var(--nxo-theme-text-soft);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.065em;
+  text-transform:uppercase
+}
+.nxo-today-shift-main{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  flex-wrap:wrap
+}
+.nxo-today-shift-main strong,
+.nxo-today-shift-card>div>strong{
+  color:var(--nxo-theme-text);
+  font-size:17px;
+  line-height:1.25
+}
+.nxo-today-shift-main span{
+  color:var(--nxo-theme-text-muted);
+  font-size:11px
+}
+.nxo-today-shift-segments{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px
+}
+.nxo-today-shift-segments span{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:5px 9px;
+  border:1px solid var(--nxo-theme-border);
+  border-radius:999px;
+  background:var(--nxo-theme-surface);
+  color:var(--nxo-theme-text-soft);
+  font-size:10px;
+  font-weight:800
+}
+@media(max-width:760px){
+  .nxo-today-shift-card{padding:14px 15px;border-radius:14px}
+  .nxo-today-shift-main strong,
+  .nxo-today-shift-card>div>strong{font-size:15px}
+}
