@@ -1931,7 +1931,7 @@ function renderScheduleDebugPanel(){
     '<div class="nxo-section-head"><div><h3 style="margin:0">'+esc(ui('Lectura del horario','Schedule reading'))+'</h3><p>'+esc(ui('La imagen se optimiza en el teléfono y el OCR lee texto y posiciones. La imagen no se divide ni se reconstruye.','The image is optimized on the phone and OCR reads text plus positions. The image is not split or reconstructed.'))+'</p></div>'+(scheduleAnalysisBusy?'<span class="nxo-chip">'+esc(ui('Procesando','Processing'))+'</span>':'')+'</div>'+
     scheduleDebugRow(ui('Optimizar imagen','Optimize image'),state('optimize',d.optimized),optimizedDetail)+
     scheduleDebugRow(ui('Preparar OCR','Prepare OCR'),state('ocr-load',d.ocrReady),d.ocrReady?ui('Motor OCR listo.','OCR engine ready.'):ui('Cargando lector de texto.','Loading text reader.'))+
-    scheduleDebugRow(ui('Leer texto','Read text'),state('ocr',d.ocrCompleted),d.ocrCompleted?((d.wordsDetected||0)+' '+ui('palabras detectadas','words detected')):(d.ocrProgress?Math.round(d.ocrProgress*100)+'%':ui('Esperando lectura.','Waiting to read.')))+
+    scheduleDebugRow(ui('Leer texto','Read text'),state('ocr',d.ocrCompleted),d.ocrCompleted?((d.wordsDetected||0)+' '+ui('palabras detectadas','words detected')):((d.ocrPass?ui('Pasada ','Pass ')+d.ocrPass+' · ':'')+(d.ocrProgress?Math.round(d.ocrProgress*100)+'%':ui('Esperando lectura.','Waiting to read.'))))+
     scheduleDebugRow(ui('Mapear estructura','Map structure'),state('map',d.mapped),d.mapped?ui('Días, colaboradores, horarios y roles comparados.','Days, members, hours, and roles matched.'):ui('Esperando OCR.','Waiting for OCR.'))+
     scheduleDebugRow(ui('Días / fechas','Days / dates'),d.mapped?(Number(d.daysDetected||0)>0?'done':'error'):'pending',String(d.daysDetected||0))+
     scheduleDebugRow(ui('Colaboradores','Members'),d.mapped?(Number(d.collaboratorsDetected||0)>0?'done':'error'):'pending',String(d.collaboratorsDetected||0))+
@@ -1961,7 +1961,7 @@ async function optimizeScheduleImage(file){
     source=await scheduleImageElement(file);originalWidth=source.naturalWidth||source.width;originalHeight=source.naturalHeight||source.height
   }
   if(!originalWidth||!originalHeight)throw new Error(ui('La imagen no tiene dimensiones válidas.','The image has invalid dimensions.'));
-  const maxSide=file.size>6*1024*1024?2200:(file.size>3*1024*1024?2400:2700);
+  const maxSide=file.size>6*1024*1024?3600:(file.size>3*1024*1024?4000:4200);
   const scale=Math.min(1,maxSide/Math.max(originalWidth,originalHeight));
   const width=Math.max(1,Math.round(originalWidth*scale)),height=Math.max(1,Math.round(originalHeight*scale));
   const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
@@ -1974,6 +1974,85 @@ async function optimizeScheduleImage(file){
   while(blob.size>1500000&&quality>.64){quality-=.08;blob=await scheduleCanvasBlob(canvas,quality)}
   return {blob,width,height,originalWidth,originalHeight,quality}
 }
+async function scheduleBlobToBitmap(blob){
+  if(typeof createImageBitmap==='function'){
+    try{return await createImageBitmap(blob,{imageOrientation:'from-image'})}catch(_){}
+  }
+  return scheduleImageElement(blob)
+}
+function schedulePngBlob(canvas){
+  return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error(ui('No se pudo preparar la imagen OCR.','Could not prepare OCR image.'))),'image/png'))
+}
+async function prepareScheduleOcrVariant(blob,mode='enhanced'){
+  const source=await scheduleBlobToBitmap(blob);
+  const sw=source.width||source.naturalWidth,sh=source.height||source.naturalHeight;
+  if(!sw||!sh)throw new Error(ui('La imagen OCR no tiene dimensiones válidas.','OCR image has invalid dimensions.'));
+  const long=Math.max(sw,sh);
+  const targetLong=Math.min(3200,Math.max(2600,long));
+  const scale=targetLong/long;
+  const width=Math.max(1,Math.round(sw*scale)),height=Math.max(1,Math.round(sh*scale));
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d',{alpha:false,willReadFrequently:true});
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(source,0,0,width,height);
+  try{if(source&&typeof source.close==='function')source.close()}catch(_){}
+  const image=ctx.getImageData(0,0,width,height),d=image.data;
+  let avg=0,count=0;
+  for(let i=0;i<d.length;i+=16){
+    avg+=(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114);count++
+  }
+  avg=count?avg/count:180;
+  const contrast=mode==='threshold'?1.75:1.42;
+  const threshold=Math.max(138,Math.min(205,avg*0.92));
+  for(let i=0;i<d.length;i+=4){
+    let g=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
+    g=(g-128)*contrast+128;
+    if(mode==='threshold'){
+      g=g<threshold?0:255;
+    }else{
+      g=Math.max(0,Math.min(255,g));
+      if(g<45)g=0;
+      else if(g>230)g=255;
+    }
+    d[i]=d[i+1]=d[i+2]=g;d[i+3]=255
+  }
+  ctx.putImageData(image,0,0);
+  const out=await schedulePngBlob(canvas);
+  canvas.width=1;canvas.height=1;
+  return {blob:out,width,height,mode}
+}
+function scheduleOcrNormalize(value){
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9:+./&'-]+/g,' ').replace(/\s+/g,' ').trim()
+}
+function scheduleOcrSignals(words){
+  const text=' '+scheduleOcrNormalize((words||[]).map(w=>w.text||'').join(' '))+' ';
+  const roles=(scheduleData?.roles||[]).flatMap(r=>[r.name,...(Array.isArray(r.aliases)?r.aliases:[])]);
+  const members=(scheduleData?.members||[]).flatMap(m=>[m.displayName,m.workName]).filter(Boolean);
+  let roleHits=0,memberHits=0;
+  for(const role of roles){
+    const n=scheduleOcrNormalize(role);if(n&&text.includes(' '+n+' '))roleHits++
+  }
+  for(const member of members){
+    const parts=scheduleOcrNormalize(member).split(' ').filter(x=>x.length>=3);
+    if(parts.some(p=>text.includes(' '+p+' ')))memberHits++
+  }
+  const timeHits=((text.match(/\b\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?|a|p)?\s*(?:-|to)\s*\d{1,2}(?::\d{2})?/g)||[]).length);
+  return {roleHits,memberHits,timeHits,total:(words||[]).length}
+}
+function mergeScheduleOcrWords(primary,secondary){
+  const rows=[...(primary||[])];
+  for(const w of (secondary||[])){
+    const dup=rows.some(x=>
+      scheduleOcrNormalize(x.text)===scheduleOcrNormalize(w.text)&&
+      Math.abs(((x.x0+x.x1)/2)-((w.x0+w.x1)/2))<18&&
+      Math.abs(((x.y0+x.y1)/2)-((w.y0+w.y1)/2))<14
+    );
+    if(!dup)rows.push(w)
+  }
+  return rows.sort((a,b)=>a.y0-b.y0||a.x0-b.x0)
+}
+
 function scheduleOcrBase(){
   return 'https://dtokurisu-png.github.io/nexo-inventory-smart/vendor/tesseract'
 }
@@ -2028,9 +2107,9 @@ function scheduleWordsFromTesseract(data){
     return {text:String(p.slice(11).join('\t')||'').trim(),confidence:Number(p[10]||0),x0:left,y0:top,x1:left+width,y1:top+height}
   }).filter(Boolean)
 }
-async function runScheduleOcr(blob){
+async function runScheduleOcr(blob,passLabel='1/1'){
   const T=await loadScheduleOcrLibrary();
-  scheduleDebug={...(scheduleDebug||{}),stage:'ocr-load',ocrReady:true};
+  scheduleDebug={...(scheduleDebug||{}),stage:'ocr-load',ocrReady:true,ocrPass:passLabel};
   renderScheduleDebugPanel();
   const base=scheduleOcrBase();
   const worker=await T.createWorker(['eng','spa'],1,{
@@ -2041,7 +2120,7 @@ async function runScheduleOcr(blob){
     workerBlobURL:true,
     logger:m=>{
       if(m&&m.status==='recognizing text'){
-        scheduleDebug={...(scheduleDebug||{}),stage:'ocr',ocrReady:true,ocrProgress:Number(m.progress||0)};
+        scheduleDebug={...(scheduleDebug||{}),stage:'ocr',ocrReady:true,ocrProgress:Number(m.progress||0),ocrPass:passLabel};
         renderScheduleDebugPanel()
       }
     },
@@ -2050,12 +2129,20 @@ async function runScheduleOcr(blob){
       renderScheduleDebugPanel()
     }
   });
-  const url=URL.createObjectURL(blob);
   try{
-    const result=await worker.recognize(url);
-    return scheduleWordsFromTesseract(result?.data)
+    if(typeof worker.setParameters==='function'){
+      await worker.setParameters({
+        tessedit_pageseg_mode:'11',
+        preserve_interword_spaces:'1',
+        user_defined_dpi:'300'
+      })
+    }
+    const url=URL.createObjectURL(blob);
+    try{
+      const result=await worker.recognize(url);
+      return scheduleWordsFromTesseract(result?.data)
+    }finally{URL.revokeObjectURL(url)}
   }finally{
-    URL.revokeObjectURL(url);
     try{await worker.terminate()}catch(_){}
   }
 }
@@ -2213,18 +2300,34 @@ async function processScheduleImage(file){
     scheduleDebug={...scheduleDebug,stage:'ocr',ocrReady:true};
     renderScheduleDebugPanel();
 
-    let words=await runScheduleOcr(optimized.blob);
-    words=words.filter(w=>String(w.text||'').trim()&&Number(w.confidence||0)>=20).slice(0,3500);
+    const enhanced=await prepareScheduleOcrVariant(optimized.blob,'enhanced');
+    let words=await runScheduleOcr(enhanced.blob,'1/2');
+    words=words.filter(w=>String(w.text||'').trim()&&Number(w.confidence||0)>=12).slice(0,5000);
+    let signals=scheduleOcrSignals(words);
+    let ocrWidth=enhanced.width,ocrHeight=enhanced.height;
+    let usedSecondPass=false;
+
+    if(signals.memberHits===0&&signals.roleHits===0&&signals.timeHits<3){
+      scheduleDebug={...scheduleDebug,stage:'ocr',ocrProgress:0,ocrPass:'2/2'};
+      renderScheduleDebugPanel();
+      const threshold=await prepareScheduleOcrVariant(optimized.blob,'threshold');
+      let second=await runScheduleOcr(threshold.blob,'2/2');
+      second=second.filter(w=>String(w.text||'').trim()&&Number(w.confidence||0)>=8).slice(0,5000);
+      words=mergeScheduleOcrWords(words,second).slice(0,7000);
+      signals=scheduleOcrSignals(words);
+      ocrWidth=threshold.width;ocrHeight=threshold.height;usedSecondPass=true
+    }
+
     if(!words.length)throw new Error(ui('OCR no encontró texto legible en la imagen.','OCR found no readable text in the image.'));
-    scheduleDebug={...scheduleDebug,stage:'map',ocrCompleted:true,ocrProgress:1,wordsDetected:words.length};
+    scheduleDebug={...scheduleDebug,stage:'map',ocrCompleted:true,ocrProgress:1,ocrPass:usedSecondPass?'2/2':'1/2',wordsDetected:words.length,ocrMemberHits:signals.memberHits,ocrRoleHits:signals.roleHits,ocrTimeHits:signals.timeHits};
     renderScheduleDebugPanel();
 
     const parsed=await api('schedule.ocr.parse',{workspaceId:workspace.workspace.id,input:{
       weekStart:week,
       fileName:file.name||'schedule-image',
-      mimeType:'image/jpeg',
-      imageWidth:optimized.width,
-      imageHeight:optimized.height,
+      mimeType:'image/png',
+      imageWidth:ocrWidth,
+      imageHeight:ocrHeight,
       originalBytes:file.size,
       processedBytes:optimized.blob.size,
       words
