@@ -4520,3 +4520,78 @@ button.nxo-workspace-logo-edit.uploading{
 @media(prefers-reduced-motion:reduce){
   .nxo-schedule-day.is-today::after{animation:none;transform:none}
 }
+
+
+/* =========================================================
+   SCHEDULE GRID THEME SURFACES · 2026-10-02
+   Uses only canonical Nexo day/night semantic tokens.
+   Source-sheet/Sketch colors do not drive the UI.
+   ========================================================= */
+.nxo-schedule-grid-head>div{
+  background:var(--nxo-theme-surface-raised)!important;
+  border-color:var(--nxo-theme-border)!important;
+  color:var(--nxo-theme-text-soft)!important;
+  box-shadow:0 5px 14px color-mix(in srgb,var(--nxo-theme-bg) 72%,transparent)
+}
+.nxo-schedule-person{
+  background:var(--nxo-theme-surface)!important;
+  border-color:var(--nxo-theme-border)!important;
+  box-shadow:0 6px 16px color-mix(in srgb,var(--nxo-theme-bg) 72%,transparent)
+}
+.nxo-schedule-day{
+  background:var(--nxo-theme-surface-raised)!important;
+  border-color:var(--nxo-theme-border)!important;
+  box-shadow:0 6px 16px color-mix(in srgb,var(--nxo-theme-bg) 72%,transparent)
+}
+.nxo-schedule-status-work{
+  background:color-mix(in srgb,var(--nxo-theme-accent-soft) 58%,var(--nxo-theme-surface-raised) 42%)!important;
+  border-color:color-mix(in srgb,var(--nxo-theme-accent) 34%,var(--nxo-theme-border) 66%)!important
+}
+.nxo-schedule-status-off,
+.nxo-schedule-status-rec-off{
+  background:color-mix(in srgb,var(--nxo-theme-interaction) 18%,var(--nxo-theme-surface-raised) 82%)!important;
+  border-color:color-mix(in srgb,var(--nxo-theme-interaction) 38%,var(--nxo-theme-border) 62%)!important
+}
+.nxo-schedule-status-training{
+  background:color-mix(in srgb,var(--nxo-theme-positive) 16%,var(--nxo-theme-surface-raised) 84%)!important;
+  border-color:color-mix(in srgb,var(--nxo-theme-positive) 38%,var(--nxo-theme-border) 62%)!important
+}
+.nxo-schedule-status-on-call{
+  background:color-mix(in srgb,var(--nxo-theme-interaction) 12%,var(--nxo-theme-surface-raised) 88%)!important;
+  border-color:color-mix(in srgb,var(--nxo-theme-interaction) 30%,var(--nxo-theme-border) 70%)!important
+}
+.nxo-schedule-status-unknown{
+  background:color-mix(in srgb,var(--nxo-theme-danger) 10%,var(--nxo-theme-surface-raised) 90%)!important;
+  border-color:color-mix(in srgb,var(--nxo-theme-danger) 28%,var(--nxo-theme-border) 72%)!important
+}
+.nxo-schedule-day strong{
+  color:var(--nxo-theme-text)!important
+}
+.nxo-schedule-status-off strong,
+.nxo-schedule-status-rec-off strong{
+  color:var(--nxo-theme-text-soft)!important
+}
+.nxo-schedule-day.is-today{
+  border-color:var(--nxo-theme-interaction)!important;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb,var(--nxo-theme-interaction) 28%,transparent),
+    0 9px 24px color-mix(in srgb,var(--nxo-theme-bg) 65%,transparent)!important
+}
+.nxo-schedule-day.is-today::after{
+  background:linear-gradient(
+    105deg,
+    transparent 35%,
+    color-mix(in srgb,var(--nxo-theme-interaction) 5%,transparent) 42%,
+    color-mix(in srgb,var(--nxo-theme-interaction) 48%,white 20%) 49%,
+    color-mix(in srgb,var(--nxo-theme-interaction) 14%,white 12%) 54%,
+    transparent 62%
+  )!important
+}
+.nxo-schedule-identity-note{
+  background:color-mix(in srgb,var(--nxo-theme-interaction) 10%,var(--nxo-theme-surface) 90%)!important;
+  border-color:color-mix(in srgb,var(--nxo-theme-interaction) 28%,var(--nxo-theme-border) 72%)!important
+}
+.nxo-schedule-identity-note strong,
+.nxo-schedule-person em{
+  color:var(--nxo-theme-text-soft)!important
+}
