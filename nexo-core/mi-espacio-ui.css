@@ -4295,3 +4295,32 @@ button.nxo-workspace-logo-edit.uploading{
   }
 }
 
+
+
+/* CANONICAL NEXO ICON GALLERY · 2026-10-01 */
+.nxo-icon-img{
+  width:18px;height:18px;display:block;object-fit:contain;object-position:center;flex:0 0 auto;
+}
+.nxo-icon-label{display:inline-flex;align-items:center;gap:7px;min-width:0}
+.nxo-icon-label>span{min-width:0}
+.nxo-tool-icon img{width:30px;height:30px;object-fit:contain}
+.nxo-notification-icon{display:grid;place-items:center}
+.nxo-notification-icon .nxo-icon-img,
+.nxo-quick-settings-button .nxo-icon-img{width:18px;height:18px}
+.nxo-quick-setting-row>.nxo-icon-label{flex:1}
+.nxo-nav-link>.nxo-icon-label{gap:6px}
+.nxo-nav-link .nxo-icon-img,.nxo-tab .nxo-icon-img{width:16px;height:16px}
+.nxo-summary-item .nxo-summary-icon{
+  width:30px;height:30px;display:grid;place-items:center;flex:0 0 auto;
+}
+.nxo-summary-item .nxo-summary-icon .nxo-icon-img{width:24px;height:24px}
+.nxo-btn>.nxo-icon-label{justify-content:center}
+.nxo-btn .nxo-icon-img{width:16px;height:16px}
+.nxo-workspace-logo>.nxo-icon-img,.nxo-workspace-logo-preview>.nxo-icon-img{width:32px;height:32px}
+.nxo-workspace-menu-button{display:grid;place-items:center}
+.nxo-workspace-menu-button .nxo-icon-img{width:18px;height:18px}
+@media(max-width:760px){
+  .nxo-nav-link .nxo-icon-img{width:15px;height:15px}
+  .nxo-summary-item .nxo-summary-icon{width:27px;height:27px}
+  .nxo-summary-item .nxo-summary-icon .nxo-icon-img{width:22px;height:22px}
+}
