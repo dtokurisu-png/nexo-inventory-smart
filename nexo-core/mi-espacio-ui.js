@@ -2004,7 +2004,7 @@ function loadScheduleOcrLibrary(){
       return
     }
     const s=document.createElement('script');
-    s.src=scheduleOcrBase()+'/tesseract.min.js?v=20261002-2';
+    s.src=scheduleOcrBase()+'/tesseract.min.js?v=20261002-3';
     s.async=true;s.dataset.nexoScheduleOcr='1';
     s.onload=finish;
     s.onerror=()=>reject(new Error(ui('No se pudo cargar el lector OCR local de Nexo.','Could not load the local Nexo OCR reader.')));
