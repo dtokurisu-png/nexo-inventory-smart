@@ -14,8 +14,8 @@ function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
 let workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
-let scheduleWeekStart='',scheduleData=null,scheduleImportData=null,scheduleDebug=null,scheduleAnalysisBusy=false,scheduleDebugModal=null;
-const SCHEDULE_GPT_REVISION='70';
+let scheduleWeekStart='',scheduleData=null,scheduleImportData=null,scheduleDebug=null,scheduleAnalysisBusy=false,scheduleDebugModal=null,scheduleOcrLoaderPromise=null;
+const SCHEDULE_OCR_REVISION='69';
 const NEXO_THEME_KEY='nexoTheme:v1';
 const NEXO_LANGUAGE_KEY='nexoLanguage:v1';
 function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
@@ -1889,20 +1889,11 @@ function scheduleStatusLabel(value){
   return s==='PUBLISHED'?ui('Publicado','Published'):s==='DRAFT'?ui('Borrador','Draft'):s||ui('Sin horario','No schedule')
 }
 function scheduleTime(value){
-  if(!value)return'';
-  try{return new Date(value).toLocaleTimeString(currentLanguage()==='en'?'en-US':'es-US',{hour:'numeric',minute:'2-digit'})}catch(_){return''}
+  if(!value)return'—';
+  try{return new Date(value).toLocaleTimeString(currentLanguage()==='en'?'en-US':'es-US',{hour:'numeric',minute:'2-digit'})}catch(_){return'—'}
 }
-function scheduleDay(value,long=false){
-  try{return new Date(value+'T12:00:00').toLocaleDateString(currentLanguage()==='en'?'en-US':'es-US',long?{weekday:'long',month:'short',day:'numeric'}:{weekday:'short',month:'short',day:'numeric'})}catch(_){return value}
-}
-function scheduleShiftDisplay(row){
-  const s=String(row?.status||'').toUpperCase();
-  if(s==='OFF')return ui('OFF','OFF');
-  if(s==='REC_OFF')return ui('REC OFF','REC OFF');
-  if(s==='TRAINING')return (ui('Capacitación','Training'))+(row.startAt&&row.endAt?' · '+scheduleTime(row.startAt)+'–'+scheduleTime(row.endAt):'');
-  if(s==='ON_CALL')return (ui('Guardia','On call'))+(row.startAt&&row.endAt?' · '+scheduleTime(row.startAt)+'–'+scheduleTime(row.endAt):'');
-  if(s==='WORK')return (scheduleTime(row.startAt)||'—')+' – '+(scheduleTime(row.endAt)||'—');
-  return ui('Revisar','Review')
+function scheduleDay(value){
+  try{return new Date(value+'T12:00:00').toLocaleDateString(currentLanguage()==='en'?'en-US':'es-US',{weekday:'short',month:'short',day:'numeric'})}catch(_){return value}
 }
 function closeScheduleDebugModal(){
   if(scheduleDebugModal){scheduleDebugModal.remove();scheduleDebugModal=null}
@@ -1910,36 +1901,46 @@ function closeScheduleDebugModal(){
 function openScheduleDebugModal(){
   if(scheduleDebugModal&&document.body.contains(scheduleDebugModal)){renderScheduleDebugPanel();return scheduleDebugModal}
   const o=document.createElement('div');
-  o.className='nxo-overlay';o.id='nxo-schedule-debug-overlay';
-  o.innerHTML='<div class="nxo-modal" style="max-width:760px"><div class="nxo-modal-head"><strong>'+esc(ui('Procesando horario','Processing schedule'))+'</strong><button class="nxo-btn" data-schedule-debug-close hidden>✕</button></div><div class="nxo-modal-body"><div id="nxo-schedule-debug"></div></div></div>';
-  document.body.appendChild(o);scheduleDebugModal=o;
+  o.className='nxo-overlay';
+  o.id='nxo-schedule-debug-overlay';
+  o.innerHTML='<div class="nxo-modal" style="max-width:760px"><div class="nxo-modal-head"><strong>'+esc(ui('Procesando horario','Processing schedule'))+'</strong><button class="nxo-btn" data-schedule-debug-close hidden aria-label="'+esc(ui('Cerrar','Close'))+'">'+iconTag('cerrar')+'</button></div><div class="nxo-modal-body"><div id="nxo-schedule-debug"></div></div></div>';
+  document.body.appendChild(o);
+  scheduleDebugModal=o;
   o.querySelector('[data-schedule-debug-close]')?.addEventListener('click',closeScheduleDebugModal);
-  renderScheduleDebugPanel();return o
+  renderScheduleDebugPanel();
+  return o
 }
 function setScheduleDebugClosable(value){
-  const b=scheduleDebugModal?.querySelector('[data-schedule-debug-close]');if(b)b.hidden=!value
+  const b=scheduleDebugModal?.querySelector('[data-schedule-debug-close]');
+  if(b)b.hidden=!value
 }
 function scheduleDebugIcon(state){
   return state==='done'?'✓':state==='error'?'✕':state==='working'?'◌':'○'
 }
 function scheduleDebugRow(label,state,detail=''){
-  return '<div style="display:grid;grid-template-columns:28px minmax(150px,220px) 1fr;gap:8px;align-items:start;padding:9px 0;border-bottom:1px solid rgba(127,127,127,.12)"><strong>'+esc(scheduleDebugIcon(state))+'</strong><strong>'+esc(label)+'</strong><span class="nxo-muted">'+esc(detail)+'</span></div>'
+  return '<div style="display:grid;grid-template-columns:28px minmax(150px,220px) 1fr;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid rgba(127,127,127,.12)"><strong>'+esc(scheduleDebugIcon(state))+'</strong><strong>'+esc(label)+'</strong><span class="nxo-muted">'+esc(detail)+'</span></div>'
 }
 function renderScheduleDebugPanel(){
   const zone=scheduleDebugModal?.querySelector('#nxo-schedule-debug');if(!zone)return;
-  const d=scheduleDebug||{},err=String(d.error||''),busy=scheduleAnalysisBusy;
-  const state=(name,done)=>done?'done':(err&&d.stage===name?'error':(!err&&busy&&d.stage===name?'working':'pending'));
+  const d=scheduleDebug||{},hasError=Boolean(d.error),stage=String(d.stage||'');
+  const state=(name,done)=>done?'done':(hasError&&stage===name?'error':(!hasError&&scheduleAnalysisBusy&&stage===name?'working':'pending'));
+  const originalKb=Math.round(Number(d.originalBytes||0)/1024),processedKb=Math.round(Number(d.processedBytes||0)/1024);
+  const optimizedDetail=d.optimized
+    ?(d.originalWidth+'×'+d.originalHeight+' → '+d.processedWidth+'×'+d.processedHeight+' · '+originalKb+' KB → '+processedKb+' KB')
+    :ui('Preparando una versión legible y ligera.','Preparing a lightweight readable version.');
   zone.innerHTML='<div>'+
-    '<div class="nxo-section-head"><div><h3 style="margin:0">'+esc(ui('Análisis con GPT','GPT analysis'))+'</h3><p>'+esc(ui('GPT lee la imagen completa y devuelve colaboradores, roles y los siete días en una estructura validada.','GPT reads the complete image and returns members, roles, and all seven days in a validated structure.'))+' · GPT v'+esc(String(d.revision||SCHEDULE_GPT_REVISION))+'</p></div>'+(busy?'<span class="nxo-chip">'+esc(ui('Procesando','Processing'))+'</span>':'')+'</div>'+
-    scheduleDebugRow(ui('Imagen preparada','Image prepared'),state('prepare',d.prepared),d.prepared?((d.width||0)+'×'+(d.height||0)+' · '+Math.round(Number(d.bytes||0)/1024)+' KB'):ui('Esperando imagen.','Waiting for image.'))+
-    scheduleDebugRow(ui('GPT analizando','GPT analyzing'),state('analyze',d.aiCompleted),d.aiCompleted?ui('Análisis completado.','Analysis completed.'):ui('Leyendo estructura completa del horario.','Reading the complete schedule structure.'))+
-    scheduleDebugRow(ui('Colaboradores','Members'),d.aiCompleted?(Number(d.collaboratorsDetected||0)>0?'done':'error'):'pending',String(d.collaboratorsDetected||0))+
-    scheduleDebugRow(ui('Roles detectados','Detected roles'),d.aiCompleted?(Number(d.rolesDetected||0)>0?'done':'error'):'pending',String(d.rolesDetected||0))+
-    scheduleDebugRow(ui('Días / registros','Days / records'),d.aiCompleted?(Number(d.shiftsDetected||0)>0?'done':'error'):'pending',(d.daysDetected||0)+' '+ui('fechas · ','dates · ')+(d.shiftsDetected||0)+' '+ui('registros','records'))+
-    scheduleDebugRow(ui('Resultado para revisar','Ready for review'),d.aiCompleted?'done':'pending',d.unresolvedRows?((d.unresolvedRows||0)+' '+ui('fila(s) pendientes','pending row(s)')):ui('Listo para revisar.','Ready to review.'))+
-    (err?'<div class="nxo-empty" style="margin-top:14px;text-align:left"><strong>'+esc(ui('Error: ','Error: '))+'</strong>'+esc(err)+'</div>':'')+
+    '<div class="nxo-section-head"><div><h3 style="margin:0">'+esc(ui('Lectura del horario','Schedule reading'))+'</h3><p>'+esc(ui('La imagen se optimiza en el teléfono y el OCR lee texto y posiciones. La imagen no se divide ni se reconstruye.','The image is optimized on the phone and OCR reads text plus positions. The image is not split or reconstructed.'))+' · OCR v'+esc(String(d.ocrRevision||SCHEDULE_OCR_REVISION))+'</p></div>'+(scheduleAnalysisBusy?'<span class="nxo-chip">'+esc(ui('Procesando','Processing'))+'</span>':'')+'</div>'+
+    scheduleDebugRow(ui('Optimizar imagen','Optimize image'),state('optimize',d.optimized),optimizedDetail)+
+    scheduleDebugRow(ui('Preparar OCR','Prepare OCR'),state('ocr-load',d.ocrReady),d.ocrReady?ui('Motor OCR listo.','OCR engine ready.'):ui('Cargando lector de texto.','Loading text reader.'))+
+    scheduleDebugRow(ui('Leer texto','Read text'),state('ocr',d.ocrCompleted),d.ocrCompleted?((d.wordsDetected||0)+' '+ui('palabras detectadas','words detected')):((d.ocrPass?ui('Pasada ','Pass ')+d.ocrPass+' · ':'')+(d.ocrProgress?Math.round(d.ocrProgress*100)+'%':ui('Esperando lectura.','Waiting to read.'))))+
+    scheduleDebugRow(ui('Mapear estructura','Map structure'),state('map',d.mapped),d.mapped?ui('Días, colaboradores, horarios y roles comparados.','Days, members, hours, and roles matched.'):ui('Esperando OCR.','Waiting for OCR.'))+
+    scheduleDebugRow(ui('Días / fechas','Days / dates'),d.mapped?(Number(d.daysDetected||0)>0?'done':'error'):'pending',String(d.daysDetected||0))+
+    scheduleDebugRow(ui('Colaboradores','Members'),d.mapped?(Number(d.collaboratorsDetected||0)>0?'done':'error'):'pending',String(d.collaboratorsDetected||0))+
+    scheduleDebugRow(ui('Roles','Roles'),d.mapped?(Number(d.positionsDetected||0)>0?'done':'error'):'pending',String(d.positionsDetected||0))+
+    scheduleDebugRow(ui('Turnos / horarios','Shifts / hours'),d.mapped?(Number(d.shiftsDetected||0)>0?'done':'error'):'pending',String(d.shiftsDetected||0))+
+    (hasError?'<div class="nxo-empty" style="margin-top:14px;text-align:left"><strong>'+esc(ui('Error: ','Error: '))+'</strong>'+esc(String(d.error))+'</div>':'')+
   '</div>';
-  setScheduleDebugClosable(Boolean(err)||(!busy&&d.aiCompleted))
+  setScheduleDebugClosable(hasError||(!scheduleAnalysisBusy&&d.mapped))
 }
 function scheduleImageElement(file){
   return new Promise((resolve,reject)=>{
@@ -1950,84 +1951,237 @@ function scheduleImageElement(file){
   })
 }
 function scheduleCanvasBlob(canvas,quality){
-  return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error(ui('No se pudo preparar la imagen.','Could not prepare image.'))),'image/jpeg',quality))
+  return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error(ui('No se pudo optimizar la imagen.','Could not optimize the image.'))),'image/jpeg',quality))
 }
 async function optimizeScheduleImage(file){
-  let source=null,ow=0,oh=0;
+  let source=null,originalWidth=0,originalHeight=0;
   if(typeof createImageBitmap==='function'){
-    try{source=await createImageBitmap(file,{imageOrientation:'from-image'});ow=source.width;oh=source.height}catch(_){}
+    try{source=await createImageBitmap(file,{imageOrientation:'from-image'});originalWidth=source.width;originalHeight=source.height}catch(_){}
   }
-  if(!source){source=await scheduleImageElement(file);ow=source.naturalWidth||source.width;oh=source.naturalHeight||source.height}
-  if(!ow||!oh)throw new Error(ui('La imagen no tiene dimensiones válidas.','The image has invalid dimensions.'));
-  const maxSide=file.size>7*1024*1024?2800:(file.size>3*1024*1024?3000:3200);
-  const scale=Math.min(1,maxSide/Math.max(ow,oh));
-  const width=Math.max(1,Math.round(ow*scale)),height=Math.max(1,Math.round(oh*scale));
+  if(!source){
+    source=await scheduleImageElement(file);originalWidth=source.naturalWidth||source.width;originalHeight=source.naturalHeight||source.height
+  }
+  if(!originalWidth||!originalHeight)throw new Error(ui('La imagen no tiene dimensiones válidas.','The image has invalid dimensions.'));
+  const maxSide=file.size>6*1024*1024?3600:(file.size>3*1024*1024?4000:4200);
+  const scale=Math.min(1,maxSide/Math.max(originalWidth,originalHeight));
+  const width=Math.max(1,Math.round(originalWidth*scale)),height=Math.max(1,Math.round(originalHeight*scale));
   const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
   const ctx=canvas.getContext('2d',{alpha:false});
   ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
-  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(source,0,0,width,height);
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(source,0,0,width,height);
   try{if(source&&typeof source.close==='function')source.close()}catch(_){}
-  let quality=.9,blob=await scheduleCanvasBlob(canvas,quality);
-  while(blob.size>1500000&&quality>.7){quality-=.06;blob=await scheduleCanvasBlob(canvas,quality)}
-  canvas.width=1;canvas.height=1;
-  return {blob,width,height,originalWidth:ow,originalHeight:oh}
+  let quality=.88,blob=await scheduleCanvasBlob(canvas,quality);
+  while(blob.size>1500000&&quality>.64){quality-=.08;blob=await scheduleCanvasBlob(canvas,quality)}
+  return {blob,width,height,originalWidth,originalHeight,quality}
 }
-async function scheduleBlobBase64(blob){
-  const buffer=await blob.arrayBuffer(),bytes=new Uint8Array(buffer);
-  let binary='';
-  const chunk=0x8000;
-  for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));
-  return btoa(binary)
+async function scheduleBlobToBitmap(blob){
+  if(typeof createImageBitmap==='function'){
+    try{return await createImageBitmap(blob,{imageOrientation:'from-image'})}catch(_){}
+  }
+  return scheduleImageElement(blob)
+}
+function schedulePngBlob(canvas){
+  return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error(ui('No se pudo preparar la imagen OCR.','Could not prepare OCR image.'))),'image/png'))
+}
+async function prepareScheduleOcrVariant(blob,mode='enhanced'){
+  const source=await scheduleBlobToBitmap(blob);
+  const sw=source.width||source.naturalWidth,sh=source.height||source.naturalHeight;
+  if(!sw||!sh)throw new Error(ui('La imagen OCR no tiene dimensiones válidas.','OCR image has invalid dimensions.'));
+  const long=Math.max(sw,sh);
+  const targetLong=Math.min(3200,Math.max(2600,long));
+  const scale=targetLong/long;
+  const width=Math.max(1,Math.round(sw*scale)),height=Math.max(1,Math.round(sh*scale));
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d',{alpha:false,willReadFrequently:true});
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(source,0,0,width,height);
+  try{if(source&&typeof source.close==='function')source.close()}catch(_){}
+  const image=ctx.getImageData(0,0,width,height),d=image.data;
+  let avg=0,count=0;
+  for(let i=0;i<d.length;i+=16){
+    avg+=(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114);count++
+  }
+  avg=count?avg/count:180;
+  const contrast=mode==='threshold'?1.75:1.42;
+  const threshold=Math.max(138,Math.min(205,avg*0.92));
+  for(let i=0;i<d.length;i+=4){
+    let g=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
+    g=(g-128)*contrast+128;
+    if(mode==='threshold'){
+      g=g<threshold?0:255;
+    }else{
+      g=Math.max(0,Math.min(255,g));
+      if(g<45)g=0;
+      else if(g>230)g=255;
+    }
+    d[i]=d[i+1]=d[i+2]=g;d[i+3]=255
+  }
+  ctx.putImageData(image,0,0);
+  const out=await schedulePngBlob(canvas);
+  canvas.width=1;canvas.height=1;
+  return {blob:out,width,height,mode}
+}
+function scheduleOcrNormalize(value){
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9:+./&'-]+/g,' ').replace(/\s+/g,' ').trim()
+}
+function scheduleOcrSignals(words){
+  const text=' '+scheduleOcrNormalize((words||[]).map(w=>w.text||'').join(' '))+' ';
+  const roles=(scheduleData?.roles||[]).flatMap(r=>[r.name,...(Array.isArray(r.aliases)?r.aliases:[])]);
+  const members=(scheduleData?.members||[]).flatMap(m=>[m.displayName,m.workName]).filter(Boolean);
+  let roleHits=0,memberHits=0;
+  for(const role of roles){
+    const n=scheduleOcrNormalize(role);if(n&&text.includes(' '+n+' '))roleHits++
+  }
+  for(const member of members){
+    const parts=scheduleOcrNormalize(member).split(' ').filter(x=>x.length>=3);
+    if(parts.some(p=>text.includes(' '+p+' ')))memberHits++
+  }
+  const timeHits=((text.match(/\b\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?|a|p)?\s*(?:-|to)\s*\d{1,2}(?::\d{2})?/g)||[]).length);
+  return {roleHits,memberHits,timeHits,total:(words||[]).length}
+}
+function mergeScheduleOcrWords(primary,secondary){
+  const rows=[...(primary||[])];
+  for(const w of (secondary||[])){
+    const dup=rows.some(x=>
+      scheduleOcrNormalize(x.text)===scheduleOcrNormalize(w.text)&&
+      Math.abs(((x.x0+x.x1)/2)-((w.x0+w.x1)/2))<18&&
+      Math.abs(((x.y0+x.y1)/2)-((w.y0+w.y1)/2))<14
+    );
+    if(!dup)rows.push(w)
+  }
+  return rows.sort((a,b)=>a.y0-b.y0||a.x0-b.x0)
+}
+
+function scheduleOcrBase(){
+  return 'https://dtokurisu-png.github.io/nexo-inventory-smart/vendor/tesseract'
+}
+function scheduleOcrGlobal(){
+  const t=(typeof globalThis!=='undefined'&&globalThis.Tesseract)||
+          (typeof self!=='undefined'&&self.Tesseract)||
+          (typeof window!=='undefined'&&window.Tesseract)||
+          null;
+  if(t&&typeof window!=='undefined'&&!window.Tesseract)window.Tesseract=t;
+  return t
+}
+function loadScheduleOcrLibrary(){
+  const ready=scheduleOcrGlobal();
+  if(ready)return Promise.resolve(ready);
+  if(scheduleOcrLoaderPromise)return scheduleOcrLoaderPromise;
+  scheduleOcrLoaderPromise=new Promise((resolve,reject)=>{
+    const existing=document.querySelector('script[data-nexo-schedule-ocr]');
+    const finish=()=>{
+      const t=scheduleOcrGlobal();
+      if(t)resolve(t);
+      else reject(new Error('OCR_RUNTIME_NOT_AVAILABLE'))
+    };
+    if(existing){
+      const now=scheduleOcrGlobal();
+      if(now){resolve(now);return}
+      existing.addEventListener('load',finish,{once:true});
+      existing.addEventListener('error',()=>reject(new Error('OCR_RUNTIME_LOAD_FAILED')),{once:true});
+      return
+    }
+    const s=document.createElement('script');
+    s.src=scheduleOcrBase()+'/tesseract.min.js?v=20261002-3';
+    s.async=true;s.dataset.nexoScheduleOcr='1';
+    s.onload=finish;
+    s.onerror=()=>reject(new Error(ui('No se pudo cargar el lector OCR local de Nexo.','Could not load the local Nexo OCR reader.')));
+    document.head.appendChild(s)
+  }).catch(error=>{scheduleOcrLoaderPromise=null;throw error});
+  return scheduleOcrLoaderPromise
+}
+function scheduleWordsFromTesseract(data){
+  if(Array.isArray(data?.words)&&data.words.length){
+    return data.words.map(w=>({
+      text:String(w.text||'').trim(),
+      confidence:Number(w.confidence||w.conf||0),
+      x0:Number(w.bbox?.x0),y0:Number(w.bbox?.y0),x1:Number(w.bbox?.x1),y1:Number(w.bbox?.y1)
+    })).filter(w=>w.text&&[w.x0,w.y0,w.x1,w.y1].every(Number.isFinite))
+  }
+  const tsv=String(data?.tsv||'');
+  if(!tsv)return[];
+  return tsv.split(/\r?\n/).slice(1).map(line=>{
+    const p=line.split('\t');if(p.length<12||Number(p[0])!==5)return null;
+    const left=Number(p[6]),top=Number(p[7]),width=Number(p[8]),height=Number(p[9]);
+    return {text:String(p.slice(11).join('\t')||'').trim(),confidence:Number(p[10]||0),x0:left,y0:top,x1:left+width,y1:top+height}
+  }).filter(Boolean)
+}
+async function runScheduleOcr(blob,passLabel='1/1'){
+  const T=await loadScheduleOcrLibrary();
+  scheduleDebug={...(scheduleDebug||{}),stage:'ocr-load',ocrReady:true,ocrPass:passLabel};
+  renderScheduleDebugPanel();
+  const base=scheduleOcrBase();
+  const worker=await T.createWorker(['eng','spa'],1,{
+    workerPath:base+'/worker.min.js?v=20261002-1',
+    corePath:base+'/core',
+    langPath:base+'/lang',
+    gzip:true,
+    workerBlobURL:true,
+    logger:m=>{
+      if(m&&m.status==='recognizing text'){
+        scheduleDebug={...(scheduleDebug||{}),stage:'ocr',ocrReady:true,ocrProgress:Number(m.progress||0),ocrPass:passLabel};
+        renderScheduleDebugPanel()
+      }
+    },
+    errorHandler:error=>{
+      scheduleDebug={...(scheduleDebug||{}),stage:'ocr',error:String(error?.message||error||'OCR_WORKER_ERROR')};
+      renderScheduleDebugPanel()
+    }
+  });
+  try{
+    if(typeof worker.setParameters==='function'){
+      await worker.setParameters({
+        tessedit_pageseg_mode:'11',
+        preserve_interword_spaces:'1',
+        user_defined_dpi:'300'
+      })
+    }
+    const url=URL.createObjectURL(blob);
+    try{
+      const result=await worker.recognize(url);
+      return scheduleWordsFromTesseract(result?.data)
+    }finally{URL.revokeObjectURL(url)}
+  }finally{
+    try{await worker.terminate()}catch(_){}
+  }
 }
 function renderScheduleRoles(){
-  const roles=scheduleData?.roles||[];
+  const roles=scheduleData?.roles||[],actor=scheduleData?.actor||{};
   const rows=roles.length
-    ?roles.map(r=>'<span class="nxo-chip" style="display:inline-flex;gap:7px;align-items:center">'+esc(r.name)+(scheduleData?.actor?.canManage?'<button class="nxo-icon-btn" data-schedule-role-edit="'+esc(r.id)+'" aria-label="'+esc(ui('Editar rol','Edit role'))+'">✎</button>':'')+'</span>').join(' ')
-    :'<span class="nxo-muted">'+esc(ui('GPT creará los roles cuando analice el primer horario.','GPT will create roles when it analyzes the first schedule.'))+'</span>';
-  return '<div class="nxo-panel" style="padding:14px;margin-bottom:16px"><div class="nxo-section-head"><div><h3>'+esc(ui('Roles de la compañía','Company roles'))+'</h3><p>'+esc(ui('Se crean automáticamente a partir del schedule y luego pueden renombrarse o reasignarse.','They are created automatically from the schedule and can later be renamed or reassigned.'))+'</p></div></div><div style="display:flex;flex-wrap:wrap;gap:8px">'+rows+'</div></div>'
+    ?roles.map(r=>'<span class="nxo-chip" style="display:inline-flex;gap:8px;align-items:center">'+esc(r.name)+(r.aliases?.length>1?' · '+esc(r.aliases.filter(a=>String(a).toLowerCase()!==String(r.name).toLowerCase()).join(', ')):'')+(actor.canManage?'<button class="nxo-icon-btn" data-schedule-role-remove="'+esc(r.id)+'" aria-label="'+esc(ui('Eliminar rol','Remove role'))+'">'+iconTag('eliminar')+'</button>':'')+'</span>').join(' ')
+    :'<span class="nxo-muted">'+esc(ui('No hay roles creados.','No roles created.'))+'</span>';
+  return '<div class="nxo-panel" style="padding:16px;margin-bottom:16px"><div class="nxo-section-head"><div><h3>'+esc(ui('Roles del horario','Schedule roles'))+'</h3><p>'+esc(ui('Define los nombres que pueden aparecer junto a las horas: Prep, Sauté, Soldador, Electricista, etc.','Define names that may appear next to hours: Prep, Sauté, Welder, Electrician, etc.'))+'</p></div>'+(actor.canManage?'<button class="nxo-btn" id="nxo-schedule-role-add">'+esc(ui('Añadir rol','Add role'))+'</button>':'')+'</div><div style="display:flex;flex-wrap:wrap;gap:8px">'+rows+'</div></div>'
 }
-function openScheduleRoleRenameModal(roleId){
-  const role=(scheduleData?.roles||[]).find(r=>r.id===roleId);if(!role)return;
-  modal(ui('Editar rol','Edit role'),
-    '<div class="nxo-field"><label>'+esc(ui('Nombre del rol','Role name'))+'</label><input id="nxo-schedule-role-name" class="nxo-input" value="'+esc(role.name||'')+'"></div>'+
-    '<div class="nxo-modal-actions"><button id="nxo-schedule-role-save" class="nxo-btn nxo-btn-gold">'+esc(ui('Guardar','Save'))+'</button></div>',
+function openScheduleRoleModal(){
+  modal(ui('Añadir rol del horario','Add schedule role'),
+    '<div class="nxo-field"><label>'+esc(ui('Nombre del rol','Role name'))+'</label><input id="nxo-schedule-role-name" class="nxo-input" placeholder="'+esc(ui('Ej. Prep, Sauté, Electricista','E.g. Prep, Sauté, Electrician'))+'"></div>'+
+    '<div class="nxo-field"><label>'+esc(ui('Alias opcionales','Optional aliases'))+'</label><input id="nxo-schedule-role-aliases" class="nxo-input" placeholder="'+esc(ui('Ej. saute, saut','E.g. saute, saut'))+'"></div>'+
+    '<div class="nxo-modal-actions"><button id="nxo-schedule-role-save" class="nxo-btn nxo-btn-gold">'+esc(ui('Guardar rol','Save role'))+'</button></div>',
     o=>{o.querySelector('#nxo-schedule-role-save').onclick=async()=>{
       const name=o.querySelector('#nxo-schedule-role-name').value.trim();
-      if(!name){toast(ui('Escribe el nombre del rol.','Enter the role name.'));return}
-      try{await api('schedule.roles.save',{workspaceId:workspace.workspace.id,input:{id:role.id,name,aliases:role.aliases||[]}});o.remove();await loadSchedule();toast(ui('Rol actualizado','Role updated'))}catch(e){toast(e.message||String(e))}
+      const aliases=o.querySelector('#nxo-schedule-role-aliases').value.split(',').map(x=>x.trim()).filter(Boolean);
+      if(!name){toast(ui('Escribe un nombre para el rol.','Enter a role name.'));return}
+      try{await api('schedule.roles.save',{workspaceId:workspace.workspace.id,input:{name,aliases}});o.remove();toast(ui('Rol guardado','Role saved'));await loadSchedule()}catch(e){toast(e.message||String(e))}
     }}
   )
 }
-function renderPublishedSchedule(rows){
-  if(!rows.length)return '<div class="nxo-empty">'+esc(ui('No hay un horario confirmado para esta semana.','There is no confirmed schedule for this week.'))+'</div>';
-  const groups=new Map();
-  for(const row of rows){
-    const key=(row.memberId||row.memberNameSnapshot)+'|'+(row.positionKey||row.positionLabel||'');
-    if(!groups.has(key))groups.set(key,{name:row.memberNameSnapshot||row.memberId,role:row.positionLabel||'',rows:[]});
-    groups.get(key).rows.push(row)
-  }
-  const today=scheduleDateKey(new Date());
-  const cards=[...groups.values()].map(group=>{
-    const byDate=new Map(group.rows.map(r=>[r.date,r]));
-    const firstDate=group.rows.map(r=>r.date).filter(Boolean).sort()[0]||scheduleWeekStart;
-    const monday=scheduleMonday(firstDate);
-    const days=[];
-    for(let i=0;i<7;i++){
-      const d=new Date(monday+'T12:00:00');d.setDate(d.getDate()+i);const key=scheduleDateKey(d),row=byDate.get(key)||null,isToday=key===today;
-      days.push('<div style="min-width:112px;flex:1;padding:12px;border-radius:16px;border:1px solid rgba(47,79,147,.18);'+(isToday?'background:linear-gradient(135deg,rgba(47,79,147,.18),rgba(225,189,105,.18));box-shadow:0 0 0 2px rgba(47,79,147,.34);animation:nxoScheduleTodayFade 2.4s ease-in-out infinite alternate;':'background:rgba(255,255,255,.28);')+'"><div style="font-weight:800">'+esc(scheduleDay(key,false))+'</div><div style="margin-top:8px;font-size:1.02rem">'+esc(row?scheduleShiftDisplay(row):ui('Sin dato','No data'))+'</div></div>')
-    }
-    return '<div class="nxo-panel" style="padding:16px;margin:12px 0"><div style="margin-bottom:12px"><div style="font-size:1.22rem;font-weight:900">'+esc(group.name)+'</div><div class="nxo-muted" style="font-weight:700;margin-top:3px">'+esc(group.role||ui('Sin rol','No role'))+'</div></div><div style="display:flex;gap:9px;overflow:auto;padding-bottom:4px">'+days.join('')+'</div></div>'
-  }).join('');
-  return '<style>@keyframes nxoScheduleTodayFade{from{filter:brightness(.98)}to{filter:brightness(1.09)}}</style>'+cards
+async function removeScheduleRoleUi(roleId){
+  try{await api('schedule.roles.remove',{workspaceId:workspace.workspace.id,roleId});toast(ui('Rol eliminado','Role removed'));await loadSchedule()}catch(e){toast(e.message||String(e))}
 }
 function renderScheduleData(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!scheduleData)return;
-  const d=scheduleData,s=d.schedule,actor=d.actor||{},rows=d.shifts||[];
+  const d=scheduleData,s=d.schedule,actor=d.actor||{},rows=d.shifts||[],roles=d.roles||[];
   const publishReady=d.publishReady===true&&s&&rows.length>0;
+  const rolesReady=roles.length>0;
   const importBox=actor.canImport
-    ?'<div class="nxo-panel" style="padding:18px;margin-bottom:16px"><div class="nxo-section-head"><div><h3>'+esc(ui('Crear horario desde imagen','Create schedule from image'))+'</h3><p>'+esc(ui('Sube la foto. GPT detecta colaboradores, roles, días, horarios, OFF, REC OFF y capacitación.','Upload the image. GPT detects members, roles, days, shifts, OFF, REC OFF, and training.'))+'</p></div></div>'+
-      '<div class="nxo-field"><label>'+esc(ui('Semana esperada','Expected week'))+'</label><input id="nxo-schedule-import-week" class="nxo-input" type="date" value="'+esc(d.weekStart)+'" '+(scheduleAnalysisBusy?'disabled':'')+'></div>'+
-      '<label class="nxo-btn nxo-btn-gold nxo-native-file-picker" style="display:inline-flex;align-items:center;gap:8px;'+(scheduleAnalysisBusy?'opacity:.55;pointer-events:none':'')+'"><span>'+esc(scheduleAnalysisBusy?ui('Analizando…','Analyzing…'):ui('Seleccionar imagen','Select image'))+'</span><input id="nxo-schedule-image-input" type="file" accept="image/png,image/jpeg,image/webp" '+(scheduleAnalysisBusy?'disabled':'')+'></label></div>'
+    ?'<div class="nxo-panel" style="padding:18px;margin-bottom:16px">'+
+      '<div class="nxo-section-head"><div><h3>'+esc(ui('Crear horario desde imagen','Create schedule from image'))+'</h3><p>'+esc(ui('La imagen se reduce si es grande; después OCR lee texto y coordenadas y Nexo compara días, miembros y roles.','Large images are reduced first; then OCR reads text and coordinates and Nexo matches days, members, and roles.'))+'</p></div></div>'+
+      (!rolesReady?'<div class="nxo-empty">'+esc(ui('Primero crea al menos un rol del horario.','Create at least one schedule role first.'))+'</div>':'')+
+      '<div class="nxo-field"><label>'+esc(ui('Semana del horario','Schedule week'))+'</label><input id="nxo-schedule-import-week" class="nxo-input" type="date" value="'+esc(d.weekStart)+'" '+(scheduleAnalysisBusy?'disabled':'')+'></div>'+
+      '<label class="nxo-btn nxo-btn-gold nxo-native-file-picker" style="display:inline-flex;align-items:center;gap:8px;'+((scheduleAnalysisBusy||!rolesReady)?'opacity:.55;pointer-events:none':'')+'"><span>'+esc(scheduleAnalysisBusy?ui('Leyendo…','Reading…'):ui('Seleccionar imagen','Select image'))+'</span><input id="nxo-schedule-image-input" type="file" accept="image/png,image/jpeg,image/webp" '+((scheduleAnalysisBusy||!rolesReady)?'disabled':'')+'></label>'+
+     '</div>'
     :'';
   const controls='<div class="nxo-section-actions">'+
     '<button class="nxo-btn" id="nxo-schedule-prev">‹ '+esc(ui('Semana anterior','Previous week'))+'</button>'+
@@ -2035,69 +2189,100 @@ function renderScheduleData(){
     '<button class="nxo-btn" id="nxo-schedule-next">'+esc(ui('Semana siguiente','Next week'))+' ›</button>'+
     (actor.canPublish?'<button class="nxo-btn nxo-btn-gold" id="nxo-schedule-publish" '+(publishReady?'':'disabled')+'>'+esc(publishReady?ui('Publicar horario','Publish schedule'):ui('Publicar · bloqueado','Publish · locked'))+'</button>':'')+
   '</div>';
-  zone.innerHTML='<div class="nxo-section-head"><div><h3>'+esc(ui('Horarios','Schedule'))+'</h3><p>'+esc(scheduleDay(d.weekStart,true))+' — '+esc(scheduleDay(d.weekEnd,true))+'</p></div><span class="nxo-chip">'+esc(scheduleStatusLabel(s?.status))+'</span></div>'+renderScheduleRoles()+importBox+controls+'<div id="nxo-schedule-import-preview"></div>'+renderPublishedSchedule(rows);
-  document.querySelectorAll('[data-schedule-role-edit]').forEach(b=>b.onclick=()=>openScheduleRoleRenameModal(b.dataset.scheduleRoleEdit));
+  const table=rows.length?'<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">'+esc(ui('Día','Day'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Colaborador','Member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Rol','Role'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Entrada','Start'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Salida','End'))+'</th></tr></thead><tbody>'+rows.map(r=>'<tr style="border-top:1px solid rgba(127,127,127,.2)"><td style="padding:10px">'+esc(scheduleDay(r.date))+'</td><td style="padding:10px">'+esc(r.memberNameSnapshot||r.memberId)+'</td><td style="padding:10px">'+esc(r.positionLabel||'—')+'</td><td style="padding:10px">'+esc(scheduleTime(r.startAt))+'</td><td style="padding:10px">'+esc(scheduleTime(r.endAt))+'</td></tr>').join('')+'</tbody></table></div>':'<div class="nxo-empty">'+esc(ui('No hay un horario confirmado para esta semana.','There is no confirmed schedule for this week.'))+'</div>';
+  zone.innerHTML='<div class="nxo-section-head"><div><h3>'+esc(ui('Horarios','Schedule'))+'</h3><p>'+esc(scheduleDay(d.weekStart))+' — '+esc(scheduleDay(d.weekEnd))+'</p></div><span class="nxo-chip">'+esc(scheduleStatusLabel(s?.status))+'</span></div>'+renderScheduleRoles()+importBox+controls+'<div id="nxo-schedule-import-preview"></div>'+table;
+  document.getElementById('nxo-schedule-role-add')?.addEventListener('click',openScheduleRoleModal);
+  document.querySelectorAll('[data-schedule-role-remove]').forEach(b=>b.onclick=()=>removeScheduleRoleUi(b.dataset.scheduleRoleRemove));
   document.getElementById('nxo-schedule-prev')?.addEventListener('click',()=>{if(!scheduleAnalysisBusy)scheduleShiftWeek(-7)});
   document.getElementById('nxo-schedule-next')?.addEventListener('click',()=>{if(!scheduleAnalysisBusy)scheduleShiftWeek(7)});
   document.getElementById('nxo-schedule-today')?.addEventListener('click',()=>{if(!scheduleAnalysisBusy){scheduleWeekStart=scheduleMonday();scheduleData=null;scheduleImportData=null;scheduleDebug=null;loadSchedule()}});
   if(publishReady)document.getElementById('nxo-schedule-publish')?.addEventListener('click',publishScheduleUi);
-  document.getElementById('nxo-schedule-image-input')?.addEventListener('change',e=>{const file=e.target.files?.[0]||null;e.target.value='';if(file)processScheduleImage(file)});
+  document.getElementById('nxo-schedule-image-input')?.addEventListener('change',e=>{
+    const file=e.target.files?.[0]||null;e.target.value='';
+    if(file)processScheduleImage(file)
+  });
   if(scheduleImportData?.rows)renderScheduleImportPreview()
 }
 function scheduleReviewWarningLabel(code){
   const map={
     MEMBER_UNRESOLVED:ui('Colaborador pendiente','Member pending'),
-    ROLE_UNRESOLVED:ui('Rol pendiente','Role pending'),
     DATE_UNRESOLVED:ui('Fecha pendiente','Date pending'),
+    DATE_INFERRED:ui('Fecha inferida','Date inferred'),
     TIME_UNRESOLVED:ui('Horario pendiente','Hours pending'),
-    STATUS_UNRESOLVED:ui('Estado pendiente','Status pending')
+    ROLE_UNRESOLVED:ui('Rol pendiente','Role pending')
   };
   return map[code]||code
 }
 function scheduleMemberOptions(row,members){
-  return '<option value="">'+esc(ui('Seleccionar colaborador','Select member'))+'</option>'+members.map(m=>'<option value="'+esc(m.memberId)+'" '+(m.memberId===row.memberId?'selected':'')+'>'+esc(m.displayName||m.workName||m.memberId)+'</option>').join('')
+  const selected=row.memberId||row.suggestedMemberId||'';
+  return '<option value="">'+esc(ui('Seleccionar colaborador','Select member'))+'</option>'+
+    members.map(m=>'<option value="'+esc(m.memberId)+'" '+(m.memberId===selected?'selected':'')+'>'+esc(m.displayName||m.workName||m.memberId)+(m.memberId===row.suggestedMemberId&&!row.memberId?' · '+esc(ui('sugerido','suggested')):'')+'</option>').join('')
 }
 function scheduleRoleOptions(row,roles){
-  return '<option value="">'+esc(ui('Seleccionar rol','Select role'))+'</option>'+roles.map(r=>'<option value="'+esc(r.id)+'" '+(r.id===row.positionKey?'selected':'')+'>'+esc(r.name)+'</option>').join('')
+  const selected=row.positionKey||row.suggestedRoleId||'';
+  return '<option value="">'+esc(ui('Sin rol / seleccionar','No role / select'))+'</option>'+
+    roles.map(r=>'<option value="'+esc(r.id)+'" '+(r.id===selected?'selected':'')+'>'+esc(r.name)+(r.id===row.suggestedRoleId&&!row.positionKey?' · '+esc(ui('sugerido','suggested')):'')+'</option>').join('')
 }
 function renderScheduleImportPreview(){
   const zone=document.getElementById('nxo-schedule-import-preview');if(!zone||!scheduleImportData?.rows)return;
-  const rows=scheduleImportData.rows||[],members=scheduleImportData.members||[],roles=scheduleImportData.roles||[],dbg=scheduleImportData.debug||scheduleDebug||{};
-  const unresolved=rows.filter(r=>r.mappingStatus!=='MATCHED'||(r.warnings||[]).length);
+  const rows=scheduleImportData.rows||[],members=scheduleImportData.members||[],roles=scheduleImportData.roles||scheduleData?.roles||[],dbg=scheduleImportData.debug||scheduleDebug||{};
+  const unresolved=rows.filter(r=>r.mappingStatus!=='MATCHED'||(r.warnings||[]).some(w=>w!=='DATE_INFERRED'));
   const cards=rows.map((r,index)=>{
-    const warnings=(r.warnings||[]).map(scheduleReviewWarningLabel),status=String(r.status||'UNKNOWN').toUpperCase();
-    return '<div class="nxo-panel" data-schedule-review-row="'+esc(r.id)+'" style="padding:14px;margin:10px 0"><div class="nxo-section-head" style="margin-bottom:10px"><div><strong>'+esc((r.rawName||ui('Colaborador','Member'))+' · '+(r.day||scheduleDay(r.date,false)))+'</strong><div class="nxo-muted" style="margin-top:4px">'+esc(r.rawText||'')+'</div></div><span class="nxo-chip">'+esc(r.mappingStatus==='MATCHED'?ui('Listo','Ready'):ui('Revisar','Review'))+'</span></div>'+
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px">'+
-      '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Colaborador','Member'))+'</label><select class="nxo-select" data-schedule-field="memberId">'+scheduleMemberOptions(r,members)+'</select></div>'+
-      '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Rol','Role'))+'</label><select class="nxo-select" data-schedule-field="roleId">'+scheduleRoleOptions(r,roles)+'</select></div>'+
-      '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Fecha','Date'))+'</label><input class="nxo-input" type="date" data-schedule-field="date" value="'+esc(r.date||'')+'"></div>'+
-      '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Estado','Status'))+'</label><select class="nxo-select" data-schedule-field="status">'+
-        ['WORK','OFF','REC_OFF','TRAINING','ON_CALL','UNKNOWN'].map(v=>'<option value="'+v+'" '+(status===v?'selected':'')+'>'+esc(v==='TRAINING'?ui('CAPACITACIÓN','TRAINING'):v==='ON_CALL'?ui('GUARDIA','ON CALL'):v.replace('_',' '))+'</option>').join('')+
-      '</select></div>'+
-      '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Entrada','Start'))+'</label><input class="nxo-input" type="time" data-schedule-field="start" value="'+esc(r.start||'')+'"></div>'+
-      '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Salida','End'))+'</label><input class="nxo-input" type="time" data-schedule-field="end" value="'+esc(r.end||'')+'"></div>'+
+    const warnings=(r.warnings||[]).map(scheduleReviewWarningLabel);
+    const status=String(r.status||'WORK').toUpperCase();
+    return '<div class="nxo-panel" data-schedule-review-row="'+esc(r.id)+'" style="padding:14px;margin:10px 0">'+
+      '<div class="nxo-section-head" style="margin-bottom:10px"><div><strong>'+esc(ui('Turno ','Shift ')+(index+1))+'</strong><div class="nxo-muted" style="margin-top:4px;word-break:break-word">'+esc(r.rawText||r.rawName||ui('Texto OCR','OCR text'))+'</div></div><span class="nxo-chip">'+esc(r.mappingStatus==='MATCHED'?ui('Listo','Ready'):ui('Revisar','Review'))+'</span></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Nombre leído','Read name'))+'</label><input class="nxo-input" data-schedule-field="rawName" value="'+esc(r.rawName||'')+'" placeholder="'+esc(ui('Nombre en la imagen','Name in image'))+'"></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Colaborador','Member'))+'</label><select class="nxo-select" data-schedule-field="memberId">'+scheduleMemberOptions(r,members)+'</select></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Fecha','Date'))+'</label><input class="nxo-input" type="date" data-schedule-field="date" value="'+esc(r.date||'')+'"></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Estado','Status'))+'</label><select class="nxo-select" data-schedule-field="status"><option value="WORK" '+(status==='WORK'?'selected':'')+'>'+esc(ui('Trabaja','Work'))+'</option><option value="OFF" '+(status==='OFF'?'selected':'')+'>'+esc(ui('Libre','Off'))+'</option><option value="ON_CALL" '+(status==='ON_CALL'?'selected':'')+'>'+esc(ui('Guardia','On call'))+'</option></select></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Entrada','Start'))+'</label><input class="nxo-input" type="time" data-schedule-field="start" value="'+esc(r.start||'')+'"></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Salida','End'))+'</label><input class="nxo-input" type="time" data-schedule-field="end" value="'+esc(r.end||'')+'"></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Rol','Role'))+'</label><select class="nxo-select" data-schedule-field="roleId">'+scheduleRoleOptions(r,roles)+'</select></div>'+
       '</div>'+
       (warnings.length?'<div class="nxo-muted" style="margin-top:10px">'+esc(warnings.join(' · '))+'</div>':'')+
-      '<div class="nxo-modal-actions" style="margin-top:10px"><button class="nxo-btn" data-schedule-row-save="'+esc(r.id)+'">'+esc(ui('Guardar corrección','Save correction'))+'</button></div></div>'
+      '<div class="nxo-modal-actions" style="margin-top:10px"><button class="nxo-btn" data-schedule-row-save="'+esc(r.id)+'">'+esc(ui('Guardar corrección','Save correction'))+'</button></div>'+
+    '</div>'
   }).join('');
   const canConfirm=dbg.readyForConfirmation===true&&unresolved.length===0&&rows.length>0;
-  zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-top:16px"><div class="nxo-section-head"><div><h3>'+esc(ui('Revisión del análisis GPT','GPT analysis review'))+'</h3><p>'+esc(ui('Corrige únicamente lo que GPT no haya podido vincular con seguridad.','Correct only what GPT could not link confidently.'))+'</p></div><span class="nxo-chip">'+rows.length+' '+esc(ui('registros','records'))+'</span></div>'+
-    (scheduleImportData.warnings?.length?'<div class="nxo-empty" style="margin-bottom:12px;text-align:left">'+esc(scheduleImportData.warnings.join(' · '))+'</div>':'')+
-    cards+'<div class="nxo-modal-actions"><button id="nxo-schedule-import-confirm" class="nxo-btn nxo-btn-gold" '+(canConfirm?'':'disabled')+'>'+esc(canConfirm?ui('Confirmar y generar horario','Confirm and generate schedule'):ui('Corrige las filas pendientes','Fix pending rows'))+'</button></div></div>';
+  zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-top:16px"><div class="nxo-section-head"><div><h3>'+esc(ui('Revisión del horario','Schedule review'))+'</h3><p>'+esc(ui('Nada se descarta: corrige cualquier fila dudosa y guarda los cambios.','Nothing is discarded: correct any uncertain row and save the changes.'))+'</p></div><span class="nxo-chip">'+rows.length+' '+esc(ui('turnos detectados','detected shifts'))+'</span></div>'+
+    (rows.length?cards:'<div class="nxo-empty">'+esc(ui('OCR leyó texto, pero todavía no encontró un patrón de horario.','OCR read text, but no schedule pattern was found yet.'))+'</div>')+
+    '<div class="nxo-modal-actions"><button id="nxo-schedule-import-confirm" class="nxo-btn nxo-btn-gold" '+(canConfirm?'':'disabled')+'>'+esc(canConfirm?ui('Confirmar y generar horario','Confirm and generate schedule'):ui('Corrige las filas pendientes','Fix pending rows'))+'</button></div></div>';
   zone.querySelectorAll('[data-schedule-row-save]').forEach(btn=>btn.onclick=()=>saveScheduleImportRowUi(btn.dataset.scheduleRowSave));
   if(canConfirm)document.getElementById('nxo-schedule-import-confirm')?.addEventListener('click',confirmScheduleImportUi)
 }
 async function saveScheduleImportRowUi(rowId){
   const card=document.querySelector('[data-schedule-review-row="'+CSS.escape(rowId)+'"]');if(!card||!scheduleImportData?.importId)return;
-  const get=name=>card.querySelector('[data-schedule-field="'+name+'"]')?.value||'',button=card.querySelector('[data-schedule-row-save]');
+  const get=name=>card.querySelector('[data-schedule-field="'+name+'"]')?.value||'';
+  const button=card.querySelector('[data-schedule-row-save]');
   if(button){button.disabled=true;button.textContent=ui('Guardando…','Saving…')}
   try{
-    await api('schedule.import.row.update',{workspaceId:workspace.workspace.id,importId:scheduleImportData.importId,rowId,input:{rawName:(scheduleImportData.rows.find(r=>r.id===rowId)?.rawName||''),memberId:get('memberId'),roleId:get('roleId'),date:get('date'),status:get('status'),start:get('start'),end:get('end')}});
+    await api('schedule.import.row.update',{
+      workspaceId:workspace.workspace.id,
+      importId:scheduleImportData.importId,
+      rowId,
+      input:{
+        rawName:get('rawName'),
+        memberId:get('memberId'),
+        date:get('date'),
+        status:get('status'),
+        start:get('start'),
+        end:get('end'),
+        roleId:get('roleId')
+      }
+    });
     const refreshed=await api('schedule.import.get',{workspaceId:workspace.workspace.id,importId:scheduleImportData.importId});
-    refreshed.weekStart=scheduleImportData.weekStart||scheduleWeekStart;scheduleImportData=refreshed;
-    scheduleDebug={...(scheduleDebug||{}),...(refreshed.debug||{}),aiCompleted:true,stage:'done'};
-    await loadSchedule();renderScheduleDebugPanel();toast(ui('Corrección guardada','Correction saved'))
-  }catch(e){if(button){button.disabled=false;button.textContent=ui('Guardar corrección','Save correction')}toast(e.message||String(e))}
+    refreshed.weekStart=scheduleImportData.weekStart||scheduleWeekStart;
+    scheduleImportData=refreshed;
+    scheduleDebug={...(scheduleDebug||{}),...(refreshed.debug||{}),mapped:true,stage:'done'};
+    renderScheduleData();
+    renderScheduleDebugPanel();
+    toast(ui('Corrección guardada','Correction saved'))
+  }catch(e){
+    if(button){button.disabled=false;button.textContent=ui('Guardar corrección','Save correction')}
+    toast(e.message||String(e))
+  }
 }
 async function processScheduleImage(file){
   const mime=String(file.type||'').toLowerCase();
@@ -2105,23 +2290,60 @@ async function processScheduleImage(file){
   if(!file.size||file.size>20*1024*1024){toast(ui('La imagen debe pesar menos de 20 MB.','The image must be under 20 MB.'));return}
   const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleMonday();
   scheduleAnalysisBusy=true;scheduleImportData=null;
-  scheduleDebug={stage:'prepare',prepared:false,aiCompleted:false,error:'',revision:SCHEDULE_GPT_REVISION};
+  scheduleDebug={stage:'optimize',originalBytes:file.size,optimized:false,ocrReady:false,ocrCompleted:false,mapped:false,error:'',ocrRevision:SCHEDULE_OCR_REVISION};
   renderScheduleData();openScheduleDebugModal();
   try{
     const optimized=await optimizeScheduleImage(file);
-    const base64=await scheduleBlobBase64(optimized.blob);
-    scheduleDebug={...scheduleDebug,stage:'analyze',prepared:true,width:optimized.width,height:optimized.height,bytes:optimized.blob.size};
+    scheduleDebug={...scheduleDebug,stage:'ocr-load',optimized:true,processedBytes:optimized.blob.size,originalWidth:optimized.originalWidth,originalHeight:optimized.originalHeight,processedWidth:optimized.width,processedHeight:optimized.height};
     renderScheduleDebugPanel();
-    const analyzed=await api('schedule.gpt.analyze',{workspaceId:workspace.workspace.id,input:{weekStart:week,fileName:file.name||'schedule-image',mimeType:'image/jpeg',imageBase64:base64}});
-    scheduleImportData=analyzed;
-    scheduleWeekStart=analyzed.weekStart||week;
-    scheduleDebug={...scheduleDebug,...(analyzed.debug||{}),stage:'done',aiCompleted:true,error:''};
+
+    await loadScheduleOcrLibrary();
+    scheduleDebug={...scheduleDebug,stage:'ocr',ocrReady:true};
+    renderScheduleDebugPanel();
+
+    const enhanced=await prepareScheduleOcrVariant(optimized.blob,'enhanced');
+    let words=await runScheduleOcr(enhanced.blob,'1/2');
+    words=words.filter(w=>String(w.text||'').trim()&&Number(w.confidence||0)>=12).slice(0,5000);
+    let signals=scheduleOcrSignals(words);
+    let ocrWidth=enhanced.width,ocrHeight=enhanced.height;
+    let usedSecondPass=false;
+
+    if(signals.memberHits===0||signals.roleHits===0||signals.timeHits<3){
+      scheduleDebug={...scheduleDebug,stage:'ocr',ocrProgress:0,ocrPass:'2/2'};
+      renderScheduleDebugPanel();
+      const threshold=await prepareScheduleOcrVariant(optimized.blob,'threshold');
+      let second=await runScheduleOcr(threshold.blob,'2/2');
+      second=second.filter(w=>String(w.text||'').trim()&&Number(w.confidence||0)>=8).slice(0,5000);
+      words=mergeScheduleOcrWords(words,second).slice(0,7000);
+      signals=scheduleOcrSignals(words);
+      ocrWidth=threshold.width;ocrHeight=threshold.height;usedSecondPass=true
+    }
+
+    if(!words.length)throw new Error(ui('OCR no encontró texto legible en la imagen.','OCR found no readable text in the image.'));
+    scheduleDebug={...scheduleDebug,stage:'map',ocrCompleted:true,ocrProgress:1,ocrPass:usedSecondPass?'2/2':'1/2',wordsDetected:words.length,ocrMemberHits:signals.memberHits,ocrRoleHits:signals.roleHits,ocrTimeHits:signals.timeHits};
+    renderScheduleDebugPanel();
+
+    const parsed=await api('schedule.ocr.parse',{workspaceId:workspace.workspace.id,input:{
+      weekStart:week,
+      fileName:file.name||'schedule-image',
+      mimeType:'image/png',
+      imageWidth:ocrWidth,
+      imageHeight:ocrHeight,
+      originalBytes:file.size,
+      processedBytes:optimized.blob.size,
+      words
+    }});
+    scheduleImportData=parsed;
+    scheduleDebug={...scheduleDebug,...(parsed.debug||{}),stage:'done',mapped:true,error:''};
     scheduleAnalysisBusy=false;
-    await loadSchedule();renderScheduleDebugPanel();setTimeout(closeScheduleDebugModal,1000);
-    toast(ui('GPT terminó el análisis. Revisa el horario.','GPT finished the analysis. Review the schedule.'))
+    renderScheduleData();renderScheduleDebugPanel();
+    if(scheduleDebug.readyForConfirmation){setTimeout(closeScheduleDebugModal,900);toast(ui('Horario mapeado. Revisa el resultado.','Schedule mapped. Review the result.'))}
+    else{setScheduleDebugClosable(true);toast(ui('El OCR terminó con datos pendientes de revisar.','OCR finished with data that needs review.'))}
   }catch(e){
-    scheduleAnalysisBusy=false;scheduleDebug={...(scheduleDebug||{}),error:e.message||String(e)};
-    renderScheduleData();renderScheduleDebugPanel();setScheduleDebugClosable(true);toast(e.message||String(e))
+    scheduleAnalysisBusy=false;
+    scheduleDebug={...(scheduleDebug||{}),error:e.message||String(e)};
+    renderScheduleData();renderScheduleDebugPanel();setScheduleDebugClosable(true);
+    toast(e.message||String(e))
   }
 }
 async function confirmScheduleImportUi(){
@@ -2129,16 +2351,24 @@ async function confirmScheduleImportUi(){
   const button=document.getElementById('nxo-schedule-import-confirm');if(button)button.disabled=true;
   try{
     await api('schedule.import.confirm',{workspaceId:workspace.workspace.id,importId:scheduleImportData.importId,input:{weekStart:scheduleImportData.weekStart||scheduleWeekStart}});
-    scheduleImportData=null;scheduleDebug=null;toast(ui('Horario generado. Ya puedes publicarlo.','Schedule generated. You can now publish it.'));await loadSchedule()
+    scheduleImportData=null;scheduleDebug=null;
+    toast(ui('Horario generado. Ya puedes publicarlo.','Schedule generated. You can now publish it.'));
+    await loadSchedule()
   }catch(e){if(button)button.disabled=false;toast(e.message||String(e))}
 }
 async function loadSchedule(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!workspace?.workspace?.id)return;
   if(!scheduleWeekStart)scheduleWeekStart=scheduleMonday();
-  try{scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});renderScheduleData()}catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||String(e))+'</div>'}
+  try{
+    scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
+    renderScheduleData()
+  }catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||String(e))+'</div>'}
 }
 async function publishScheduleUi(){
-  try{await api('schedule.publish',{workspaceId:workspace.workspace.id,scheduleId:scheduleData.schedule.id});toast(ui('Horario publicado','Schedule published'));await loadSchedule()}catch(e){toast(e.message||String(e))}
+  try{
+    await api('schedule.publish',{workspaceId:workspace.workspace.id,scheduleId:scheduleData.schedule.id});
+    toast(ui('Horario publicado','Schedule published'));await loadSchedule()
+  }catch(e){toast(e.message||String(e))}
 }
 function renderRecipeCommentNoticesShell(){return '<section class="nxo-section" style="margin-top:0"><div id="nxo-recipe-comment-notifications"><div class="nxo-section-head"><div><h3>Notificaciones</h3><p>Recomendaciones nuevas del equipo sobre las fichas técnicas.</p></div></div><div class="nxo-empty">Cargando avisos…</div></div></section>'}
 function renderPendingNotesShell(){return '<section class="nxo-section"><div id="nxo-pending-notes"><div class="nxo-section-head"><div><h3>Pendientes</h3><p>Notas persistentes guardadas para revisar después.</p></div></div><div class="nxo-empty">Cargando pendientes…</div></div></section>'}
