@@ -25,3 +25,14 @@
   .nexoWorkspaceLibraryBody .taxonomyMaster p,
   html.nexoMobile .nexoWorkspaceLibraryBody .taxonomyMaster p{font-size:14px!important;line-height:1.45!important}
 }
+
+
+/* CANONICAL NEXO ICON GALLERY · 2026-10-01 */
+.nexoWorkspaceIcon{width:18px;height:18px;display:block;object-fit:contain;object-position:center;flex:0 0 auto}
+.nexoWorkspaceBtn,.nexoWorkspaceTabs button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.nexoWorkspaceEmptyIcon .nexoWorkspaceIcon{width:28px;height:28px}
+.nexoWorkspaceSearch{position:relative;display:block}
+.nexoWorkspaceSearch>.nexoWorkspaceIcon{position:absolute;left:13px;top:50%;transform:translateY(-50%);z-index:1;pointer-events:none}
+.nexoWorkspaceSearch>.search{padding-left:43px}
+.nexoWorkspaceModalHead [data-nexo-layer-close]{display:grid;place-items:center}
+.nexoWorkspaceModalHead [data-nexo-layer-close] .nexoWorkspaceIcon{width:18px;height:18px}
