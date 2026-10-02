@@ -1,0 +1,54 @@
+name: Vendor OCR runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/vendor-ocr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  vendor-ocr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install OCR packages
+        run: |
+          rm -rf /tmp/nexo-ocr
+          mkdir -p /tmp/nexo-ocr
+          npm install --prefix /tmp/nexo-ocr --no-save tesseract.js@5.0.5 tesseract.js-core@5.0.0
+
+      - name: Copy browser runtime
+        run: |
+          mkdir -p vendor/tesseract/core vendor/tesseract/lang
+          cp /tmp/nexo-ocr/node_modules/tesseract.js/dist/tesseract.min.js vendor/tesseract/tesseract.min.js
+          cp /tmp/nexo-ocr/node_modules/tesseract.js/dist/worker.min.js vendor/tesseract/worker.min.js
+          cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core.wasm.js vendor/tesseract/core/
+          cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core-simd.wasm.js vendor/tesseract/core/
+          cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core-lstm.wasm.js vendor/tesseract/core/
+          cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm.js vendor/tesseract/core/
+          cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core.wasm vendor/tesseract/core/
+          cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core-simd.wasm vendor/tesseract/core/
+          cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core-lstm.wasm vendor/tesseract/core/
+          cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm vendor/tesseract/core/
+          curl -fsSL https://tessdata.projectnaptha.com/4.0.0_fast/eng.traineddata.gz -o vendor/tesseract/lang/eng.traineddata.gz
+          curl -fsSL https://tessdata.projectnaptha.com/4.0.0_fast/spa.traineddata.gz -o vendor/tesseract/lang/spa.traineddata.gz
+
+      - name: Commit vendored runtime
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor/tesseract
+          if git diff --cached --quiet; then
+            echo "OCR runtime already up to date."
+            exit 0
+          fi
+          git commit -m "vendor(ocr): host Tesseract runtime locally"
+          git push origin HEAD:main
