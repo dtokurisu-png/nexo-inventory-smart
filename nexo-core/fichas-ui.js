@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-theme-contract-20261001-30';
-const ENGINE_REVISION='image-crop-20261001-28';
+const ACCESS_REVISION='fichas-icon-gallery-20261001-33';
+const ENGINE_REVISION='icon-gallery-20261001-29';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
@@ -528,6 +528,9 @@ function accessError(code){
 function esc(v){
   return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
+const NEXO_ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
+const iconUrl=name=>NEXO_ICON_BASE+encodeURIComponent(String(name||''))+'.png';
+function iconTag(name,label=''){return '<img class="nx-nexo-icon" src="'+esc(iconUrl(name))+'" alt="'+esc(label)+'" loading="lazy" decoding="async">'}
 function mountRoot(){
   document.body.style.overflow='hidden';
   let root=document.getElementById('nx-fichas-app');
@@ -679,10 +682,10 @@ function ensureImportHostStyles(){
     '#nx-import-host{position:fixed;inset:0;z-index:2147483646;background:var(--nx-overlay);display:grid;place-items:center;padding:18px;font-family:Inter,Arial,sans-serif;color:var(--nx-text)}'+
     '#nx-import-host .box{width:min(660px,calc(100vw - 36px));max-height:88vh;overflow:auto;background:var(--nx-raised);color:var(--nx-text);border:1px solid var(--nx-border-strong);border-radius:20px;box-shadow:0 28px 70px var(--nx-shadow)}'+
     '#nx-import-host .head{display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border-bottom:1px solid var(--nx-border);position:sticky;top:0;background:var(--nx-surface);z-index:2}'+
-    '#nx-import-host .head strong{font-size:17px}#nx-import-host .close{width:36px;height:36px;border:1px solid var(--nx-btn-border);border-radius:10px;background:var(--nx-btn-bg);color:var(--nx-btn-text);font-size:22px;cursor:pointer}#nx-import-host .close:hover{background:var(--nx-interaction);color:var(--nx-interaction-contrast);border-color:var(--nx-interaction)}'+
+    '#nx-import-host .head strong{font-size:17px}#nx-import-host .close{width:36px;height:36px;border:1px solid var(--nx-btn-border);border-radius:10px;background:var(--nx-btn-bg);color:var(--nx-btn-text);font-size:22px;cursor:pointer;display:grid;place-items:center}#nx-import-host .close:hover{background:var(--nx-interaction);color:var(--nx-interaction-contrast);border-color:var(--nx-interaction)}#nx-import-host .nx-nexo-icon{width:18px;height:18px;display:block;object-fit:contain;flex:0 0 auto}'+
     '#nx-import-host .body{padding:17px}#nx-import-host p{color:var(--nx-muted);line-height:1.5}'+
     '#nx-import-host input{width:100%;box-sizing:border-box;border:1px solid var(--nx-border);border-radius:11px;padding:12px 13px;font:inherit;background:var(--nx-surface);margin:6px 0 12px;color:var(--nx-text);outline:none}#nx-import-host input::placeholder{color:var(--nx-muted)}#nx-import-host input:focus{border-color:var(--nx-interaction);box-shadow:0 0 0 3px var(--nx-accent-soft)}'+
-    '#nx-import-host .btn{border:1px solid var(--nx-btn-border);background:var(--nx-btn-bg);color:var(--nx-btn-text);border-radius:11px;padding:10px 13px;font-weight:850;cursor:pointer;transition:transform .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease}'+
+    '#nx-import-host .btn{border:1px solid var(--nx-btn-border);background:var(--nx-btn-bg);color:var(--nx-btn-text);border-radius:11px;padding:10px 13px;font-weight:850;cursor:pointer;transition:transform .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease;display:inline-flex;align-items:center;justify-content:center;gap:7px}'+
     '#nx-import-host .btn.primary{background:var(--nx-positive);color:var(--nx-positive-contrast);border-color:var(--nx-positive)}#nx-import-host .btn:hover,#nx-import-host .btn:focus-visible{background:var(--nx-interaction);color:var(--nx-interaction-contrast);border-color:var(--nx-interaction);transform:translateY(-1px);box-shadow:0 8px 16px var(--nx-shadow);outline:none}#nx-import-host .btn:active{transform:translateY(0) scale(.99)}#nx-import-host .btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}'+
     '#nx-import-host .wide{width:100%}.nx-imp-spin{display:flex;align-items:center;gap:9px;color:var(--nx-muted);font-size:12px;min-height:24px;margin-bottom:10px}'+
     '.nx-imp-spin:before{content:"";width:15px;height:15px;border:2px solid var(--nx-border);border-top-color:var(--nx-accent);border-radius:50%;animation:nxImpSpin .8s linear infinite}@keyframes nxImpSpin{to{transform:rotate(360deg)}}'+
@@ -707,7 +710,7 @@ function importHostShell(){
   const host=document.createElement('div');
   host.id='nx-import-host';
   applyImportThemeVars(host);
-  host.innerHTML='<div class="box"><div class="head"><strong>Importar paquete</strong><button class="close" type="button">×</button></div><div class="body"></div></div>';
+  host.innerHTML='<div class="box"><div class="head"><strong>Importar paquete</strong><button class="close" type="button" aria-label="Cerrar">'+iconTag('cerrar')+'</button></div><div class="body"></div></div>';
   host.querySelector('.close').onclick=closeImportHost;
   host.onclick=e=>{if(e.target===host)closeImportHost()};
   document.body.appendChild(host);
@@ -721,7 +724,7 @@ function renderImportCodeStage(){
   body.innerHTML='<p>Ingresa el código entregado por Nexo Group. Primero revisaremos el paquete; no se modificará ningún dato hasta que confirmes.</p>'+
     '<input id="nx-import-code-input" placeholder="NEXO-…" autocomplete="off" autocapitalize="characters">'+
     '<div id="nx-import-host-status"></div>'+
-    '<button id="nx-import-review" class="btn primary wide" type="button">Revisar paquete</button>';
+    '<button id="nx-import-review" class="btn primary wide" type="button">'+iconTag('informacion')+'<span>Revisar paquete</span></button>';
   const input=body.querySelector('#nx-import-code-input');
   const button=body.querySelector('#nx-import-review');
   input.focus();
@@ -742,7 +745,7 @@ function renderImportCodeStage(){
     }catch(error){
       status.innerHTML='<div class="nx-imp-error">⚠ '+esc(error?.message||error)+'</div>';
       button.disabled=false;
-      button.textContent='Revisar paquete';
+      button.innerHTML=iconTag('informacion')+'<span>Revisar paquete</span>';
     }
   };
 }
@@ -781,8 +784,8 @@ function renderImportPreviewStage(preview){
     '</div>'+
     rows+resume+changes+
     (pending?'<p><strong>¿Deseas sincronizar el paquete con este Workspace?</strong></p>':'')+
-    '<div class="nx-imp-actions"><button id="nx-import-cancel" class="btn" type="button">'+(pending?'No, cancelar':'Cerrar')+'</button>'+
-    (pending?'<button id="nx-import-confirm" class="btn primary" type="button">'+actionLabel+'</button>':'')+'</div>';
+    '<div class="nx-imp-actions"><button id="nx-import-cancel" class="btn" type="button">'+iconTag('cerrar')+'<span>'+(pending?'No, cancelar':'Cerrar')+'</span></button>'+
+    (pending?'<button id="nx-import-confirm" class="btn primary" type="button">'+iconTag('sincronizar')+'<span>'+actionLabel+'</span></button>':'')+'</div>';
   body.querySelector('#nx-import-cancel').onclick=closeImportHost;
   const confirm=body.querySelector('#nx-import-confirm');
   if(confirm)confirm.onclick=()=>runImportHost();
@@ -867,7 +870,7 @@ async function runImportHost(){
       row.textContent='✕ Lote detenido ('+batch.map(item=>item?.title||item?.titleEs||item?.titleEn||item?.id||'—').join(', ')+') — '+String(error?.message||error);
       log.appendChild(row);
     }
-    footer.innerHTML='<button id="nx-import-close" class="btn" type="button">Cerrar</button><button id="nx-import-resume" class="btn primary" type="button">Continuar importación</button>';
+    footer.innerHTML='<button id="nx-import-close" class="btn" type="button">'+iconTag('cerrar')+'<span>Cerrar</span></button><button id="nx-import-resume" class="btn primary" type="button">'+iconTag('sincronizar')+'<span>Continuar importación</span></button>';
     footer.querySelector('#nx-import-close').onclick=closeImportHost;
     footer.querySelector('#nx-import-resume').onclick=()=>{importing=false;runImportHost()};
   }finally{
