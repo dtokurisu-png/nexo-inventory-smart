@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=nexo-schedule-auto-grid-20261002-64';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=nexo-schedule-local-time-grid-20261002-65';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
@@ -2030,13 +2030,18 @@ function openScheduleRowEdit(rowId){
 function scheduleGridText(row){
   if(!row)return'—';
   const status=String(row.status||'UNKNOWN').toUpperCase();
-  const start=row.start||scheduleTime(row.startAt)||'',end=row.end||scheduleTime(row.endAt)||'';
-  if(status==='WORK')return start&&end?start+' – '+end:(start?ui('Entrada ','Start ')+start:(end?ui('Salida ','End ')+end:ui('Trabaja','Works')));
-  if(status==='TRAINING'||status==='ON_CALL'){
+  const imported=Boolean(row.sourceImportId);
+  const start=row.startTimeLocal||row.start||(imported?'':scheduleTime(row.startAt))||'';
+  const end=row.endTimeLocal||row.end||(imported?'':scheduleTime(row.endAt))||'';
+  const station=String(row.stationLabel||'').trim();
+  let text='';
+  if(status==='WORK')text=start&&end?start+' – '+end:(start?start:(end?ui('Salida ','End ')+end:ui('Trabaja','Works')));
+  else if(status==='TRAINING'||status==='ON_CALL'){
     const base=scheduleStatusLabel(status);
-    return start&&end?base+' · '+start+' – '+end:(start?base+' · '+ui('Entrada ','Start ')+start:(end?base+' · '+ui('Salida ','End ')+end:base))
-  }
-  return scheduleStatusLabel(status)
+    text=start&&end?base+' · '+start+' – '+end:(start?base+' · '+start:(end?base+' · '+ui('Salida ','End ')+end:base))
+  }else text=scheduleStatusLabel(status);
+  if(station&&status!=='OFF'&&status!=='REC_OFF')text+=(text?' · ':'')+station;
+  return text
 }
 function scheduleWeekDates(weekStart){
   const base=new Date(String(weekStart||'')+'T12:00:00');
