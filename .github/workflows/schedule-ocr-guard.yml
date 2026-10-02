@@ -6,7 +6,6 @@ on:
     paths:
       - "nexo-core/mi-espacio-ui.js"
       - "vendor/tesseract/**"
-      - ".github/workflows/vendor-ocr.yml"
       - ".github/workflows/schedule-ocr-guard.yml"
   workflow_dispatch:
 
@@ -43,7 +42,6 @@ jobs:
           restore_files() {
             git checkout a65760b952 -- nexo-core/mi-espacio-ui.js
             git checkout a98fafbc32 -- vendor/tesseract
-            git checkout 349c8fb65a -- .github/workflows/vendor-ocr.yml
           }
 
           git config user.name "github-actions[bot]"
@@ -53,7 +51,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             restore_files
-            git add nexo-core/mi-espacio-ui.js vendor/tesseract .github/workflows/vendor-ocr.yml
+            git add nexo-core/mi-espacio-ui.js vendor/tesseract
 
             if git diff --cached --quiet; then
               echo "OCR runtime already restored."
@@ -65,9 +63,6 @@ jobs:
             if git push origin HEAD:main; then
               exit 0
             fi
-
-            echo "Push raced with another commit; retrying ($attempt/3)."
           done
 
-          echo "Could not restore OCR runtime after 3 attempts."
           exit 1
