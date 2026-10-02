@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=nexo-icon-gallery-20261001-63';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=nexo-schedule-auto-grid-20261002-64';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
@@ -1920,7 +1920,8 @@ function renderScheduleDebugPanel(){
     scheduleDebugRow(ui('Colaboradores','Members'),d.aiCompleted?'done':'pending',String(d.collaboratorsDetected||0))+
     scheduleDebugRow(ui('Roles','Roles'),d.aiCompleted?'done':'pending',String(d.rolesDetected||0))+
     scheduleDebugRow(ui('Días','Days'),d.aiCompleted?'done':'pending',String(d.daysDetected||0))+
-    scheduleDebugRow(ui('Colaboradores por revisar','Members to review'),d.aiCompleted?(Number(d.unresolvedRows||0)?'error':'done'):'pending',String(d.unresolvedCollaborators??d.unresolvedRows??0))+
+    scheduleDebugRow(ui('Horario creado','Schedule created'),d.scheduleCreated?'done':(d.aiCompleted?'working':'pending'),d.scheduleCreated?ui('Borrador generado automáticamente.','Draft generated automatically.'):ui('Preparando la cuadrícula.','Preparing schedule grid.'))+
+    scheduleDebugRow(ui('Colaboradores por vincular','Members to link'),d.aiCompleted?(Number(d.unresolvedCollaborators||0)?'pending':'done'):'pending',String(d.unresolvedCollaborators??0))+
     (err?'<div class="nxo-empty" style="margin-top:14px;text-align:left"><strong>'+esc(ui('Error: ','Error: '))+'</strong>'+esc(String(d.error))+'</div>':'');
   const b=scheduleDebugModal?.querySelector('[data-schedule-debug-close]');if(b)b.hidden=!(err||d.aiCompleted)
 }
@@ -1976,7 +1977,7 @@ function openScheduleRoleEdit(roleId){
 function scheduleGroupRows(rows){
   const map=new Map();
   for(const r of rows||[]){
-    const key=r.memberId||r.rawName||r.memberNameSnapshot||'unknown';
+    const key=r.memberId||r.identityKey||r.rawName||r.memberNameSnapshot||'unknown';
     if(!map.has(key))map.set(key,{key,name:r.suggestedMemberName||r.memberName||r.memberNameSnapshot||r.rawName||ui('Sin vincular','Unmatched'),role:r.position||r.positionLabel||'',rows:[]});
     const g=map.get(key);if(!g.role&&(r.position||r.positionLabel))g.role=r.position||r.positionLabel;g.rows.push(r)
   }
@@ -2026,15 +2027,43 @@ function openScheduleRowEdit(rowId){
     }}
   )
 }
-function renderScheduleImportPreview(){
-  const zone=document.getElementById('nxo-schedule-import-preview');if(!zone||!scheduleImportData)return;
-  const rows=scheduleImportData.rows||[],groups=scheduleGroupRows(rows),dbg=scheduleImportData.debug||{},unresolved=rows.filter(r=>r.mappingStatus!=='MATCHED');
-  const cards=groups.map(g=>'<div class="nxo-panel" style="padding:16px;margin:12px 0"><div style="margin-bottom:12px"><div style="font-size:1.15em;font-weight:800">'+esc(g.name)+'</div><div class="nxo-muted">'+esc(g.role||ui('Rol no detectado','Role not detected'))+'</div></div><div style="display:grid;grid-template-columns:repeat(7,minmax(112px,1fr));gap:8px;overflow:auto">'+g.rows.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).map(r=>scheduleDayCard(r,true)).join('')+'</div></div>').join('');
-  const canConfirm=dbg.readyForConfirmation===true&&unresolved.length===0&&rows.length>0;
-  zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-top:16px"><div class="nxo-section-head"><div><h3>'+esc(ui('Vista previa del horario','Schedule preview'))+'</h3><p>'+esc(ui('Revisa lo que GPT detectó. Puedes corregir miembro, rol, estado y horas antes de confirmar.','Review what GPT detected. You can correct member, role, status and times before confirming.'))+'</p></div><span class="nxo-chip">'+rows.length+' '+esc(ui('días','days'))+'</span></div>'+cards+'<div class="nxo-modal-actions"><button id="nxo-schedule-import-confirm" class="nxo-btn nxo-btn-gold" '+(canConfirm?'':'disabled')+'>'+esc(canConfirm?ui('Confirmar horario','Confirm schedule'):ui('Corrige los pendientes','Fix pending data'))+'</button></div></div>';
-  zone.querySelectorAll('[data-schedule-row-edit]').forEach(b=>b.onclick=()=>openScheduleRowEdit(b.dataset.scheduleRowEdit));
-  if(canConfirm)document.getElementById('nxo-schedule-import-confirm')?.addEventListener('click',confirmScheduleImportUi)
+function scheduleGridText(row){
+  if(!row)return'—';
+  const status=String(row.status||'UNKNOWN').toUpperCase();
+  const start=row.start||scheduleTime(row.startAt)||'',end=row.end||scheduleTime(row.endAt)||'';
+  if(status==='WORK')return start&&end?start+' – '+end:(start?ui('Entrada ','Start ')+start:(end?ui('Salida ','End ')+end:ui('Trabaja','Works')));
+  if(status==='TRAINING'||status==='ON_CALL'){
+    const base=scheduleStatusLabel(status);
+    return start&&end?base+' · '+start+' – '+end:(start?base+' · '+ui('Entrada ','Start ')+start:(end?base+' · '+ui('Salida ','End ')+end:base))
+  }
+  return scheduleStatusLabel(status)
 }
+function scheduleWeekDates(weekStart){
+  const base=new Date(String(weekStart||'')+'T12:00:00');
+  if(Number.isNaN(base.getTime()))return[];
+  return Array.from({length:7},(_,i)=>{
+    const d=new Date(base);d.setDate(base.getDate()+i);return scheduleDateKey(d)
+  })
+}
+function scheduleGridDayCell(row,date){
+  const status=String(row?.status||'UNKNOWN').toUpperCase();
+  const today=scheduleDateKey(new Date())===date;
+  const cls='nxo-schedule-day nxo-schedule-status-'+status.toLowerCase().replace(/_/g,'-')+(today?' is-today':'');
+  return '<div class="'+cls+'" data-date="'+esc(date)+'"><strong>'+esc(scheduleGridText(row))+'</strong></div>'
+}
+function renderScheduleGrid(rows,weekStart){
+  const groups=scheduleGroupRows(rows||[]),dates=scheduleWeekDates(weekStart);
+  if(!groups.length)return'<div class="nxo-empty">'+esc(ui('Todavía no hay un horario para esta semana.','There is no schedule for this week yet.'))+'</div>';
+  const lang=currentLanguage()==='en'?'en-US':'es-US';
+  const head='<div class="nxo-schedule-grid-head"><div>'+esc(ui('Colaborador + puesto','Member + role'))+'</div>'+dates.map(date=>'<div>'+esc(new Date(date+'T12:00:00').toLocaleDateString(lang,{weekday:'short',day:'numeric'}))+'</div>').join('')+'</div>';
+  const body=groups.map(g=>{
+    const byDate=new Map(g.rows.map(r=>[String(r.date||scheduleDateKey(r.startAt)||''),r]));
+    const pending=g.rows.some(r=>!r.memberId||String(r.identityStatus||'').toUpperCase()==='PENDING');
+    return '<div class="nxo-schedule-grid-row"><div class="nxo-schedule-person"><strong>'+esc(g.name)+'</strong><span>'+esc(g.role||ui('Sin puesto','No role'))+'</span>'+(pending?'<em>'+esc(ui('Pendiente de identidad','Identity pending'))+'</em>':'')+'</div>'+dates.map(date=>scheduleGridDayCell(byDate.get(date),date)).join('')+'</div>'
+  }).join('');
+  return '<div class="nxo-schedule-grid-wrap"><div class="nxo-schedule-grid">'+head+body+'</div></div>'
+}
+
 async function waitForScheduleAnalysis(importId,weekStart){
   const deadline=Date.now()+240000;
   let transientFailures=0;
@@ -2063,7 +2092,7 @@ async function processScheduleImage(file){
   if(!['image/png','image/jpeg','image/webp'].includes(mime)){toast(ui('Usa una imagen PNG, JPG o WEBP','Use a PNG, JPG or WEBP image'));return}
   if(!file.size||file.size>20*1024*1024){toast(ui('La imagen debe pesar menos de 20 MB.','The image must be under 20 MB.'));return}
   const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleMonday();
-  scheduleAnalysisBusy=true;scheduleImportData=null;scheduleDebug={stage:'image',imageReady:false,sent:false,aiCompleted:false,providerStatus:'',error:''};
+  scheduleAnalysisBusy=true;scheduleImportData=null;scheduleDebug={stage:'image',imageReady:false,sent:false,aiCompleted:false,scheduleCreated:false,providerStatus:'',error:''};
   renderScheduleData();openScheduleDebugModal();
   try{
     const optimized=await optimizeScheduleImage(file);
@@ -2073,44 +2102,35 @@ async function processScheduleImage(file){
     scheduleImportData=started;scheduleWeekStart=started.weekStart||week;
     scheduleDebug={...scheduleDebug,...(started.debug||{}),stage:'gpt',sent:true,providerStatus:started.providerStatus||'queued',aiCompleted:false,error:''};renderScheduleDebugPanel();
     const parsed=await waitForScheduleAnalysis(started.importId,week);
-    scheduleImportData=parsed;scheduleWeekStart=parsed.weekStart||week;
-    scheduleDebug={...scheduleDebug,...(parsed.debug||{}),stage:'done',providerStatus:'completed',aiCompleted:true,error:''};
+    scheduleWeekStart=parsed.weekStart||week;
+    scheduleDebug={...scheduleDebug,...(parsed.debug||{}),stage:'done',providerStatus:'completed',aiCompleted:true,scheduleCreated:Boolean(parsed.schedule?.id||parsed.debug?.scheduleCreated),error:''};
     scheduleAnalysisBusy=false;
     scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
+    scheduleImportData=null;
     renderScheduleData();renderScheduleDebugPanel();
-    if(scheduleDebug.readyForConfirmation)setTimeout(closeScheduleDebugModal,700)
+    const pending=Number(scheduleData?.pendingIdentityCount||0);
+    toast(pending?ui('Horario creado. '+pending+' colaborador(es) quedarán vinculados cuando existan en el Workspace.','Schedule created. '+pending+' member(s) will link when they exist in the Workspace.'):ui('Horario creado automáticamente.','Schedule created automatically.'));
+    setTimeout(closeScheduleDebugModal,1100)
   }catch(e){
     scheduleAnalysisBusy=false;scheduleDebug={...(scheduleDebug||{}),error:e.message||String(e)};
     renderScheduleData();renderScheduleDebugPanel();toast(e.message||String(e))
   }
 }
-async function confirmScheduleImportUi(){
-  if(!scheduleImportData?.importId)return;
-  try{
-    await api('schedule.import.confirm',{workspaceId:workspace.workspace.id,importId:scheduleImportData.importId,input:{weekStart:scheduleImportData.weekStart||scheduleWeekStart}});
-    scheduleImportData=null;scheduleDebug=null;toast(ui('Horario generado. Ya puedes publicarlo.','Schedule generated. You can now publish it.'));await loadSchedule()
-  }catch(e){toast(e.message||String(e))}
-}
-function renderPublishedSchedule(rows){
-  const groups=scheduleGroupRows(rows||[]);
-  if(!groups.length)return'<div class="nxo-empty">'+esc(ui('No hay un horario confirmado para esta semana.','There is no confirmed schedule for this week.'))+'</div>';
-  return groups.map(g=>'<div class="nxo-panel" style="padding:16px;margin:12px 0"><div style="margin-bottom:12px"><div style="font-size:1.15em;font-weight:800">'+esc(g.name)+'</div><div class="nxo-muted">'+esc(g.role||'')+'</div></div><div style="display:grid;grid-template-columns:repeat(7,minmax(112px,1fr));gap:8px;overflow:auto">'+g.rows.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).map(r=>scheduleDayCard({...r,start:scheduleTime(r.startAt),end:scheduleTime(r.endAt)},false)).join('')+'</div></div>').join('')
-}
 function renderScheduleData(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!scheduleData)return;
-  const d=scheduleData,s=d.schedule,actor=d.actor||{},publishReady=d.publishReady===true&&s;
+  const d=scheduleData,s=d.schedule,actor=d.actor||{},publishReady=d.publishReady===true&&s,pending=Number(d.pendingIdentityCount||0);
+  const pendingNotice=pending?'<div class="nxo-schedule-identity-note"><strong>'+pending+' '+esc(ui('colaborador(es) por vincular','member(s) to link'))+'</strong><span>'+esc(ui('El horario ya está creado. Cuando esos colaboradores existan en el Workspace, Nexo intentará asociarlos automáticamente.','The schedule is already created. When those members exist in the Workspace, Nexo will try to link them automatically.'))+'</span></div>':'';
   zone.innerHTML='<div class="nxo-section-head"><div><h3>'+esc(ui('Horarios','Schedule'))+'</h3><p>'+esc(scheduleDay(d.weekStart))+' — '+esc(scheduleDay(d.weekEnd))+'</p></div><span class="nxo-chip">'+esc(scheduleStatusLabel(s?.status))+'</span></div>'+
     renderScheduleRoles()+
-    (actor.canImport?'<div class="nxo-panel" style="padding:16px;margin-bottom:14px"><div class="nxo-section-head"><div><h3>'+esc(ui('Crear horario desde imagen','Create schedule from image'))+'</h3><p>'+esc(ui('Sube la imagen completa. GPT detectará colaboradores, roles, OFF, REC OFF, capacitación y los siete días.','Upload the complete image. GPT will detect members, roles, OFF, REC OFF, training and all seven days.'))+'</p></div></div><div class="nxo-field"><label>'+esc(ui('Semana aproximada','Approximate week'))+'</label><input id="nxo-schedule-import-week" class="nxo-input" type="date" value="'+esc(d.weekStart)+'"></div><label class="nxo-btn nxo-btn-gold nxo-native-file-picker"><span>'+esc(scheduleAnalysisBusy?ui('Analizando…','Analyzing…'):ui('Seleccionar imagen','Select image'))+'</span><input id="nxo-schedule-image-input" type="file" accept="image/png,image/jpeg,image/webp" '+(scheduleAnalysisBusy?'disabled':'')+'></label></div>':'')+
+    (actor.canImport?'<div class="nxo-panel" style="padding:16px;margin-bottom:14px"><div class="nxo-section-head"><div><h3>'+esc(ui('Cargar horario desde imagen','Load schedule from image'))+'</h3><p>'+esc(ui('Sube la hoja completa. GPT la interpreta, aprende su estructura y crea el borrador automáticamente, incluso si algunos colaboradores todavía no existen.','Upload the complete sheet. GPT interprets it, learns its structure, and creates the draft automatically even if some members do not exist yet.'))+'</p></div></div><div class="nxo-field"><label>'+esc(ui('Semana aproximada','Approximate week'))+'</label><input id="nxo-schedule-import-week" class="nxo-input" type="date" value="'+esc(d.weekStart)+'"></div><label class="nxo-btn nxo-btn-gold nxo-native-file-picker"><span>'+esc(scheduleAnalysisBusy?ui('Analizando…','Analyzing…'):ui('Seleccionar imagen','Select image'))+'</span><input id="nxo-schedule-image-input" type="file" accept="image/png,image/jpeg,image/webp" '+(scheduleAnalysisBusy?'disabled':'')+'></label></div>':'')+
     '<div class="nxo-section-actions"><button class="nxo-btn" id="nxo-schedule-prev">‹ '+esc(ui('Semana anterior','Previous week'))+'</button><button class="nxo-btn" id="nxo-schedule-today">'+esc(ui('Esta semana','This week'))+'</button><button class="nxo-btn" id="nxo-schedule-next">'+esc(ui('Semana siguiente','Next week'))+' ›</button>'+(actor.canPublish?'<button class="nxo-btn nxo-btn-gold" id="nxo-schedule-publish" '+(publishReady?'':'disabled')+'>'+esc(publishReady?ui('Publicar horario','Publish schedule'):ui('Publicar · bloqueado','Publish · locked'))+'</button>':'')+'</div>'+
-    '<div id="nxo-schedule-import-preview"></div>'+renderPublishedSchedule(d.shifts||[]);
+    pendingNotice+renderScheduleGrid(d.shifts||[],d.weekStart);
   zone.querySelectorAll('[data-schedule-role-edit]').forEach(b=>b.onclick=()=>openScheduleRoleEdit(b.dataset.scheduleRoleEdit));
   document.getElementById('nxo-schedule-prev')?.addEventListener('click',()=>scheduleShiftWeek(-7));
   document.getElementById('nxo-schedule-next')?.addEventListener('click',()=>scheduleShiftWeek(7));
   document.getElementById('nxo-schedule-today')?.addEventListener('click',()=>{scheduleWeekStart=scheduleMonday();scheduleData=null;scheduleImportData=null;loadSchedule()});
   document.getElementById('nxo-schedule-image-input')?.addEventListener('change',e=>{const file=e.target.files?.[0];e.target.value='';if(file)processScheduleImage(file)});
-  if(publishReady)document.getElementById('nxo-schedule-publish')?.addEventListener('click',publishScheduleUi);
-  if(scheduleImportData)renderScheduleImportPreview()
+  if(publishReady)document.getElementById('nxo-schedule-publish')?.addEventListener('click',publishScheduleUi)
 }
 async function loadSchedule(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!workspace?.workspace?.id)return;
