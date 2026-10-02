@@ -1234,7 +1234,7 @@ function toast(msg){let x=document.querySelector('.nxo-toast');if(x)x.remove();x
 async function api(action,payload={}){
  const h={'Content-Type':'application/json','Accept':'application/json'};
  if(sessionToken)h.Authorization='Bearer '+sessionToken;
- const controller=new AbortController(),requestTimeout=action==='recipe-change.process'?90000:(action==='schedule.import.analyze'?120000:(action==='numa.send'?65000:20000)),timer=setTimeout(()=>controller.abort(),requestTimeout);
+ const controller=new AbortController(),requestTimeout=action==='recipe-change.process'?90000:(action==='schedule.gpt.analyze'?45000:(action==='schedule.import.get'?45000:(action==='numa.send'?65000:20000))),timer=setTimeout(()=>controller.abort(),requestTimeout);
  try{
   const r=await fetch(API,{method:'POST',cache:'no-store',signal:controller.signal,headers:h,body:JSON.stringify({action,...payload})});
   let d=null;try{d=await r.json()}catch(_){}
@@ -1916,7 +1916,7 @@ function renderScheduleDebugPanel(){
     '<p class="nxo-muted">'+esc(ui('GPT analiza la imagen completa y devuelve un horario estructurado.','GPT analyzes the complete image and returns a structured schedule.'))+'</p>'+
     scheduleDebugRow(ui('Preparar imagen','Prepare image'),st('image',d.imageReady),d.imageReady?((d.width||'')+'×'+(d.height||'')+' · '+Math.round((d.bytes||0)/1024)+' KB'):ui('Optimizando imagen.','Optimizing image.'))+
     scheduleDebugRow(ui('Enviar a GPT','Send to GPT'),st('send',d.sent),d.sent?ui('Imagen enviada.','Image sent.'):ui('Esperando imagen.','Waiting for image.'))+
-    scheduleDebugRow(ui('GPT analizando','GPT analyzing'),st('gpt',d.aiCompleted),d.aiCompleted?ui('Análisis completado.','Analysis complete.'):ui('Leyendo colaboradores, roles y siete días.','Reading members, roles and seven days.'))+
+    scheduleDebugRow(ui('GPT analizando','GPT analyzing'),st('gpt',d.aiCompleted),d.aiCompleted?ui('Análisis completado.','Analysis complete.'):(String(d.providerStatus||'').toLowerCase()==='queued'?ui('Solicitud en cola de GPT.','GPT request queued.'):ui('Leyendo colaboradores, roles y siete días.','Reading members, roles and seven days.')))+
     scheduleDebugRow(ui('Colaboradores','Members'),d.aiCompleted?'done':'pending',String(d.collaboratorsDetected||0))+
     scheduleDebugRow(ui('Roles','Roles'),d.aiCompleted?'done':'pending',String(d.rolesDetected||0))+
     scheduleDebugRow(ui('Días','Days'),d.aiCompleted?'done':'pending',String(d.daysDetected||0))+
@@ -2030,21 +2030,46 @@ function renderScheduleImportPreview(){
   zone.querySelectorAll('[data-schedule-row-edit]').forEach(b=>b.onclick=()=>openScheduleRowEdit(b.dataset.scheduleRowEdit));
   if(canConfirm)document.getElementById('nxo-schedule-import-confirm')?.addEventListener('click',confirmScheduleImportUi)
 }
+async function waitForScheduleAnalysis(importId,weekStart){
+  const deadline=Date.now()+240000;
+  let transientFailures=0;
+  while(Date.now()<deadline){
+    await new Promise(r=>setTimeout(r,2200));
+    try{
+      const state=await api('schedule.import.get',{workspaceId:workspace.workspace.id,importId,weekStart});
+      transientFailures=0;
+      scheduleImportData=state;
+      scheduleDebug={...(scheduleDebug||{}),...(state.debug||{}),stage:state?.debug?.aiCompleted?'done':'gpt',sent:true,providerStatus:state.providerStatus||'',error:''};
+      renderScheduleDebugPanel();
+      if(state?.debug?.aiCompleted===true)return state;
+      if(String(state?.status||'').toUpperCase()==='ERROR')throw new Error(ui('El análisis GPT no pudo completarse.','GPT analysis could not be completed.'))
+    }catch(e){
+      const msg=String(e?.message||e||'');
+      const transient=/HTTP_502|HTTP_503|HTTP_504|REQUEST_TIMEOUT|Failed to fetch|NetworkError|Load failed/i.test(msg);
+      if(!transient||transientFailures>=2)throw e;
+      transientFailures+=1;
+      await new Promise(r=>setTimeout(r,900*transientFailures))
+    }
+  }
+  throw new Error(ui('GPT sigue procesando el horario y superó el tiempo de espera de esta pantalla. Vuelve a intentar la imagen.','GPT is still processing the schedule and exceeded this screen\'s wait time. Try the image again.'))
+}
 async function processScheduleImage(file){
   const mime=String(file.type||'').toLowerCase();
   if(!['image/png','image/jpeg','image/webp'].includes(mime)){toast(ui('Usa una imagen PNG, JPG o WEBP','Use a PNG, JPG or WEBP image'));return}
   if(!file.size||file.size>20*1024*1024){toast(ui('La imagen debe pesar menos de 20 MB.','The image must be under 20 MB.'));return}
   const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleMonday();
-  scheduleAnalysisBusy=true;scheduleImportData=null;scheduleDebug={stage:'image',imageReady:false,sent:false,aiCompleted:false,error:''};
+  scheduleAnalysisBusy=true;scheduleImportData=null;scheduleDebug={stage:'image',imageReady:false,sent:false,aiCompleted:false,providerStatus:'',error:''};
   renderScheduleData();openScheduleDebugModal();
   try{
     const optimized=await optimizeScheduleImage(file);
     scheduleDebug={...scheduleDebug,stage:'send',imageReady:true,width:optimized.width,height:optimized.height,bytes:optimized.blob.size};renderScheduleDebugPanel();
     const imageBase64=await scheduleBlobBase64(optimized.blob);
-    scheduleDebug={...scheduleDebug,stage:'gpt',sent:true};renderScheduleDebugPanel();
-    const parsed=await api('schedule.gpt.analyze',{workspaceId:workspace.workspace.id,input:{weekStart:week,fileName:file.name||'schedule-image',mimeType:'image/jpeg',imageBase64}});
+    const started=await api('schedule.gpt.analyze',{workspaceId:workspace.workspace.id,input:{weekStart:week,fileName:file.name||'schedule-image',mimeType:'image/jpeg',imageBase64}});
+    scheduleImportData=started;scheduleWeekStart=started.weekStart||week;
+    scheduleDebug={...scheduleDebug,...(started.debug||{}),stage:'gpt',sent:true,providerStatus:started.providerStatus||'queued',aiCompleted:false,error:''};renderScheduleDebugPanel();
+    const parsed=await waitForScheduleAnalysis(started.importId,week);
     scheduleImportData=parsed;scheduleWeekStart=parsed.weekStart||week;
-    scheduleDebug={...scheduleDebug,...(parsed.debug||{}),stage:'done',aiCompleted:true,error:''};
+    scheduleDebug={...scheduleDebug,...(parsed.debug||{}),stage:'done',providerStatus:'completed',aiCompleted:true,error:''};
     scheduleAnalysisBusy=false;
     scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
     renderScheduleData();renderScheduleDebugPanel();
