@@ -467,7 +467,7 @@ function mountNuma(){
     panel.dataset.state='idle';
     panel.setAttribute('aria-hidden','true');
     panel.innerHTML=
-      '<button id="nma-close" class="nma-presence-close" type="button" aria-label="Cerrar Numa">✕</button>'+
+      '<button id="nma-close" class="nma-presence-close" type="button" aria-label="Cerrar Numa">'+iconTag('cerrar')+'</button>'+
       '<div class="nma-character-stage" aria-label="Numa">'+
         '<div class="nma-character-shell" id="nma-character-shell">'+
           '<img id="nma-character-img" class="nma-character" alt="" draggable="false">'+
@@ -530,7 +530,7 @@ function esc(v){
 }
 const NEXO_ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const iconUrl=name=>NEXO_ICON_BASE+encodeURIComponent(String(name||''))+'.png';
-function iconTag(name,label=''){return '<img class="nx-nexo-icon" src="'+esc(iconUrl(name))+'" alt="'+esc(label)+'" loading="lazy" decoding="async">'}
+function iconTag(name,label=''){return '<img class="nx-nexo-icon" style="width:18px;height:18px;display:block;object-fit:contain" src="'+esc(iconUrl(name))+'" alt="'+esc(label)+'" loading="lazy" decoding="async">'}
 function mountRoot(){
   document.body.style.overflow='hidden';
   let root=document.getElementById('nx-fichas-app');
