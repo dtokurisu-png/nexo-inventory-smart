@@ -1181,7 +1181,7 @@ function mountNuma(){
     panel.setAttribute("aria-hidden","true");
     panel.dataset.state="idle";
     panel.innerHTML=
-      '<button id="nma-close" class="nma-presence-close" type="button" aria-label="Cerrar Numa">✕</button>'+
+      '<button id="nma-close" class="nma-presence-close" type="button" aria-label="Cerrar Numa">'+iconTag('cerrar')+'</button>'+
       '<div class="nma-character-stage" aria-label="Numa">'+
         '<div class="nma-character-shell" id="nma-character-shell">'+
           '<img id="nma-character-img" class="nma-character" alt="" draggable="false">'+
@@ -1350,9 +1350,9 @@ function topbar(mode){
         '<span class="nxo-nav-caret">⌄</span>'+
       '</button>'+
       '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
-        '<button type="button" data-account-action="settings">'+esc(ui('Ajustes de perfil','Profile settings'))+'</button>'+
-        '<button type="button" data-account-action="switch">'+esc(ui('Cambiar cuenta','Switch account'))+'</button>'+
-        '<button type="button" class="danger" data-account-action="logout">'+esc(ui('Cerrar sesión','Sign out'))+'</button>'+
+        '<button type="button" data-account-action="settings">'+iconLabel('perfil',ui('Ajustes de perfil','Profile settings'))+'</button>'+
+        '<button type="button" data-account-action="switch">'+iconLabel('cuenta-correo',ui('Cambiar cuenta','Switch account'))+'</button>'+
+        '<button type="button" class="danger" data-account-action="logout">'+iconLabel('cerrar',ui('Cerrar sesión','Sign out'))+'</button>'+
       '</div>'+
       '<input type="file" id="nxo-profile-photo-input" class="nxo-profile-photo-input" accept="image/png,image/jpeg,image/webp" hidden>'+
     '</div>'+
@@ -1686,7 +1686,7 @@ function renderPersonal(){
   const archivedSpaces=spaces.filter(w=>String(w.status||'').toUpperCase()==='ARCHIVED');
   const inv=personal?.invitations||[];
   let welcomeHidden=false;try{welcomeHidden=localStorage.getItem('nexoWelcomeDismissed:v1')==='1'}catch(_){}
-  const welcome=welcomeHidden?'':'<section class="nxo-welcome"><button id="nxo-dismiss-welcome" class="nxo-welcome-close" aria-label="'+esc(ui('Cerrar','Close'))+'">✕</button><div class="nxo-eyebrow">'+esc(ui('Mi espacio','My space'))+'</div><h2>'+esc(ui('Hola, ','Hello, '))+esc(personal?.profile?.displayName||ui('Usuario Nexo','Nexo user'))+'</h2><p>'+esc(ui('Desde aquí administras tus herramientas personales y entras a los espacios de trabajo donde colaboras. Puedes cerrar este mensaje cuando ya no lo necesites.','Manage your personal tools here and enter the Workspaces where you collaborate. You can close this message when you no longer need it.'))+'</p></section>';
+  const welcome=welcomeHidden?'':'<section class="nxo-welcome"><button id="nxo-dismiss-welcome" class="nxo-welcome-close" aria-label="'+esc(ui('Cerrar','Close'))+'">'+iconTag('cerrar')+'</button><div class="nxo-eyebrow">'+esc(ui('Mi espacio','My space'))+'</div><h2>'+esc(ui('Hola, ','Hello, '))+esc(personal?.profile?.displayName||ui('Usuario Nexo','Nexo user'))+'</h2><p>'+esc(ui('Desde aquí administras tus herramientas personales y entras a los espacios de trabajo donde colaboras. Puedes cerrar este mensaje cuando ya no lo necesites.','Manage your personal tools here and enter the Workspaces where you collaborate. You can close this message when you no longer need it.'))+'</p></section>';
   const summary='<section class="nxo-summary-strip"><div class="nxo-summary-item"><span class="nxo-summary-icon">'+iconTag('herramientas')+'</span><strong>'+tools.length+'</strong><span>'+esc(ui('Mis herramientas','My tools'))+'</span></div><div class="nxo-summary-item"><span class="nxo-summary-icon">'+iconTag('workspace')+'</span><strong>'+spaces.length+'</strong><span>'+esc(ui('Espacios de trabajo','Workspaces'))+'</span></div><div class="nxo-summary-item"><span class="nxo-summary-icon">'+iconTag('invitaciones')+'</span><strong>'+inv.length+'</strong><span>'+esc(ui('Invitaciones','Invitations'))+'</span></div><div class="nxo-summary-item"><span class="nxo-summary-icon">'+iconTag('activo')+'</span><strong>●</strong><span>'+esc(ui('Cuenta activa','Active account'))+'</span></div></section>';
   const legacyInvites=inv.length?'<section class="nxo-section"><div class="nxo-section-head"><div><h3>'+esc(ui('Invitaciones pendientes','Pending invitations'))+'</h3><p>'+esc(ui('Invitaciones heredadas asociadas directamente a tu cuenta.','Legacy invitations linked directly to your account.'))+'</p></div></div>'+inv.map(i=>'<div class="nxo-invite"><div><strong>'+esc(i.workspaceName)+'</strong><p>'+esc(ui('Rol: ','Role: '))+esc(roleName(i.roleKey,i.role))+'</p></div><div class="nxo-invite-actions"><button class="nxo-btn" data-invite-decline="'+esc(i.id)+'">'+esc(ui('Rechazar','Decline'))+'</button><button class="nxo-btn nxo-btn-gold" data-invite-accept="'+esc(i.id)+'">'+esc(ui('Aceptar','Accept'))+'</button></div></div>').join('')+'</section>':'';
   const explore='<article class="nxo-card clickable nxo-explore-card" data-tool="'+esc(centerDevelopmentUrl())+'"><div class="nxo-card-top"><div class="nxo-tool-icon">'+iconTag('catalogo',ui('Catálogo','Catalog'))+'</div><span class="nxo-status ACTIVE">'+esc(ui('Catálogo','Catalog'))+'</span></div><h4>'+esc(ui('Explorar más herramientas','Explore more tools'))+'</h4><p>'+esc(ui('Abre el Centro de desarrollo para conocer todas las herramientas activas de Nexo y, más adelante, probarlas o añadirlas mediante un plan.','Open the Development Center to see all active Nexo tools and later try or add them through a plan.'))+'</p><div class="nxo-card-footer"><span class="nxo-role">'+esc(ui('Centro de desarrollo','Development Center'))+'</span><span>›</span></div></article>';
@@ -1707,7 +1707,7 @@ function renderPersonal(){
 }
 async function refreshPersonal(){personal=await api('personal.refresh');renderPersonal()}
 async function respondInvite(id,decision){try{loading(decision==='accept'?'Aceptando invitación…':'Actualizando invitación…');personal=await api('invitation.respond',{invitationId:id,decision});toast(decision==='accept'?'Invitación aceptada':'Invitación rechazada');renderPersonal()}catch(e){errorView(e)}}
-function modal(title,body,onReady){const o=document.createElement('div');o.className='nxo-overlay';o.innerHTML='<div class="nxo-modal"><div class="nxo-modal-head"><strong>'+esc(title)+'</strong><button class="nxo-btn" data-close>✕</button></div><div class="nxo-modal-body">'+body+'</div></div>';document.body.appendChild(o);o.querySelector('[data-close]').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};if(onReady)onReady(o);return o}
+function modal(title,body,onReady){const o=document.createElement('div');o.className='nxo-overlay';o.innerHTML='<div class="nxo-modal"><div class="nxo-modal-head"><strong>'+esc(title)+'</strong><button class="nxo-btn" data-close aria-label="'+esc(ui('Cerrar','Close'))+'">'+iconTag('cerrar')+'</button></div><div class="nxo-modal-body">'+body+'</div></div>';document.body.appendChild(o);o.querySelector('[data-close]').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};if(onReady)onReady(o);return o}
 function openProfileSettings(inWorkspace=false){
   const name=personal?.profile?.displayName||ui('Usuario Nexo','Nexo user');
   const workName=personal?.profile?.workName||name;
@@ -1902,7 +1902,7 @@ function openScheduleDebugModal(){
   const o=document.createElement('div');
   o.className='nxo-overlay';
   o.id='nxo-schedule-debug-overlay';
-  o.innerHTML='<div class="nxo-modal" style="max-width:760px"><div class="nxo-modal-head"><strong>'+esc(ui('Procesando horario','Processing schedule'))+'</strong><button class="nxo-btn" data-schedule-debug-close hidden>✕</button></div><div class="nxo-modal-body"><div id="nxo-schedule-debug"></div></div></div>';
+  o.innerHTML='<div class="nxo-modal" style="max-width:760px"><div class="nxo-modal-head"><strong>'+esc(ui('Procesando horario','Processing schedule'))+'</strong><button class="nxo-btn" data-schedule-debug-close hidden aria-label="'+esc(ui('Cerrar','Close'))+'">'+iconTag('cerrar')+'</button></div><div class="nxo-modal-body"><div id="nxo-schedule-debug"></div></div></div>';
   document.body.appendChild(o);
   scheduleDebugModal=o;
   o.querySelector('[data-schedule-debug-close]')?.addEventListener('click',closeScheduleDebugModal);
@@ -2033,7 +2033,7 @@ async function runScheduleOcr(blob){
 function renderScheduleRoles(){
   const roles=scheduleData?.roles||[],actor=scheduleData?.actor||{};
   const rows=roles.length
-    ?roles.map(r=>'<span class="nxo-chip" style="display:inline-flex;gap:8px;align-items:center">'+esc(r.name)+(r.aliases?.length>1?' · '+esc(r.aliases.filter(a=>String(a).toLowerCase()!==String(r.name).toLowerCase()).join(', ')):'')+(actor.canManage?'<button class="nxo-icon-btn" data-schedule-role-remove="'+esc(r.id)+'" aria-label="'+esc(ui('Eliminar rol','Remove role'))+'">✕</button>':'')+'</span>').join(' ')
+    ?roles.map(r=>'<span class="nxo-chip" style="display:inline-flex;gap:8px;align-items:center">'+esc(r.name)+(r.aliases?.length>1?' · '+esc(r.aliases.filter(a=>String(a).toLowerCase()!==String(r.name).toLowerCase()).join(', ')):'')+(actor.canManage?'<button class="nxo-icon-btn" data-schedule-role-remove="'+esc(r.id)+'" aria-label="'+esc(ui('Eliminar rol','Remove role'))+'">'+iconTag('eliminar')+'</button>':'')+'</span>').join(' ')
     :'<span class="nxo-muted">'+esc(ui('No hay roles creados.','No roles created.'))+'</span>';
   return '<div class="nxo-panel" style="padding:16px;margin-bottom:16px"><div class="nxo-section-head"><div><h3>'+esc(ui('Roles del horario','Schedule roles'))+'</h3><p>'+esc(ui('Define los nombres que pueden aparecer junto a las horas: Prep, Sauté, Soldador, Electricista, etc.','Define names that may appear next to hours: Prep, Sauté, Welder, Electrician, etc.'))+'</p></div>'+(actor.canManage?'<button class="nxo-btn" id="nxo-schedule-role-add">'+esc(ui('Añadir rol','Add role'))+'</button>':'')+'</div><div style="display:flex;flex-wrap:wrap;gap:8px">'+rows+'</div></div>'
 }
@@ -2619,7 +2619,7 @@ async function loadWorkspaceSettings(){
     zone.innerHTML=
       '<div class="nxo-panel" style="padding:18px;margin-bottom:14px">'+
         '<div class="nxo-section-head"><div><h3>'+esc(ui('Información del espacio de trabajo','Workspace information'))+'</h3><p>'+esc(ui('Nombre, descripción y logo visibles para sus miembros.','Name, description and logo visible to its members.'))+'</p></div></div>'+
-        '<div class="nxo-workspace-logo-settings"><div class="nxo-workspace-logo-preview">'+(logo?'<img src="'+esc(logo)+'" alt="'+esc((ws.name||ui('Espacio de trabajo','Workspace'))+' logo')+'">':'<span>⌂</span>')+'</div><div class="nxo-workspace-logo-copy"><strong>'+esc(ui('Logo del espacio de trabajo','Workspace logo'))+'</strong><p>PNG, JPG, WEBP '+esc(ui('o','or'))+' SVG · '+esc(ui('máximo','maximum'))+' 8 MB.</p><label id="nxo-workspace-logo-change" class="nxo-btn nxo-native-file-picker"><span class="nxo-native-file-picker-text">'+esc(logoAction)+'</span><input id="nxo-workspace-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="'+esc(logoAction)+'"></label></div></div>'+
+        '<div class="nxo-workspace-logo-settings"><div class="nxo-workspace-logo-preview">'+(logo?'<img src="'+esc(logo)+'" alt="'+esc((ws.name||ui('Espacio de trabajo','Workspace'))+' logo')+'">':iconTag('workspace',ws.name||ui('Espacio de trabajo','Workspace')) )+'</div><div class="nxo-workspace-logo-copy"><strong>'+esc(ui('Logo del espacio de trabajo','Workspace logo'))+'</strong><p>PNG, JPG, WEBP '+esc(ui('o','or'))+' SVG · '+esc(ui('máximo','maximum'))+' 8 MB.</p><label id="nxo-workspace-logo-change" class="nxo-btn nxo-native-file-picker"><span class="nxo-native-file-picker-text">'+esc(logoAction)+'</span><input id="nxo-workspace-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="'+esc(logoAction)+'"></label></div></div>'+
         '<div class="nxo-field"><label>'+esc(ui('Nombre','Name'))+'</label><input id="nxo-settings-name" class="nxo-input" value="'+esc(ws.name||'')+'"></div>'+
         '<div class="nxo-field"><label>'+esc(ui('Descripción','Description'))+'</label><textarea id="nxo-settings-desc" class="nxo-textarea">'+esc(ws.description||'')+'</textarea></div>'+
         '<div class="nxo-modal-actions"><button id="nxo-settings-save" class="nxo-btn nxo-btn-gold">'+esc(ui('Guardar cambios','Save changes'))+'</button></div>'+
