@@ -2135,7 +2135,11 @@ function renderScheduleData(){
 async function loadSchedule(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!workspace?.workspace?.id)return;
   if(!scheduleWeekStart)scheduleWeekStart=scheduleMonday();
-  try{scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});renderScheduleData()}
+  try{
+    scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
+    scheduleWeekStart=scheduleData?.weekStart||scheduleWeekStart;
+    renderScheduleData()
+  }
   catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||String(e))+'</div>'}
 }
 async function publishScheduleUi(){
