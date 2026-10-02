@@ -14,6 +14,8 @@ const tr=(es,en)=>lang()==='en'?en:es;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const text=(o,enKey,esKey)=>lang()==='en'?(o?.[enKey]||o?.[esKey]||''):(o?.[esKey]||o?.[enKey]||'');
 const img=x=>typeof x==='string'?x:(x&&(x.url||x.image?.url||x.src)||'');
+const ICON_BASE='../assets/icons/nexo/';
+const icon=name=>'<img class="nexoWorkspaceIcon" src="'+esc(ICON_BASE+encodeURIComponent(String(name||''))+'.png')+'" alt="" loading="lazy" decoding="async">';
 
 function capabilities(){return data().capabilities||{}}
 function context(){return data().context||{}}
@@ -63,13 +65,13 @@ function sheetCard(r){
 
 function actionButtons(){
   return '<div class="nexoWorkspaceActions">'+
-    (canCreate()?'<button type="button" class="nexoWorkspaceBtn" data-nexo-create>＋ '+esc(tr('Crear ficha','Create sheet'))+'</button>':'')+
-    (canImport()?'<button type="button" class="nexoWorkspaceBtn primary" data-nexo-import>⇩ '+esc(tr('Importar fichas','Import sheets'))+'</button>':'')+
+    (canCreate()?'<button type="button" class="nexoWorkspaceBtn" data-nexo-create>'+icon('nuevo')+'<span>'+esc(tr('Crear ficha','Create sheet'))+'</span></button>':'')+
+    (canImport()?'<button type="button" class="nexoWorkspaceBtn primary" data-nexo-import>'+icon('sincronizar')+'<span>'+esc(tr('Importar fichas','Import sheets'))+'</span></button>':'')+
     '</div>';
 }
 
 function emptyState(){
-  return '<div class="nexoWorkspaceEmpty"><div class="nexoWorkspaceEmptyIcon">⌁</div><h2>'+esc(tr('Este Workspace todavía no tiene fichas técnicas','This Workspace has no technical sheets yet'))+'</h2><p>'+esc(tr('Puedes crear una ficha desde cero o importar un paquete preparado por Nexo Group.','Create a sheet from scratch or import a package prepared by Nexo Group.'))+'</p>'+actionButtons()+'</div>';
+  return '<div class="nexoWorkspaceEmpty"><div class="nexoWorkspaceEmptyIcon">'+icon('ficha-tecnica')+'</div><h2>'+esc(tr('Este Workspace todavía no tiene fichas técnicas','This Workspace has no technical sheets yet'))+'</h2><p>'+esc(tr('Puedes crear una ficha desde cero o importar un paquete preparado por Nexo Group.','Create a sheet from scratch or import a package prepared by Nexo Group.'))+'</p>'+actionButtons()+'</div>';
 }
 
 function renderSheets(root){
@@ -81,7 +83,7 @@ function renderSheets(root){
     bindActions(body);
     return;
   }
-  body.innerHTML='<div class="nexoWorkspaceSheetTools"><input class="search" data-nexo-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar receta, ingrediente o preparación…','Search recipe, ingredient or preparation…'))+'"><span data-nexo-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-nexo-sheet-grid>'+recipes.map(sheetCard).join('')+'</div>';
+  body.innerHTML='<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-nexo-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar receta, ingrediente o preparación…','Search recipe, ingredient or preparation…'))+'"></label><span data-nexo-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-nexo-sheet-grid>'+recipes.map(sheetCard).join('')+'</div>';
   body.querySelectorAll('[data-workspace-sheet]').forEach(card=>card.onclick=()=>window.NEXO_MENU_API?.openRecipe?.(card.dataset.workspaceSheet));
   const search=body.querySelector('[data-nexo-sheet-search]');
   const count=body.querySelector('[data-nexo-search-count]');
@@ -143,7 +145,7 @@ function enhanceRoot(){
 
   const nav=document.createElement('div');
   nav.className='nexoWorkspaceTabs';
-  nav.innerHTML='<button type="button" data-nexo-tab="collections">'+esc(tr('Colecciones','Collections'))+'</button><button type="button" data-nexo-tab="sheets">'+esc(tr('Fichas técnicas','Technical sheets'))+'</button>';
+  nav.innerHTML='<button type="button" data-nexo-tab="collections">'+icon('coleccion')+'<span>'+esc(tr('Colecciones','Collections'))+'</span></button><button type="button" data-nexo-tab="sheets">'+icon('ficha-tecnica')+'<span>'+esc(tr('Fichas técnicas','Technical sheets'))+'</span></button>';
 
   const body=document.createElement('div');
   body.className='nexoWorkspaceLibraryBody';
@@ -163,7 +165,7 @@ function layer(title,body){
   closeLayer();
   const el=document.createElement('div');
   el.id='nexoWorkspaceLibraryLayer';
-  el.innerHTML='<div class="nexoWorkspaceModal"><div class="nexoWorkspaceModalHead"><strong>'+esc(title)+'</strong><button type="button" data-nexo-layer-close>×</button></div><div class="nexoWorkspaceModalBody">'+body+'</div></div>';
+  el.innerHTML='<div class="nexoWorkspaceModal"><div class="nexoWorkspaceModalHead"><strong>'+esc(title)+'</strong><button type="button" data-nexo-layer-close aria-label="'+esc(tr('Cerrar','Close'))+'">'+icon('cerrar')+'</button></div><div class="nexoWorkspaceModalBody">'+body+'</div></div>';
   document.body.appendChild(el);
   el.querySelector('[data-nexo-layer-close]').onclick=closeLayer;
   el.onclick=e=>{if(e.target===el)closeLayer()};
@@ -171,7 +173,7 @@ function layer(title,body){
 }
 
 function openCreatePreview(){
-  layer(tr('Crear ficha técnica','Create technical sheet'),'<div class="nexoWorkspacePreview"><div class="nexoWorkspaceEmptyIcon">＋</div><h3>'+esc(tr('Creador de fichas en preparación','Technical sheet creator is being prepared'))+'</h3><p>'+esc(tr('Este botón utilizará el mismo motor dinámico para crear platos, preparaciones, productos, componentes, MOP, batches, traducciones y demás estructura. Por ahora queda como prevista.','This button will use the same dynamic engine to create dishes, preparations, products, components, MOP, batches, translations and the rest of the structure. For now it is a preview.'))+'</p></div>');
+  layer(tr('Crear ficha técnica','Create technical sheet'),'<div class="nexoWorkspacePreview"><div class="nexoWorkspaceEmptyIcon">'+icon('nuevo')+'</div><h3>'+esc(tr('Creador de fichas en preparación','Technical sheet creator is being prepared'))+'</h3><p>'+esc(tr('Este botón utilizará el mismo motor dinámico para crear platos, preparaciones, productos, componentes, MOP, batches, traducciones y demás estructura. Por ahora queda como prevista.','This button will use the same dynamic engine to create dishes, preparations, products, components, MOP, batches, translations and the rest of the structure. For now it is a preview.'))+'</p></div>');
 }
 
 function openImport(){
