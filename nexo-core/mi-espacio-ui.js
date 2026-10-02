@@ -1990,7 +1990,7 @@ function loadScheduleOcrLibrary(){
     }
     const s=document.createElement('script');
     s.src=scheduleOcrBase()+'/tesseract.min.js?v=20261002-1';
-    s.async=true;s.crossOrigin='anonymous';s.dataset.nexoScheduleOcr='1';
+    s.async=true;s.dataset.nexoScheduleOcr='1';
     s.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR_RUNTIME_NOT_AVAILABLE'));
     s.onerror=()=>reject(new Error(ui('No se pudo cargar el lector OCR local de Nexo.','Could not load the local Nexo OCR reader.')));
     document.head.appendChild(s)
