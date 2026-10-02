@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=nexo-schedule-local-time-grid-20261002-65';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=nexo-today-shift-20261002-66';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
@@ -12,7 +12,7 @@ let accessStage='WAITING_PAGE';
 function accessError(code){return new Error('No se pudo completar el acceso ('+ACCESS_REVISION+' / '+accessStage+' / '+code+'). Reintenta.')}
 function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r.style.display=visible?'none':'';document.body.classList.toggle('nxo-lock',!visible)}
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
-let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
+let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null,workspaceTodaySchedule=null;
 let workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
 let scheduleWeekStart='',scheduleData=null,scheduleImportData=null,scheduleDebug=null,scheduleAnalysisBusy=false,scheduleDebugModal=null,scheduleResumeImportId='';
 const NEXO_THEME_KEY='nexoTheme:v1';
@@ -1831,7 +1831,7 @@ function joinWorkspaceModal(){
     '<div class="nxo-field"><label>'+esc(ui('Código de invitación','Invitation code'))+'</label><input id="nxo-join-code" class="nxo-input" placeholder="NEXO-ABCDE-12345" autocomplete="off" autocapitalize="characters"></div><p class="nxo-muted" style="margin:0;line-height:1.55">'+esc(ui('Pega el código que te compartió un administrador del espacio de trabajo. Los códigos son de un solo uso.','Paste the code shared by a Workspace administrator. Codes are single-use.'))+'</p><div class="nxo-modal-actions"><button id="nxo-join-submit" class="nxo-btn nxo-btn-gold">'+esc(ui('Unirme al espacio de trabajo','Join Workspace'))+'</button></div>',
     o=>{const input=o.querySelector('#nxo-join-code'),button=o.querySelector('#nxo-join-submit');input?.focus();button.onclick=async()=>{const code=input.value.trim();if(!code){toast(ui('Escribe el código de invitación','Enter the invitation code'));return}button.disabled=true;button.textContent=ui('Validando…','Validating…');try{workspace=await api('workspace.join.code',{code});o.remove();setWorkspaceReturnParam(workspace?.workspace?.id||'');workspaceTab='tools';toast(ui('Te uniste a ','You joined ')+(workspace?.workspace?.name||ui('el espacio de trabajo','the Workspace')));renderWorkspace()}catch(e){button.disabled=false;button.textContent=ui('Unirme al espacio de trabajo','Join Workspace');toast(e.message||String(e))}}})
 }
-async function openWorkspace(id,alreadyOpen=false){try{stopWorkspaceNotificationPolling();workspaceNotificationSignature='';loading(ui('Abriendo espacio de trabajo…','Opening Workspace…'));workspace=alreadyOpen&&workspace?workspace:await api('workspace.open',{workspaceId:id});workspaceRecipeComments=null;workspacePendingNotes=null;setWorkspaceReturnParam(workspace?.workspace?.id||id);workspaceTab='tools';renderWorkspace()}catch(e){errorView(e)}}
+async function openWorkspace(id,alreadyOpen=false){try{stopWorkspaceNotificationPolling();workspaceNotificationSignature='';loading(ui('Abriendo espacio de trabajo…','Opening Workspace…'));workspace=alreadyOpen&&workspace?workspace:await api('workspace.open',{workspaceId:id});workspaceRecipeComments=null;workspacePendingNotes=null;workspaceTodaySchedule=null;setWorkspaceReturnParam(workspace?.workspace?.id||id);workspaceTab='tools';renderWorkspace()}catch(e){errorView(e)}}
 async function returnPersonal(){try{loading('Volviendo a Mi espacio…');personal=await api('workspace.return');clearWorkspaceReturnParam();renderPersonal()}catch(e){errorView(e)}}
 function renderWorkspace(){
   const ws=workspace?.workspace||{},role=workspace?.role||{},tools=workspace?.tools||[];
@@ -1846,7 +1846,7 @@ function renderWorkspace(){
   tabs.push('<button class="nxo-tab '+(workspaceTab==='access'?'active':'')+'" data-wtab="access">'+iconLabel('acceso-rol',ui('Mi acceso','My access'))+'</button>');
   if(canTools)tabs.push('<button class="nxo-tab nxo-settings-tab '+(workspaceTab==='settings'?'active':'')+'" data-wtab="settings">'+iconLabel('ajustes-rapidos',ui('Configuración','Settings'))+'</button>');
   let body='';
-  if(workspaceTab==='tools')body=(canAdmin?renderPendingNotesShell():'')+renderWorkspaceTools(tools);
+  if(workspaceTab==='tools')body=(canSchedule?renderTodayScheduleShell():'')+(canAdmin?renderPendingNotesShell():'')+renderWorkspaceTools(tools);
   else if(workspaceTab==='schedule')body=renderScheduleShell();
   else if(workspaceTab==='members')body='<div id="nxo-members-zone"><div class="nxo-empty">'+esc(ui('Cargando miembros…','Loading members…'))+'</div></div>';
   else if(workspaceTab==='settings')body='<div id="nxo-settings-zone"><div class="nxo-empty">'+esc(ui('Cargando configuración…','Loading settings…'))+'</div></div>';
@@ -1859,9 +1859,47 @@ function renderWorkspace(){
     if(workspaceTab==='tools')refreshWorkspaceAdminPanels();else loadWorkspaceRecipeComments();
     startWorkspaceNotificationPolling()
   }else stopWorkspaceNotificationPolling();
+  if(workspaceTab==='tools'&&canSchedule)loadTodaySchedule();
   if(workspaceTab==='schedule')loadSchedule();
   if(workspaceTab==='members')loadMembers();
   if(workspaceTab==='settings')loadWorkspaceSettings()
+}
+function renderTodayScheduleShell(){
+  return '<section class="nxo-section nxo-today-shift-section"><div id="nxo-today-shift-zone"><div class="nxo-today-shift-card is-loading"><div><span class="nxo-today-shift-eyebrow">'+esc(ui('Jornada de hoy','Today\'s shift'))+'</span><strong>'+esc(ui('Cargando tu jornada…','Loading your shift…'))+'</strong></div></div></div></section>'
+}
+function todayShiftText(row){
+  if(!row)return'';
+  const status=String(row.status||'UNKNOWN').toUpperCase();
+  if(status==='OFF'||status==='REC_OFF')return scheduleStatusLabel(status);
+  const time=scheduleGridText(row);
+  return time||scheduleStatusLabel(status)
+}
+function renderTodayScheduleCard(data){
+  const zone=document.getElementById('nxo-today-shift-zone');if(!zone)return;
+  if(!data){
+    zone.innerHTML='<div class="nxo-today-shift-card"><div><span class="nxo-today-shift-eyebrow">'+esc(ui('Jornada de hoy','Today\'s shift'))+'</span><strong>'+esc(ui('No se pudo cargar la jornada.','Could not load today\'s shift.'))+'</strong></div></div>';return
+  }
+  const shifts=Array.isArray(data.shifts)?data.shifts:[];
+  const status=String(data.schedule?.status||'').toUpperCase();
+  const statusChip=status?'<span class="nxo-chip">'+esc(scheduleStatusLabel(status))+'</span>':'';
+  const dateLabel=data.date?scheduleDay(data.date):ui('Hoy','Today');
+  let content='';
+  if(!shifts.length){
+    content='<div class="nxo-today-shift-main"><strong>'+esc(ui('Sin jornada asignada para hoy','No shift assigned today'))+'</strong><span>'+esc(dateLabel)+'</span></div>'
+  }else{
+    content='<div class="nxo-today-shift-main"><strong>'+esc(todayShiftText(shifts[0]))+'</strong><span>'+esc(dateLabel)+'</span></div>'+
+      (shifts.length>1?'<div class="nxo-today-shift-segments">'+shifts.slice(1).map(row=>'<span>'+esc(todayShiftText(row))+'</span>').join('')+'</div>':'')
+  }
+  zone.innerHTML='<div class="nxo-today-shift-card"><div class="nxo-today-shift-head"><span class="nxo-today-shift-eyebrow">'+esc(ui('Jornada de hoy','Today\'s shift'))+'</span>'+statusChip+'</div>'+content+'</div>'
+}
+async function loadTodaySchedule(){
+  const zone=document.getElementById('nxo-today-shift-zone');if(!zone||!workspace?.workspace?.id)return;
+  try{
+    workspaceTodaySchedule=await api('schedule.today',{workspaceId:workspace.workspace.id});
+    renderTodayScheduleCard(workspaceTodaySchedule)
+  }catch(e){
+    zone.innerHTML='<div class="nxo-today-shift-card"><div><span class="nxo-today-shift-eyebrow">'+esc(ui('Jornada de hoy','Today\'s shift'))+'</span><strong>'+esc(e.message||String(e))+'</strong></div></div>'
+  }
 }
 function scheduleDateKey(d){
   const x=d instanceof Date?d:new Date(d);
