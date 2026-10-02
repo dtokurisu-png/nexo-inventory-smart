@@ -14,7 +14,7 @@ function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
 let workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
-let scheduleWeekStart='',scheduleData=null,scheduleImportData=null,scheduleDebug=null,scheduleAnalysisBusy=false,scheduleDebugModal=null;
+let scheduleWeekStart='',scheduleData=null,scheduleImportData=null,scheduleDebug=null,scheduleAnalysisBusy=false,scheduleDebugModal=null,scheduleResumeImportId='';
 const NEXO_THEME_KEY='nexoTheme:v1';
 const NEXO_LANGUAGE_KEY='nexoLanguage:v1';
 function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
@@ -1916,7 +1916,7 @@ function renderScheduleDebugPanel(){
     '<p class="nxo-muted">'+esc(ui('GPT analiza la imagen completa y devuelve un horario estructurado.','GPT analyzes the complete image and returns a structured schedule.'))+'</p>'+
     scheduleDebugRow(ui('Preparar imagen','Prepare image'),st('image',d.imageReady),d.imageReady?((d.width||'')+'×'+(d.height||'')+' · '+Math.round((d.bytes||0)/1024)+' KB'):ui('Optimizando imagen.','Optimizing image.'))+
     scheduleDebugRow(ui('Enviar a GPT','Send to GPT'),st('send',d.sent),d.sent?ui('Imagen enviada.','Image sent.'):ui('Esperando imagen.','Waiting for image.'))+
-    scheduleDebugRow(ui('GPT analizando','GPT analyzing'),st('gpt',d.aiCompleted),d.aiCompleted?ui('Análisis completado.','Analysis complete.'):(String(d.providerStatus||'').toLowerCase()==='queued'?ui('Solicitud en cola de GPT.','GPT request queued.'):ui('Leyendo colaboradores, roles y siete días.','Reading members, roles and seven days.')))+
+    scheduleDebugRow(ui('GPT analizando','GPT analyzing'),st('gpt',d.aiCompleted),d.aiCompleted?ui('Análisis completado.','Analysis complete.'):(String(d.providerStatus||'').toLowerCase()==='reconnecting'?ui('Reconectando con el análisis… intento ','Reconnecting to analysis… attempt ')+String(d.networkRetries||1):(String(d.providerStatus||'').toLowerCase()==='queued'?ui('Solicitud en cola de GPT.','GPT request queued.'):ui('Leyendo colaboradores, roles y siete días.','Reading members, roles and seven days.'))))+
     scheduleDebugRow(ui('Colaboradores','Members'),d.aiCompleted?'done':'pending',String(d.collaboratorsDetected||0))+
     scheduleDebugRow(ui('Roles','Roles'),d.aiCompleted?'done':'pending',String(d.rolesDetected||0))+
     scheduleDebugRow(ui('Días','Days'),d.aiCompleted?'done':'pending',String(d.daysDetected||0))+
@@ -2070,7 +2070,7 @@ function renderScheduleGrid(rows,weekStart){
 }
 
 async function waitForScheduleAnalysis(importId,weekStart){
-  const deadline=Date.now()+240000;
+  const deadline=Date.now()+900000;
   let transientFailures=0;
   while(Date.now()<deadline){
     await new Promise(r=>setTimeout(r,2200));
@@ -2078,47 +2078,77 @@ async function waitForScheduleAnalysis(importId,weekStart){
       const state=await api('schedule.import.get',{workspaceId:workspace.workspace.id,importId,weekStart});
       transientFailures=0;
       scheduleImportData=state;
-      scheduleDebug={...(scheduleDebug||{}),...(state.debug||{}),stage:state?.debug?.aiCompleted?'done':'gpt',sent:true,providerStatus:state.providerStatus||'',error:''};
+      scheduleDebug={...(scheduleDebug||{}),...(state.debug||{}),stage:state?.debug?.aiCompleted?'done':'gpt',sent:true,providerStatus:state.providerStatus||'',networkRetries:0,error:''};
       renderScheduleDebugPanel();
       if(state?.debug?.aiCompleted===true)return state;
       if(String(state?.status||'').toUpperCase()==='ERROR')throw new Error(ui('El análisis GPT no pudo completarse.','GPT analysis could not be completed.'))
     }catch(e){
       const msg=String(e?.message||e||'');
-      const transient=/HTTP_502|HTTP_503|HTTP_504|REQUEST_TIMEOUT|Failed to fetch|NetworkError|Load failed/i.test(msg);
-      if(!transient||transientFailures>=2)throw e;
+      const transient=/HTTP_502|HTTP_503|HTTP_504|REQUEST_TIMEOUT|Failed to fetch|NetworkError|Load failed|ERR_NETWORK|ERR_CONNECTION/i.test(msg);
+      if(!transient)throw e;
       transientFailures+=1;
-      await new Promise(r=>setTimeout(r,900*transientFailures))
+      scheduleDebug={...(scheduleDebug||{}),stage:'gpt',sent:true,providerStatus:'reconnecting',networkRetries:transientFailures,error:''};
+      renderScheduleDebugPanel();
+      await new Promise(r=>setTimeout(r,Math.min(8000,1200+transientFailures*900)));
     }
   }
-  throw new Error(ui('GPT sigue procesando el horario y superó el tiempo de espera de esta pantalla. Vuelve a intentar la imagen.','GPT is still processing the schedule and exceeded this screen\'s wait time. Try the image again.'))
+  throw new Error(ui('El análisis sigue activo, pero esta pantalla superó el tiempo de espera. Cierra y vuelve a abrir Horarios para reanudarlo sin subir la imagen otra vez.','The analysis is still active, but this screen exceeded its wait time. Close and reopen Schedule to resume it without uploading the image again.'))
 }
+
+async function finishScheduleImportPolling(importId,weekStart){
+  const parsed=await waitForScheduleAnalysis(importId,weekStart);
+  scheduleWeekStart=parsed.weekStart||weekStart;
+  scheduleDebug={...scheduleDebug,...(parsed.debug||{}),stage:'done',providerStatus:'completed',aiCompleted:true,scheduleCreated:Boolean(parsed.schedule?.id||parsed.debug?.scheduleCreated),error:''};
+  scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
+  scheduleWeekStart=scheduleData?.weekStart||scheduleWeekStart;
+  scheduleImportData=null;
+  renderScheduleData();renderScheduleDebugPanel();
+  const pending=Number(scheduleData?.pendingIdentityCount||0);
+  toast(pending?ui('Horario creado. '+pending+' colaborador(es) quedarán vinculados cuando existan en el Workspace.','Schedule created. '+pending+' member(s) will link when they exist in the Workspace.'):ui('Horario creado automáticamente.','Schedule created automatically.'));
+  setTimeout(closeScheduleDebugModal,1100);
+  return parsed
+}
+
+async function resumeScheduleImport(importId,weekStart){
+  if(!importId||scheduleResumeImportId===importId)return;
+  scheduleResumeImportId=importId;
+  scheduleAnalysisBusy=true;
+  scheduleDebug={stage:'gpt',imageReady:true,sent:true,aiCompleted:false,scheduleCreated:false,providerStatus:'resuming',networkRetries:0,error:''};
+  openScheduleDebugModal();renderScheduleData();renderScheduleDebugPanel();
+  try{
+    await finishScheduleImportPolling(importId,weekStart||scheduleWeekStart||scheduleMonday())
+  }catch(e){
+    scheduleDebug={...(scheduleDebug||{}),error:e.message||String(e)};
+    renderScheduleDebugPanel();toast(e.message||String(e))
+  }finally{
+    scheduleAnalysisBusy=false;
+    scheduleResumeImportId='';
+    renderScheduleData()
+  }
+}
+
 async function processScheduleImage(file){
   const mime=String(file.type||'').toLowerCase();
   if(!['image/png','image/jpeg','image/webp'].includes(mime)){toast(ui('Usa una imagen PNG, JPG o WEBP','Use a PNG, JPG or WEBP image'));return}
   if(!file.size||file.size>20*1024*1024){toast(ui('La imagen debe pesar menos de 20 MB.','The image must be under 20 MB.'));return}
   const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleMonday();
-  scheduleAnalysisBusy=true;scheduleImportData=null;scheduleDebug={stage:'image',imageReady:false,sent:false,aiCompleted:false,scheduleCreated:false,providerStatus:'',error:''};
+  scheduleAnalysisBusy=true;scheduleImportData=null;scheduleDebug={stage:'image',imageReady:false,sent:false,aiCompleted:false,scheduleCreated:false,providerStatus:'',networkRetries:0,error:''};
   renderScheduleData();openScheduleDebugModal();
   try{
     const optimized=await optimizeScheduleImage(file);
     scheduleDebug={...scheduleDebug,stage:'send',imageReady:true,width:optimized.width,height:optimized.height,bytes:optimized.blob.size};renderScheduleDebugPanel();
     const imageBase64=await scheduleBlobBase64(optimized.blob);
     const started=await api('schedule.gpt.analyze',{workspaceId:workspace.workspace.id,input:{weekStart:week,fileName:file.name||'schedule-image',mimeType:'image/jpeg',imageBase64}});
-    scheduleImportData=started;scheduleWeekStart=started.weekStart||week;
+    scheduleImportData=started;scheduleWeekStart=started.weekStart||week;scheduleResumeImportId=started.importId;
     scheduleDebug={...scheduleDebug,...(started.debug||{}),stage:'gpt',sent:true,providerStatus:started.providerStatus||'queued',aiCompleted:false,error:''};renderScheduleDebugPanel();
-    const parsed=await waitForScheduleAnalysis(started.importId,week);
-    scheduleWeekStart=parsed.weekStart||week;
-    scheduleDebug={...scheduleDebug,...(parsed.debug||{}),stage:'done',providerStatus:'completed',aiCompleted:true,scheduleCreated:Boolean(parsed.schedule?.id||parsed.debug?.scheduleCreated),error:''};
-    scheduleAnalysisBusy=false;
-    scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
-    scheduleImportData=null;
-    renderScheduleData();renderScheduleDebugPanel();
-    const pending=Number(scheduleData?.pendingIdentityCount||0);
-    toast(pending?ui('Horario creado. '+pending+' colaborador(es) quedarán vinculados cuando existan en el Workspace.','Schedule created. '+pending+' member(s) will link when they exist in the Workspace.'):ui('Horario creado automáticamente.','Schedule created automatically.'));
-    setTimeout(closeScheduleDebugModal,1100)
+    await finishScheduleImportPolling(started.importId,week)
   }catch(e){
-    scheduleAnalysisBusy=false;scheduleDebug={...(scheduleDebug||{}),error:e.message||String(e)};
-    renderScheduleData();renderScheduleDebugPanel();toast(e.message||String(e))
+    scheduleDebug={...(scheduleDebug||{}),error:e.message||String(e)};
+    renderScheduleDebugPanel();toast(e.message||String(e))
+  }finally{
+    scheduleAnalysisBusy=false;
+    scheduleResumeImportId='';
+    renderScheduleData()
   }
 }
 function renderScheduleData(){
@@ -2143,7 +2173,12 @@ async function loadSchedule(){
   try{
     scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
     scheduleWeekStart=scheduleData?.weekStart||scheduleWeekStart;
-    renderScheduleData()
+    renderScheduleData();
+    const pending=scheduleData?.pendingImport;
+    if(pending?.importId&&!scheduleAnalysisBusy){
+      const resumeWeek=pending.requestedWeekStart||scheduleWeekStart||scheduleMonday();
+      setTimeout(()=>resumeScheduleImport(pending.importId,resumeWeek),250)
+    }
   }
   catch(e){zone.innerHTML='<div class="nxo-empty">'+esc(e.message||String(e))+'</div>'}
 }
