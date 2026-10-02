@@ -1920,7 +1920,7 @@ function renderScheduleDebugPanel(){
     scheduleDebugRow(ui('Colaboradores','Members'),d.aiCompleted?'done':'pending',String(d.collaboratorsDetected||0))+
     scheduleDebugRow(ui('Roles','Roles'),d.aiCompleted?'done':'pending',String(d.rolesDetected||0))+
     scheduleDebugRow(ui('Días','Days'),d.aiCompleted?'done':'pending',String(d.daysDetected||0))+
-    scheduleDebugRow(ui('Pendientes','Needs review'),d.aiCompleted?(Number(d.unresolvedRows||0)?'error':'done'):'pending',String(d.unresolvedRows||0))+
+    scheduleDebugRow(ui('Colaboradores por revisar','Members to review'),d.aiCompleted?(Number(d.unresolvedRows||0)?'error':'done'):'pending',String(d.unresolvedCollaborators??d.unresolvedRows??0))+
     (err?'<div class="nxo-empty" style="margin-top:14px;text-align:left"><strong>'+esc(ui('Error: ','Error: '))+'</strong>'+esc(String(d.error))+'</div>':'');
   const b=scheduleDebugModal?.querySelector('[data-schedule-debug-close]');if(b)b.hidden=!(err||d.aiCompleted)
 }
@@ -1985,9 +1985,14 @@ function scheduleGroupRows(rows){
 function scheduleDayCard(row,editable=false){
   const today=scheduleDateKey(new Date())===row.date;
   const status=String(row.status||'UNKNOWN').toUpperCase();
-  const text=status==='WORK'||status==='TRAINING'||status==='ON_CALL'
-    ?((row.start||scheduleTime(row.startAt)||'')+((row.end||scheduleTime(row.endAt)||'')?' – '+(row.end||scheduleTime(row.endAt)):''))
-    :scheduleStatusLabel(status);
+  const start=row.start||scheduleTime(row.startAt)||'',end=row.end||scheduleTime(row.endAt)||'';
+  let text=scheduleStatusLabel(status);
+  if(status==='WORK'){
+    text=start&&end?start+' – '+end:(start?ui('Entrada ','Start ')+start:(end?ui('Salida ','End ')+end:ui('Trabaja','Works')))
+  }else if(status==='TRAINING'||status==='ON_CALL'){
+    const base=scheduleStatusLabel(status);
+    text=start&&end?base+' · '+start+' – '+end:(start?base+' · '+ui('Entrada ','Start ')+start:(end?base+' · '+ui('Salida ','End ')+end:base))
+  }
   const bg=today?'background:linear-gradient(135deg,rgba(225,189,105,.32),rgba(47,79,147,.12));box-shadow:0 0 0 2px rgba(225,189,105,.45) inset;':'';
   return '<div class="nxo-panel" style="padding:10px;min-width:112px;'+bg+'"><div class="nxo-muted" style="font-size:.82em">'+esc(scheduleDay(row.date))+(today?' · '+esc(ui('Hoy','Today')):'')+'</div><strong style="display:block;margin-top:4px">'+esc(text||'—')+'</strong>'+(editable?'<button type="button" class="nxo-icon-btn" data-schedule-row-edit="'+esc(row.id)+'" style="margin-top:8px" aria-label="'+esc(ui('Editar turno','Edit shift'))+'">'+iconTag('editar')+'</button>':'')+'</div>'
 }
