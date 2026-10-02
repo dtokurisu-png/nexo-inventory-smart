@@ -2115,19 +2115,86 @@ function renderScheduleData(){
   });
   if(scheduleImportData?.rows)renderScheduleImportPreview()
 }
+function scheduleReviewWarningLabel(code){
+  const map={
+    MEMBER_UNRESOLVED:ui('Colaborador pendiente','Member pending'),
+    DATE_UNRESOLVED:ui('Fecha pendiente','Date pending'),
+    DATE_INFERRED:ui('Fecha inferida','Date inferred'),
+    TIME_UNRESOLVED:ui('Horario pendiente','Hours pending'),
+    ROLE_UNRESOLVED:ui('Rol pendiente','Role pending')
+  };
+  return map[code]||code
+}
+function scheduleMemberOptions(row,members){
+  const selected=row.memberId||row.suggestedMemberId||'';
+  return '<option value="">'+esc(ui('Seleccionar colaborador','Select member'))+'</option>'+
+    members.map(m=>'<option value="'+esc(m.memberId)+'" '+(m.memberId===selected?'selected':'')+'>'+esc(m.displayName||m.workName||m.memberId)+(m.memberId===row.suggestedMemberId&&!row.memberId?' · '+esc(ui('sugerido','suggested')):'')+'</option>').join('')
+}
+function scheduleRoleOptions(row,roles){
+  const selected=row.positionKey||row.suggestedRoleId||'';
+  return '<option value="">'+esc(ui('Sin rol / seleccionar','No role / select'))+'</option>'+
+    roles.map(r=>'<option value="'+esc(r.id)+'" '+(r.id===selected?'selected':'')+'>'+esc(r.name)+(r.id===row.suggestedRoleId&&!row.positionKey?' · '+esc(ui('sugerido','suggested')):'')+'</option>').join('')
+}
 function renderScheduleImportPreview(){
   const zone=document.getElementById('nxo-schedule-import-preview');if(!zone||!scheduleImportData?.rows)return;
-  const rows=scheduleImportData.rows||[],members=scheduleImportData.members||[],dbg=scheduleImportData.debug||scheduleDebug||{};
-  const memberMap=new Map(members.map(m=>[m.memberId,m.displayName||m.workName||m.memberId]));
-  const unresolved=rows.filter(r=>r.mappingStatus!=='MATCHED'||(r.warnings||[]).length);
-  const html=rows.map(r=>{
-    const matched=r.memberId?memberMap.get(r.memberId)||r.memberId:ui('Sin coincidencia','No match');
-    const warning=(r.warnings||[]).join(', ');
-    return '<tr style="border-top:1px solid rgba(127,127,127,.2)"><td style="padding:10px">'+esc(r.rawName||'—')+'</td><td style="padding:10px">'+esc(matched)+(warning?'<div class="nxo-muted">'+esc(warning)+'</div>':'')+'</td><td style="padding:10px">'+esc(r.date?scheduleDay(r.date):(r.day||'—'))+'</td><td style="padding:10px">'+esc(r.status==='OFF'?ui('Libre','Off'):((r.start||'—')+' – '+(r.end||'—')))+'</td><td style="padding:10px">'+esc(r.position||'—')+'</td></tr>'
+  const rows=scheduleImportData.rows||[],members=scheduleImportData.members||[],roles=scheduleImportData.roles||scheduleData?.roles||[],dbg=scheduleImportData.debug||scheduleDebug||{};
+  const unresolved=rows.filter(r=>r.mappingStatus!=='MATCHED'||(r.warnings||[]).some(w=>w!=='DATE_INFERRED'));
+  const cards=rows.map((r,index)=>{
+    const warnings=(r.warnings||[]).map(scheduleReviewWarningLabel);
+    const status=String(r.status||'WORK').toUpperCase();
+    return '<div class="nxo-panel" data-schedule-review-row="'+esc(r.id)+'" style="padding:14px;margin:10px 0">'+
+      '<div class="nxo-section-head" style="margin-bottom:10px"><div><strong>'+esc(ui('Turno ','Shift ')+(index+1))+'</strong><div class="nxo-muted" style="margin-top:4px;word-break:break-word">'+esc(r.rawText||r.rawName||ui('Texto OCR','OCR text'))+'</div></div><span class="nxo-chip">'+esc(r.mappingStatus==='MATCHED'?ui('Listo','Ready'):ui('Revisar','Review'))+'</span></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Nombre leído','Read name'))+'</label><input class="nxo-input" data-schedule-field="rawName" value="'+esc(r.rawName||'')+'" placeholder="'+esc(ui('Nombre en la imagen','Name in image'))+'"></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Colaborador','Member'))+'</label><select class="nxo-select" data-schedule-field="memberId">'+scheduleMemberOptions(r,members)+'</select></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Fecha','Date'))+'</label><input class="nxo-input" type="date" data-schedule-field="date" value="'+esc(r.date||'')+'"></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Estado','Status'))+'</label><select class="nxo-select" data-schedule-field="status"><option value="WORK" '+(status==='WORK'?'selected':'')+'>'+esc(ui('Trabaja','Work'))+'</option><option value="OFF" '+(status==='OFF'?'selected':'')+'>'+esc(ui('Libre','Off'))+'</option><option value="ON_CALL" '+(status==='ON_CALL'?'selected':'')+'>'+esc(ui('Guardia','On call'))+'</option></select></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Entrada','Start'))+'</label><input class="nxo-input" type="time" data-schedule-field="start" value="'+esc(r.start||'')+'"></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Salida','End'))+'</label><input class="nxo-input" type="time" data-schedule-field="end" value="'+esc(r.end||'')+'"></div>'+
+        '<div class="nxo-field" style="margin:0"><label>'+esc(ui('Rol','Role'))+'</label><select class="nxo-select" data-schedule-field="roleId">'+scheduleRoleOptions(r,roles)+'</select></div>'+
+      '</div>'+
+      (warnings.length?'<div class="nxo-muted" style="margin-top:10px">'+esc(warnings.join(' · '))+'</div>':'')+
+      '<div class="nxo-modal-actions" style="margin-top:10px"><button class="nxo-btn" data-schedule-row-save="'+esc(r.id)+'">'+esc(ui('Guardar corrección','Save correction'))+'</button></div>'+
+    '</div>'
   }).join('');
   const canConfirm=dbg.readyForConfirmation===true&&unresolved.length===0&&rows.length>0;
-  zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-top:16px"><div class="nxo-section-head"><div><h3>'+esc(ui('Mapa detectado','Detected map'))+'</h3><p>'+esc(ui('Revisa lo que OCR relacionó antes de generar el horario.','Review what OCR matched before generating the schedule.'))+'</p></div><span class="nxo-chip">'+rows.length+' '+esc(ui('turnos','shifts'))+'</span></div><div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">'+esc(ui('Colaborador','Member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Miembro vinculado','Matched member'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Día','Day'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Horario','Hours'))+'</th><th style="text-align:left;padding:10px">'+esc(ui('Rol','Role'))+'</th></tr></thead><tbody>'+html+'</tbody></table></div><div class="nxo-modal-actions"><button id="nxo-schedule-import-confirm" class="nxo-btn nxo-btn-gold" '+(canConfirm?'':'disabled')+'>'+esc(canConfirm?ui('Confirmar y generar horario','Confirm and generate schedule'):ui('Revisión pendiente','Review pending'))+'</button></div></div>';
+  zone.innerHTML='<div class="nxo-panel" style="padding:18px;margin-top:16px"><div class="nxo-section-head"><div><h3>'+esc(ui('Revisión del horario','Schedule review'))+'</h3><p>'+esc(ui('Nada se descarta: corrige cualquier fila dudosa y guarda los cambios.','Nothing is discarded: correct any uncertain row and save the changes.'))+'</p></div><span class="nxo-chip">'+rows.length+' '+esc(ui('turnos detectados','detected shifts'))+'</span></div>'+
+    (rows.length?cards:'<div class="nxo-empty">'+esc(ui('OCR leyó texto, pero todavía no encontró un patrón de horario.','OCR read text, but no schedule pattern was found yet.'))+'</div>')+
+    '<div class="nxo-modal-actions"><button id="nxo-schedule-import-confirm" class="nxo-btn nxo-btn-gold" '+(canConfirm?'':'disabled')+'>'+esc(canConfirm?ui('Confirmar y generar horario','Confirm and generate schedule'):ui('Corrige las filas pendientes','Fix pending rows'))+'</button></div></div>';
+  zone.querySelectorAll('[data-schedule-row-save]').forEach(btn=>btn.onclick=()=>saveScheduleImportRowUi(btn.dataset.scheduleRowSave));
   if(canConfirm)document.getElementById('nxo-schedule-import-confirm')?.addEventListener('click',confirmScheduleImportUi)
+}
+async function saveScheduleImportRowUi(rowId){
+  const card=document.querySelector('[data-schedule-review-row="'+CSS.escape(rowId)+'"]');if(!card||!scheduleImportData?.importId)return;
+  const get=name=>card.querySelector('[data-schedule-field="'+name+'"]')?.value||'';
+  const button=card.querySelector('[data-schedule-row-save]');
+  if(button){button.disabled=true;button.textContent=ui('Guardando…','Saving…')}
+  try{
+    await api('schedule.import.row.update',{
+      workspaceId:workspace.workspace.id,
+      importId:scheduleImportData.importId,
+      rowId,
+      input:{
+        rawName:get('rawName'),
+        memberId:get('memberId'),
+        date:get('date'),
+        status:get('status'),
+        start:get('start'),
+        end:get('end'),
+        roleId:get('roleId')
+      }
+    });
+    const refreshed=await api('schedule.import.get',{workspaceId:workspace.workspace.id,importId:scheduleImportData.importId});
+    refreshed.weekStart=scheduleImportData.weekStart||scheduleWeekStart;
+    scheduleImportData=refreshed;
+    scheduleDebug={...(scheduleDebug||{}),...(refreshed.debug||{}),mapped:true,stage:'done'};
+    renderScheduleData();
+    renderScheduleDebugPanel();
+    toast(ui('Corrección guardada','Correction saved'))
+  }catch(e){
+    if(button){button.disabled=false;button.textContent=ui('Guardar corrección','Save correction')}
+    toast(e.message||String(e))
+  }
 }
 async function processScheduleImage(file){
   const mime=String(file.type||'').toLowerCase();
