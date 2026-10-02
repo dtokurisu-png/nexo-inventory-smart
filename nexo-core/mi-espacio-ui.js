@@ -15,6 +15,7 @@ function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
 let workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
 let scheduleWeekStart='',scheduleData=null,scheduleImportData=null,scheduleDebug=null,scheduleAnalysisBusy=false,scheduleDebugModal=null,scheduleOcrLoaderPromise=null;
+const SCHEDULE_OCR_REVISION='69';
 const NEXO_THEME_KEY='nexoTheme:v1';
 const NEXO_LANGUAGE_KEY='nexoLanguage:v1';
 function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
@@ -1928,7 +1929,7 @@ function renderScheduleDebugPanel(){
     ?(d.originalWidth+'×'+d.originalHeight+' → '+d.processedWidth+'×'+d.processedHeight+' · '+originalKb+' KB → '+processedKb+' KB')
     :ui('Preparando una versión legible y ligera.','Preparing a lightweight readable version.');
   zone.innerHTML='<div>'+
-    '<div class="nxo-section-head"><div><h3 style="margin:0">'+esc(ui('Lectura del horario','Schedule reading'))+'</h3><p>'+esc(ui('La imagen se optimiza en el teléfono y el OCR lee texto y posiciones. La imagen no se divide ni se reconstruye.','The image is optimized on the phone and OCR reads text plus positions. The image is not split or reconstructed.'))+'</p></div>'+(scheduleAnalysisBusy?'<span class="nxo-chip">'+esc(ui('Procesando','Processing'))+'</span>':'')+'</div>'+
+    '<div class="nxo-section-head"><div><h3 style="margin:0">'+esc(ui('Lectura del horario','Schedule reading'))+'</h3><p>'+esc(ui('La imagen se optimiza en el teléfono y el OCR lee texto y posiciones. La imagen no se divide ni se reconstruye.','The image is optimized on the phone and OCR reads text plus positions. The image is not split or reconstructed.'))+' · OCR v'+esc(String(d.ocrRevision||SCHEDULE_OCR_REVISION))+'</p></div>'+(scheduleAnalysisBusy?'<span class="nxo-chip">'+esc(ui('Procesando','Processing'))+'</span>':'')+'</div>'+
     scheduleDebugRow(ui('Optimizar imagen','Optimize image'),state('optimize',d.optimized),optimizedDetail)+
     scheduleDebugRow(ui('Preparar OCR','Prepare OCR'),state('ocr-load',d.ocrReady),d.ocrReady?ui('Motor OCR listo.','OCR engine ready.'):ui('Cargando lector de texto.','Loading text reader.'))+
     scheduleDebugRow(ui('Leer texto','Read text'),state('ocr',d.ocrCompleted),d.ocrCompleted?((d.wordsDetected||0)+' '+ui('palabras detectadas','words detected')):((d.ocrPass?ui('Pasada ','Pass ')+d.ocrPass+' · ':'')+(d.ocrProgress?Math.round(d.ocrProgress*100)+'%':ui('Esperando lectura.','Waiting to read.'))))+
@@ -2289,7 +2290,7 @@ async function processScheduleImage(file){
   if(!file.size||file.size>20*1024*1024){toast(ui('La imagen debe pesar menos de 20 MB.','The image must be under 20 MB.'));return}
   const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleMonday();
   scheduleAnalysisBusy=true;scheduleImportData=null;
-  scheduleDebug={stage:'optimize',originalBytes:file.size,optimized:false,ocrReady:false,ocrCompleted:false,mapped:false,error:''};
+  scheduleDebug={stage:'optimize',originalBytes:file.size,optimized:false,ocrReady:false,ocrCompleted:false,mapped:false,error:'',ocrRevision:SCHEDULE_OCR_REVISION};
   renderScheduleData();openScheduleDebugModal();
   try{
     const optimized=await optimizeScheduleImage(file);
@@ -2307,7 +2308,7 @@ async function processScheduleImage(file){
     let ocrWidth=enhanced.width,ocrHeight=enhanced.height;
     let usedSecondPass=false;
 
-    if(signals.memberHits===0&&signals.roleHits===0&&signals.timeHits<3){
+    if(signals.memberHits===0||signals.roleHits===0||signals.timeHits<3){
       scheduleDebug={...scheduleDebug,stage:'ocr',ocrProgress:0,ocrPass:'2/2'};
       renderScheduleDebugPanel();
       const threshold=await prepareScheduleOcrVariant(optimized.blob,'threshold');
