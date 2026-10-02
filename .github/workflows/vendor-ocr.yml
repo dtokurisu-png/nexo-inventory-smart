@@ -29,16 +29,7 @@ jobs:
         run: |
           mkdir -p vendor/tesseract/core vendor/tesseract/lang
           cp /tmp/nexo-ocr/node_modules/tesseract.js/dist/tesseract.min.js vendor/tesseract/tesseract.min.js
-          python3 - <<'PY'
-from pathlib import Path
-p=Path("vendor/tesseract/tesseract.min.js")
-s=p.read_text()
-old='!function(t,r){"object"==typeof exports&&"object"==typeof module?module.exports=r():"function"==typeof define&&define.amd?define([],r):"object"==typeof exports?exports.Tesseract=r():t.Tesseract=r()}(self,'
-new='!function(t,r){t.Tesseract=r()}(self,'
-if old not in s:
-    raise SystemExit("Unexpected Tesseract UMD wrapper")
-p.write_text(s.replace(old,new,1))
-PY
+          python3 -c "from pathlib import Path; p=Path('vendor/tesseract/tesseract.min.js'); s=p.read_text(); old='!function(t,r){\\\"object\\\"==typeof exports&&\\\"object\\\"==typeof module?module.exports=r():\\\"function\\\"==typeof define&&define.amd?define([],r):\\\"object\\\"==typeof exports?exports.Tesseract=r():t.Tesseract=r()}(self,'; new='!function(t,r){t.Tesseract=r()}(self,'; assert old in s, 'Unexpected Tesseract UMD wrapper'; p.write_text(s.replace(old,new,1))"
           cp /tmp/nexo-ocr/node_modules/tesseract.js/dist/worker.min.js vendor/tesseract/worker.min.js
           cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core.wasm.js vendor/tesseract/core/
           cp /tmp/nexo-ocr/node_modules/tesseract.js-core/tesseract-core-simd.wasm.js vendor/tesseract/core/
