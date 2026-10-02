@@ -1974,23 +1974,27 @@ async function optimizeScheduleImage(file){
   while(blob.size>1500000&&quality>.64){quality-=.08;blob=await scheduleCanvasBlob(canvas,quality)}
   return {blob,width,height,originalWidth,originalHeight,quality}
 }
+function scheduleOcrBase(){
+  return 'https://dtokurisu-png.github.io/nexo-inventory-smart/vendor/tesseract'
+}
 function loadScheduleOcrLibrary(){
   if(window.Tesseract)return Promise.resolve(window.Tesseract);
   if(scheduleOcrLoaderPromise)return scheduleOcrLoaderPromise;
   scheduleOcrLoaderPromise=new Promise((resolve,reject)=>{
     const existing=document.querySelector('script[data-nexo-schedule-ocr]');
     if(existing){
-      existing.addEventListener('load',()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR_LOAD_FAILED')),{once:true});
-      existing.addEventListener('error',()=>reject(new Error('OCR_LOAD_FAILED')),{once:true});
+      if(window.Tesseract){resolve(window.Tesseract);return}
+      existing.addEventListener('load',()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR_RUNTIME_NOT_AVAILABLE')),{once:true});
+      existing.addEventListener('error',()=>reject(new Error('OCR_RUNTIME_LOAD_FAILED')),{once:true});
       return
     }
     const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-    s.async=true;s.dataset.nexoScheduleOcr='1';
-    s.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR_LOAD_FAILED'));
-    s.onerror=()=>reject(new Error(ui('No se pudo cargar el motor OCR.','Could not load the OCR engine.')));
+    s.src=scheduleOcrBase()+'/tesseract.min.js?v=20261002-1';
+    s.async=true;s.crossOrigin='anonymous';s.dataset.nexoScheduleOcr='1';
+    s.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR_RUNTIME_NOT_AVAILABLE'));
+    s.onerror=()=>reject(new Error(ui('No se pudo cargar el lector OCR local de Nexo.','Could not load the local Nexo OCR reader.')));
     document.head.appendChild(s)
-  });
+  }).catch(error=>{scheduleOcrLoaderPromise=null;throw error});
   return scheduleOcrLoaderPromise
 }
 function scheduleWordsFromTesseract(data){
@@ -2013,12 +2017,22 @@ async function runScheduleOcr(blob){
   const T=await loadScheduleOcrLibrary();
   scheduleDebug={...(scheduleDebug||{}),stage:'ocr-load',ocrReady:true};
   renderScheduleDebugPanel();
-  const worker=await T.createWorker('eng+spa',1,{
+  const base=scheduleOcrBase();
+  const worker=await T.createWorker(['eng','spa'],1,{
+    workerPath:base+'/worker.min.js?v=20261002-1',
+    corePath:base+'/core',
+    langPath:base+'/lang',
+    gzip:true,
+    workerBlobURL:true,
     logger:m=>{
       if(m&&m.status==='recognizing text'){
         scheduleDebug={...(scheduleDebug||{}),stage:'ocr',ocrReady:true,ocrProgress:Number(m.progress||0)};
         renderScheduleDebugPanel()
       }
+    },
+    errorHandler:error=>{
+      scheduleDebug={...(scheduleDebug||{}),stage:'ocr',error:String(error?.message||error||'OCR_WORKER_ERROR')};
+      renderScheduleDebugPanel()
     }
   });
   const url=URL.createObjectURL(blob);
