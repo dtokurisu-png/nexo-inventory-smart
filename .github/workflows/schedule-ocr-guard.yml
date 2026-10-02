@@ -1,68 +1,14 @@
-name: Guard Schedule OCR runtime
+name: Retired Schedule OCR guard
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "nexo-core/mi-espacio-ui.js"
-      - "vendor/tesseract/**"
-      - ".github/workflows/schedule-ocr-guard.yml"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  guard:
+  retired:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect GPT UI or missing OCR runtime
-        id: detect
-        shell: bash
-        run: |
-          bad=false
-          if grep -Eqi 'schedule\.gpt\.analyze|Análisis con GPT|GPT analyzes the complete image|direct GPT vision' nexo-core/mi-espacio-ui.js; then
-            bad=true
-          fi
-          for f in vendor/tesseract/tesseract.min.js vendor/tesseract/worker.min.js vendor/tesseract/lang/eng.traineddata.gz vendor/tesseract/lang/spa.traineddata.gz vendor/tesseract/core/tesseract-core.wasm.js; do
-            if [ ! -f "$f" ]; then bad=true; fi
-          done
-          echo "bad=$bad" >> "$GITHUB_OUTPUT"
-
-      - name: Restore OCR UI and runtime
-        if: steps.detect.outputs.bad == 'true'
-        shell: bash
-        run: |
-          set -e
-
-          restore_files() {
-            git checkout a65760b952 -- nexo-core/mi-espacio-ui.js
-            git checkout a98fafbc32 -- vendor/tesseract
-          }
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git reset --hard origin/main
-            restore_files
-            git add nexo-core/mi-espacio-ui.js vendor/tesseract
-
-            if git diff --cached --quiet; then
-              echo "OCR runtime already restored."
-              exit 0
-            fi
-
-            git commit -m "guard(schedule): restore OCR UI and runtime"
-
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-          done
-
-          exit 1
+      - name: OCR guard retired
+        run: echo "Schedule now uses GPT vision. OCR guard is intentionally disabled."
