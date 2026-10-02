@@ -1977,21 +1977,36 @@ async function optimizeScheduleImage(file){
 function scheduleOcrBase(){
   return 'https://dtokurisu-png.github.io/nexo-inventory-smart/vendor/tesseract'
 }
+function scheduleOcrGlobal(){
+  const t=(typeof globalThis!=='undefined'&&globalThis.Tesseract)||
+          (typeof self!=='undefined'&&self.Tesseract)||
+          (typeof window!=='undefined'&&window.Tesseract)||
+          null;
+  if(t&&typeof window!=='undefined'&&!window.Tesseract)window.Tesseract=t;
+  return t
+}
 function loadScheduleOcrLibrary(){
-  if(window.Tesseract)return Promise.resolve(window.Tesseract);
+  const ready=scheduleOcrGlobal();
+  if(ready)return Promise.resolve(ready);
   if(scheduleOcrLoaderPromise)return scheduleOcrLoaderPromise;
   scheduleOcrLoaderPromise=new Promise((resolve,reject)=>{
     const existing=document.querySelector('script[data-nexo-schedule-ocr]');
+    const finish=()=>{
+      const t=scheduleOcrGlobal();
+      if(t)resolve(t);
+      else reject(new Error('OCR_RUNTIME_NOT_AVAILABLE'))
+    };
     if(existing){
-      if(window.Tesseract){resolve(window.Tesseract);return}
-      existing.addEventListener('load',()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR_RUNTIME_NOT_AVAILABLE')),{once:true});
+      const now=scheduleOcrGlobal();
+      if(now){resolve(now);return}
+      existing.addEventListener('load',finish,{once:true});
       existing.addEventListener('error',()=>reject(new Error('OCR_RUNTIME_LOAD_FAILED')),{once:true});
       return
     }
     const s=document.createElement('script');
-    s.src=scheduleOcrBase()+'/tesseract.min.js?v=20261002-1';
+    s.src=scheduleOcrBase()+'/tesseract.min.js?v=20261002-2';
     s.async=true;s.dataset.nexoScheduleOcr='1';
-    s.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR_RUNTIME_NOT_AVAILABLE'));
+    s.onload=finish;
     s.onerror=()=>reject(new Error(ui('No se pudo cargar el lector OCR local de Nexo.','Could not load the local Nexo OCR reader.')));
     document.head.appendChild(s)
   }).catch(error=>{scheduleOcrLoaderPromise=null;throw error});
