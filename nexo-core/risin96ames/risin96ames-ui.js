@@ -1,5 +1,6 @@
 (() => {
-  const REV="r96-wix-shell-20261003-2";
+  const REV="r96-wix-shell-20261003-3";
+  const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
     const og=document.querySelector('meta[property="og:title"]')?.getAttribute("content")||"";
@@ -20,7 +21,9 @@
   document.body.appendChild(root);
 
   const esc=(v)=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-  const api=async(action,payload={})=>{
+  const params=()=>new URLSearchParams(location.search);
+  const sessionToken=()=>sessionStorage.getItem(SESSION_KEY)||"";
+  const publicApi=async(action,payload={})=>{
     const res=await fetch("/_functions/risin96amesPublic",{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({action,...payload})
@@ -29,6 +32,53 @@
     if(!res.ok||data.ok===false) throw new Error(data.error||"R96_REQUEST_FAILED");
     return data.data;
   };
+  const uiApi=async(action,payload={})=>{
+    const token=sessionToken();
+    const res=await fetch("/_functions/risin96amesUi",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action,sessionToken:token,...payload})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||data.ok===false){
+      const err=new Error(data.error||"R96_REQUEST_FAILED");
+      if(["AUTH_REQUIRED","SESSION_EXPIRED"].includes(err.message)) sessionStorage.removeItem(SESSION_KEY);
+      throw err;
+    }
+    return data.data??data;
+  };
+  const currentBaseUrl=()=>location.origin+location.pathname;
+  const developerLoginUrl=(invite=false)=>{
+    const u=new URL(location.href);
+    u.searchParams.set(invite?"r96invite":"r96dev","1");
+    u.searchParams.delete(invite?"r96dev":"r96invite");
+    return u.toString();
+  };
+  const cleanAuthQuery=({keepInvite=false}={})=>{
+    const u=new URL(location.href);
+    ["r96b","r96s","r96e","r96dev"].forEach(k=>u.searchParams.delete(k));
+    if(!keepInvite)u.searchParams.delete("r96invite");
+    history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
+  };
+
+  async function exchangeBoot(){
+    const boot=params().get("r96b");
+    if(!boot)return Boolean(sessionToken());
+    try{
+      const res=await fetch("/_functions/risin96amesUi",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({action:"exchange",bootToken:boot})
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok||data.ok===false) throw new Error(data.error||"BOOT_FAILED");
+      if(!data.sessionToken)throw new Error("NO_SESSION_TOKEN");
+      sessionStorage.setItem(SESSION_KEY,data.sessionToken);
+      cleanAuthQuery({keepInvite:params().get("r96invite")==="1"});
+      return true;
+    }catch(e){
+      sessionStorage.removeItem(SESSION_KEY);
+      return false;
+    }
+  }
 
   const shell=()=>`
     <header class="r96-header">
@@ -39,13 +89,13 @@
             <div id="r96-menu-panel" class="r96-menu-panel" hidden>
               <button id="r96-theme" type="button">Cambiar tema</button>
               <a href="#games">Explorar juegos</a>
-              <button id="r96-dev" type="button">Mis juegos</button>
+              <button id="r96-dev" type="button">Workspace de desarrollador</button>
             </div>
           </div>
           <a class="r96-brand" href="#home"><span class="r96-mark">R96</span><span class="r96-name">RISIN96AMES</span></a>
         </div>
         <div class="r96-nav-right">
-          <div class="r96-links"><a href="#games">Juegos</a><a href="#reviews">Reseñas</a><a href="#community">Comunidad</a><a href="#" id="r96-dev-link">Mis juegos</a></div>
+          <div class="r96-links"><a href="#games">Juegos</a><a href="#reviews">Reseñas</a><a href="#community">Comunidad</a><a href="#" id="r96-dev-link">Desarrollar</a></div>
           <div class="r96-stats"><span>Juegos <strong id="r96-games-count">0</strong></span><span>Reseñas <strong id="r96-reviews-count">0</strong></span></div>
         </div>
       </nav>
@@ -54,7 +104,7 @@
       <section class="r96-band r96-hero">
         <div class="r96-inner r96-hero-grid">
           <div class="r96-hero-copy"><p class="r96-eyebrow">Beta games in development</p><h1 class="r96-h1">Prueba betas jugables y ayuda a construir mejores juegos.</h1></div>
-          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a></div></div>
+          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a><button class="r96-secondary" id="r96-hero-dev">Workspace de desarrollador</button></div></div>
         </div>
       </section>
       <section id="games" class="r96-band r96-games">
@@ -75,24 +125,227 @@
   const emptyCard=()=>`<article class="r96-card r96-empty"><div class="r96-thumb"><span>R96</span></div><div class="r96-card-body"><p class="r96-eyebrow">Catálogo nuevo</p><h3 class="r96-h3">Aún no hay juegos publicados</h3><p class="r96-desc">La estructura ya está lista para recibir las nuevas builds. Los juegos antiguos no fueron migrados.</p></div></article>`;
   const card=(g)=>`<article class="r96-card"><div class="r96-thumb"${g.thumbnailUrl?` style="background-image:url('${esc(g.thumbnailUrl)}')"`:""}><span>${g.thumbnailUrl?"":esc((g.title||"R96").slice(0,3).toUpperCase())}</span></div><div class="r96-card-body"><div><span class="r96-status">${esc(g.status||"Beta")}</span></div><h3 class="r96-h3">${esc(g.title)}</h3><p class="r96-desc">${esc(g.shortDescription||"Beta web jugable en RISIN96AMES.")}</p><div class="r96-meta"><span><strong>Género:</strong> ${esc(g.genre||"No especificado")}</span></div><div class="r96-card-actions"><button class="r96-primary" data-r96-game="${esc(g.id)}">Ver juego</button></div></div></article>`;
 
-  const showDevPending=(ev)=>{
-    ev?.preventDefault?.();
-    alert("El área de desarrollador de RISIN96AMES está siendo conectada a la sesión de Nexo. El catálogo público ya funciona.");
+  const showNotice=(msg,type="")=>{
+    const box=root.querySelector("#r96-dev-message");
+    if(!box)return;
+    box.textContent=msg||"";
+    box.dataset.type=type;
   };
 
-  const bind=()=>{
+  const renderInviteRedeem=()=>{
+    const main=root.querySelector("main");
+    main.innerHTML=`<section class="r96-band r96-games r96-dev-page"><div class="r96-inner r96-dev-narrow">
+      <button class="r96-secondary" id="r96-dev-back">← Volver</button>
+      <div class="r96-panel r96-dev-auth">
+        <p class="r96-eyebrow">Developer invitation</p>
+        <h1 class="r96-h2">Acceso de desarrollador</h1>
+        <p class="r96-desc">Tu sesión ya está identificada. Pega el código de un solo uso que recibiste con la invitación. El código solo funcionará con el correo para el que fue creado.</p>
+        <label class="r96-field"><span>Código de invitación</span><input id="r96-invite-code" autocomplete="one-time-code" placeholder="R96-XXXXX-XXXXX"></label>
+        <div class="r96-actions"><button class="r96-primary" id="r96-redeem">Activar acceso</button></div>
+        <p id="r96-dev-message" class="r96-form-message"></p>
+      </div>
+    </div></section>`;
+    main.querySelector("#r96-dev-back")?.addEventListener("click",()=>{cleanAuthQuery();location.reload()});
+    main.querySelector("#r96-redeem")?.addEventListener("click",async()=>{
+      const code=main.querySelector("#r96-invite-code")?.value||"";
+      if(!code.trim()){showNotice("Escribe el código de invitación.","error");return;}
+      showNotice("Validando código...");
+      try{
+        await uiApi("developer.invite.redeem",{code});
+        cleanAuthQuery();
+        await openDeveloperWorkspace();
+      }catch(e){
+        const map={
+          R96_INVITE_EMAIL_MISMATCH:"Este código fue creado para otro correo electrónico.",
+          R96_INVITE_CODE_USED_OR_INVALID:"El código no existe, ya fue utilizado o fue revocado.",
+          R96_INVITE_CODE_EXPIRED:"El código expiró. Solicita una nueva invitación.",
+          R96_INVITE_CODE_INVALID:"El formato del código no es válido."
+        };
+        showNotice(map[e.message]||"No se pudo activar el acceso: "+e.message,"error");
+      }
+    });
+    root.scrollTo({top:0,behavior:"smooth"});
+  };
+
+  const workspaceShell=(data)=>`
+    <section class="r96-band r96-games r96-dev-page">
+      <div class="r96-inner">
+        <div class="r96-dev-head">
+          <div><p class="r96-eyebrow">Developer workspace</p><h1 class="r96-h2">RISIN96AMES Development</h1><p class="r96-desc">${esc(data.developer.displayName)} · ${esc(data.developer.roleKey)}</p></div>
+          <button class="r96-secondary" id="r96-public-home">Ver plataforma pública</button>
+        </div>
+        <div class="r96-dev-tabs">
+          <button class="r96-dev-tab on" data-tab="games">Mis juegos</button>
+          <button class="r96-dev-tab" data-tab="new">Crear juego</button>
+          <button class="r96-dev-tab" data-tab="reviews">Reseñas</button>
+          <button class="r96-dev-tab" data-tab="invites">Invitar desarrollador</button>
+        </div>
+        <div id="r96-dev-content"></div>
+      </div>
+    </section>`;
+
+  const gamesPanel=(data)=>{
+    const games=data.games||[];
+    return `<div class="r96-dev-grid">
+      <section class="r96-panel r96-dev-main">
+        <div class="r96-dev-panel-head"><div><p class="r96-eyebrow">Projects</p><h3 class="r96-h3">Mis juegos</h3></div><button class="r96-primary" data-open-tab="new">+ Crear juego</button></div>
+        <div class="r96-dev-list">${games.length?games.map(g=>`<article class="r96-dev-row">
+          <div><span class="r96-status">${esc(g.status)}</span><h3 class="r96-h3">${esc(g.title)}</h3><p class="r96-desc">${esc(g.shortDescription||"Sin descripción todavía.")}</p></div>
+          <div class="r96-dev-row-actions"><button class="r96-secondary" data-version-game="${esc(g.id)}">Nueva versión</button><button class="r96-primary" data-build-game="${esc(g.id)}">Cargar build</button></div>
+        </article>`).join(""):`<div class="r96-dev-empty"><h3 class="r96-h3">Todavía no tienes juegos</h3><p class="r96-desc">Crea el proyecto primero. Después podrás registrar versiones y cargar la build web.</p></div>`}</div>
+      </section>
+      <aside class="r96-panel r96-dev-side"><p class="r96-eyebrow">Workspace</p><h3 class="r96-h3">Herramientas</h3><div class="r96-tool-list"><span>Crear y editar juegos</span><span>Versiones y changelog</span><span>Carga de builds web</span><span>Reseñas y feedback</span><span>Invitaciones de desarrolladores</span></div></aside>
+    </div>`;
+  };
+
+  const newGamePanel=()=>`<section class="r96-panel r96-dev-form-shell">
+    <p class="r96-eyebrow">New project</p><h3 class="r96-h3">Crear juego</h3>
+    <div class="r96-form-grid">
+      <label class="r96-field"><span>Nombre</span><input id="r96-game-title" placeholder="Nombre del juego"></label>
+      <label class="r96-field"><span>Género</span><input id="r96-game-genre" placeholder="Estrategia, RPG, cartas..."></label>
+      <label class="r96-field r96-wide"><span>Descripción corta</span><textarea id="r96-game-short" placeholder="Resumen visible en la tarjeta"></textarea></label>
+      <label class="r96-field"><span>Estado</span><select id="r96-game-status"><option>DRAFT</option><option>PROTOTYPE</option><option>ALPHA</option><option>BETA</option><option>RELEASE</option></select></label>
+      <label class="r96-field"><span>Visibilidad</span><select id="r96-game-visibility"><option>PRIVATE</option><option>UNLISTED</option><option>PUBLIC</option></select></label>
+    </div>
+    <div class="r96-actions"><button class="r96-primary" id="r96-create-game">Crear proyecto</button></div>
+    <p id="r96-dev-message" class="r96-form-message"></p>
+  </section>`;
+
+  const invitePanel=(data)=>`<div class="r96-dev-grid">
+    <section class="r96-panel r96-dev-main">
+      <p class="r96-eyebrow">One-time access</p><h3 class="r96-h3">Invitar desarrollador</h3>
+      <p class="r96-desc">La invitación queda vinculada al correo indicado. La persona abre el enlace, inicia sesión con ese mismo correo y pega el código de un solo uso.</p>
+      <label class="r96-field"><span>Correo del desarrollador</span><input id="r96-invite-email" type="email" placeholder="persona@correo.com"></label>
+      <div class="r96-actions"><button class="r96-primary" id="r96-create-invite">Generar invitación</button></div>
+      <p id="r96-dev-message" class="r96-form-message"></p>
+      <div id="r96-invite-result"></div>
+    </section>
+    <aside class="r96-panel r96-dev-side"><p class="r96-eyebrow">Recent invites</p><h3 class="r96-h3">Invitaciones</h3><div class="r96-tool-list">${(data.invites||[]).length?(data.invites||[]).map(i=>`<span>${esc(i.inviteeEmail)} · ${esc(i.status)} · ${esc(i.codeHint||"")}</span>`).join(""):"<span>No hay invitaciones creadas todavía.</span>"}</div></aside>
+  </div>`;
+
+  const reviewsPanel=()=>`<section class="r96-panel r96-dev-form-shell"><div class="r96-dev-panel-head"><div><p class="r96-eyebrow">Feedback</p><h3 class="r96-h3">Reseñas</h3></div><button class="r96-secondary" id="r96-refresh-reviews">Actualizar</button></div><div id="r96-review-list"><p class="r96-desc">Cargando reseñas...</p></div><p id="r96-dev-message" class="r96-form-message"></p></section>`;
+
+  const versionPanel=(game)=>`<section class="r96-panel r96-dev-form-shell">
+    <button class="r96-secondary" id="r96-version-back">← Mis juegos</button>
+    <p class="r96-eyebrow">Version</p><h3 class="r96-h3">Nueva versión · ${esc(game.title)}</h3>
+    <div class="r96-form-grid"><label class="r96-field"><span>Versión</span><input id="r96-version-name" placeholder="0.1.0"></label><label class="r96-field r96-wide"><span>Changelog</span><textarea id="r96-version-changelog" placeholder="Cambios de esta build"></textarea></label></div>
+    <div class="r96-actions"><button class="r96-primary" id="r96-create-version">Crear versión</button></div><p id="r96-dev-message" class="r96-form-message"></p>
+  </section>`;
+
+  async function renderReviews(){
+    const list=root.querySelector("#r96-review-list");
+    if(!list)return;
+    try{
+      const data=await uiApi("developer.reviews.list");
+      const reviews=data.reviews||[];
+      list.innerHTML=reviews.length?reviews.map(r=>`<article class="r96-review-row"><div><strong>${esc(r.gameTitle)}</strong> · ${"★".repeat(Math.max(0,Math.min(5,Number(r.rating||0))))}</div><p>${esc(r.comment||"Sin comentario")}</p><small>${esc(r.userNameSnapshot||"Jugador")}</small></article>`).join(""):`<div class="r96-dev-empty"><h3 class="r96-h3">Todavía no hay reseñas</h3><p class="r96-desc">Cuando haya sesiones y feedback, aparecerán aquí.</p></div>`;
+    }catch(e){showNotice("No se pudieron cargar las reseñas: "+e.message,"error");}
+  }
+
+  function bindWorkspace(data){
+    const content=root.querySelector("#r96-dev-content");
+    const setTab=(tab)=>{
+      root.querySelectorAll(".r96-dev-tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));
+      if(tab==="games")content.innerHTML=gamesPanel(data);
+      if(tab==="new")content.innerHTML=newGamePanel();
+      if(tab==="reviews"){content.innerHTML=reviewsPanel();renderReviews();}
+      if(tab==="invites")content.innerHTML=invitePanel(data);
+      bindPanel(tab);
+    };
+    const bindPanel=(tab)=>{
+      content.querySelectorAll("[data-open-tab]").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.openTab)));
+      content.querySelectorAll("[data-version-game]").forEach(b=>b.addEventListener("click",()=>{
+        const game=(data.games||[]).find(g=>g.id===b.dataset.versionGame);if(!game)return;
+        content.innerHTML=versionPanel(game);
+        content.querySelector("#r96-version-back")?.addEventListener("click",()=>setTab("games"));
+        content.querySelector("#r96-create-version")?.addEventListener("click",async()=>{
+          const version=content.querySelector("#r96-version-name")?.value||"";
+          const changelog=content.querySelector("#r96-version-changelog")?.value||"";
+          if(!version.trim()){showNotice("Escribe un número de versión.","error");return;}
+          showNotice("Creando versión...");
+          try{await uiApi("version.create",{gameId:game.id,input:{version,changelog}});showNotice("Versión creada. Ya está lista para recibir una build.","ok");}
+          catch(e){showNotice("No se pudo crear la versión: "+e.message,"error");}
+        });
+      }));
+      content.querySelectorAll("[data-build-game]").forEach(b=>b.addEventListener("click",()=>{
+        const game=(data.games||[]).find(g=>g.id===b.dataset.buildGame);
+        content.innerHTML=`<section class="r96-panel r96-dev-form-shell"><button class="r96-secondary" id="r96-build-back">← Mis juegos</button><p class="r96-eyebrow">Build uploader</p><h3 class="r96-h3">Cargar build · ${esc(game?.title||"Juego")}</h3><p class="r96-desc">El espacio de carga ya está reservado para este proyecto. El siguiente bloque conecta el paquete HTML/JS/CSS/assets con Wix Media Manager y el Player versionado.</p><div class="r96-upload-zone"><strong>Build web</strong><span>ZIP / carpeta de distribución</span><button class="r96-primary" disabled>Seleccionar build · próximo bloque</button></div></section>`;
+        content.querySelector("#r96-build-back")?.addEventListener("click",()=>setTab("games"));
+      }));
+      content.querySelector("#r96-create-game")?.addEventListener("click",async()=>{
+        const input={
+          title:content.querySelector("#r96-game-title")?.value||"",
+          genre:content.querySelector("#r96-game-genre")?.value||"",
+          shortDescription:content.querySelector("#r96-game-short")?.value||"",
+          status:content.querySelector("#r96-game-status")?.value||"DRAFT",
+          visibility:content.querySelector("#r96-game-visibility")?.value||"PRIVATE"
+        };
+        if(!input.title.trim()){showNotice("El nombre del juego es obligatorio.","error");return;}
+        showNotice("Creando proyecto...");
+        try{await uiApi("game.create",{input});showNotice("Juego creado.","ok");setTimeout(()=>openDeveloperWorkspace(),450);}
+        catch(e){showNotice("No se pudo crear el juego: "+e.message,"error");}
+      });
+      content.querySelector("#r96-create-invite")?.addEventListener("click",async()=>{
+        const email=content.querySelector("#r96-invite-email")?.value||"";
+        if(!email.trim()){showNotice("Escribe el correo del desarrollador.","error");return;}
+        showNotice("Generando invitación...");
+        try{
+          const result=await uiApi("developer.invite.create",{input:{email}});
+          const link=currentBaseUrl()+"?r96invite=1";
+          const code=result.code;
+          const message=`Únete a RISIN96AMES como desarrollador.\n\nAbre este enlace: ${link}\n\nCódigo de un solo uso: ${code}\n\nInicia sesión con ${result.invite.inviteeEmail} y pega el código para activar tu acceso.`;
+          const out=content.querySelector("#r96-invite-result");
+          out.innerHTML=`<div class="r96-invite-card"><strong>Invitación creada</strong><div><span>Enlace</span><code>${esc(link)}</code></div><div><span>Código de un solo uso</span><code class="r96-code">${esc(code)}</code></div><button class="r96-secondary" id="r96-copy-invite">Copiar mensaje</button></div>`;
+          out.querySelector("#r96-copy-invite")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(message);showNotice("Mensaje copiado.","ok");}catch(_){showNotice("No se pudo copiar automáticamente.","error");}});
+          showNotice("Invitación lista. El código solo puede usarse una vez.","ok");
+        }catch(e){showNotice("No se pudo crear la invitación: "+e.message,"error");}
+      });
+      content.querySelector("#r96-refresh-reviews")?.addEventListener("click",renderReviews);
+    };
+
+    root.querySelectorAll(".r96-dev-tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+    root.querySelector("#r96-public-home")?.addEventListener("click",()=>{cleanAuthQuery();location.href=currentBaseUrl();});
+    setTab("games");
+  }
+
+  async function openDeveloperWorkspace(){
+    if(!sessionToken()){
+      location.href=developerLoginUrl(params().get("r96invite")==="1");
+      return;
+    }
+    try{
+      const data=await uiApi("developer.bootstrap");
+      const main=root.querySelector("main");
+      main.innerHTML=workspaceShell(data);
+      bindWorkspace(data);
+      cleanAuthQuery();
+      root.scrollTo({top:0,behavior:"smooth"});
+    }catch(e){
+      if(e.message==="R96_DEVELOPER_REQUIRED"){
+        if(params().get("r96invite")==="1"){renderInviteRedeem();return;}
+        const main=root.querySelector("main");
+        main.innerHTML=`<section class="r96-band r96-games r96-dev-page"><div class="r96-inner r96-dev-narrow"><button class="r96-secondary" id="r96-dev-back">← Volver</button><div class="r96-panel r96-dev-auth"><p class="r96-eyebrow">Restricted workspace</p><h1 class="r96-h2">Necesitas una invitación</h1><p class="r96-desc">El Workspace de desarrollador no está abierto al público. Usa el enlace y código de un solo uso que te envíe un desarrollador autorizado.</p><div class="r96-actions"><button class="r96-primary" id="r96-have-code">Tengo un código</button></div></div></div></section>`;
+        main.querySelector("#r96-dev-back")?.addEventListener("click",()=>location.href=currentBaseUrl());
+        main.querySelector("#r96-have-code")?.addEventListener("click",()=>{const u=new URL(location.href);u.searchParams.set("r96invite","1");history.replaceState({},document.title,u.pathname+u.search);renderInviteRedeem();});
+        return;
+      }
+      if(["AUTH_REQUIRED","SESSION_EXPIRED"].includes(e.message)){location.href=developerLoginUrl(params().get("r96invite")==="1");return;}
+      alert("No se pudo abrir el Workspace de desarrollador: "+e.message);
+    }
+  }
+
+  const bindPublic=()=>{
     const menu=root.querySelector("#r96-menu"),panel=root.querySelector("#r96-menu-panel");
     menu?.addEventListener("click",()=>{panel.hidden=!panel.hidden});
     root.querySelector("#r96-theme")?.addEventListener("click",()=>{
       const next=root.dataset.theme==="dark"?"light":"dark";
       root.dataset.theme=next;localStorage.setItem("risin96ames-theme",next);
     });
-    root.querySelector("#r96-dev")?.addEventListener("click",showDevPending);
-    root.querySelector("#r96-dev-link")?.addEventListener("click",showDevPending);
+    ["#r96-dev","#r96-dev-link","#r96-hero-dev"].forEach(sel=>root.querySelector(sel)?.addEventListener("click",(ev)=>{ev.preventDefault();openDeveloperWorkspace()}));
     root.addEventListener("click",async(ev)=>{
       const b=ev.target.closest("[data-r96-game]");if(!b)return;
       try{
-        const data=await api("game.get",{gameId:b.dataset.r96Game});
+        const data=await publicApi("game.get",{gameId:b.dataset.r96Game});
         const g=data.game,v=data.version||{};
         root.querySelector("main").innerHTML=`<section class="r96-band r96-games r96-detail"><div class="r96-inner"><div class="r96-back"><button id="r96-back" class="r96-secondary">← Volver a juegos</button></div><div class="r96-detail-grid"><article class="r96-panel"><p class="r96-eyebrow">${esc(g.status)}</p><h1 class="r96-h2">${esc(g.title)}</h1><p class="r96-desc">${esc(g.longDescription||g.shortDescription||"")}</p><div class="r96-actions">${v.runtimeUrl?`<a class="r96-primary" href="${esc(v.runtimeUrl)}">Jugar ahora</a>`:`<span class="r96-secondary">Build jugable pendiente</span>`}</div></article><aside class="r96-panel"><h3 class="r96-h3">Información</h3><p class="r96-desc"><strong>Género:</strong> ${esc(g.genre||"No especificado")}<br><strong>Versión:</strong> ${esc(v.version||"Pendiente")}<br><strong>Estado:</strong> ${esc(g.status)}</p></aside></div></div></section>`;
         root.querySelector("#r96-back")?.addEventListener("click",()=>location.reload());
@@ -102,15 +355,16 @@
   };
 
   const load=async()=>{
-    root.innerHTML=shell();bind();
+    root.innerHTML=shell();bindPublic();
     try{
-      const data=await api("games.list");
+      const data=await publicApi("games.list");
       const games=Array.isArray(data?.games)?data.games:[];
       root.querySelector("#r96-games-count").textContent=String(games.length);
       root.querySelector("#r96-games-grid").innerHTML=games.length?games.map(card).join(""):emptyCard();
-    }catch(e){
-      root.querySelector("#r96-games-grid").innerHTML=emptyCard();
-    }
+    }catch(e){root.querySelector("#r96-games-grid").innerHTML=emptyCard();}
+
+    await exchangeBoot();
+    if(params().get("r96dev")==="1"||params().get("r96invite")==="1")openDeveloperWorkspace();
   };
   load();
 })();
