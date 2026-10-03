@@ -1,6 +1,6 @@
 (() => {
   const REV="r96-wix-shell-20261003-11";
-  const SESSION_KEY="r96-developer-session";
+  const SESSION_KEY="r96-developer-session-v2";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
     const og=document.querySelector('meta[property="og:title"]')?.getAttribute("content")||"";
