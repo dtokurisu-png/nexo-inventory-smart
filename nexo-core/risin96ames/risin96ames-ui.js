@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-11";
+  const REV="r96-wix-shell-20261003-12";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -55,12 +55,19 @@
     return data.data??data;
   };
   const currentBaseUrl=()=>location.origin+location.pathname;
+  const wixInternalPath=()=>{
+    const host=location.hostname.toLowerCase();
+    const parts=location.pathname.split("/").filter(Boolean);
+    const freeHost=host.endsWith(".wixsite.com")||host.endsWith(".wixstudio.com");
+    if(freeHost && parts.length>1) return "/"+parts.slice(1).join("/");
+    return location.pathname||"/";
+  };
   const ownerLoginUrl=()=>{
     const u=new URL(location.href);
     u.hash="";
     u.search="";
     u.searchParams.set("r96owner","1");
-    u.searchParams.set("r96ReturnPath",location.pathname);
+    u.searchParams.set("r96ReturnPath",wixInternalPath());
     return u.toString();
   };
   const cleanAuthQuery=()=>{
