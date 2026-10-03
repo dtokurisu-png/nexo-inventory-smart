@@ -352,7 +352,7 @@
     };
 
     root.querySelectorAll(".r96-dev-tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
-    root.querySelector("#r96-public-home")?.addEventListener("click",()=>{cleanAuthQuery();location.href=currentBaseUrl();});
+    root.querySelector("#r96-public-home")?.addEventListener("click",async()=>{cleanAuthQuery();await renderPublicSurface({skipInvite:true});});
     setTab(data.__initialTab||"games");
   }
 
