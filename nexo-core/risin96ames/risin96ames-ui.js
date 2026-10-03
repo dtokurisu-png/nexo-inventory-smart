@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-8";
+  const REV="r96-wix-shell-20261003-9";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -22,7 +22,7 @@
 
   const esc=(v)=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
   const params=()=>new URLSearchParams(location.search);
-  const sessionToken=()=>sessionStorage.getItem(SESSION_KEY)||"";
+  const sessionToken=()=>localStorage.getItem(SESSION_KEY)||"";
   const publicApi=async(action,payload={})=>{
     const res=await fetch("/_functions/risin96amesPublic",{
       method:"POST",headers:{"Content-Type":"application/json"},
@@ -41,50 +41,27 @@
     const data=await res.json().catch(()=>({}));
     if(!res.ok||data.ok===false){
       const err=new Error(data.error||"R96_REQUEST_FAILED");
-      if(["AUTH_REQUIRED","SESSION_EXPIRED"].includes(err.message)) sessionStorage.removeItem(SESSION_KEY);
+      if(["AUTH_REQUIRED","SESSION_EXPIRED"].includes(err.message)) localStorage.removeItem(SESSION_KEY);
       throw err;
     }
     return data.data??data;
   };
   const currentBaseUrl=()=>location.origin+location.pathname;
-  const developerLoginUrl=(invite=false)=>{
-    // R96 authenticates on its own surface. Wix only verifies the member identity;
-    // the developer entitlement and session are completely separate from Mi espacio.
+  const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    u.hash="";
-    u.search="";
-    u.searchParams.set("r96surface","risin96ames");
-    u.searchParams.set("r96auth","1");
-    u.searchParams.set("r96ReturnPath",location.pathname);
-    if(invite)u.searchParams.set("r96invite","1");
-    return u.toString();
-  };
-  const cleanAuthQuery=({keepInvite=false}={})=>{
-    const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96auth","r96surface","r96ReturnPath"].forEach(k=>u.searchParams.delete(k));
-    if(!keepInvite)u.searchParams.delete("r96invite");
+    ["r96b","r96s","r96e","r96dev","r96auth","r96surface","r96ReturnPath","r96invite"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
 
-  async function exchangeBoot(){
-    const boot=params().get("r96b");
-    if(!boot)return Boolean(sessionToken());
-    try{
-      const keepInvite=params().get("r96invite")==="1";
-      const res=await fetch("/_functions/risin96amesUi",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({action:"exchange",bootToken:boot})
-      });
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok||data.ok===false) throw new Error(data.error||"BOOT_FAILED");
-      if(!data.sessionToken)throw new Error("NO_SESSION_TOKEN");
-      sessionStorage.setItem(SESSION_KEY,data.sessionToken);
-      cleanAuthQuery({keepInvite});
-      return true;
-    }catch(e){
-      sessionStorage.removeItem(SESSION_KEY);
-      return false;
-    }
+  async function accessApi(input={}){
+    const res=await fetch("/_functions/risin96amesUi",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"developer.access.redeem",input})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||data.ok===false) throw new Error(data.error||"R96_ACCESS_FAILED");
+    return data.data??data;
   }
 
   const shell=()=>`
@@ -139,36 +116,44 @@
     box.dataset.type=type;
   };
 
-  const renderInviteRedeem=()=>{
+  const renderDeveloperLogin=({invite=false}={})=>{
     const main=root.querySelector("main");
     main.innerHTML=`<section class="r96-band r96-games r96-dev-page"><div class="r96-inner r96-dev-narrow">
       <button class="r96-secondary" id="r96-dev-back">← Volver</button>
       <div class="r96-panel r96-dev-auth">
-        <p class="r96-eyebrow">Developer invitation</p>
-        <h1 class="r96-h2">Acceso de desarrollador</h1>
-        <p class="r96-desc">Tu sesión ya está identificada. Pega el código de un solo uso que recibiste con la invitación. El código solo funcionará con el correo para el que fue creado.</p>
-        <label class="r96-field"><span>Código de invitación</span><input id="r96-invite-code" autocomplete="one-time-code" placeholder="R96-XXXXX-XXXXX"></label>
-        <div class="r96-actions"><button class="r96-primary" id="r96-redeem">Activar acceso</button></div>
+        <p class="r96-eyebrow">${invite?"Developer invitation":"Developer access"}</p>
+        <h1 class="r96-h2">${invite?"Activar acceso":"Entrar al panel"}</h1>
+        <p class="r96-desc">RISIN96AMES usa un acceso independiente de Mi espacio. Escribe el correo autorizado y el código R96 correspondiente.</p>
+        <div class="r96-form-grid">
+          <label class="r96-field r96-wide"><span>Correo</span><input id="r96-access-email" type="email" autocomplete="email" placeholder="tu@correo.com"></label>
+          <label class="r96-field r96-wide"><span>Código R96</span><input id="r96-access-code" autocomplete="one-time-code" placeholder="R96-XXXXX-XXXXX"></label>
+        </div>
+        <div class="r96-actions"><button class="r96-primary" id="r96-access-enter">${invite?"Activar y entrar":"Entrar"}</button></div>
         <p id="r96-dev-message" class="r96-form-message"></p>
       </div>
     </div></section>`;
-    main.querySelector("#r96-dev-back")?.addEventListener("click",()=>{cleanAuthQuery();location.reload()});
-    main.querySelector("#r96-redeem")?.addEventListener("click",async()=>{
-      const code=main.querySelector("#r96-invite-code")?.value||"";
-      if(!code.trim()){showNotice("Escribe el código de invitación.","error");return;}
-      showNotice("Validando código...");
+
+    main.querySelector("#r96-dev-back")?.addEventListener("click",()=>{cleanAuthQuery();location.href=currentBaseUrl();});
+    main.querySelector("#r96-access-enter")?.addEventListener("click",async()=>{
+      const email=main.querySelector("#r96-access-email")?.value||"";
+      const code=main.querySelector("#r96-access-code")?.value||"";
+      if(!email.trim()||!code.trim()){showNotice("Escribe el correo y el código R96.","error");return;}
+      showNotice("Validando acceso...");
       try{
-        await uiApi("developer.invite.redeem",{code});
+        const result=await accessApi({email,code});
+        if(!result.sessionToken) throw new Error("NO_SESSION_TOKEN");
+        localStorage.setItem(SESSION_KEY,result.sessionToken);
         cleanAuthQuery();
         await openDeveloperWorkspace();
       }catch(e){
         const map={
-          R96_INVITE_EMAIL_MISMATCH:"Este código fue creado para otro correo electrónico.",
-          R96_INVITE_CODE_USED_OR_INVALID:"El código no existe, ya fue utilizado o fue revocado.",
-          R96_INVITE_CODE_EXPIRED:"El código expiró. Solicita una nueva invitación.",
+          LOGIN_EMAIL_REQUIRED:"Escribe un correo válido.",
+          R96_INVITE_EMAIL_MISMATCH:"Ese código pertenece a otro correo.",
+          R96_INVITE_CODE_USED_OR_INVALID:"El código no existe o ya fue utilizado.",
+          R96_INVITE_CODE_EXPIRED:"El código expiró. Solicita uno nuevo.",
           R96_INVITE_CODE_INVALID:"El formato del código no es válido."
         };
-        showNotice(map[e.message]||"No se pudo activar el acceso: "+e.message,"error");
+        showNotice(map[e.message]||"No se pudo validar el acceso: "+e.message,"error");
       }
     });
     root.scrollTo({top:0,behavior:"smooth"});
@@ -345,7 +330,7 @@
 
   async function openDeveloperWorkspace(){
     if(!sessionToken()){
-      location.href=developerLoginUrl(params().get("r96invite")==="1");
+      renderDeveloperLogin({invite:params().get("r96invite")==="1"});
       return;
     }
     try{
@@ -356,16 +341,12 @@
       cleanAuthQuery();
       root.scrollTo({top:0,behavior:"smooth"});
     }catch(e){
-      if(e.message==="R96_DEVELOPER_REQUIRED"){
-        if(params().get("r96invite")==="1"){renderInviteRedeem();return;}
-        const main=root.querySelector("main");
-        main.innerHTML=`<section class="r96-band r96-games r96-dev-page"><div class="r96-inner r96-dev-narrow"><button class="r96-secondary" id="r96-dev-back">← Volver</button><div class="r96-panel r96-dev-auth"><p class="r96-eyebrow">Restricted developer area</p><h1 class="r96-h2">Necesitas una invitación</h1><p class="r96-desc">El Panel de desarrollador no está abierto al público. Usa el enlace y código de un solo uso que te envíe un desarrollador autorizado.</p><div class="r96-actions"><button class="r96-primary" id="r96-have-code">Tengo un código</button></div></div></div></section>`;
-        main.querySelector("#r96-dev-back")?.addEventListener("click",()=>location.href=currentBaseUrl());
-        main.querySelector("#r96-have-code")?.addEventListener("click",()=>{const u=new URL(location.href);u.searchParams.set("r96invite","1");history.replaceState({},document.title,u.pathname+u.search);renderInviteRedeem();});
+      if(["AUTH_REQUIRED","SESSION_EXPIRED","R96_DEVELOPER_REQUIRED"].includes(e.message)){
+        localStorage.removeItem(SESSION_KEY);
+        renderDeveloperLogin({invite:params().get("r96invite")==="1"});
         return;
       }
-      if(["AUTH_REQUIRED","SESSION_EXPIRED"].includes(e.message)){location.href=developerLoginUrl(params().get("r96invite")==="1");return;}
-      alert("No se pudo abrir el Panel de desarrollador: "+e.message);
+      alert("No se pudo abrir el entorno de desarrollador: "+e.message);
     }
   }
 
@@ -390,35 +371,21 @@
   };
 
   const load=async()=>{
-    root.innerHTML=shell();bindPublic();
+    root.innerHTML=shell();
+    bindPublic();
     try{
       const data=await publicApi("games.list");
       const games=Array.isArray(data?.games)?data.games:[];
       root.querySelector("#r96-games-count").textContent=String(games.length);
       root.querySelector("#r96-games-grid").innerHTML=games.length?games.map(card).join(""):emptyCard();
-    }catch(e){root.querySelector("#r96-games-grid").innerHTML=emptyCard();}
-
-    // While Wix is showing/finishing the R96 login, the page code owns the flow.
-    // Do not redirect again from the embed or an invitation would loop forever.
-    if(params().get("r96auth")==="1") return;
-
-    const developerIntent=params().get("r96dev")==="1"||params().get("r96invite")==="1";
-    if(developerIntent){
-      const ready=await exchangeBoot();
-      if(ready){
-        await openDeveloperWorkspace();
-        return;
-      }
-      if(params().get("r96e")){
-        cleanAuthQuery({keepInvite:false});
-        alert("No se pudo iniciar la sesión de desarrollador. Intenta abrir el panel de desarrollador nuevamente.");
-        return;
-      }
-      location.href=developerLoginUrl(params().get("r96invite")==="1");
-      return;
+    }catch(e){
+      root.querySelector("#r96-games-grid").innerHTML=emptyCard();
     }
 
-    await exchangeBoot();
+    if(params().get("r96dev")==="1"||params().get("r96invite")==="1"){
+      await openDeveloperWorkspace();
+    }
   };
+
   load();
 })();
