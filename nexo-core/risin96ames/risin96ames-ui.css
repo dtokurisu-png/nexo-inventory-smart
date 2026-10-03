@@ -1,6 +1,6 @@
 :host{all:initial}
 #r96-app{--bg:#070912;--band-1:#070912;--band-2:#0a1020;--band-3:#080b16;--band-4:#0d1021;--panel:rgba(255,255,255,.06);--panel-strong:rgba(255,255,255,.10);--text:#f4f7ff;--muted:#a9b3c7;--line:rgba(255,255,255,.12);--accent:#00ffdf;--accent-2:#8d5cff;--warning:#ffd166;--shadow:0 24px 80px rgba(0,0,0,.45);--radius-xl:28px;--radius-lg:20px;--radius-md:14px;--page-pad:clamp(18px,4vw,72px);--max-width:1540px;position:fixed;inset:0;z-index:2147483000;overflow:auto;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#r96-app[data-theme="light"]{--bg:#ffffff;--band-1:#ffffff;--band-2:#f2fbfc;--band-3:#ffffff;--band-4:#f7f3ff;--panel:rgba(17,109,120,.055);--panel-strong:rgba(17,109,120,.10);--text:#0b5963;--muted:#3c7580;--line:rgba(13,89,99,.16);--accent:#00cdb7;--accent-2:#8d5cff;--warning:#a86800;--shadow:0 24px 80px rgba(21,78,91,.14)}
+#r96-app[data-theme="light"]{--bg:#f4ecff;--band-1:#f7f1ff;--band-2:#eee2ff;--band-3:#f8f2ff;--band-4:#eadcff;--panel:rgba(74,46,116,.075);--panel-strong:rgba(74,46,116,.13);--text:#163f48;--muted:#3f6870;--line:rgba(86,57,133,.20);--accent:#008f91;--accent-2:#7d4fc2;--warning:#8f5a00;--shadow:0 24px 80px rgba(82,48,126,.18)}
 #r96-app *{box-sizing:border-box}
 #r96-app a{color:inherit;text-decoration:none}
 #r96-app button,#r96-app input,#r96-app select,#r96-app textarea{font:inherit}
@@ -89,3 +89,42 @@
 .r96-menu-profile strong{color:var(--text);font-size:.95rem}
 .r96-menu-profile small{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em}
 @media(max-width:720px){.r96-login-button{padding:0 12px}.r96-profile-chip{max-width:130px}.r96-icon-button{width:38px;height:38px;min-width:38px}}
+
+/* R96 v12 light palette + fixed theme control */
+.r96-nav{position:relative;padding-right:78px}
+.r96-icon-button{position:absolute;top:14px;right:16px;z-index:50;width:44px;height:44px;min-width:44px;background:color-mix(in srgb,var(--panel) 88%,transparent);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.14)}
+#r96-app[data-theme="light"]{background:
+  radial-gradient(circle at 14% 8%,rgba(118,75,186,.20),transparent 30rem),
+  radial-gradient(circle at 86% 6%,rgba(0,143,145,.12),transparent 26rem),
+  linear-gradient(145deg,#f7f1ff 0%,#efe4ff 46%,#f8f3ff 100%)}
+#r96-app[data-theme="light"] .r96-header{background:rgba(244,236,255,.88);border-bottom-color:rgba(86,57,133,.18)}
+#r96-app[data-theme="light"] .r96-hero{background:
+  radial-gradient(circle at 10% 14%,rgba(0,143,145,.16),transparent 30rem),
+  radial-gradient(circle at 90% 12%,rgba(125,79,194,.26),transparent 34rem),
+  linear-gradient(135deg,#f8f3ff 0%,#ecddff 58%,#f5edff 100%)}
+#r96-app[data-theme="light"] .r96-games{background:
+  linear-gradient(105deg,rgba(0,143,145,.09),transparent 30%,rgba(125,79,194,.16)),
+  linear-gradient(180deg,#efe4ff,#f5efff)}
+#r96-app[data-theme="light"] .r96-reviews{background:
+  radial-gradient(circle at 18% 22%,rgba(125,79,194,.20),transparent 30rem),
+  linear-gradient(180deg,#f8f3ff,#eee3ff)}
+#r96-app[data-theme="light"] .r96-community{background:
+  linear-gradient(135deg,rgba(0,143,145,.10),rgba(125,79,194,.18)),
+  #efe3ff}
+#r96-app[data-theme="light"] .r96-card,
+#r96-app[data-theme="light"] .r96-panel,
+#r96-app[data-theme="light"] .r96-menu-panel,
+#r96-app[data-theme="light"] .r96-profile-chip,
+#r96-app[data-theme="light"] .r96-secondary,
+#r96-app[data-theme="light"] .r96-stats{background:rgba(255,255,255,.46);border-color:rgba(86,57,133,.18)}
+#r96-app[data-theme="light"] .r96-footer{background:linear-gradient(135deg,#e8d8ff,#f4ecff);color:var(--muted);border-color:var(--line)}
+#r96-app[data-theme="light"] .r96-primary{color:#153f47;background:linear-gradient(135deg,#b8f2ee,#f5eeff);box-shadow:0 0 24px rgba(0,143,145,.15)}
+#r96-app[data-theme="light"] .r96-eyebrow,
+#r96-app[data-theme="light"] .r96-status,
+#r96-app[data-theme="light"] .r96-stats strong{color:#007f82}
+#r96-app[data-theme="light"] .r96-thumb{background:linear-gradient(135deg,rgba(0,143,145,.14),rgba(125,79,194,.18)),#efe4ff}
+#r96-app[data-theme="light"] .r96-field input,
+#r96-app[data-theme="light"] .r96-field select,
+#r96-app[data-theme="light"] .r96-field textarea{background:rgba(255,255,255,.58);color:#163f48;border-color:rgba(86,57,133,.18)}
+@media(max-width:1080px){.r96-nav{padding-right:72px}.r96-icon-button{top:14px;right:14px}}
+@media(max-width:720px){.r96-icon-button{top:12px;right:12px;width:40px;height:40px;min-width:40px}}
