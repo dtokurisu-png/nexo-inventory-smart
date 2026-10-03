@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-11";
+  const REV="r96-wix-shell-20261003-12";
   const SESSION_KEY="r96-developer-session-v2";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -472,7 +472,6 @@
     await renderPublicSurface();
 
     if(params().get("r96login")==="1"){
-      renderDeveloperLogin({invite:params().get("r96invite")==="1",waiting:true});
       const bridge=await waitForLoginBridge();
       if(bridge.error){
         const errors={
