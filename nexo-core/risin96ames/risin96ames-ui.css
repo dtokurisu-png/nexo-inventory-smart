@@ -77,3 +77,15 @@
 #r96-app[data-theme="light"] .r96-primary{color:#0b5963;background:linear-gradient(135deg,#bffcf2,#ffffff);box-shadow:0 0 24px rgba(0,205,183,.16)}
 #r96-app[data-theme="light"] .r96-mark{color:#ffffff}
 #r96-app[data-theme="light"] .r96-band{border-bottom-color:rgba(13,89,99,.10)}
+
+/* R96 auth + global theme controls */
+#r96-app [hidden]{display:none!important}
+.r96-icon-button{width:42px;height:42px;min-width:42px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);display:grid;place-items:center;cursor:pointer;font-size:1.08rem;line-height:1}
+.r96-login-button{min-height:42px;padding:0 16px;white-space:nowrap}
+.r96-profile-chip{min-height:42px;max-width:190px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-weight:850;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.r96-nav-link{border:0;background:transparent;color:var(--muted);padding:0;cursor:pointer;font-weight:700}
+.r96-nav-link:hover{color:var(--text)}
+.r96-menu-profile{display:grid;gap:3px;padding:10px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.r96-menu-profile strong{color:var(--text);font-size:.95rem}
+.r96-menu-profile small{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em}
+@media(max-width:720px){.r96-login-button{padding:0 12px}.r96-profile-chip{max-width:130px}.r96-icon-button{width:38px;height:38px;min-width:38px}}
