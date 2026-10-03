@@ -1,6 +1,8 @@
 (() => {
-  const REV="r96-wix-shell-20261003-13";
-  const SESSION_KEY="r96-developer-session-v2";
+  const REV="r96-auth-clean-20261003-20";
+  const SESSION_KEY="r96-developer-session-v3";
+  localStorage.removeItem("r96-developer-session");
+  localStorage.removeItem("r96-developer-session-v2");
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
     const og=document.querySelector('meta[property="og:title"]')?.getAttribute("content")||"";
@@ -57,20 +59,19 @@
   const currentBaseUrl=()=>location.origin+location.pathname;
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96auth","r96surface","r96ReturnPath","r96invite","r96login","r96code"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","r96dev","r96auth","r96code","r96ReturnPath"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
-
-  const loginUrl=(code="")=>{
+  const requestWixAccess=(code="")=>{
     const u=new URL(location.href);
-    u.searchParams.set("r96login","1");
     u.searchParams.delete("r96b");
     u.searchParams.delete("r96e");
+    u.searchParams.delete("r96dev");
+    u.searchParams.set("r96auth","1");
     if(code)u.searchParams.set("r96code",code);
     else u.searchParams.delete("r96code");
-    return u.toString();
+    location.assign(u.toString());
   };
-  const beginWixLogin=(code="")=>location.assign(loginUrl(code));
   const exchangeBoot=async(bootToken)=>{
     const res=await fetch(functionUrl("risin96amesUi"),{
       method:"POST",
@@ -81,30 +82,6 @@
     if(!res.ok||data.ok===false) throw new Error(data.error||"R96_BOOT_FAILED");
     return data;
   };
-  const waitForLoginBridge=()=>new Promise((resolve)=>{
-    let tries=0;
-    const timer=setInterval(()=>{
-      tries+=1;
-      const q=params();
-      const boot=q.get("r96b");
-      const error=q.get("r96e");
-      if(boot||error||tries>600){
-        clearInterval(timer);
-        resolve({boot,error:error||(!boot&&tries>600?"R96_LOGIN_TIMEOUT":"")});
-      }
-    },200);
-  });
-
-  async function accessApi(input={}){
-    const res=await fetch(functionUrl("risin96amesUi"),{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action:"developer.access.redeem",input})
-    });
-    const data=await res.json().catch(()=>({}));
-    if(!res.ok||data.ok===false) throw new Error(data.error||"R96_ACCESS_FAILED");
-    return data.data??data;
-  }
 
   const shell=()=>`
     <header class="r96-header">
@@ -162,7 +139,7 @@
     box.dataset.type=type;
   };
 
-  const renderDeveloperLogin=({invite=false,waiting=false,error=""}={})=>{
+  const renderDeveloperLogin=({invite=false,error=""}={})=>{
     const main=root.querySelector("main");
     const code=params().get("r96code")||"";
     main.innerHTML=`<section class="r96-band r96-games r96-dev-page"><div class="r96-inner r96-dev-narrow">
@@ -170,8 +147,8 @@
       <div class="r96-panel r96-dev-auth">
         <p class="r96-eyebrow">${invite?"Invitación de desarrollador":"Acceso R96"}</p>
         <h1 class="r96-h2">${invite?"Aceptar invitación":"Iniciar sesión"}</h1>
-        <p class="r96-desc">${invite?"Inicia sesión con la cuenta de Google/Wix correspondiente al correo invitado. El código ya viene incluido en este enlace.":"Inicia sesión con tu cuenta de Google/Wix. El Panel de desarrollador solo aparecerá si esta cuenta está autorizada en RISIN96AMES."}</p>
-        <div class="r96-actions"><button class="r96-primary" id="r96-login-google">${waiting?"Completando acceso...":"Iniciar con Google"}</button></div>
+        <p class="r96-desc">${invite?"Inicia sesión con Google usando el mismo correo al que llegó la invitación. El código ya viene incluido en el enlace.":"Inicia sesión con Google. El Panel de desarrollador solo se habilita para cuentas R96 autorizadas."}</p>
+        <div class="r96-actions"><button class="r96-primary" id="r96-login-google">Iniciar con Google</button></div>
         <p id="r96-dev-message" class="r96-form-message" data-type="${error?"error":""}">${esc(error)}</p>
       </div>
     </div></section>`;
@@ -180,10 +157,7 @@
       cleanAuthQuery();
       await renderPublicSurface({skipInvite:true});
     });
-    main.querySelector("#r96-login-google")?.addEventListener("click",()=>{
-      if(waiting)return;
-      beginWixLogin(invite?code:"");
-    });
+    main.querySelector("#r96-login-google")?.addEventListener("click",()=>requestWixAccess(invite?code:""));
     root.scrollTo({top:0,behavior:"smooth"});
   };
 
@@ -255,7 +229,7 @@
   const invitePanel=(data)=>`<div class="r96-dev-grid">
     <section class="r96-panel r96-dev-main">
       <p class="r96-eyebrow">One-time access</p><h3 class="r96-h3">Invitar desarrollador</h3>
-      <p class="r96-desc">La invitación queda vinculada al correo indicado. La persona abre el enlace, inicia sesión con ese mismo correo y pega el código de un solo uso.</p>
+      <p class="r96-desc">La invitación queda vinculada al correo indicado. El enlace incluye el código de un solo uso y solo se activa después de iniciar sesión con Google usando ese mismo correo.</p>
       <label class="r96-field"><span>Correo del desarrollador</span><input id="r96-invite-email" type="email" placeholder="persona@correo.com"></label>
       <div class="r96-actions"><button class="r96-primary" id="r96-create-invite">Generar invitación</button></div>
       <p id="r96-dev-message" class="r96-form-message"></p>
@@ -284,7 +258,6 @@
   }
 
   function bindWorkspace(data,initialTab="games"){
-    data.__initialTab=initialTab;
     const content=root.querySelector("#r96-dev-content");
     const setTab=(tab)=>{
       root.querySelectorAll(".r96-dev-tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));
@@ -336,12 +309,12 @@
           const result=await uiApi("developer.invite.create",{input:{email}});
           const code=result.code;
           const inviteUrl=new URL(location.href);
-          ["r96b","r96s","r96e","r96dev","r96auth","r96login"].forEach(k=>inviteUrl.searchParams.delete(k));
+          ["r96b","r96s","r96e","r96dev","r96auth"].forEach(k=>inviteUrl.searchParams.delete(k));
           inviteUrl.hash="";
           inviteUrl.searchParams.set("r96invite","1");
           inviteUrl.searchParams.set("r96code",code);
           const link=inviteUrl.toString();
-          const message=`Únete a RISIN96AMES como desarrollador.\n\nAbre este enlace: ${link}\n\nCódigo de un solo uso: ${code}\n\nInicia sesión con ${result.invite.inviteeEmail} y pega el código para activar tu acceso.`;
+          const message=`Únete a RISIN96AMES como desarrollador.\n\nAbre este enlace: ${link}\n\nInicia sesión con Google usando ${result.invite.inviteeEmail}. El código de un solo uso ya viene incluido en el enlace.`;
           const out=content.querySelector("#r96-invite-result");
           out.innerHTML=`<div class="r96-invite-card"><strong>Invitación creada</strong><div><span>Enlace</span><code>${esc(link)}</code></div><div><span>Código de un solo uso</span><code class="r96-code">${esc(code)}</code></div><button class="r96-secondary" id="r96-copy-invite">Copiar mensaje</button></div>`;
           out.querySelector("#r96-copy-invite")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(message);showNotice("Mensaje copiado.","ok");}catch(_){showNotice("No se pudo copiar automáticamente.","error");}});
@@ -353,7 +326,7 @@
 
     root.querySelectorAll(".r96-dev-tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
     root.querySelector("#r96-public-home")?.addEventListener("click",async()=>{cleanAuthQuery();await renderPublicSurface({skipInvite:true});});
-    setTab(data.__initialTab||"games");
+    setTab(initialTab);
   }
 
   async function openDeveloperWorkspace(initialTab="games"){
@@ -381,26 +354,28 @@
   let authorizedDeveloper=null;
 
   const setThemeButton=()=>{
-    const b=root.querySelector("#r96-theme-toggle");
-    if(b)b.textContent=root.dataset.theme==="dark"?"☀️":"🌙";
+    const button=root.querySelector("#r96-theme-toggle");
+    if(button)button.textContent=root.dataset.theme==="dark"?"☀️":"🌙";
   };
 
   const applyGuestUi=()=>{
     authorizedDeveloper=null;
-    ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-menu-invite","#r96-profile-chip","#r96-menu-profile"].forEach(sel=>{
-      const el=root.querySelector(sel);if(el)el.hidden=true;
+    ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-menu-invite","#r96-profile-chip","#r96-menu-profile"].forEach((selector)=>{
+      const el=root.querySelector(selector);
+      if(el)el.hidden=true;
     });
     const login=root.querySelector("#r96-login");if(login)login.hidden=false;
-    const hero=root.querySelector("#r96-hero-login");if(hero)hero.hidden=false;
+    const heroLogin=root.querySelector("#r96-hero-login");if(heroLogin)heroLogin.hidden=false;
   };
 
   const applyDeveloperUi=(data)=>{
     authorizedDeveloper=data;
-    ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-menu-invite","#r96-profile-chip","#r96-menu-profile"].forEach(sel=>{
-      const el=root.querySelector(sel);if(el)el.hidden=false;
+    ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-menu-invite","#r96-profile-chip","#r96-menu-profile"].forEach((selector)=>{
+      const el=root.querySelector(selector);
+      if(el)el.hidden=false;
     });
     const login=root.querySelector("#r96-login");if(login)login.hidden=true;
-    const hero=root.querySelector("#r96-hero-login");if(hero)hero.hidden=true;
+    const heroLogin=root.querySelector("#r96-hero-login");if(heroLogin)heroLogin.hidden=true;
     const name=data?.developer?.displayName||"Desarrollador";
     const role=data?.developer?.roleKey||"developer";
     const chip=root.querySelector("#r96-profile-chip");if(chip)chip.textContent=name;
@@ -433,7 +408,7 @@
       localStorage.setItem("risin96ames-theme",next);
       setThemeButton();
     });
-    ["#r96-login","#r96-hero-login"].forEach(sel=>root.querySelector(sel)?.addEventListener("click",()=>beginWixLogin("")));
+    ["#r96-login","#r96-hero-login"].forEach(sel=>root.querySelector(sel)?.addEventListener("click",()=>requestWixAccess("")));
     ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-profile-chip"].forEach(sel=>root.querySelector(sel)?.addEventListener("click",(ev)=>{ev.preventDefault();openDeveloperWorkspace()}));
     root.querySelector("#r96-menu-invite")?.addEventListener("click",()=>openDeveloperWorkspace("invites"));
     root.addEventListener("click",async(ev)=>{
@@ -453,6 +428,7 @@
     root.innerHTML=shell();
     bindPublic();
     applyGuestUi();
+
     try{
       const data=await publicApi("games.list");
       const games=Array.isArray(data?.games)?data.games:[];
@@ -461,62 +437,87 @@
     }catch(e){
       root.querySelector("#r96-games-grid").innerHTML=emptyCard();
     }
+
     await refreshAuthorization();
 
-    if(!skipInvite && params().get("r96invite")==="1" && !sessionToken()){
+    if(!skipInvite && params().get("r96invite")==="1" && !sessionToken() && params().get("r96auth")!=="1"){
       renderDeveloperLogin({invite:true});
     }
+  };
+
+  const authErrorMessage=(code)=>{
+    const map={
+      R96_DEVELOPER_REQUIRED:"Esta cuenta no tiene acceso al Panel de desarrollador.",
+      R96_INVITE_EMAIL_MISMATCH:"La cuenta de Google no coincide con el correo invitado.",
+      R96_INVITE_CODE_USED_OR_INVALID:"La invitación no existe o ya fue utilizada.",
+      R96_INVITE_CODE_EXPIRED:"La invitación expiró. Solicita una nueva.",
+      R96_INVITE_CODE_INVALID:"El código de invitación no es válido.",
+      AUTH_REQUIRED:"No se pudo iniciar la sesión de Wix."
+    };
+    return map[code]||("No se pudo iniciar sesión: "+code);
+  };
+
+  const consumeAuthResult=async()=>{
+    const q=params();
+    const error=q.get("r96e");
+    if(error){
+      const invite=q.get("r96invite")==="1";
+      const message=authErrorMessage(error);
+      cleanAuthQuery();
+      await renderPublicSurface({skipInvite:true});
+      renderDeveloperLogin({invite,error:message});
+      return true;
+    }
+
+    const boot=q.get("r96b");
+    if(!boot)return false;
+
+    try{
+      const result=await exchangeBoot(boot);
+      if(!result.sessionToken)throw new Error("NO_SESSION_TOKEN");
+      localStorage.setItem(SESSION_KEY,result.sessionToken);
+      cleanAuthQuery();
+      await renderPublicSurface({skipInvite:true});
+      await openDeveloperWorkspace();
+    }catch(e){
+      cleanAuthQuery();
+      await renderPublicSurface({skipInvite:true});
+      renderDeveloperLogin({error:"No se pudo completar la sesión R96: "+e.message});
+    }
+    return true;
+  };
+
+  const watchAuthBridge=()=>{
+    let attempts=0;
+    const timer=setInterval(async()=>{
+      attempts+=1;
+      if(params().get("r96b")||params().get("r96e")){
+        clearInterval(timer);
+        await consumeAuthResult();
+        return;
+      }
+      if(params().get("r96auth")!=="1"||attempts>=480){
+        clearInterval(timer);
+      }
+    },250);
   };
 
   const load=async()=>{
     await renderPublicSurface();
 
-    if(params().get("r96login")==="1"){
-      const bridge=await waitForLoginBridge();
-      if(bridge.error){
-        const errors={
-          R96_DEVELOPER_REQUIRED:"Esta cuenta no tiene acceso al Panel de desarrollador.",
-          R96_INVITE_EMAIL_MISMATCH:"La cuenta de Google/Wix no coincide con el correo invitado.",
-          R96_INVITE_CODE_USED_OR_INVALID:"La invitación no existe o ya fue utilizada.",
-          R96_INVITE_CODE_EXPIRED:"La invitación expiró. Solicita una nueva."
-        };
-        const message=errors[bridge.error]||("No se pudo iniciar sesión: "+bridge.error);
-        cleanAuthQuery();
-        await renderPublicSurface({skipInvite:true});
-        renderDeveloperLogin({error:message});
-        return;
-      }
-      if(bridge.boot){
-        try{
-          const result=await exchangeBoot(bridge.boot);
-          if(!result.sessionToken)throw new Error("NO_SESSION_TOKEN");
-          localStorage.setItem(SESSION_KEY,result.sessionToken);
-          cleanAuthQuery();
-          await renderPublicSurface({skipInvite:true});
-          await openDeveloperWorkspace();
-          return;
-        }catch(e){
-          cleanAuthQuery();
-          await renderPublicSurface({skipInvite:true});
-          renderDeveloperLogin({error:"No se pudo completar el acceso: "+e.message});
-          return;
-        }
-      }
-    }
+    if(await consumeAuthResult())return;
 
-    const boot=params().get("r96b");
-    if(boot){
-      try{
-        const result=await exchangeBoot(boot);
-        if(result.sessionToken)localStorage.setItem(SESSION_KEY,result.sessionToken);
-        cleanAuthQuery();
-        await renderPublicSurface({skipInvite:true});
-      }catch(_){}
+    if(params().get("r96auth")==="1"){
+      watchAuthBridge();
+      return;
     }
 
     if(params().get("r96dev")==="1" && sessionToken()){
       await openDeveloperWorkspace();
-    }else if(params().get("r96invite")==="1" && !sessionToken()){
+      return;
+    }
+
+    if(params().get("r96invite")==="1" && !sessionToken()){
       renderDeveloperLogin({invite:true});
     }
   };
