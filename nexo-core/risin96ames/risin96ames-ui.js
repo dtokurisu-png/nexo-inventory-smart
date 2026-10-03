@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-5";
+  const REV="r96-wix-shell-20261003-6";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -48,7 +48,11 @@
   };
   const currentBaseUrl=()=>location.origin+location.pathname;
   const developerLoginUrl=(invite=false)=>{
-    const u=new URL("/blank-8",location.origin);
+    // Keep the Wix free-site prefix (for example /my-site-1/).
+    // Using origin + /blank-8 drops that prefix and produces a 404.
+    const u=new URL("./blank-8",location.href);
+    u.hash="";
+    u.search="";
     u.searchParams.set("r96Auth","1");
     u.searchParams.set("r96ReturnPath",location.pathname);
     if(invite)u.searchParams.set("r96invite","1");
