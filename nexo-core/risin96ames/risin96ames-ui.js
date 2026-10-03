@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-3";
+  const REV="r96-wix-shell-20261003-4";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -64,6 +64,7 @@
     const boot=params().get("r96b");
     if(!boot)return Boolean(sessionToken());
     try{
+      const keepInvite=params().get("r96invite")==="1";
       const res=await fetch("/_functions/risin96amesUi",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({action:"exchange",bootToken:boot})
@@ -72,12 +73,40 @@
       if(!res.ok||data.ok===false) throw new Error(data.error||"BOOT_FAILED");
       if(!data.sessionToken)throw new Error("NO_SESSION_TOKEN");
       sessionStorage.setItem(SESSION_KEY,data.sessionToken);
-      cleanAuthQuery({keepInvite:params().get("r96invite")==="1"});
+      cleanAuthQuery({keepInvite});
       return true;
     }catch(e){
       sessionStorage.removeItem(SESSION_KEY);
       return false;
     }
+  }
+
+  const sleep=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
+
+  async function waitForDeveloperSession(){
+    if(sessionToken()) return true;
+
+    // Do not keep redirecting to ?r96dev=1 while Wix is creating the boot token.
+    // The old behavior caused an endless reload/flicker loop.
+    root.style.display="none";
+    const deadline=Date.now()+60000;
+
+    while(Date.now()<deadline){
+      const error=params().get("r96e");
+      if(error){
+        root.style.display="";
+        return false;
+      }
+      if(params().get("r96b")){
+        const ok=await exchangeBoot();
+        root.style.display="";
+        return ok;
+      }
+      await sleep(250);
+    }
+
+    root.style.display="";
+    return Boolean(sessionToken());
   }
 
   const shell=()=>`
@@ -363,8 +392,22 @@
       root.querySelector("#r96-games-grid").innerHTML=games.length?games.map(card).join(""):emptyCard();
     }catch(e){root.querySelector("#r96-games-grid").innerHTML=emptyCard();}
 
+    const developerIntent=params().get("r96dev")==="1"||params().get("r96invite")==="1";
+    if(developerIntent){
+      const ready=await waitForDeveloperSession();
+      if(ready){
+        await openDeveloperWorkspace();
+        return;
+      }
+
+      // If Wix reported an auth/bootstrap error, return to the public shell instead
+      // of reloading forever.
+      cleanAuthQuery({keepInvite:false});
+      alert("No se pudo iniciar la sesión de desarrollador. Intenta abrir el Workspace nuevamente.");
+      return;
+    }
+
     await exchangeBoot();
-    if(params().get("r96dev")==="1"||params().get("r96invite")==="1")openDeveloperWorkspace();
   };
   load();
 })();
