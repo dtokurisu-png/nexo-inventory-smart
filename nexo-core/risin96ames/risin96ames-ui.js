@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-10";
+  const REV="r96-wix-shell-20261003-11";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -57,9 +57,43 @@
   const currentBaseUrl=()=>location.origin+location.pathname;
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96auth","r96surface","r96ReturnPath","r96invite"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","r96dev","r96auth","r96surface","r96ReturnPath","r96invite","r96login","r96code"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
+
+  const loginUrl=(code="")=>{
+    const u=new URL(location.href);
+    u.searchParams.set("r96login","1");
+    u.searchParams.delete("r96b");
+    u.searchParams.delete("r96e");
+    if(code)u.searchParams.set("r96code",code);
+    else u.searchParams.delete("r96code");
+    return u.toString();
+  };
+  const beginWixLogin=(code="")=>location.assign(loginUrl(code));
+  const exchangeBoot=async(bootToken)=>{
+    const res=await fetch(functionUrl("risin96amesUi"),{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"exchange",bootToken})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||data.ok===false) throw new Error(data.error||"R96_BOOT_FAILED");
+    return data;
+  };
+  const waitForLoginBridge=()=>new Promise((resolve)=>{
+    let tries=0;
+    const timer=setInterval(()=>{
+      tries+=1;
+      const q=params();
+      const boot=q.get("r96b");
+      const error=q.get("r96e");
+      if(boot||error||tries>600){
+        clearInterval(timer);
+        resolve({boot,error:error||(!boot&&tries>600?"R96_LOGIN_TIMEOUT":"")});
+      }
+    },200);
+  });
 
   async function accessApi(input={}){
     const res=await fetch(functionUrl("risin96amesUi"),{
@@ -79,16 +113,20 @@
           <div class="r96-menu-wrap">
             <button id="r96-menu" class="r96-menu" type="button" aria-label="Abrir menú"><span></span><span></span><span></span></button>
             <div id="r96-menu-panel" class="r96-menu-panel" hidden>
-              <button id="r96-theme" type="button">Cambiar tema</button>
+              <div id="r96-menu-profile" class="r96-menu-profile" hidden><strong id="r96-menu-name"></strong><small id="r96-menu-role"></small></div>
               <a href="#games">Explorar juegos</a>
-              <button id="r96-dev" type="button">Panel de desarrollador</button>
+              <button id="r96-dev" type="button" hidden>Panel de desarrollador</button>
+              <button id="r96-menu-invite" type="button" hidden>Invitar desarrollador</button>
             </div>
           </div>
           <a class="r96-brand" href="#home"><span class="r96-mark">R96</span><span class="r96-name">RISIN96AMES</span></a>
         </div>
         <div class="r96-nav-right">
-          <div class="r96-links"><a href="#games">Juegos</a><a href="#reviews">Reseñas</a><a href="#community">Comunidad</a><a href="#" id="r96-dev-link">Desarrollar</a></div>
+          <div class="r96-links"><a href="#games">Juegos</a><a href="#reviews">Reseñas</a><a href="#community">Comunidad</a><button class="r96-nav-link" id="r96-dev-link" type="button" hidden>Panel de desarrollador</button></div>
           <div class="r96-stats"><span>Juegos <strong id="r96-games-count">0</strong></span><span>Reseñas <strong id="r96-reviews-count">0</strong></span></div>
+          <button class="r96-icon-button" id="r96-theme-toggle" type="button" aria-label="Cambiar tema"></button>
+          <button class="r96-secondary r96-login-button" id="r96-login" type="button">Iniciar con Google</button>
+          <button class="r96-profile-chip" id="r96-profile-chip" type="button" hidden></button>
         </div>
       </nav>
     </header>
@@ -96,7 +134,7 @@
       <section class="r96-band r96-hero">
         <div class="r96-inner r96-hero-grid">
           <div class="r96-hero-copy"><p class="r96-eyebrow">Beta games in development</p><h1 class="r96-h1">Prueba betas jugables y ayuda a construir mejores juegos.</h1></div>
-          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a><button class="r96-secondary" id="r96-hero-dev">Panel de desarrollador</button></div></div>
+          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a><button class="r96-secondary" id="r96-hero-login">Iniciar con Google</button><button class="r96-secondary" id="r96-hero-dev" hidden>Panel de desarrollador</button></div></div>
         </div>
       </section>
       <section id="games" class="r96-band r96-games">
@@ -124,45 +162,27 @@
     box.dataset.type=type;
   };
 
-  const renderDeveloperLogin=({invite=false}={})=>{
+  const renderDeveloperLogin=({invite=false,waiting=false,error=""}={})=>{
     const main=root.querySelector("main");
+    const code=params().get("r96code")||"";
     main.innerHTML=`<section class="r96-band r96-games r96-dev-page"><div class="r96-inner r96-dev-narrow">
       <button class="r96-secondary" id="r96-dev-back">← Volver</button>
       <div class="r96-panel r96-dev-auth">
-        <p class="r96-eyebrow">${invite?"Developer invitation":"Developer access"}</p>
-        <h1 class="r96-h2">${invite?"Activar acceso":"Entrar al panel"}</h1>
-        <p class="r96-desc">RISIN96AMES usa un acceso independiente de Mi espacio. Escribe el correo autorizado y el código R96 correspondiente.</p>
-        <div class="r96-form-grid">
-          <label class="r96-field r96-wide"><span>Correo</span><input id="r96-access-email" type="email" autocomplete="email" placeholder="tu@correo.com"></label>
-          <label class="r96-field r96-wide"><span>Código R96</span><input id="r96-access-code" autocomplete="one-time-code" placeholder="R96-XXXXX-XXXXX"></label>
-        </div>
-        <div class="r96-actions"><button class="r96-primary" id="r96-access-enter">${invite?"Activar y entrar":"Entrar"}</button></div>
-        <p id="r96-dev-message" class="r96-form-message"></p>
+        <p class="r96-eyebrow">${invite?"Invitación de desarrollador":"Acceso R96"}</p>
+        <h1 class="r96-h2">${invite?"Aceptar invitación":"Iniciar sesión"}</h1>
+        <p class="r96-desc">${invite?"Inicia sesión con la cuenta de Google/Wix correspondiente al correo invitado. El código ya viene incluido en este enlace.":"Inicia sesión con tu cuenta de Google/Wix. El Panel de desarrollador solo aparecerá si esta cuenta está autorizada en RISIN96AMES."}</p>
+        <div class="r96-actions"><button class="r96-primary" id="r96-login-google">${waiting?"Completando acceso...":"Iniciar con Google"}</button></div>
+        <p id="r96-dev-message" class="r96-form-message" data-type="${error?"error":""}">${esc(error)}</p>
       </div>
     </div></section>`;
 
-    main.querySelector("#r96-dev-back")?.addEventListener("click",()=>{cleanAuthQuery();location.href=currentBaseUrl();});
-    main.querySelector("#r96-access-enter")?.addEventListener("click",async()=>{
-      const email=main.querySelector("#r96-access-email")?.value||"";
-      const code=main.querySelector("#r96-access-code")?.value||"";
-      if(!email.trim()||!code.trim()){showNotice("Escribe el correo y el código R96.","error");return;}
-      showNotice("Validando acceso...");
-      try{
-        const result=await accessApi({email,code});
-        if(!result.sessionToken) throw new Error("NO_SESSION_TOKEN");
-        localStorage.setItem(SESSION_KEY,result.sessionToken);
-        cleanAuthQuery();
-        await openDeveloperWorkspace();
-      }catch(e){
-        const map={
-          LOGIN_EMAIL_REQUIRED:"Escribe un correo válido.",
-          R96_INVITE_EMAIL_MISMATCH:"Ese código pertenece a otro correo.",
-          R96_INVITE_CODE_USED_OR_INVALID:"El código no existe o ya fue utilizado.",
-          R96_INVITE_CODE_EXPIRED:"El código expiró. Solicita uno nuevo.",
-          R96_INVITE_CODE_INVALID:"El formato del código no es válido."
-        };
-        showNotice(map[e.message]||"No se pudo validar el acceso: "+e.message,"error");
-      }
+    main.querySelector("#r96-dev-back")?.addEventListener("click",async()=>{
+      cleanAuthQuery();
+      await renderPublicSurface({skipInvite:true});
+    });
+    main.querySelector("#r96-login-google")?.addEventListener("click",()=>{
+      if(waiting)return;
+      beginWixLogin(invite?code:"");
     });
     root.scrollTo({top:0,behavior:"smooth"});
   };
@@ -178,7 +198,6 @@
             <p class="r96-desc">Acceso: <strong>${esc(data.developer.roleKey||"developer")}</strong></p>
           </div>
           <div class="r96-dev-top-actions">
-            <button class="r96-secondary" id="r96-dev-theme">☀︎ / ☾</button>
             <button class="r96-secondary" id="r96-public-home">Ver plataforma pública</button>
           </div>
         </div>
@@ -264,7 +283,8 @@
     }catch(e){showNotice("No se pudieron cargar las reseñas: "+e.message,"error");}
   }
 
-  function bindWorkspace(data){
+  function bindWorkspace(data,initialTab="games"){
+    data.__initialTab=initialTab;
     const content=root.querySelector("#r96-dev-content");
     const setTab=(tab)=>{
       root.querySelectorAll(".r96-dev-tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));
@@ -314,8 +334,13 @@
         showNotice("Generando invitación...");
         try{
           const result=await uiApi("developer.invite.create",{input:{email}});
-          const link=currentBaseUrl()+"?r96invite=1";
           const code=result.code;
+          const inviteUrl=new URL(location.href);
+          ["r96b","r96s","r96e","r96dev","r96auth","r96login"].forEach(k=>inviteUrl.searchParams.delete(k));
+          inviteUrl.hash="";
+          inviteUrl.searchParams.set("r96invite","1");
+          inviteUrl.searchParams.set("r96code",code);
+          const link=inviteUrl.toString();
           const message=`Únete a RISIN96AMES como desarrollador.\n\nAbre este enlace: ${link}\n\nCódigo de un solo uso: ${code}\n\nInicia sesión con ${result.invite.inviteeEmail} y pega el código para activar tu acceso.`;
           const out=content.querySelector("#r96-invite-result");
           out.innerHTML=`<div class="r96-invite-card"><strong>Invitación creada</strong><div><span>Enlace</span><code>${esc(link)}</code></div><div><span>Código de un solo uso</span><code class="r96-code">${esc(code)}</code></div><button class="r96-secondary" id="r96-copy-invite">Copiar mensaje</button></div>`;
@@ -328,15 +353,10 @@
 
     root.querySelectorAll(".r96-dev-tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
     root.querySelector("#r96-public-home")?.addEventListener("click",()=>{cleanAuthQuery();location.href=currentBaseUrl();});
-    root.querySelector("#r96-dev-theme")?.addEventListener("click",()=>{
-      const next=root.dataset.theme==="dark"?"light":"dark";
-      root.dataset.theme=next;
-      localStorage.setItem("risin96ames-theme",next);
-    });
-    setTab("games");
+    setTab(data.__initialTab||"games");
   }
 
-  async function openDeveloperWorkspace(){
+  async function openDeveloperWorkspace(initialTab="games"){
     if(!sessionToken()){
       renderDeveloperLogin({invite:params().get("r96invite")==="1"});
       return;
@@ -345,7 +365,7 @@
       const data=await uiApi("developer.bootstrap");
       const main=root.querySelector("main");
       main.innerHTML=workspaceShell(data);
-      bindWorkspace(data);
+      bindWorkspace(data,initialTab);
       cleanAuthQuery();
       root.scrollTo({top:0,behavior:"smooth"});
     }catch(e){
@@ -358,29 +378,81 @@
     }
   }
 
+  let authorizedDeveloper=null;
+
+  const setThemeButton=()=>{
+    const b=root.querySelector("#r96-theme-toggle");
+    if(b)b.textContent=root.dataset.theme==="dark"?"☀️":"🌙";
+  };
+
+  const applyGuestUi=()=>{
+    authorizedDeveloper=null;
+    ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-menu-invite","#r96-profile-chip","#r96-menu-profile"].forEach(sel=>{
+      const el=root.querySelector(sel);if(el)el.hidden=true;
+    });
+    const login=root.querySelector("#r96-login");if(login)login.hidden=false;
+    const hero=root.querySelector("#r96-hero-login");if(hero)hero.hidden=false;
+  };
+
+  const applyDeveloperUi=(data)=>{
+    authorizedDeveloper=data;
+    ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-menu-invite","#r96-profile-chip","#r96-menu-profile"].forEach(sel=>{
+      const el=root.querySelector(sel);if(el)el.hidden=false;
+    });
+    const login=root.querySelector("#r96-login");if(login)login.hidden=true;
+    const hero=root.querySelector("#r96-hero-login");if(hero)hero.hidden=true;
+    const name=data?.developer?.displayName||"Desarrollador";
+    const role=data?.developer?.roleKey||"developer";
+    const chip=root.querySelector("#r96-profile-chip");if(chip)chip.textContent=name;
+    const menuName=root.querySelector("#r96-menu-name");if(menuName)menuName.textContent=name;
+    const menuRole=root.querySelector("#r96-menu-role");if(menuRole)menuRole.textContent=role;
+  };
+
+  const refreshAuthorization=async()=>{
+    if(!sessionToken()){applyGuestUi();return null;}
+    try{
+      const data=await uiApi("developer.bootstrap");
+      applyDeveloperUi(data);
+      return data;
+    }catch(e){
+      if(["AUTH_REQUIRED","SESSION_EXPIRED","R96_DEVELOPER_REQUIRED"].includes(e.message)){
+        localStorage.removeItem(SESSION_KEY);
+        applyGuestUi();
+        return null;
+      }
+      throw e;
+    }
+  };
+
   const bindPublic=()=>{
     const menu=root.querySelector("#r96-menu"),panel=root.querySelector("#r96-menu-panel");
     menu?.addEventListener("click",()=>{panel.hidden=!panel.hidden});
-    root.querySelector("#r96-theme")?.addEventListener("click",()=>{
+    root.querySelector("#r96-theme-toggle")?.addEventListener("click",()=>{
       const next=root.dataset.theme==="dark"?"light":"dark";
-      root.dataset.theme=next;localStorage.setItem("risin96ames-theme",next);
+      root.dataset.theme=next;
+      localStorage.setItem("risin96ames-theme",next);
+      setThemeButton();
     });
-    ["#r96-dev","#r96-dev-link","#r96-hero-dev"].forEach(sel=>root.querySelector(sel)?.addEventListener("click",(ev)=>{ev.preventDefault();openDeveloperWorkspace()}));
+    ["#r96-login","#r96-hero-login"].forEach(sel=>root.querySelector(sel)?.addEventListener("click",()=>beginWixLogin("")));
+    ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-profile-chip"].forEach(sel=>root.querySelector(sel)?.addEventListener("click",(ev)=>{ev.preventDefault();openDeveloperWorkspace()}));
+    root.querySelector("#r96-menu-invite")?.addEventListener("click",()=>openDeveloperWorkspace("invites"));
     root.addEventListener("click",async(ev)=>{
       const b=ev.target.closest("[data-r96-game]");if(!b)return;
       try{
         const data=await publicApi("game.get",{gameId:b.dataset.r96Game});
         const g=data.game,v=data.version||{};
         root.querySelector("main").innerHTML=`<section class="r96-band r96-games r96-detail"><div class="r96-inner"><div class="r96-back"><button id="r96-back" class="r96-secondary">← Volver a juegos</button></div><div class="r96-detail-grid"><article class="r96-panel"><p class="r96-eyebrow">${esc(g.status)}</p><h1 class="r96-h2">${esc(g.title)}</h1><p class="r96-desc">${esc(g.longDescription||g.shortDescription||"")}</p><div class="r96-actions">${v.runtimeUrl?`<a class="r96-primary" href="${esc(v.runtimeUrl)}">Jugar ahora</a>`:`<span class="r96-secondary">Build jugable pendiente</span>`}</div></article><aside class="r96-panel"><h3 class="r96-h3">Información</h3><p class="r96-desc"><strong>Género:</strong> ${esc(g.genre||"No especificado")}<br><strong>Versión:</strong> ${esc(v.version||"Pendiente")}<br><strong>Estado:</strong> ${esc(g.status)}</p></aside></div></div></section>`;
-        root.querySelector("#r96-back")?.addEventListener("click",()=>location.reload());
+        root.querySelector("#r96-back")?.addEventListener("click",()=>renderPublicSurface({skipInvite:true}));
         root.scrollTo({top:0,behavior:"smooth"});
       }catch(e){alert("No se pudo abrir este juego.");}
     });
+    setThemeButton();
   };
 
-  const load=async()=>{
+  const renderPublicSurface=async({skipInvite=false}={})=>{
     root.innerHTML=shell();
     bindPublic();
+    applyGuestUi();
     try{
       const data=await publicApi("games.list");
       const games=Array.isArray(data?.games)?data.games:[];
@@ -389,9 +461,64 @@
     }catch(e){
       root.querySelector("#r96-games-grid").innerHTML=emptyCard();
     }
+    await refreshAuthorization();
 
-    if(params().get("r96dev")==="1"||params().get("r96invite")==="1"){
+    if(!skipInvite && params().get("r96invite")==="1" && !sessionToken()){
+      renderDeveloperLogin({invite:true});
+    }
+  };
+
+  const load=async()=>{
+    await renderPublicSurface();
+
+    if(params().get("r96login")==="1"){
+      renderDeveloperLogin({invite:params().get("r96invite")==="1",waiting:true});
+      const bridge=await waitForLoginBridge();
+      if(bridge.error){
+        const errors={
+          R96_DEVELOPER_REQUIRED:"Esta cuenta no tiene acceso al Panel de desarrollador.",
+          R96_INVITE_EMAIL_MISMATCH:"La cuenta de Google/Wix no coincide con el correo invitado.",
+          R96_INVITE_CODE_USED_OR_INVALID:"La invitación no existe o ya fue utilizada.",
+          R96_INVITE_CODE_EXPIRED:"La invitación expiró. Solicita una nueva."
+        };
+        const message=errors[bridge.error]||("No se pudo iniciar sesión: "+bridge.error);
+        cleanAuthQuery();
+        await renderPublicSurface({skipInvite:true});
+        renderDeveloperLogin({error:message});
+        return;
+      }
+      if(bridge.boot){
+        try{
+          const result=await exchangeBoot(bridge.boot);
+          if(!result.sessionToken)throw new Error("NO_SESSION_TOKEN");
+          localStorage.setItem(SESSION_KEY,result.sessionToken);
+          cleanAuthQuery();
+          await renderPublicSurface({skipInvite:true});
+          await openDeveloperWorkspace();
+          return;
+        }catch(e){
+          cleanAuthQuery();
+          await renderPublicSurface({skipInvite:true});
+          renderDeveloperLogin({error:"No se pudo completar el acceso: "+e.message});
+          return;
+        }
+      }
+    }
+
+    const boot=params().get("r96b");
+    if(boot){
+      try{
+        const result=await exchangeBoot(boot);
+        if(result.sessionToken)localStorage.setItem(SESSION_KEY,result.sessionToken);
+        cleanAuthQuery();
+        await renderPublicSurface({skipInvite:true});
+      }catch(_){}
+    }
+
+    if(params().get("r96dev")==="1" && sessionToken()){
       await openDeveloperWorkspace();
+    }else if(params().get("r96invite")==="1" && !sessionToken()){
+      renderDeveloperLogin({invite:true});
     }
   };
 
