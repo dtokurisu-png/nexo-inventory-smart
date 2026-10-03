@@ -56,7 +56,6 @@
     }
     return data.data??data;
   };
-  const currentBaseUrl=()=>location.origin+location.pathname;
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
     ["r96b","r96s","r96e","r96dev","r96auth","r96code","r96ReturnPath"].forEach(k=>u.searchParams.delete(k));
@@ -351,15 +350,12 @@
     }
   }
 
-  let authorizedDeveloper=null;
-
   const setThemeButton=()=>{
     const button=root.querySelector("#r96-theme-toggle");
     if(button)button.textContent=root.dataset.theme==="dark"?"☀️":"🌙";
   };
 
   const applyGuestUi=()=>{
-    authorizedDeveloper=null;
     ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-menu-invite","#r96-profile-chip","#r96-menu-profile"].forEach((selector)=>{
       const el=root.querySelector(selector);
       if(el)el.hidden=true;
@@ -369,7 +365,6 @@
   };
 
   const applyDeveloperUi=(data)=>{
-    authorizedDeveloper=data;
     ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-menu-invite","#r96-profile-chip","#r96-menu-profile"].forEach((selector)=>{
       const el=root.querySelector(selector);
       if(el)el.hidden=false;
