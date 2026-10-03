@@ -1,6 +1,6 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=nexo-today-shift-20261002-66';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=nexo-schedule-saturday-week-20261003-67';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
@@ -14,7 +14,7 @@ function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null,workspaceTodaySchedule=null;
 let workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
-let scheduleWeekStart='',scheduleData=null,scheduleImportData=null,scheduleDebug=null,scheduleAnalysisBusy=false,scheduleDebugModal=null,scheduleResumeImportId='';
+let scheduleWeekStart='',scheduleWeekStartsOn='saturday',scheduleData=null,scheduleImportData=null,scheduleDebug=null,scheduleAnalysisBusy=false,scheduleDebugModal=null,scheduleResumeImportId='';
 const NEXO_THEME_KEY='nexoTheme:v1';
 const NEXO_LANGUAGE_KEY='nexoLanguage:v1';
 function storedTheme(){try{const v=localStorage.getItem(NEXO_THEME_KEY);return v==='night'?'night':'day'}catch(_){return'day'}}
@@ -1906,13 +1906,16 @@ function scheduleDateKey(d){
   if(Number.isNaN(x.getTime()))return'';
   return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')
 }
-function scheduleMonday(value){
-  const d=value?new Date(value+'T12:00:00'):new Date(),day=d.getDay()||7;
-  d.setDate(d.getDate()-day+1);
+function scheduleWeekStartKey(value,weekStartsOn=scheduleWeekStartsOn){
+  const d=value?new Date(value+'T12:00:00'):new Date();
+  const map={sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
+  const target=Object.prototype.hasOwnProperty.call(map,String(weekStartsOn||'').toLowerCase())?map[String(weekStartsOn||'').toLowerCase()]:6;
+  const delta=(d.getDay()-target+7)%7;
+  d.setDate(d.getDate()-delta);
   return scheduleDateKey(d)
 }
 function scheduleShiftWeek(days){
-  const base=new Date((scheduleWeekStart||scheduleMonday())+'T12:00:00');
+  const base=new Date((scheduleWeekStart||scheduleWeekStartKey())+'T12:00:00');
   base.setDate(base.getDate()+days);
   scheduleWeekStart=scheduleDateKey(base);
   scheduleData=null;scheduleImportData=null;scheduleDebug=null;
@@ -2154,7 +2157,7 @@ async function resumeScheduleImport(importId,weekStart){
   scheduleDebug={stage:'gpt',imageReady:true,sent:true,aiCompleted:false,scheduleCreated:false,providerStatus:'resuming',networkRetries:0,error:''};
   openScheduleDebugModal();renderScheduleData();renderScheduleDebugPanel();
   try{
-    await finishScheduleImportPolling(importId,weekStart||scheduleWeekStart||scheduleMonday())
+    await finishScheduleImportPolling(importId,weekStart||scheduleWeekStart||scheduleWeekStartKey())
   }catch(e){
     scheduleDebug={...(scheduleDebug||{}),error:e.message||String(e)};
     renderScheduleDebugPanel();toast(e.message||String(e))
@@ -2169,7 +2172,7 @@ async function processScheduleImage(file){
   const mime=String(file.type||'').toLowerCase();
   if(!['image/png','image/jpeg','image/webp'].includes(mime)){toast(ui('Usa una imagen PNG, JPG o WEBP','Use a PNG, JPG or WEBP image'));return}
   if(!file.size||file.size>20*1024*1024){toast(ui('La imagen debe pesar menos de 20 MB.','The image must be under 20 MB.'));return}
-  const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleMonday();
+  const week=document.getElementById('nxo-schedule-import-week')?.value||scheduleWeekStart||scheduleWeekStartKey();
   scheduleAnalysisBusy=true;scheduleImportData=null;scheduleDebug={stage:'image',imageReady:false,sent:false,aiCompleted:false,scheduleCreated:false,providerStatus:'',networkRetries:0,error:''};
   renderScheduleData();openScheduleDebugModal();
   try{
@@ -2199,20 +2202,21 @@ function renderScheduleData(){
     pendingNotice+renderScheduleGrid(d.shifts||[],d.weekStart);
   document.getElementById('nxo-schedule-prev')?.addEventListener('click',()=>scheduleShiftWeek(-7));
   document.getElementById('nxo-schedule-next')?.addEventListener('click',()=>scheduleShiftWeek(7));
-  document.getElementById('nxo-schedule-today')?.addEventListener('click',()=>{scheduleWeekStart=scheduleMonday();scheduleData=null;scheduleImportData=null;loadSchedule()});
+  document.getElementById('nxo-schedule-today')?.addEventListener('click',()=>{scheduleWeekStart=scheduleWeekStartKey(undefined,scheduleWeekStartsOn);scheduleData=null;scheduleImportData=null;loadSchedule()});
   document.getElementById('nxo-schedule-image-input')?.addEventListener('change',e=>{const file=e.target.files?.[0];e.target.value='';if(file)processScheduleImage(file)});
   if(publishReady)document.getElementById('nxo-schedule-publish')?.addEventListener('click',publishScheduleUi)
 }
 async function loadSchedule(){
   const zone=document.getElementById('nxo-schedule-zone');if(!zone||!workspace?.workspace?.id)return;
-  if(!scheduleWeekStart)scheduleWeekStart=scheduleMonday();
+  if(!scheduleWeekStart)scheduleWeekStart=scheduleWeekStartKey(undefined,scheduleWeekStartsOn);
   try{
     scheduleData=await api('schedule.bootstrap',{workspaceId:workspace.workspace.id,weekStart:scheduleWeekStart});
-    scheduleWeekStart=scheduleData?.weekStart||scheduleWeekStart;
+    scheduleWeekStartsOn=String(scheduleData?.settings?.weekStartsOn||'saturday').toLowerCase();
+    scheduleWeekStart=scheduleData?.weekStart||scheduleWeekStartKey(scheduleWeekStart||undefined,scheduleWeekStartsOn);
     renderScheduleData();
     const pending=scheduleData?.pendingImport;
     if(pending?.importId&&!scheduleAnalysisBusy){
-      const resumeWeek=pending.requestedWeekStart||scheduleWeekStart||scheduleMonday();
+      const resumeWeek=pending.requestedWeekStart||scheduleWeekStart||scheduleWeekStartKey();
       setTimeout(()=>resumeScheduleImport(pending.importId,resumeWeek),250)
     }
   }
