@@ -1,7 +1,12 @@
 (() => {
-  const REV="r96-wix-shell-20261003-1";
-  const PATH_KEY=location.pathname.toLowerCase().replace(/[^a-z0-9]/g,"");
-  if(!PATH_KEY.endsWith("risin96ames")) return;
+  const REV="r96-wix-shell-20261003-2";
+  const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const isTarget=()=>{
+    const og=document.querySelector('meta[property="og:title"]')?.getAttribute("content")||"";
+    const tw=document.querySelector('meta[name="twitter:title"]')?.getAttribute("content")||"";
+    return [location.pathname,document.title,og,tw].some(v=>norm(v).includes("risin96ames"));
+  };
+  if(!isTarget()) return;
   if(document.getElementById("r96-app")) return;
 
   const css=document.createElement("link");
