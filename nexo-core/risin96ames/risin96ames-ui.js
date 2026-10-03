@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-9";
+  const REV="r96-wix-shell-20261003-10";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -22,9 +22,17 @@
 
   const esc=(v)=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
   const params=()=>new URLSearchParams(location.search);
+  const functionBase=()=>{
+    const host=location.hostname.toLowerCase();
+    const freeHost=host.endsWith(".wixsite.com")||host.endsWith(".wixstudio.com");
+    if(!freeHost)return location.origin+"/_functions";
+    const first=location.pathname.split("/").filter(Boolean)[0]||"";
+    return first?location.origin+"/"+first+"/_functions":location.origin+"/_functions";
+  };
+  const functionUrl=(name)=>functionBase()+"/"+name;
   const sessionToken=()=>localStorage.getItem(SESSION_KEY)||"";
   const publicApi=async(action,payload={})=>{
-    const res=await fetch("/_functions/risin96amesPublic",{
+    const res=await fetch(functionUrl("risin96amesPublic"),{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({action,...payload})
     });
@@ -34,7 +42,7 @@
   };
   const uiApi=async(action,payload={})=>{
     const token=sessionToken();
-    const res=await fetch("/_functions/risin96amesUi",{
+    const res=await fetch(functionUrl("risin96amesUi"),{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({action,sessionToken:token,...payload})
     });
@@ -54,7 +62,7 @@
   };
 
   async function accessApi(input={}){
-    const res=await fetch("/_functions/risin96amesUi",{
+    const res=await fetch(functionUrl("risin96amesUi"),{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({action:"developer.access.redeem",input})
