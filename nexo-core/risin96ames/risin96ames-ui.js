@@ -1,10 +1,12 @@
 (() => {
-  const REV="r96-wix-shell-20261003-13";
+  const REV="r96-wix-shell-20261003-14";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
     const og=document.querySelector('meta[property="og:title"]')?.getAttribute("content")||"";
     const tw=document.querySelector('meta[name="twitter:title"]')?.getAttribute("content")||"";
+    const query=new URLSearchParams(location.search);
+    if(query.get("r96surface")==="risin96ames") return true;
     return [location.pathname,document.title,og,tw].some(v=>norm(v).includes("risin96ames"));
   };
   if(!isTarget()) return;
@@ -72,7 +74,7 @@
   };
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96auth","r96surface","r96ReturnPath","r96invite","r96owner"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","r96dev","r96auth","r96ReturnPath","r96invite","r96owner"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
 
