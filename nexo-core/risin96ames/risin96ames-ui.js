@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-7";
+  const REV="r96-wix-shell-20261003-8";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -397,6 +397,10 @@
       root.querySelector("#r96-games-count").textContent=String(games.length);
       root.querySelector("#r96-games-grid").innerHTML=games.length?games.map(card).join(""):emptyCard();
     }catch(e){root.querySelector("#r96-games-grid").innerHTML=emptyCard();}
+
+    // While Wix is showing/finishing the R96 login, the page code owns the flow.
+    // Do not redirect again from the embed or an invitation would loop forever.
+    if(params().get("r96auth")==="1") return;
 
     const developerIntent=params().get("r96dev")==="1"||params().get("r96invite")==="1";
     if(developerIntent){
