@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-10";
+  const REV="r96-wix-shell-20261003-11";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -55,11 +55,35 @@
     return data.data??data;
   };
   const currentBaseUrl=()=>location.origin+location.pathname;
+  const ownerLoginUrl=()=>{
+    const u=new URL(location.href);
+    u.hash="";
+    u.search="";
+    u.searchParams.set("r96owner","1");
+    u.searchParams.set("r96ReturnPath",location.pathname);
+    return u.toString();
+  };
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96auth","r96surface","r96ReturnPath","r96invite"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","r96dev","r96auth","r96surface","r96ReturnPath","r96invite","r96owner"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
+
+  async function exchangeOwnerBoot(){
+    const boot=params().get("r96b");
+    if(!boot) return Boolean(sessionToken());
+    const res=await fetch(functionUrl("risin96amesUi"),{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"exchange",bootToken:boot})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||data.ok===false) throw new Error(data.error||"R96_OWNER_BOOT_FAILED");
+    if(!data.sessionToken) throw new Error("NO_SESSION_TOKEN");
+    localStorage.setItem(SESSION_KEY,data.sessionToken);
+    cleanAuthQuery();
+    return true;
+  }
 
   async function accessApi(input={}){
     const res=await fetch(functionUrl("risin96amesUi"),{
@@ -136,12 +160,17 @@
           <label class="r96-field r96-wide"><span>Correo</span><input id="r96-access-email" type="email" autocomplete="email" placeholder="tu@correo.com"></label>
           <label class="r96-field r96-wide"><span>Código R96</span><input id="r96-access-code" autocomplete="one-time-code" placeholder="R96-XXXXX-XXXXX"></label>
         </div>
-        <div class="r96-actions"><button class="r96-primary" id="r96-access-enter">${invite?"Activar y entrar":"Entrar"}</button></div>
+        <div class="r96-actions">
+          <button class="r96-primary" id="r96-access-enter">${invite?"Activar y entrar":"Entrar con código"}</button>
+          ${invite?"":'<button class="r96-secondary" id="r96-owner-enter">Entrar como propietario</button>'}
+        </div>
+        ${invite?"":'<p class="r96-desc">El propietario no necesita código de invitación. Su acceso se valida con la cuenta principal del sitio.</p>'}
         <p id="r96-dev-message" class="r96-form-message"></p>
       </div>
     </div></section>`;
 
     main.querySelector("#r96-dev-back")?.addEventListener("click",()=>{cleanAuthQuery();location.href=currentBaseUrl();});
+    main.querySelector("#r96-owner-enter")?.addEventListener("click",()=>{location.href=ownerLoginUrl();});
     main.querySelector("#r96-access-enter")?.addEventListener("click",async()=>{
       const email=main.querySelector("#r96-access-email")?.value||"";
       const code=main.querySelector("#r96-access-code")?.value||"";
@@ -178,6 +207,7 @@
             <p class="r96-desc">Acceso: <strong>${esc(data.developer.roleKey||"developer")}</strong></p>
           </div>
           <div class="r96-dev-top-actions">
+            ${data.developer.canInviteDevelopers?'<button class="r96-primary" id="r96-owner-invite">Invitar desarrollador</button>':""}
             <button class="r96-secondary" id="r96-dev-theme">☀︎ / ☾</button>
             <button class="r96-secondary" id="r96-public-home">Ver plataforma pública</button>
           </div>
@@ -327,6 +357,7 @@
     };
 
     root.querySelectorAll(".r96-dev-tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+    root.querySelector("#r96-owner-invite")?.addEventListener("click",()=>setTab("invites"));
     root.querySelector("#r96-public-home")?.addEventListener("click",()=>{cleanAuthQuery();location.href=currentBaseUrl();});
     root.querySelector("#r96-dev-theme")?.addEventListener("click",()=>{
       const next=root.dataset.theme==="dark"?"light":"dark";
@@ -390,7 +421,18 @@
       root.querySelector("#r96-games-grid").innerHTML=emptyCard();
     }
 
-    if(params().get("r96dev")==="1"||params().get("r96invite")==="1"){
+    if(params().get("r96b")){
+      try{
+        await exchangeOwnerBoot();
+      }catch(e){
+        localStorage.removeItem(SESSION_KEY);
+        cleanAuthQuery();
+        alert("No se pudo iniciar la sesión de propietario: "+e.message);
+        return;
+      }
+    }
+
+    if(params().get("r96dev")==="1"||params().get("r96invite")==="1"||sessionToken()){
       await openDeveloperWorkspace();
     }
   };
