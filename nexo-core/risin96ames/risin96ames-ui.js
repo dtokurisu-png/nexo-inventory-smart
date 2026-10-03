@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-12";
+  const REV="r96-wix-shell-20261003-13";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -177,7 +177,29 @@
     </div></section>`;
 
     main.querySelector("#r96-dev-back")?.addEventListener("click",()=>{cleanAuthQuery();location.href=currentBaseUrl();});
-    main.querySelector("#r96-owner-enter")?.addEventListener("click",()=>{location.href=ownerLoginUrl();});
+    main.querySelector("#r96-owner-enter")?.addEventListener("click",async()=>{
+      showNotice("Validando propietario...");
+      try{
+        const res=await fetch(functionUrl("risin96amesUi"),{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({action:"developer.owner.session"})
+        });
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok||data.ok===false) throw new Error(data.error||"R96_OWNER_SESSION_FAILED");
+        const token=data.data?.sessionToken||data.sessionToken||"";
+        if(!token) throw new Error("NO_SESSION_TOKEN");
+        localStorage.setItem(SESSION_KEY,token);
+        cleanAuthQuery();
+        await openDeveloperWorkspace();
+      }catch(e){
+        const map={
+          AUTH_REQUIRED:"Tu sesión principal de Wix no está activa. Inicia sesión en el sitio y vuelve a intentarlo.",
+          R96_OWNER_REQUIRED:"Esta cuenta no está autorizada como propietaria de RISIN96AMES."
+        };
+        showNotice(map[e.message]||"No se pudo iniciar la sesión de propietario: "+e.message,"error");
+      }
+    });
     main.querySelector("#r96-access-enter")?.addEventListener("click",async()=>{
       const email=main.querySelector("#r96-access-email")?.value||"";
       const code=main.querySelector("#r96-access-code")?.value||"";
