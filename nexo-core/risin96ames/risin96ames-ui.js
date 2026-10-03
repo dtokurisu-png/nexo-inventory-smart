@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-4";
+  const REV="r96-wix-shell-20261003-5";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -48,9 +48,10 @@
   };
   const currentBaseUrl=()=>location.origin+location.pathname;
   const developerLoginUrl=(invite=false)=>{
-    const u=new URL(location.href);
-    u.searchParams.set(invite?"r96invite":"r96dev","1");
-    u.searchParams.delete(invite?"r96dev":"r96invite");
+    const u=new URL("/blank-8",location.origin);
+    u.searchParams.set("r96Auth","1");
+    u.searchParams.set("r96ReturnPath",location.pathname);
+    if(invite)u.searchParams.set("r96invite","1");
     return u.toString();
   };
   const cleanAuthQuery=({keepInvite=false}={})=>{
@@ -79,34 +80,6 @@
       sessionStorage.removeItem(SESSION_KEY);
       return false;
     }
-  }
-
-  const sleep=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
-
-  async function waitForDeveloperSession(){
-    if(sessionToken()) return true;
-
-    // Do not keep redirecting to ?r96dev=1 while Wix is creating the boot token.
-    // The old behavior caused an endless reload/flicker loop.
-    root.style.display="none";
-    const deadline=Date.now()+60000;
-
-    while(Date.now()<deadline){
-      const error=params().get("r96e");
-      if(error){
-        root.style.display="";
-        return false;
-      }
-      if(params().get("r96b")){
-        const ok=await exchangeBoot();
-        root.style.display="";
-        return ok;
-      }
-      await sleep(250);
-    }
-
-    root.style.display="";
-    return Boolean(sessionToken());
   }
 
   const shell=()=>`
@@ -394,16 +367,17 @@
 
     const developerIntent=params().get("r96dev")==="1"||params().get("r96invite")==="1";
     if(developerIntent){
-      const ready=await waitForDeveloperSession();
+      const ready=await exchangeBoot();
       if(ready){
         await openDeveloperWorkspace();
         return;
       }
-
-      // If Wix reported an auth/bootstrap error, return to the public shell instead
-      // of reloading forever.
-      cleanAuthQuery({keepInvite:false});
-      alert("No se pudo iniciar la sesión de desarrollador. Intenta abrir el Workspace nuevamente.");
+      if(params().get("r96e")){
+        cleanAuthQuery({keepInvite:false});
+        alert("No se pudo iniciar la sesión de desarrollador. Intenta abrir el Workspace nuevamente.");
+        return;
+      }
+      location.href=developerLoginUrl(params().get("r96invite")==="1");
       return;
     }
 
