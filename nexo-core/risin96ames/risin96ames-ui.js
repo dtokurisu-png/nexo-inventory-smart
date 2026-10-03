@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-auth-clean-20261003-20";
+  const REV="r96-auth-clean-20261003-21";
   const SESSION_KEY="r96-developer-session-v3";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
