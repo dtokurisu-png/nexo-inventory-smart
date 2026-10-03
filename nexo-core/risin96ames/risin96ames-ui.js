@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-wix-shell-20261003-6";
+  const REV="r96-wix-shell-20261003-7";
   const SESSION_KEY="r96-developer-session";
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
@@ -48,19 +48,20 @@
   };
   const currentBaseUrl=()=>location.origin+location.pathname;
   const developerLoginUrl=(invite=false)=>{
-    // Keep the Wix free-site prefix (for example /my-site-1/).
-    // Using origin + /blank-8 drops that prefix and produces a 404.
-    const u=new URL("./blank-8",location.href);
+    // R96 authenticates on its own surface. Wix only verifies the member identity;
+    // the developer entitlement and session are completely separate from Mi espacio.
+    const u=new URL(location.href);
     u.hash="";
     u.search="";
-    u.searchParams.set("r96Auth","1");
+    u.searchParams.set("r96surface","risin96ames");
+    u.searchParams.set("r96auth","1");
     u.searchParams.set("r96ReturnPath",location.pathname);
     if(invite)u.searchParams.set("r96invite","1");
     return u.toString();
   };
   const cleanAuthQuery=({keepInvite=false}={})=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","r96dev","r96auth","r96surface","r96ReturnPath"].forEach(k=>u.searchParams.delete(k));
     if(!keepInvite)u.searchParams.delete("r96invite");
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
@@ -95,7 +96,7 @@
             <div id="r96-menu-panel" class="r96-menu-panel" hidden>
               <button id="r96-theme" type="button">Cambiar tema</button>
               <a href="#games">Explorar juegos</a>
-              <button id="r96-dev" type="button">Workspace de desarrollador</button>
+              <button id="r96-dev" type="button">Panel de desarrollador</button>
             </div>
           </div>
           <a class="r96-brand" href="#home"><span class="r96-mark">R96</span><span class="r96-name">RISIN96AMES</span></a>
@@ -110,7 +111,7 @@
       <section class="r96-band r96-hero">
         <div class="r96-inner r96-hero-grid">
           <div class="r96-hero-copy"><p class="r96-eyebrow">Beta games in development</p><h1 class="r96-h1">Prueba betas jugables y ayuda a construir mejores juegos.</h1></div>
-          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a><button class="r96-secondary" id="r96-hero-dev">Workspace de desarrollador</button></div></div>
+          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a><button class="r96-secondary" id="r96-hero-dev">Panel de desarrollador</button></div></div>
         </div>
       </section>
       <section id="games" class="r96-band r96-games">
@@ -176,16 +177,26 @@
   const workspaceShell=(data)=>`
     <section class="r96-band r96-games r96-dev-page">
       <div class="r96-inner">
-        <div class="r96-dev-head">
-          <div><p class="r96-eyebrow">Developer workspace</p><h1 class="r96-h2">RISIN96AMES Development</h1><p class="r96-desc">${esc(data.developer.displayName)} · ${esc(data.developer.roleKey)}</p></div>
-          <button class="r96-secondary" id="r96-public-home">Ver plataforma pública</button>
+        <div class="r96-dev-identity">
+          <div class="r96-dev-avatar">R96</div>
+          <div class="r96-dev-who">
+            <p class="r96-eyebrow">Developer environment</p>
+            <h1 class="r96-h2">${esc(data.developer.displayName||"Desarrollador")}</h1>
+            <p class="r96-desc">Acceso: <strong>${esc(data.developer.roleKey||"developer")}</strong></p>
+          </div>
+          <div class="r96-dev-top-actions">
+            <button class="r96-secondary" id="r96-dev-theme">☀︎ / ☾</button>
+            <button class="r96-secondary" id="r96-public-home">Ver plataforma pública</button>
+          </div>
         </div>
+
         <div class="r96-dev-tabs">
           <button class="r96-dev-tab on" data-tab="games">Mis juegos</button>
-          <button class="r96-dev-tab" data-tab="new">Crear juego</button>
+          <button class="r96-dev-tab" data-tab="new">+ Agregar juego</button>
           <button class="r96-dev-tab" data-tab="reviews">Reseñas</button>
-          <button class="r96-dev-tab" data-tab="invites">Invitar desarrollador</button>
+          ${data.developer.canInviteDevelopers?'<button class="r96-dev-tab" data-tab="invites">Invitar desarrollador</button>':""}
         </div>
+
         <div id="r96-dev-content"></div>
       </div>
     </section>`;
@@ -194,26 +205,38 @@
     const games=data.games||[];
     return `<div class="r96-dev-grid">
       <section class="r96-panel r96-dev-main">
-        <div class="r96-dev-panel-head"><div><p class="r96-eyebrow">Projects</p><h3 class="r96-h3">Mis juegos</h3></div><button class="r96-primary" data-open-tab="new">+ Crear juego</button></div>
-        <div class="r96-dev-list">${games.length?games.map(g=>`<article class="r96-dev-row">
-          <div><span class="r96-status">${esc(g.status)}</span><h3 class="r96-h3">${esc(g.title)}</h3><p class="r96-desc">${esc(g.shortDescription||"Sin descripción todavía.")}</p></div>
-          <div class="r96-dev-row-actions"><button class="r96-secondary" data-version-game="${esc(g.id)}">Nueva versión</button><button class="r96-primary" data-build-game="${esc(g.id)}">Cargar build</button></div>
-        </article>`).join(""):`<div class="r96-dev-empty"><h3 class="r96-h3">Todavía no tienes juegos</h3><p class="r96-desc">Crea el proyecto primero. Después podrás registrar versiones y cargar la build web.</p></div>`}</div>
+        <div class="r96-dev-panel-head"><div><p class="r96-eyebrow">Game library</p><h3 class="r96-h3">Tus juegos</h3></div><button class="r96-primary" data-open-tab="new">+ Agregar juego</button></div>
+        <div class="r96-game-tray">${games.length?games.map(g=>`<article class="r96-dev-game-card">
+          <div class="r96-dev-game-cover">${g.thumbnailUrl?`<img src="${esc(g.thumbnailUrl)}" alt="">`:`<span>${esc((g.title||"R96").slice(0,3).toUpperCase())}</span>`}</div>
+          <div class="r96-dev-game-info"><span class="r96-status">${esc(g.status)}</span><h3 class="r96-h3">${esc(g.title)}</h3><p class="r96-desc">${esc(g.shortDescription||"Sin descripción todavía.")}</p><div class="r96-dev-row-actions"><button class="r96-secondary" data-version-game="${esc(g.id)}">Nueva versión</button><button class="r96-primary" data-build-game="${esc(g.id)}">Administrar juego</button></div></div>
+        </article>`).join(""):`<button class="r96-add-game-card" data-open-tab="new"><strong>＋</strong><span>Agregar tu primer juego</span><small>Crea la ficha, portada, galería y build.</small></button>`}</div>
       </section>
-      <aside class="r96-panel r96-dev-side"><p class="r96-eyebrow">Workspace</p><h3 class="r96-h3">Herramientas</h3><div class="r96-tool-list"><span>Crear y editar juegos</span><span>Versiones y changelog</span><span>Carga de builds web</span><span>Reseñas y feedback</span><span>Invitaciones de desarrolladores</span></div></aside>
+      <aside class="r96-panel r96-dev-side">
+        <p class="r96-eyebrow">Feedback</p><h3 class="r96-h3">Reseñas</h3>
+        <p class="r96-desc">Consulta comentarios y puntuaciones vinculados a cada juego y versión.</p>
+        <button class="r96-secondary" data-open-tab="reviews">Ver reseñas</button>
+        ${data.developer.canInviteDevelopers?'<div class="r96-dev-owner-box"><p class="r96-eyebrow">Owner</p><button class="r96-secondary" data-open-tab="invites">Invitar desarrollador</button></div>':""}
+      </aside>
     </div>`;
   };
 
   const newGamePanel=()=>`<section class="r96-panel r96-dev-form-shell">
-    <p class="r96-eyebrow">New project</p><h3 class="r96-h3">Crear juego</h3>
+    <p class="r96-eyebrow">New game</p><h3 class="r96-h3">Agregar juego</h3>
+    <p class="r96-desc">Esta ficha será la base de la presentación pública del juego, con una estructura similar a una tienda de juegos: portada, descripción, galería y build jugable.</p>
     <div class="r96-form-grid">
       <label class="r96-field"><span>Nombre</span><input id="r96-game-title" placeholder="Nombre del juego"></label>
       <label class="r96-field"><span>Género</span><input id="r96-game-genre" placeholder="Estrategia, RPG, cartas..."></label>
-      <label class="r96-field r96-wide"><span>Descripción corta</span><textarea id="r96-game-short" placeholder="Resumen visible en la tarjeta"></textarea></label>
+      <label class="r96-field r96-wide"><span>Descripción corta</span><textarea id="r96-game-short" placeholder="Resumen para la tarjeta del catálogo"></textarea></label>
+      <label class="r96-field r96-wide"><span>Descripción completa</span><textarea id="r96-game-long" placeholder="Descripción completa del juego, mecánicas y propuesta"></textarea></label>
       <label class="r96-field"><span>Estado</span><select id="r96-game-status"><option>DRAFT</option><option>PROTOTYPE</option><option>ALPHA</option><option>BETA</option><option>RELEASE</option></select></label>
       <label class="r96-field"><span>Visibilidad</span><select id="r96-game-visibility"><option>PRIVATE</option><option>UNLISTED</option><option>PUBLIC</option></select></label>
     </div>
-    <div class="r96-actions"><button class="r96-primary" id="r96-create-game">Crear proyecto</button></div>
+    <div class="r96-media-grid">
+      <label class="r96-media-slot"><span>Portada / cápsula</span><input type="file" id="r96-cover-file" accept="image/*"><small>Imagen principal del juego.</small></label>
+      <label class="r96-media-slot"><span>Capturas y videos</span><input type="file" id="r96-gallery-files" accept="image/*,video/*" multiple><small>Galería para la página pública.</small></label>
+      <label class="r96-media-slot r96-media-build"><span>Build jugable</span><input type="file" id="r96-build-file" accept=".zip,application/zip"><small>Paquete web del juego. La subida binaria se conecta en el siguiente bloque técnico.</small></label>
+    </div>
+    <div class="r96-actions"><button class="r96-primary" id="r96-create-game">Crear ficha del juego</button></div>
     <p id="r96-dev-message" class="r96-form-message"></p>
   </section>`;
 
@@ -283,6 +306,7 @@
           title:content.querySelector("#r96-game-title")?.value||"",
           genre:content.querySelector("#r96-game-genre")?.value||"",
           shortDescription:content.querySelector("#r96-game-short")?.value||"",
+          longDescription:content.querySelector("#r96-game-long")?.value||"",
           status:content.querySelector("#r96-game-status")?.value||"DRAFT",
           visibility:content.querySelector("#r96-game-visibility")?.value||"PRIVATE"
         };
@@ -311,6 +335,11 @@
 
     root.querySelectorAll(".r96-dev-tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
     root.querySelector("#r96-public-home")?.addEventListener("click",()=>{cleanAuthQuery();location.href=currentBaseUrl();});
+    root.querySelector("#r96-dev-theme")?.addEventListener("click",()=>{
+      const next=root.dataset.theme==="dark"?"light":"dark";
+      root.dataset.theme=next;
+      localStorage.setItem("risin96ames-theme",next);
+    });
     setTab("games");
   }
 
@@ -330,13 +359,13 @@
       if(e.message==="R96_DEVELOPER_REQUIRED"){
         if(params().get("r96invite")==="1"){renderInviteRedeem();return;}
         const main=root.querySelector("main");
-        main.innerHTML=`<section class="r96-band r96-games r96-dev-page"><div class="r96-inner r96-dev-narrow"><button class="r96-secondary" id="r96-dev-back">← Volver</button><div class="r96-panel r96-dev-auth"><p class="r96-eyebrow">Restricted workspace</p><h1 class="r96-h2">Necesitas una invitación</h1><p class="r96-desc">El Workspace de desarrollador no está abierto al público. Usa el enlace y código de un solo uso que te envíe un desarrollador autorizado.</p><div class="r96-actions"><button class="r96-primary" id="r96-have-code">Tengo un código</button></div></div></div></section>`;
+        main.innerHTML=`<section class="r96-band r96-games r96-dev-page"><div class="r96-inner r96-dev-narrow"><button class="r96-secondary" id="r96-dev-back">← Volver</button><div class="r96-panel r96-dev-auth"><p class="r96-eyebrow">Restricted developer area</p><h1 class="r96-h2">Necesitas una invitación</h1><p class="r96-desc">El Panel de desarrollador no está abierto al público. Usa el enlace y código de un solo uso que te envíe un desarrollador autorizado.</p><div class="r96-actions"><button class="r96-primary" id="r96-have-code">Tengo un código</button></div></div></div></section>`;
         main.querySelector("#r96-dev-back")?.addEventListener("click",()=>location.href=currentBaseUrl());
         main.querySelector("#r96-have-code")?.addEventListener("click",()=>{const u=new URL(location.href);u.searchParams.set("r96invite","1");history.replaceState({},document.title,u.pathname+u.search);renderInviteRedeem();});
         return;
       }
       if(["AUTH_REQUIRED","SESSION_EXPIRED"].includes(e.message)){location.href=developerLoginUrl(params().get("r96invite")==="1");return;}
-      alert("No se pudo abrir el Workspace de desarrollador: "+e.message);
+      alert("No se pudo abrir el Panel de desarrollador: "+e.message);
     }
   }
 
@@ -378,7 +407,7 @@
       }
       if(params().get("r96e")){
         cleanAuthQuery({keepInvite:false});
-        alert("No se pudo iniciar la sesión de desarrollador. Intenta abrir el Workspace nuevamente.");
+        alert("No se pudo iniciar la sesión de desarrollador. Intenta abrir el panel de desarrollador nuevamente.");
         return;
       }
       location.href=developerLoginUrl(params().get("r96invite")==="1");
