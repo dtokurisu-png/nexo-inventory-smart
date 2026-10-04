@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-mi-espacio-auth-20261003-22";
+  const REV="r96-mi-espacio-auth-20261003-23";
   const SESSION_KEY="r96-developer-session-v3";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
@@ -58,12 +58,12 @@
   };
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96auth","r96code","r96invite","r96ReturnPath","nxav"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","r96dev","r96code","r96invite","r96ReturnPath","nxav"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
   const requestWixAccess=(code="")=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96auth"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e"].forEach(k=>u.searchParams.delete(k));
     u.searchParams.set("r96dev","1");
     if(code){
       u.searchParams.set("r96invite","1");
@@ -311,7 +311,7 @@
           const result=await uiApi("developer.invite.create",{input:{email}});
           const code=result.code;
           const inviteUrl=new URL(location.href);
-          ["r96b","r96s","r96e","r96dev","r96auth"].forEach(k=>inviteUrl.searchParams.delete(k));
+          ["r96b","r96s","r96e","r96dev"].forEach(k=>inviteUrl.searchParams.delete(k));
           inviteUrl.hash="";
           inviteUrl.searchParams.set("r96invite","1");
           inviteUrl.searchParams.set("r96code",code);
@@ -437,10 +437,6 @@
     }
 
     await refreshAuthorization();
-
-    if(!skipInvite && params().get("r96invite")==="1" && !sessionToken() && params().get("r96auth")!=="1"){
-      renderDeveloperLogin({invite:true});
-    }
   };
 
   const authErrorMessage=(code)=>{
