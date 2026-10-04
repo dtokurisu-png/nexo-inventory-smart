@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-mi-espacio-auth-20261003-25";
+  const REV="r96-mi-espacio-auth-20261003-26";
   const SESSION_KEY="r96-developer-session-v3";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
@@ -480,10 +480,16 @@
     return true;
   };
 
+  const syncWixAuthLayer=()=>{
+    root.classList.toggle("r96-wix-login-open",params().get("r96s")==="LOGIN");
+  };
+
   const watchPageBoot=()=>{
     let attempts=0;
+    syncWixAuthLayer();
     const timer=setInterval(async()=>{
       attempts+=1;
+      syncWixAuthLayer();
       if(params().get("r96b")||params().get("r96e")){
         clearInterval(timer);
         await consumeAuthResult();
@@ -498,6 +504,7 @@
 
   const load=async()=>{
     await renderPublicSurface();
+    syncWixAuthLayer();
 
     if(await consumeAuthResult())return;
 
