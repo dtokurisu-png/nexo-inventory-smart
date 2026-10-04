@@ -1,8 +1,9 @@
 (() => {
-  const REV="r96-mi-espacio-broker-20261003-28";
-  const SESSION_KEY="r96-developer-session-v3";
+  const REV="r96-auth-unified-20261004-29";
+  const SESSION_KEY="r96-developer-session-v4";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
+  localStorage.removeItem("r96-developer-session-v3");
   const norm=(v)=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   const isTarget=()=>{
     const og=document.querySelector('meta[property="og:title"]')?.getAttribute("content")||"";
@@ -58,20 +59,20 @@
   };
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96code","r96invite","r96AccountAction","r96ReturnPath","nxav"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","r96dev","r96auth","r96code","r96invite","r96Bridge","r96AccountAction","nxoAccountAction","r96ReturnPath","nxav"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
   const wixAccessUrl=(code="")=>{
-    const host=location.hostname.toLowerCase();
-    const freeHost=host.endsWith(".wixstudio.com")||host.endsWith(".wixsite.com");
-    const first=location.pathname.split("/").filter(Boolean)[0]||"";
-    const sitePrefix=freeHost&&first?"/"+first:"";
-    const u=new URL(location.origin+sitePrefix+"/blank-8");
-    u.searchParams.set("r96Bridge","1");
-    u.searchParams.set("nxoAccountAction","switch");
+    const u=new URL(location.href);
+    ["r96b","r96s","r96e","r96dev","r96Bridge","r96AccountAction","nxoAccountAction","nxav"].forEach(k=>u.searchParams.delete(k));
+    u.hash="";
+    u.searchParams.set("r96auth","1");
     if(code){
       u.searchParams.set("r96invite","1");
       u.searchParams.set("r96code",code);
+    }else{
+      u.searchParams.delete("r96invite");
+      u.searchParams.delete("r96code");
     }
     return u.toString();
   };
