@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-auth-unified-20261004-29";
+  const REV="r96-auth-direct-20261004-30";
   const SESSION_KEY="r96-developer-session-v4";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
@@ -59,7 +59,7 @@
   };
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96e","r96dev","r96auth","r96code","r96invite"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96e","r96dev","r96auth","r96stage","r96code","r96invite"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
   const wixAccessUrl=(code="")=>{
