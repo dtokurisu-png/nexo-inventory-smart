@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-mi-espacio-auth-20261003-26";
+  const REV="r96-mi-espacio-broker-20261003-27";
   const SESSION_KEY="r96-developer-session-v3";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
@@ -62,16 +62,12 @@
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
   const wixAccessUrl=(code="")=>{
-    const u=new URL(location.href);
-    ["r96b","r96s","r96e","nxav"].forEach(k=>u.searchParams.delete(k));
-    u.searchParams.set("r96dev","1");
-    u.searchParams.set("r96AccountAction","switch");
+    const u=new URL("/blank-8",location.origin);
+    u.searchParams.set("r96Bridge","1");
+    u.searchParams.set("nxoAccountAction","switch");
     if(code){
       u.searchParams.set("r96invite","1");
       u.searchParams.set("r96code",code);
-    }else{
-      u.searchParams.delete("r96invite");
-      u.searchParams.delete("r96code");
     }
     return u.toString();
   };
@@ -310,12 +306,7 @@
         try{
           const result=await uiApi("developer.invite.create",{input:{email}});
           const code=result.code;
-          const inviteUrl=new URL(location.href);
-          ["r96b","r96s","r96e","r96dev"].forEach(k=>inviteUrl.searchParams.delete(k));
-          inviteUrl.hash="";
-          inviteUrl.searchParams.set("r96invite","1");
-          inviteUrl.searchParams.set("r96code",code);
-          const link=inviteUrl.toString();
+          const link=wixAccessUrl(code);
           const message=`Únete a RISIN96AMES como desarrollador.\n\nAbre este enlace: ${link}\n\nInicia sesión con Google usando ${result.invite.inviteeEmail}. El código de un solo uso ya viene incluido en el enlace.`;
           const out=content.querySelector("#r96-invite-result");
           out.innerHTML=`<div class="r96-invite-card"><strong>Invitación creada</strong><div><span>Enlace</span><code>${esc(link)}</code></div><div><span>Código de un solo uso</span><code class="r96-code">${esc(code)}</code></div><button class="r96-secondary" id="r96-copy-invite">Copiar mensaje</button></div>`;
@@ -480,31 +471,8 @@
     return true;
   };
 
-  const syncWixAuthLayer=()=>{
-    root.classList.toggle("r96-wix-login-open",params().get("r96s")==="LOGIN");
-  };
-
-  const watchPageBoot=()=>{
-    let attempts=0;
-    syncWixAuthLayer();
-    const timer=setInterval(async()=>{
-      attempts+=1;
-      syncWixAuthLayer();
-      if(params().get("r96b")||params().get("r96e")){
-        clearInterval(timer);
-        await consumeAuthResult();
-        return;
-      }
-      const requested=params().get("r96dev")==="1"||params().get("r96invite")==="1";
-      if(!requested||attempts>=1200){
-        clearInterval(timer);
-      }
-    },250);
-  };
-
   const load=async()=>{
     await renderPublicSurface();
-    syncWixAuthLayer();
 
     if(await consumeAuthResult())return;
 
@@ -513,10 +481,9 @@
       return;
     }
 
-    if(!sessionToken() && (params().get("r96dev")==="1"||params().get("r96invite")==="1")){
-      watchPageBoot();
+    if(params().get("r96invite")==="1" && !sessionToken()){
+      renderDeveloperLogin({invite:true});
     }
   };
-
   load();
 })();
