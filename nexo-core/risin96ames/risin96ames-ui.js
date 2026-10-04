@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-auth-clean-20261003-21";
+  const REV="r96-mi-espacio-auth-20261003-22";
   const SESSION_KEY="r96-developer-session-v3";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
@@ -58,17 +58,20 @@
   };
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96auth","r96code","r96ReturnPath"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","r96dev","r96auth","r96code","r96invite","r96ReturnPath","nxav"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
   const requestWixAccess=(code="")=>{
     const u=new URL(location.href);
-    u.searchParams.delete("r96b");
-    u.searchParams.delete("r96e");
-    u.searchParams.delete("r96dev");
-    u.searchParams.set("r96auth","1");
-    if(code)u.searchParams.set("r96code",code);
-    else u.searchParams.delete("r96code");
+    ["r96b","r96s","r96e","r96auth"].forEach(k=>u.searchParams.delete(k));
+    u.searchParams.set("r96dev","1");
+    if(code){
+      u.searchParams.set("r96invite","1");
+      u.searchParams.set("r96code",code);
+    }else{
+      u.searchParams.delete("r96invite");
+      u.searchParams.delete("r96code");
+    }
     location.assign(u.toString());
   };
   const exchangeBoot=async(bootToken)=>{
@@ -482,7 +485,7 @@
     return true;
   };
 
-  const watchAuthBridge=()=>{
+  const watchPageBoot=()=>{
     let attempts=0;
     const timer=setInterval(async()=>{
       attempts+=1;
@@ -491,7 +494,8 @@
         await consumeAuthResult();
         return;
       }
-      if(params().get("r96auth")!=="1"||attempts>=480){
+      const requested=params().get("r96dev")==="1"||params().get("r96invite")==="1";
+      if(!requested||attempts>=1200){
         clearInterval(timer);
       }
     },250);
@@ -502,18 +506,13 @@
 
     if(await consumeAuthResult())return;
 
-    if(params().get("r96auth")==="1"){
-      watchAuthBridge();
-      return;
-    }
-
     if(params().get("r96dev")==="1" && sessionToken()){
       await openDeveloperWorkspace();
       return;
     }
 
-    if(params().get("r96invite")==="1" && !sessionToken()){
-      renderDeveloperLogin({invite:true});
+    if(!sessionToken() && (params().get("r96dev")==="1"||params().get("r96invite")==="1")){
+      watchPageBoot();
     }
   };
 
