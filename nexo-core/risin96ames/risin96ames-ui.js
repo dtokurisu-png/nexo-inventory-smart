@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-mi-espacio-auth-20261003-24";
+  const REV="r96-mi-espacio-auth-20261003-25";
   const SESSION_KEY="r96-developer-session-v3";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
@@ -61,9 +61,9 @@
     ["r96b","r96s","r96e","r96dev","r96code","r96invite","r96AccountAction","r96ReturnPath","nxav"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
-  const requestWixAccess=(code="")=>{
+  const wixAccessUrl=(code="")=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","nxav"].forEach(k=>u.searchParams.delete(k));
     u.searchParams.set("r96dev","1");
     u.searchParams.set("r96AccountAction","switch");
     if(code){
@@ -73,7 +73,7 @@
       u.searchParams.delete("r96invite");
       u.searchParams.delete("r96code");
     }
-    location.assign(u.toString());
+    return u.toString();
   };
   const exchangeBoot=async(bootToken)=>{
     const res=await fetch(functionUrl("risin96amesUi"),{
@@ -105,7 +105,7 @@
           <div class="r96-links"><a href="#games">Juegos</a><a href="#reviews">Reseñas</a><a href="#community">Comunidad</a><button class="r96-nav-link" id="r96-dev-link" type="button" hidden>Panel de desarrollador</button></div>
           <div class="r96-stats"><span>Juegos <strong id="r96-games-count">0</strong></span><span>Reseñas <strong id="r96-reviews-count">0</strong></span></div>
           <button class="r96-icon-button" id="r96-theme-toggle" type="button" aria-label="Cambiar tema"></button>
-          <button class="r96-secondary r96-login-button" id="r96-login" type="button">Iniciar con Google</button>
+          <a class="r96-secondary r96-login-button" id="r96-login" href="${esc(wixAccessUrl())}">Iniciar con Google</a>
           <button class="r96-profile-chip" id="r96-profile-chip" type="button" hidden></button>
         </div>
       </nav>
@@ -114,7 +114,7 @@
       <section class="r96-band r96-hero">
         <div class="r96-inner r96-hero-grid">
           <div class="r96-hero-copy"><p class="r96-eyebrow">Beta games in development</p><h1 class="r96-h1">Prueba betas jugables y ayuda a construir mejores juegos.</h1></div>
-          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a><button class="r96-secondary" id="r96-hero-login">Iniciar con Google</button><button class="r96-secondary" id="r96-hero-dev" hidden>Panel de desarrollador</button></div></div>
+          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a><a class="r96-secondary" id="r96-hero-login" href="${esc(wixAccessUrl())}">Iniciar con Google</a><button class="r96-secondary" id="r96-hero-dev" hidden>Panel de desarrollador</button></div></div>
         </div>
       </section>
       <section id="games" class="r96-band r96-games">
@@ -151,7 +151,7 @@
         <p class="r96-eyebrow">${invite?"Invitación de desarrollador":"Acceso R96"}</p>
         <h1 class="r96-h2">${invite?"Aceptar invitación":"Iniciar sesión"}</h1>
         <p class="r96-desc">${invite?"Inicia sesión con Google usando el mismo correo al que llegó la invitación. El código ya viene incluido en el enlace.":"Inicia sesión con Google. El Panel de desarrollador solo se habilita para cuentas R96 autorizadas."}</p>
-        <div class="r96-actions"><button class="r96-primary" id="r96-login-google">Iniciar con Google</button></div>
+        <div class="r96-actions"><a class="r96-primary" id="r96-login-google" href="${esc(wixAccessUrl(invite?code:""))}">Iniciar con Google</a></div>
         <p id="r96-dev-message" class="r96-form-message" data-type="${error?"error":""}">${esc(error)}</p>
       </div>
     </div></section>`;
@@ -160,7 +160,6 @@
       cleanAuthQuery();
       await renderPublicSurface({skipInvite:true});
     });
-    main.querySelector("#r96-login-google")?.addEventListener("click",()=>requestWixAccess(invite?code:""));
     root.scrollTo({top:0,behavior:"smooth"});
   };
 
@@ -407,7 +406,6 @@
       localStorage.setItem("risin96ames-theme",next);
       setThemeButton();
     });
-    ["#r96-login","#r96-hero-login"].forEach(sel=>root.querySelector(sel)?.addEventListener("click",()=>requestWixAccess("")));
     ["#r96-dev","#r96-dev-link","#r96-hero-dev","#r96-profile-chip"].forEach(sel=>root.querySelector(sel)?.addEventListener("click",(ev)=>{ev.preventDefault();openDeveloperWorkspace()}));
     root.querySelector("#r96-menu-invite")?.addEventListener("click",()=>openDeveloperWorkspace("invites"));
     root.addEventListener("click",async(ev)=>{
