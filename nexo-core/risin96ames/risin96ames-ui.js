@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-mi-espacio-broker-20261003-27";
+  const REV="r96-mi-espacio-broker-20261003-28";
   const SESSION_KEY="r96-developer-session-v3";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
@@ -62,7 +62,11 @@
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
   const wixAccessUrl=(code="")=>{
-    const u=new URL("/blank-8",location.origin);
+    const host=location.hostname.toLowerCase();
+    const freeHost=host.endsWith(".wixstudio.com")||host.endsWith(".wixsite.com");
+    const first=location.pathname.split("/").filter(Boolean)[0]||"";
+    const sitePrefix=freeHost&&first?"/"+first:"";
+    const u=new URL(location.origin+sitePrefix+"/blank-8");
     u.searchParams.set("r96Bridge","1");
     u.searchParams.set("nxoAccountAction","switch");
     if(code){
