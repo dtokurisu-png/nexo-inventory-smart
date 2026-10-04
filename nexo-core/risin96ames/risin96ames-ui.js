@@ -59,12 +59,12 @@
   };
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96auth","r96code","r96invite","r96Bridge","r96AccountAction","nxoAccountAction","r96ReturnPath","nxav"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96e","r96dev","r96auth","r96code","r96invite"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
   const wixAccessUrl=(code="")=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96Bridge","r96AccountAction","nxoAccountAction","nxav"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96e","r96dev"].forEach(k=>u.searchParams.delete(k));
     u.hash="";
     u.searchParams.set("r96auth","1");
     if(code){
