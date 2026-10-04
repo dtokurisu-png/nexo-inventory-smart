@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-mi-espacio-auth-20261003-23";
+  const REV="r96-mi-espacio-auth-20261003-24";
   const SESSION_KEY="r96-developer-session-v3";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
@@ -58,13 +58,14 @@
   };
   const cleanAuthQuery=()=>{
     const u=new URL(location.href);
-    ["r96b","r96s","r96e","r96dev","r96code","r96invite","r96ReturnPath","nxav"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96s","r96e","r96dev","r96code","r96invite","r96AccountAction","r96ReturnPath","nxav"].forEach(k=>u.searchParams.delete(k));
     history.replaceState({},document.title,u.pathname+(u.search||"")+u.hash);
   };
   const requestWixAccess=(code="")=>{
     const u=new URL(location.href);
     ["r96b","r96s","r96e"].forEach(k=>u.searchParams.delete(k));
     u.searchParams.set("r96dev","1");
+    u.searchParams.set("r96AccountAction","switch");
     if(code){
       u.searchParams.set("r96invite","1");
       u.searchParams.set("r96code",code);
