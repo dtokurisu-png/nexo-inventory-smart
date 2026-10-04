@@ -64,7 +64,7 @@
   };
   const inviteUrl=(code="")=>{
     const u=new URL(location.href);
-    ["r96b","r96e","r96dev","r96login"].forEach(k=>u.searchParams.delete(k));
+    ["r96b","r96e","r96dev"].forEach(k=>u.searchParams.delete(k));
     u.hash="";
     if(code){
       u.searchParams.set("r96invite","1");
