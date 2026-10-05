@@ -31,3 +31,16 @@
 .r96-empty{min-height:420px}.r96-detail{padding-top:96px}.r96-detail-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:30px;align-items:start}.r96-back{margin-bottom:24px}
 @media(max-width:1080px){.r96-nav{height:auto;min-height:72px;align-items:flex-start;flex-direction:column;padding-top:16px;padding-bottom:16px}.r96-nav-right{width:100%;justify-content:space-between;align-items:flex-start;flex-direction:column}.r96-hero-grid,.r96-title-row,.r96-two,.r96-detail-grid,.r96-community-grid{grid-template-columns:1fr}.r96-hero-side{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:24px}.r96-title-row{gap:28px}.r96-hero{min-height:auto}}
 @media(max-width:720px){.r96-band{padding-top:72px;padding-bottom:72px}.r96-stats{flex-wrap:wrap;white-space:normal}.r96-name{font-size:.9rem}.r96-links{display:none}.r96-h1{font-size:clamp(56px,17vw,92px)}}
+
+.r96-account-wrap{position:relative;display:flex;align-items:center}
+.r96-account-button{max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r96-account-panel{position:absolute;top:58px;right:0;width:min(330px,calc(100vw - 28px));z-index:60;display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:20px;background:color-mix(in srgb,var(--bg) 96%,white 4%);box-shadow:var(--shadow)}
+.r96-account-panel[hidden]{display:none}
+.r96-account-head{display:flex;align-items:center;gap:12px;padding:6px}
+.r96-account-avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04050a;font-weight:950}
+.r96-account-copy{min-width:0;display:grid;gap:3px}
+.r96-account-copy strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r96-account-copy span{color:var(--muted);font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r96-account-role,.r96-account-access{padding:9px 11px;border-radius:12px;background:var(--panel);color:var(--muted);font-size:.86rem}
+.r96-account-access{color:var(--accent)}
+.r96-account-panel button{width:100%;min-height:44px;padding:0 13px;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--text);text-align:left;cursor:pointer;font-weight:800}
