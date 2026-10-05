@@ -207,6 +207,103 @@
       </div>
     </article>`;
 
+  let accountState=null;
+
+  const setThemeButton=()=>{
+    const button=root.querySelector("#r96-theme-toggle");
+    if(!button) return;
+    const dark=root.dataset.theme==="dark";
+    button.textContent=dark?"☀️":"🌙";
+    button.setAttribute("aria-label",dark?"Cambiar a modo claro":"Cambiar a modo oscuro");
+    button.title=dark?"Modo claro":"Modo oscuro";
+  };
+
+  const closeProfileModal=()=>{
+    document.querySelector("#r96-profile-overlay")?.remove();
+  };
+
+  const openProfileSettings=()=>{
+    const member=accountState?.member;
+    const developer=accountState?.developer;
+    if(!member) return;
+
+    closeProfileModal();
+
+    const role=developer
+      ? (developer.roleKey==="owner"?"Propietario R96":"Desarrollador R96")
+      : "Miembro";
+
+    const overlay=document.createElement("div");
+    overlay.id="r96-profile-overlay";
+    overlay.className="r96-profile-overlay";
+    overlay.innerHTML=`
+      <div class="r96-profile-modal" role="dialog" aria-modal="true" aria-labelledby="r96-profile-title">
+        <div class="r96-profile-modal-head">
+          <div>
+            <p class="r96-eyebrow">Cuenta</p>
+            <h3 id="r96-profile-title">Ajustes de perfil</h3>
+          </div>
+          <button class="r96-profile-close" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="r96-profile-summary">
+          <div class="r96-profile-avatar-large">${member.photoUrl
+            ? `<img src="${esc(member.photoUrl)}" alt="">`
+            : esc((member.displayName||"U").slice(0,1).toUpperCase())}</div>
+          <div>
+            <strong>${esc(member.displayName||"Usuario")}</strong>
+            <span>${esc(member.loginEmail||"")}</span>
+            <small>${esc(role)}</small>
+          </div>
+        </div>
+        <label class="r96-profile-field">
+          <span>Nombre visible</span>
+          <input id="r96-profile-name" maxlength="120" autocomplete="name" value="${esc(member.displayName||"")}">
+          <small>Este nombre se mostrará en tu barra de usuario de R96.</small>
+        </label>
+        <label class="r96-profile-field">
+          <span>Correo de acceso</span>
+          <input value="${esc(member.loginEmail||"")}" disabled>
+          <small>El correo de inicio de sesión se administra desde tu cuenta Wix.</small>
+        </label>
+        <div class="r96-profile-actions">
+          <button class="r96-secondary" id="r96-profile-cancel" type="button">Cancelar</button>
+          <button class="r96-primary" id="r96-profile-save" type="button">Guardar perfil</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector(".r96-profile-close")?.addEventListener("click",closeProfileModal);
+    overlay.querySelector("#r96-profile-cancel")?.addEventListener("click",closeProfileModal);
+    overlay.addEventListener("click",(event)=>{
+      if(event.target===overlay) closeProfileModal();
+    });
+
+    overlay.querySelector("#r96-profile-save")?.addEventListener("click",async(event)=>{
+      const button=event.currentTarget;
+      const input=overlay.querySelector("#r96-profile-name");
+      const displayName=String(input?.value||"").trim().replace(/\s+/g," ");
+
+      if(displayName.length<2){
+        input?.focus();
+        return;
+      }
+
+      button.disabled=true;
+      button.textContent="Guardando…";
+
+      try{
+        const data=await accountApi({action:"profile.update",displayName});
+        accountState=data;
+        applyAccountState(data);
+        closeProfileModal();
+      }catch(error){
+        button.disabled=false;
+        button.textContent="Guardar perfil";
+        alert(error?.message||"No se pudo actualizar el perfil.");
+      }
+    });
+  };
   const renderAccountPanel=(data)=>{
     const member=data?.member;
     const developer=data?.developer;
@@ -230,9 +327,15 @@
       </div>
       <div class="r96-account-role">${esc(role)}</div>
       ${developer?`<div class="r96-account-access">Acceso de desarrollador activo</div>`:""}
+      <button id="r96-profile-settings" type="button">Ajustes de perfil</button>
       <button id="r96-switch-account" type="button">Cambiar cuenta</button>
-      <button id="r96-logout-account" type="button">Cerrar sesión</button>
+      <button id="r96-logout-account" class="r96-account-danger" type="button">Cerrar sesión</button>
     `;
+
+    panel.querySelector("#r96-profile-settings")?.addEventListener("click",()=>{
+      panel.hidden=true;
+      openProfileSettings();
+    });
 
     panel.querySelector("#r96-switch-account")?.addEventListener("click",()=>{
       window.location.assign(accountActionUrl("r96switch"));
@@ -245,15 +348,32 @@
 
   const applyAccountState=(data)=>{
     const member=data?.member;
+    const developer=data?.developer;
     if(!member) return false;
+
+    accountState=data;
 
     const header=root.querySelector("#r96-login");
     const hero=root.querySelector("#r96-hero-login");
+    const role=developer
+      ? (developer.roleKey==="owner"?"Propietario R96":"Desarrollador R96")
+      : "Miembro";
+    const avatar=member.photoUrl
+      ? `<span class="r96-account-avatar r96-account-avatar-image"><img src="${esc(member.photoUrl)}" alt=""></span>`
+      : `<span class="r96-account-avatar">${esc((member.displayName||"U").slice(0,1).toUpperCase())}</span>`;
 
     if(header){
-      header.textContent=member.displayName||"Mi perfil";
+      header.classList.add("is-authenticated");
+      header.innerHTML=`
+        ${avatar}
+        <span class="r96-account-button-copy">
+          <strong>${esc(member.displayName||"Usuario")}</strong>
+          <small>${esc(member.loginEmail||"")}</small>
+          <em>${esc(role)}</em>
+        </span>
+        <span class="r96-account-caret">⌄</span>`;
       header.dataset.authenticated="1";
-      header.title="Abrir perfil";
+      header.title="Abrir opciones de usuario";
     }
 
     if(hero){
@@ -277,6 +397,7 @@
   const renderHome=async()=>{
     root.innerHTML=shell();
     bind();
+    setThemeButton();
     refreshAccountState();
 
     try{
@@ -342,10 +463,12 @@
       panel.hidden=!panel.hidden;
     });
 
-    root.querySelector("#r96-theme")?.addEventListener("click",()=>{
+    root.querySelector("#r96-theme-toggle")?.addEventListener("click",(event)=>{
+      event.stopPropagation();
       const next=root.dataset.theme==="dark"?"light":"dark";
       root.dataset.theme=next;
       localStorage.setItem("risin96ames-theme",next);
+      setThemeButton();
     });
 
     root.querySelector("#r96-login")?.addEventListener("click",(event)=>{
