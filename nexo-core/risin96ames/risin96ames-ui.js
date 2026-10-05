@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-google-bridge-20261004-33";
+  const REV="r96-google-bridge-20261004-34";
   const SESSION_KEY="r96-developer-session-v4";
   localStorage.removeItem("r96-developer-session");
   localStorage.removeItem("r96-developer-session-v2");
@@ -106,7 +106,7 @@
           <div class="r96-links"><a href="#games">Juegos</a><a href="#reviews">Reseñas</a><a href="#community">Comunidad</a><button class="r96-nav-link" id="r96-dev-link" type="button" hidden>Panel de desarrollador</button></div>
           <div class="r96-stats"><span>Juegos <strong id="r96-games-count">0</strong></span><span>Reseñas <strong id="r96-reviews-count">0</strong></span></div>
           <button class="r96-icon-button" id="r96-theme-toggle" type="button" aria-label="Cambiar tema"></button>
-          <a class="r96-secondary r96-login-button" id="r96-login" href="${esc(wixAccessUrl())}">Iniciar con Google</a>
+          <button class="r96-secondary r96-login-button" id="r96-login" type="button">Iniciar con Google</button>
           <button class="r96-profile-chip" id="r96-profile-chip" type="button" hidden></button>
         </div>
       </nav>
@@ -115,7 +115,7 @@
       <section class="r96-band r96-hero">
         <div class="r96-inner r96-hero-grid">
           <div class="r96-hero-copy"><p class="r96-eyebrow">Beta games in development</p><h1 class="r96-h1">Prueba betas jugables y ayuda a construir mejores juegos.</h1></div>
-          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a><a class="r96-secondary" id="r96-hero-login" href="${esc(wixAccessUrl())}">Iniciar con Google</a><button class="r96-secondary" id="r96-hero-dev" hidden>Panel de desarrollador</button></div></div>
+          <div class="r96-hero-side"><p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p><div class="r96-actions"><a class="r96-primary" href="#games">Explorar juegos</a><button class="r96-secondary" id="r96-hero-login" type="button">Iniciar con Google</button><button class="r96-secondary" id="r96-hero-dev" hidden>Panel de desarrollador</button></div></div>
         </div>
       </section>
       <section id="games" class="r96-band r96-games">
@@ -152,11 +152,14 @@
         <p class="r96-eyebrow">${invite?"Invitación de desarrollador":"Acceso R96"}</p>
         <h1 class="r96-h2">${invite?"Aceptar invitación":"Iniciar sesión"}</h1>
         <p class="r96-desc">${invite?"Inicia sesión con Google usando el mismo correo al que llegó la invitación. El código ya viene incluido en el enlace.":"Inicia sesión con Google. El Panel de desarrollador solo se habilita para cuentas R96 autorizadas."}</p>
-        <div class="r96-actions"><a class="r96-primary" id="r96-login-google" href="${esc(wixAccessUrl(invite?code:""))}">Iniciar con Google</a></div>
+        <div class="r96-actions"><button class="r96-primary" id="r96-login-google" type="button">Iniciar con Google</button></div>
         <p id="r96-dev-message" class="r96-form-message" data-type="${error?"error":""}">${esc(error)}</p>
       </div>
     </div></section>`;
 
+    main.querySelector("#r96-login-google")?.addEventListener("click",()=>{
+      window.location.assign(wixAccessUrl(invite?code:""));
+    });
     main.querySelector("#r96-dev-back")?.addEventListener("click",async()=>{
       cleanAuthQuery();
       await renderPublicSurface({skipInvite:true});
@@ -396,6 +399,12 @@
   const bindPublic=()=>{
     const menu=root.querySelector("#r96-menu"),panel=root.querySelector("#r96-menu-panel");
     menu?.addEventListener("click",()=>{panel.hidden=!panel.hidden});
+    root.querySelector("#r96-login")?.addEventListener("click",()=>{
+      window.location.assign(wixAccessUrl());
+    });
+    root.querySelector("#r96-hero-login")?.addEventListener("click",()=>{
+      window.location.assign(wixAccessUrl());
+    });
     root.querySelector("#r96-theme-toggle")?.addEventListener("click",()=>{
       const next=root.dataset.theme==="dark"?"light":"dark";
       root.dataset.theme=next;
