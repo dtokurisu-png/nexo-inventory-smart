@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-global-account-20261004-37";
+  const REV="r96-account-bar-20261004-38";
   if(document.getElementById("r96-app")) return;
 
   const css=document.createElement("link");
@@ -35,11 +35,11 @@
     return data.data;
   };
 
-  const accountApi=async()=>{
+  const accountApi=async(payload={})=>{
     const res=await fetch(functionUrl("risin96amesAccount"),{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:"{}"
+      body:JSON.stringify(payload)
     });
     const data=await res.json().catch(()=>({}));
     if(!res.ok||data.ok===false) throw new Error(data.error||"AUTH_REQUIRED");
@@ -63,7 +63,6 @@
               <span></span><span></span><span></span>
             </button>
             <div id="r96-menu-panel" class="r96-menu-panel" hidden>
-              <button id="r96-theme" type="button">Cambiar tema</button>
               <a href="#games">Explorar juegos</a>
               <a href="#reviews">Reseñas</a>
               <a href="#community">Comunidad</a>
@@ -84,6 +83,7 @@
             <span>Juegos <strong id="r96-games-count">0</strong></span>
             <span>Reseñas <strong id="r96-reviews-count">0</strong></span>
           </div>
+          <button class="r96-theme-toggle" id="r96-theme-toggle" type="button" aria-label="Cambiar tema"></button>
           <div class="r96-account-wrap">
             <button class="r96-secondary r96-account-button" id="r96-login" type="button">Iniciar sesión</button>
             <div id="r96-account-panel" class="r96-account-panel" hidden></div>
