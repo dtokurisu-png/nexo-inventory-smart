@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-account-bar-20261005-43";
+  const REV="r96-owner-invite-20261005-44";
   if(document.getElementById("r96-app")) return;
 
   const css=document.createElement("link");
@@ -85,6 +85,167 @@
     return u.toString();
   };
 
+  let inviteState={
+    canInviteDevelopers:false,
+    ownerEmail:"",
+    invites:[]
+  };
+  let inviteContextId="";
+  let openedInviteContext="";
+  let inviteRequestSeq=0;
+  const pendingInviteRequests=new Map();
+
+  const inviteIdFromLocation=()=>{
+    try{
+      return String(new URL(location.href).searchParams.get("r96invite")||"").trim();
+    }catch(_){
+      return "";
+    }
+  };
+
+  const inviteErrorText=(code)=>{
+    const map={
+      AUTH_REQUIRED:"Inicia sesión para continuar.",
+      LOGIN_EMAIL_REQUIRED:"Tu cuenta no tiene un correo de acceso disponible.",
+      R96_INVITE_OWNER_ONLY:"Solo la cuenta propietaria puede invitar desarrolladores.",
+      R96_OWNER_EMAIL_MISMATCH:"Esta cuenta no coincide con el correo del propietario.",
+      INVITEE_EMAIL_REQUIRED:"Escribe un correo electrónico válido.",
+      INVITEE_EMAIL_IS_YOURS:"No puedes enviarte una invitación a tu propio correo.",
+      R96_INVITEE_ALREADY_DEVELOPER:"Ese correo ya tiene una cuenta de desarrollador.",
+      R96_INVITE_LINK_REQUIRED:"La invitación no contiene un identificador válido.",
+      R96_INVITE_CODE_INVALID:"El formato del código no es válido.",
+      R96_INVITE_CODE_USED_OR_INVALID:"El código no existe, ya fue usado o la invitación fue reemplazada.",
+      R96_INVITE_CODE_EXPIRED:"La invitación expiró. Solicita una nueva.",
+      R96_INVITE_EMAIL_MISMATCH:"Debes iniciar sesión con el mismo correo al que se envió la invitación."
+    };
+    return map[String(code||"")]||String(code||"No se pudo completar la operación.");
+  };
+
+  const sendParentInviteRequest=(action,payload={})=>{
+    if(window.parent===window) return Promise.reject(new Error("R96_PARENT_BRIDGE_UNAVAILABLE"));
+
+    const requestId="r96-invite-"+Date.now().toString(36)+"-"+(++inviteRequestSeq).toString(36);
+
+    return new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{
+        pendingInviteRequests.delete(requestId);
+        reject(new Error("R96_INVITE_BRIDGE_TIMEOUT"));
+      },20000);
+
+      pendingInviteRequests.set(requestId,{
+        resolve:(value)=>{
+          clearTimeout(timer);
+          resolve(value);
+        },
+        reject:(error)=>{
+          clearTimeout(timer);
+          reject(error);
+        }
+      });
+
+      const ok=postToWixParent({
+        type:"r96-invite-"+action,
+        requestId,
+        revision:REV,
+        ...payload
+      });
+
+      if(!ok){
+        clearTimeout(timer);
+        pendingInviteRequests.delete(requestId);
+        reject(new Error("R96_PARENT_BRIDGE_UNAVAILABLE"));
+      }
+    });
+  };
+
+  const inviteApi=async(action,payload={})=>{
+    if(window.parent!==window){
+      try{
+        return await sendParentInviteRequest(action,payload);
+      }catch(error){
+        if(!accountSessionToken) throw error;
+      }
+    }
+
+    if(!accountSessionToken){
+      try{ await exchangeAccountBoot(); }catch(_){}
+    }
+
+    if(!accountSessionToken) throw new Error("AUTH_REQUIRED");
+
+    if(action==="create"){
+      return accountApi({action:"invite.create",input:{email:payload.email||""}});
+    }
+
+    if(action==="redeem"){
+      return accountApi({
+        action:"invite.redeem",
+        input:{
+          inviteId:payload.inviteId||"",
+          code:payload.code||""
+        }
+      });
+    }
+
+    if(action==="state"){
+      return accountApi({action:"invite.state"});
+    }
+
+    throw new Error("INVALID_ACTION");
+  };
+
+  const ensureQrLibrary=()=>{
+    if(window.qrcode) return Promise.resolve(window.qrcode);
+    if(window.__r96QrPromise) return window.__r96QrPromise;
+
+    window.__r96QrPromise=new Promise((resolve,reject)=>{
+      const script=document.createElement("script");
+      script.src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js";
+      script.async=true;
+      script.onload=()=>window.qrcode?resolve(window.qrcode):reject(new Error("QR_LIBRARY_FAILED"));
+      script.onerror=()=>reject(new Error("QR_LIBRARY_FAILED"));
+      document.head.appendChild(script);
+    });
+
+    return window.__r96QrPromise;
+  };
+
+  const renderQr=async(container,url)=>{
+    if(!container||!url) return;
+    container.innerHTML='<span class="r96-qr-loading">Generando QR…</span>';
+
+    try{
+      const factory=await ensureQrLibrary();
+      const qr=factory(0,"M");
+      qr.addData(url);
+      qr.make();
+      container.innerHTML=qr.createSvgTag(5,2);
+    }catch(_){
+      container.innerHTML='<span class="r96-qr-fallback">No se pudo dibujar el QR. El enlace sigue disponible.</span>';
+    }
+  };
+
+  const copyText=async(value)=>{
+    const text=String(value||"");
+    if(!text) return false;
+
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch(_){
+      const area=document.createElement("textarea");
+      area.value=text;
+      area.style.position="fixed";
+      area.style.opacity="0";
+      document.body.appendChild(area);
+      area.select();
+      let copied=false;
+      try{copied=document.execCommand("copy");}catch(__){}
+      area.remove();
+      return copied;
+    }
+  };
+
   const shell=()=>`
     <header class="r96-header">
       <nav class="r96-nav">
@@ -114,6 +275,7 @@
             <span>Juegos <strong id="r96-games-count">0</strong></span>
             <span>Reseñas <strong id="r96-reviews-count">0</strong></span>
           </div>
+          <button class="r96-owner-invite-button" id="r96-owner-invite" type="button" hidden>Invitar desarrollador</button>
           <button class="r96-theme-toggle" id="r96-theme-toggle" type="button" aria-label="Cambiar tema"></button>
           <div class="r96-account-wrap">
             <button class="r96-secondary r96-account-button" id="r96-login" type="button">Iniciar sesión</button>
@@ -282,6 +444,263 @@
     return "Cuenta invitado";
   };
 
+  const syncInviteButton=()=>{
+    const button=root.querySelector("#r96-owner-invite");
+    if(!button) return;
+    button.hidden=inviteState?.canInviteDevelopers!==true;
+  };
+
+  const closeInviteOverlay=()=>{
+    document.querySelector("#r96-invite-overlay")?.remove();
+  };
+
+  const recentInvitesMarkup=()=>{
+    const items=Array.isArray(inviteState?.invites)?inviteState.invites:[];
+    if(!items.length){
+      return '<p class="r96-invite-empty">Todavía no has creado invitaciones.</p>';
+    }
+
+    return items.slice(0,8).map((item)=>{
+      const expires=item.expiresAt?new Date(item.expiresAt).toLocaleString():"";
+      return '<div class="r96-invite-history-row">'+
+        '<div><strong>'+esc(item.inviteeEmail||"")+'</strong><span>'+esc(item.status||"pending")+' · '+esc(item.codeHint||"")+'</span></div>'+
+        (expires?'<small>Vence: '+esc(expires)+'</small>':'')+
+      '</div>';
+    }).join("");
+  };
+
+  const openInviteCreateModal=()=>{
+    if(inviteState?.canInviteDevelopers!==true) return;
+
+    closeInviteOverlay();
+
+    const overlay=document.createElement("div");
+    overlay.id="r96-invite-overlay";
+    overlay.className="r96-invite-overlay";
+    overlay.innerHTML=`
+      <section class="r96-invite-modal" role="dialog" aria-modal="true" aria-labelledby="r96-invite-title">
+        <div class="r96-invite-modal-head">
+          <div>
+            <p class="r96-eyebrow">Acceso privado</p>
+            <h2 id="r96-invite-title">Invitar desarrollador</h2>
+            <p>Solo la cuenta propietaria puede generar estas invitaciones.</p>
+          </div>
+          <button class="r96-invite-close" type="button" aria-label="Cerrar">×</button>
+        </div>
+
+        <div id="r96-invite-create-form">
+          <label class="r96-invite-field">
+            <span>Correo del colaborador</span>
+            <input id="r96-invite-email" type="email" autocomplete="email" placeholder="persona@correo.com">
+            <small>El código solo funcionará con este mismo correo al iniciar sesión.</small>
+          </label>
+          <div class="r96-invite-actions">
+            <button class="r96-primary" id="r96-generate-invite" type="button">Generar QR y clave</button>
+          </div>
+          <p class="r96-invite-message" id="r96-invite-message"></p>
+        </div>
+
+        <div id="r96-invite-result" class="r96-invite-result" hidden></div>
+
+        <div class="r96-invite-history">
+          <div class="r96-invite-history-title">
+            <strong>Invitaciones recientes</strong>
+            <span>Un solo uso · 7 días</span>
+          </div>
+          <div id="r96-invite-history-list">${recentInvitesMarkup()}</div>
+        </div>
+      </section>`;
+
+    document.body.appendChild(overlay);
+
+    const close=()=>closeInviteOverlay();
+    overlay.querySelector(".r96-invite-close")?.addEventListener("click",close);
+    overlay.addEventListener("click",(event)=>{if(event.target===overlay) close();});
+
+    const button=overlay.querySelector("#r96-generate-invite");
+    const input=overlay.querySelector("#r96-invite-email");
+    const message=overlay.querySelector("#r96-invite-message");
+    const resultBox=overlay.querySelector("#r96-invite-result");
+
+    button?.addEventListener("click",async()=>{
+      const email=String(input?.value||"").trim().toLowerCase();
+      if(!email){
+        message.textContent="Escribe el correo del desarrollador.";
+        message.dataset.type="error";
+        input?.focus();
+        return;
+      }
+
+      button.disabled=true;
+      button.textContent="Generando…";
+      message.textContent="Creando invitación segura…";
+      message.dataset.type="";
+
+      try{
+        const result=await inviteApi("create",{email});
+        const invite=result?.invite||{};
+        const code=String(result?.code||"");
+        const link=String(invite.inviteUrl||"");
+        const expiry=invite.expiresAt?new Date(invite.expiresAt).toLocaleString():"7 días";
+        const shareMessage=[
+          "Únete a RISIN96AMES como desarrollador.",
+          "",
+          "Abre este enlace:",
+          link,
+          "",
+          "Código de acceso de un solo uso:",
+          code,
+          "",
+          "Inicia sesión con "+String(invite.inviteeEmail||email)+" y escribe el código para activar tu acceso."
+        ].join("\n");
+
+        resultBox.hidden=false;
+        resultBox.innerHTML=`
+          <div class="r96-invite-success">
+            <div class="r96-invite-qr" id="r96-invite-qr"></div>
+            <div class="r96-invite-share">
+              <p class="r96-eyebrow">Invitación creada</p>
+              <h3>Clave de acceso</h3>
+              <code class="r96-invite-code">${esc(code)}</code>
+
+              <label>
+                <span>Enlace del QR</span>
+                <input value="${esc(link)}" readonly>
+              </label>
+
+              <p class="r96-invite-expiry">Vence: ${esc(expiry)}</p>
+              <p class="r96-invite-security">El QR contiene únicamente el enlace. La clave no viaja dentro del QR y debe entregarse aparte.</p>
+
+              <div class="r96-invite-share-actions">
+                <button class="r96-secondary" id="r96-copy-code" type="button">Copiar clave</button>
+                <button class="r96-secondary" id="r96-copy-link" type="button">Copiar enlace</button>
+                <button class="r96-secondary" id="r96-copy-message" type="button">Copiar invitación</button>
+                <a class="r96-primary" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Abrir en pestaña nueva</a>
+              </div>
+            </div>
+          </div>`;
+
+        renderQr(resultBox.querySelector("#r96-invite-qr"),link);
+
+        resultBox.querySelector("#r96-copy-code")?.addEventListener("click",()=>copyText(code));
+        resultBox.querySelector("#r96-copy-link")?.addEventListener("click",()=>copyText(link));
+        resultBox.querySelector("#r96-copy-message")?.addEventListener("click",()=>copyText(shareMessage));
+
+        inviteState={
+          ...inviteState,
+          invites:[invite,...(inviteState.invites||[]).filter(x=>x.id!==invite.id)]
+        };
+
+        const history=overlay.querySelector("#r96-invite-history-list");
+        if(history) history.innerHTML=recentInvitesMarkup();
+
+        message.textContent="Invitación lista. La clave solo puede utilizarse una vez.";
+        message.dataset.type="ok";
+      }catch(error){
+        message.textContent=inviteErrorText(error?.message||error);
+        message.dataset.type="error";
+      }finally{
+        button.disabled=false;
+        button.textContent="Generar QR y clave";
+      }
+    });
+
+    setTimeout(()=>input?.focus(),40);
+  };
+
+  const openInviteRedeemModal=(inviteId)=>{
+    const id=String(inviteId||"").trim();
+    if(!id||openedInviteContext===id) return;
+    openedInviteContext=id;
+
+    closeInviteOverlay();
+
+    const overlay=document.createElement("div");
+    overlay.id="r96-invite-overlay";
+    overlay.className="r96-invite-overlay";
+    overlay.innerHTML=`
+      <section class="r96-invite-modal r96-invite-redeem-modal" role="dialog" aria-modal="true" aria-labelledby="r96-redeem-title">
+        <div class="r96-invite-modal-head">
+          <div>
+            <p class="r96-eyebrow">Invitación privada</p>
+            <h2 id="r96-redeem-title">Únete a RISIN96AMES como desarrollador</h2>
+            <p>Inicia sesión con el correo para el que se creó esta invitación y escribe la clave de acceso.</p>
+          </div>
+          <button class="r96-invite-close" type="button" aria-label="Cerrar">×</button>
+        </div>
+
+        <div class="r96-invite-redeem-body">
+          <div class="r96-invite-lock">R96</div>
+          <label class="r96-invite-field">
+            <span>Clave de acceso única</span>
+            <input id="r96-redeem-code" autocomplete="one-time-code" autocapitalize="characters" placeholder="R96-XXXXX-XXXXX">
+            <small>La clave caduca después de 7 días y deja de funcionar después del primer uso.</small>
+          </label>
+          <div class="r96-invite-actions">
+            <button class="r96-primary" id="r96-redeem-invite" type="button">Activar acceso de desarrollador</button>
+          </div>
+          <p class="r96-invite-message" id="r96-redeem-message"></p>
+        </div>
+      </section>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector(".r96-invite-close")?.addEventListener("click",()=>closeInviteOverlay());
+
+    const button=overlay.querySelector("#r96-redeem-invite");
+    const input=overlay.querySelector("#r96-redeem-code");
+    const message=overlay.querySelector("#r96-redeem-message");
+
+    button?.addEventListener("click",async()=>{
+      const code=String(input?.value||"").trim();
+      if(!code){
+        message.textContent="Escribe la clave de acceso.";
+        message.dataset.type="error";
+        input?.focus();
+        return;
+      }
+
+      button.disabled=true;
+      button.textContent="Validando…";
+      message.textContent="Comprobando invitación y cuenta…";
+      message.dataset.type="";
+
+      try{
+        const result=await inviteApi("redeem",{inviteId:id,code});
+        const developer=result?.developer||{};
+
+        overlay.querySelector(".r96-invite-redeem-body").innerHTML=`
+          <div class="r96-invite-activated">
+            <div class="r96-invite-lock is-ok">✓</div>
+            <p class="r96-eyebrow">Acceso activado</p>
+            <h3>Ya eres desarrollador de RISIN96AMES</h3>
+            <p>${esc(developer.displayName||"Desarrollador")} · ${esc(developer.email||"")}</p>
+            <button class="r96-primary" id="r96-finish-invite" type="button">Continuar</button>
+          </div>`;
+
+        overlay.querySelector("#r96-finish-invite")?.addEventListener("click",()=>{
+          closeInviteOverlay();
+          try{
+            const u=new URL(location.href);
+            u.searchParams.delete("r96invite");
+            history.replaceState({},document.title,u.pathname+u.search+u.hash);
+          }catch(_){}
+          refreshAccountState();
+        });
+      }catch(error){
+        message.textContent=inviteErrorText(error?.message||error);
+        message.dataset.type="error";
+      }finally{
+        if(button?.isConnected){
+          button.disabled=false;
+          button.textContent="Activar acceso de desarrollador";
+        }
+      }
+    });
+
+    setTimeout(()=>input?.focus(),50);
+  };
+
   const closeProfileModal=()=>{
     document.querySelector("#r96-profile-overlay")?.remove();
   };
@@ -442,6 +861,15 @@
       hero.dataset.authenticated="1";
     }
 
+    if(developer?.canInviteDevelopers===true){
+      inviteState={
+        ...inviteState,
+        canInviteDevelopers:true,
+        ownerEmail:String(member.loginEmail||inviteState.ownerEmail||"").toLowerCase()
+      };
+      syncInviteButton();
+    }
+
     renderAccountPanel(data);
     return true;
   };
@@ -482,6 +910,31 @@
       if(expected!=="*"&&event.origin!==expected) return;
 
       const message=event?.data||{};
+
+      if(message?.type==="r96-invite-result"){
+        const pending=pendingInviteRequests.get(String(message.requestId||""));
+        if(!pending) return;
+        pendingInviteRequests.delete(String(message.requestId||""));
+        if(message.ok===true) pending.resolve(message.data);
+        else pending.reject(new Error(message.error||"R96_INVITE_REQUEST_FAILED"));
+        return;
+      }
+
+      if(message?.type==="r96-invite-state"){
+        inviteState={
+          canInviteDevelopers:message.data?.canInviteDevelopers===true,
+          ownerEmail:String(message.data?.ownerEmail||""),
+          invites:Array.isArray(message.data?.invites)?message.data.invites:[]
+        };
+        inviteContextId=String(message.inviteId||inviteContextId||"");
+        syncInviteButton();
+
+        if(inviteContextId){
+          setTimeout(()=>openInviteRedeemModal(inviteContextId),80);
+        }
+        return;
+      }
+
       if(message?.type!=="r96-account-state") return;
 
       if(message.data?.member){
@@ -499,8 +952,17 @@
           type:"r96-account-ready",
           revision:REV
         });
+        postToWixParent({
+          type:"r96-invite-ready",
+          revision:REV
+        });
       },delay);
     });
+
+    inviteContextId=inviteContextId||inviteIdFromLocation();
+    if(inviteContextId){
+      setTimeout(()=>openInviteRedeemModal(inviteContextId),120);
+    }
   };
 
   const sleep=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -530,6 +992,7 @@
     setThemeButton();
     bindParentAccountBridge();
     announceAccountBridgeReady();
+    syncInviteButton();
     refreshAccountState();
 
     try{
