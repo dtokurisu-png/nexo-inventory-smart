@@ -205,3 +205,202 @@
   .r96-profile-overlay{padding:12px}
   .r96-profile-modal{padding:18px;border-radius:22px}
 }
+
+
+/* R96 CANONICAL MY SPACE ACCOUNT BAR · 2026-10-04 */
+.r96-quick-settings-wrap{
+  position:relative;
+  display:flex;
+  align-items:center;
+  flex:0 0 auto;
+}
+.r96-quick-settings-button{
+  appearance:none;
+  width:52px;
+  height:52px;
+  min-width:52px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+  color:var(--text);
+  cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  transition:background .18s ease,border-color .18s ease,transform .18s ease;
+}
+.r96-quick-settings-button:hover,
+.r96-quick-settings-button:focus-visible,
+.r96-quick-settings-button[aria-expanded="true"]{
+  outline:none;
+  background:var(--panel-strong);
+  border-color:color-mix(in srgb,var(--accent) 34%,var(--line));
+  transform:translateY(-1px);
+}
+.r96-quick-settings-button img{
+  width:26px;
+  height:26px;
+  display:block;
+  object-fit:contain;
+}
+.r96-quick-settings-panel{
+  position:absolute;
+  top:60px;
+  right:0;
+  z-index:70;
+  width:230px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--bg) 97%,white 3%);
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(18px);
+}
+.r96-quick-settings-panel[hidden]{display:none}
+.r96-quick-settings-title{
+  padding:11px 13px 8px;
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.r96-quick-setting-row{
+  appearance:none;
+  width:100%;
+  min-height:48px;
+  padding:0 13px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border:0;
+  border-top:1px solid var(--line);
+  background:transparent;
+  color:var(--text);
+  cursor:pointer;
+  font-weight:800;
+}
+.r96-quick-setting-row>span{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.r96-quick-setting-row img{
+  width:19px;
+  height:19px;
+  display:block;
+  object-fit:contain;
+}
+.r96-quick-setting-row strong{
+  min-width:48px;
+  padding:4px 8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:var(--muted);
+  font-size:.72rem;
+  text-align:center;
+}
+.r96-quick-setting-row:hover{background:var(--panel-strong)}
+
+.r96-account-button.is-authenticated{
+  min-height:58px;
+  max-width:320px;
+  padding:6px 12px 6px 7px;
+  grid-template-columns:44px minmax(0,1fr) auto;
+  gap:10px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:var(--panel);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.r96-account-button.is-authenticated:hover,
+.r96-account-button.is-authenticated:focus-visible{
+  outline:none;
+  background:var(--panel-strong);
+  border-color:color-mix(in srgb,var(--accent) 30%,var(--line));
+}
+.r96-account-button.is-authenticated .r96-account-avatar{
+  width:44px;
+  height:44px;
+}
+.r96-account-button-copy{
+  align-content:center;
+  gap:2px;
+}
+.r96-account-button-copy strong{
+  font-size:.96rem;
+  line-height:1.05;
+}
+.r96-account-button-copy small{
+  font-size:.72rem;
+  line-height:1.15;
+}
+.r96-account-button-copy .r96-account-type{
+  width:max-content;
+  max-width:100%;
+  margin-top:2px;
+  padding:2px 9px 3px;
+  border-radius:999px;
+  background:#f5f7fb;
+  color:#28324a;
+  border:1px solid rgba(15,23,42,.12);
+  font-size:.65rem;
+  line-height:1.1;
+  font-weight:900;
+  font-style:normal;
+}
+.r96-account-caret{
+  align-self:center;
+  font-size:1rem;
+  font-weight:900;
+}
+#r96-app[data-theme="light"] .r96-quick-settings-button,
+#r96-app[data-theme="light"] .r96-account-button.is-authenticated{
+  background:rgba(47,79,147,.10);
+  border-color:rgba(47,79,147,.18);
+}
+#r96-app[data-theme="light"] .r96-quick-settings-button:hover,
+#r96-app[data-theme="light"] .r96-account-button.is-authenticated:hover{
+  background:rgba(47,79,147,.16);
+}
+@media(max-width:1080px){
+  .r96-quick-settings-wrap{margin-left:auto}
+  .r96-account-wrap{margin-left:0}
+}
+@media(max-width:720px){
+  .r96-quick-settings-button{
+    width:40px;
+    height:40px;
+    min-width:40px;
+    border-radius:12px;
+  }
+  .r96-quick-settings-button img{width:22px;height:22px}
+  .r96-quick-settings-panel{
+    position:fixed;
+    top:76px;
+    left:12px;
+    right:12px;
+    width:auto;
+  }
+  .r96-account-button.is-authenticated{
+    min-height:48px;
+    max-width:min(250px,calc(100vw - 76px));
+    grid-template-columns:36px minmax(0,1fr) auto;
+    padding:4px 8px 4px 5px;
+    border-radius:13px;
+    gap:7px;
+  }
+  .r96-account-button.is-authenticated .r96-account-avatar{
+    width:36px;
+    height:36px;
+  }
+  .r96-account-button-copy strong{font-size:.78rem}
+  .r96-account-button-copy small{font-size:.62rem}
+  .r96-account-button-copy .r96-account-type{
+    padding:1px 6px 2px;
+    font-size:.56rem;
+  }
+  .r96-account-caret{font-size:.8rem}
+}
