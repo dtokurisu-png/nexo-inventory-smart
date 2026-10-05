@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-structure-clean-20261004-35";
+  const REV="r96-direct-wix-login-20261004-36";
   if(document.getElementById("r96-app")) return;
 
   const css=document.createElement("link");
@@ -35,6 +35,31 @@
     return data.data;
   };
 
+  const developerApi=async()=>{
+    const res=await fetch(functionUrl("risin96amesDeveloper"),{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:"{}"
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||data.ok===false) throw new Error(data.error||"AUTH_REQUIRED");
+    return data.data;
+  };
+
+  const loginUrl=()=>{
+    const u=new URL(location.href);
+    ["r96state","r96error"].forEach(k=>u.searchParams.delete(k));
+    u.hash="";
+    u.searchParams.set("r96login","1");
+    return u.toString();
+  };
+
+  const cleanLoginQuery=()=>{
+    const u=new URL(location.href);
+    ["r96login","r96state","r96error"].forEach(k=>u.searchParams.delete(k));
+    history.replaceState(history.state,"",u.toString());
+  };
+
   const shell=()=>`
     <header class="r96-header">
       <nav class="r96-nav">
@@ -65,6 +90,7 @@
             <span>Juegos <strong id="r96-games-count">0</strong></span>
             <span>Reseñas <strong id="r96-reviews-count">0</strong></span>
           </div>
+          <button class="r96-secondary" id="r96-login" type="button">Iniciar con Google</button>
         </div>
       </nav>
     </header>
@@ -80,6 +106,7 @@
             <p class="r96-copy">RISIN96AMES reúne builds web en desarrollo para jugar directamente desde la plataforma, registrar sesiones y devolver feedback a sus desarrolladores.</p>
             <div class="r96-actions">
               <a class="r96-primary" href="#games">Explorar juegos</a>
+              <button class="r96-secondary" id="r96-hero-login" type="button">Iniciar con Google</button>
             </div>
           </div>
         </div>
@@ -183,9 +210,53 @@
       </div>
     </article>`;
 
+  const applyDeveloperState=(developer)=>{
+    const label=developer?.displayName||"Propietario R96";
+    const header=root.querySelector("#r96-login");
+    const hero=root.querySelector("#r96-hero-login");
+
+    if(header){
+      header.textContent=label;
+      header.dataset.authenticated="1";
+      header.title="Acceso R96 activo";
+    }
+
+    if(hero){
+      hero.textContent="Acceso de desarrollador activo";
+      hero.dataset.authenticated="1";
+      hero.disabled=true;
+    }
+  };
+
+  const refreshDeveloperState=async()=>{
+    try{
+      const data=await developerApi();
+      if(data?.developer){
+        applyDeveloperState(data.developer);
+        cleanLoginQuery();
+        return true;
+      }
+    }catch(_){}
+    return false;
+  };
+
+  const watchLogin=()=>{
+    if(new URL(location.href).searchParams.get("r96login")!=="1") return;
+
+    let attempts=0;
+    const timer=setInterval(async()=>{
+      attempts+=1;
+      if(await refreshDeveloperState()||attempts>=120){
+        clearInterval(timer);
+      }
+    },1000);
+  };
+
   const renderHome=async()=>{
     root.innerHTML=shell();
     bind();
+    refreshDeveloperState();
+    watchLogin();
 
     try{
       const data=await publicApi("games.list");
@@ -249,6 +320,16 @@
       const next=root.dataset.theme==="dark"?"light":"dark";
       root.dataset.theme=next;
       localStorage.setItem("risin96ames-theme",next);
+    });
+
+    root.querySelector("#r96-login")?.addEventListener("click",(event)=>{
+      if(event.currentTarget.dataset.authenticated==="1") return;
+      window.location.assign(loginUrl());
+    });
+
+    root.querySelector("#r96-hero-login")?.addEventListener("click",(event)=>{
+      if(event.currentTarget.dataset.authenticated==="1") return;
+      window.location.assign(loginUrl());
     });
 
     root.querySelectorAll('a[href^="#"]').forEach((link)=>{
