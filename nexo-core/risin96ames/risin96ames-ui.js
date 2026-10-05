@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-account-bar-20261005-42";
+  const REV="r96-account-bar-20261005-43";
   if(document.getElementById("r96-app")) return;
 
   const css=document.createElement("link");
@@ -239,6 +239,33 @@
     </article>`;
 
   let accountState=null;
+  let parentAccountBridgeBound=false;
+
+  const parentBridgeOrigin=()=>{
+    try{
+      return document.referrer?new URL(document.referrer).origin:"*";
+    }catch(_){
+      return "*";
+    }
+  };
+
+  const postToWixParent=(payload)=>{
+    if(window.parent===window) return false;
+    try{
+      window.parent.postMessage(payload,parentBridgeOrigin());
+      return true;
+    }catch(_){
+      return false;
+    }
+  };
+
+  const requestParentAccountAction=(action)=>{
+    return postToWixParent({
+      type:"r96-account-action",
+      action:String(action||""),
+      revision:REV
+    });
+  };
 
   const setThemeButton=()=>{
     const button=root.querySelector("#r96-theme-toggle");
@@ -371,10 +398,12 @@
     });
 
     panel.querySelector("#r96-switch-account")?.addEventListener("click",()=>{
+      if(requestParentAccountAction("switch")) return;
       window.location.assign(accountActionUrl("r96switch"));
     });
 
     panel.querySelector("#r96-logout-account")?.addEventListener("click",()=>{
+      if(requestParentAccountAction("logout")) return;
       window.location.assign(accountActionUrl("r96logout"));
     });
   };
@@ -417,6 +446,63 @@
     return true;
   };
 
+  const clearAccountState=()=>{
+    accountState=null;
+
+    const header=root.querySelector("#r96-login");
+    const hero=root.querySelector("#r96-hero-login");
+    const panel=root.querySelector("#r96-account-panel");
+
+    if(header){
+      header.classList.remove("is-authenticated");
+      header.textContent="Iniciar sesión";
+      delete header.dataset.authenticated;
+      header.title="";
+    }
+
+    if(hero){
+      hero.textContent="Iniciar sesión";
+      delete hero.dataset.authenticated;
+    }
+
+    if(panel){
+      panel.hidden=true;
+      panel.innerHTML="";
+    }
+  };
+
+  const bindParentAccountBridge=()=>{
+    if(parentAccountBridgeBound) return;
+    parentAccountBridgeBound=true;
+
+    window.addEventListener("message",(event)=>{
+      if(window.parent!==window&&event.source!==window.parent) return;
+
+      const expected=parentBridgeOrigin();
+      if(expected!=="*"&&event.origin!==expected) return;
+
+      const message=event?.data||{};
+      if(message?.type!=="r96-account-state") return;
+
+      if(message.data?.member){
+        applyAccountState(message.data);
+      }else{
+        clearAccountState();
+      }
+    });
+  };
+
+  const announceAccountBridgeReady=()=>{
+    [0,180,600,1400].forEach((delay)=>{
+      setTimeout(()=>{
+        postToWixParent({
+          type:"r96-account-ready",
+          revision:REV
+        });
+      },delay);
+    });
+  };
+
   const sleep=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
 
   const refreshAccountState=async(attempt=0)=>{
@@ -442,6 +528,8 @@
     root.innerHTML=shell();
     bind();
     setThemeButton();
+    bindParentAccountBridge();
+    announceAccountBridgeReady();
     refreshAccountState();
 
     try{
@@ -525,6 +613,7 @@
         toggleAccountPanel();
         return;
       }
+      if(requestParentAccountAction("login")) return;
       window.location.assign(accountActionUrl("r96login"));
     });
 
@@ -534,6 +623,7 @@
         toggleAccountPanel();
         return;
       }
+      if(requestParentAccountAction("login")) return;
       window.location.assign(accountActionUrl("r96login"));
     });
 
