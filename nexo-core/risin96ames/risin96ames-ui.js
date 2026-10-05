@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-account-bar-20261004-38";
+  const REV="r96-account-bar-20261004-39";
   if(document.getElementById("r96-app")) return;
 
   const css=document.createElement("link");
@@ -38,6 +38,7 @@
   const accountApi=async(payload={})=>{
     const res=await fetch(functionUrl("risin96amesAccount"),{
       method:"POST",
+      credentials:"include",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(payload)
     });
@@ -385,11 +386,18 @@
     return true;
   };
 
-  const refreshAccountState=async()=>{
+  const sleep=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
+
+  const refreshAccountState=async(attempt=0)=>{
     try{
       const data=await accountApi();
       return applyAccountState(data);
     }catch(_){
+      if(attempt<5){
+        const delays=[250,500,900,1400,2200];
+        await sleep(delays[attempt]||2200);
+        return refreshAccountState(attempt+1);
+      }
       return false;
     }
   };
