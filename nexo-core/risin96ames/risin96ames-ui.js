@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-account-bar-20261004-40";
+  const REV="r96-account-bar-20261004-41";
   if(document.getElementById("r96-app")) return;
 
   const css=document.createElement("link");
