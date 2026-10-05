@@ -44,6 +44,7 @@
               <span></span><span></span><span></span>
             </button>
             <div id="r96-menu-panel" class="r96-menu-panel" hidden>
+              <button id="r96-theme" type="button">Cambiar tema</button>
               <a href="#games">Explorar juegos</a>
               <a href="#reviews">Reseñas</a>
               <a href="#community">Comunidad</a>
@@ -64,7 +65,6 @@
             <span>Juegos <strong id="r96-games-count">0</strong></span>
             <span>Reseñas <strong id="r96-reviews-count">0</strong></span>
           </div>
-          <button class="r96-icon-button" id="r96-theme-toggle" type="button" aria-label="Cambiar tema"></button>
         </div>
       </nav>
     </header>
@@ -183,14 +183,8 @@
       </div>
     </article>`;
 
-  const setThemeButton=()=>{
-    const button=root.querySelector("#r96-theme-toggle");
-    if(button) button.textContent=root.dataset.theme==="dark"?"☀️":"🌙";
-  };
-
   const renderHome=async()=>{
     root.innerHTML=shell();
-    setThemeButton();
     bind();
 
     try{
@@ -251,11 +245,10 @@
       panel.hidden=!panel.hidden;
     });
 
-    root.querySelector("#r96-theme-toggle")?.addEventListener("click",()=>{
+    root.querySelector("#r96-theme")?.addEventListener("click",()=>{
       const next=root.dataset.theme==="dark"?"light":"dark";
       root.dataset.theme=next;
       localStorage.setItem("risin96ames-theme",next);
-      setThemeButton();
     });
 
     root.querySelectorAll('a[href^="#"]').forEach((link)=>{
