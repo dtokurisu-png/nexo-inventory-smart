@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-account-bar-20261004-39";
+  const REV="r96-account-bar-20261004-40";
   if(document.getElementById("r96-app")) return;
 
   const css=document.createElement("link");
@@ -84,7 +84,21 @@
             <span>Juegos <strong id="r96-games-count">0</strong></span>
             <span>Reseñas <strong id="r96-reviews-count">0</strong></span>
           </div>
-          <button class="r96-theme-toggle" id="r96-theme-toggle" type="button" aria-label="Cambiar tema"></button>
+          <div class="r96-quick-settings-wrap">
+            <button class="r96-quick-settings-button" id="r96-quick-settings-button" type="button" aria-label="Ajustes rápidos" aria-expanded="false">
+              <img src="https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/ajustes-rapidos.png" alt="">
+            </button>
+            <div id="r96-quick-settings-panel" class="r96-quick-settings-panel" hidden>
+              <div class="r96-quick-settings-title">Ajustes rápidos</div>
+              <button id="r96-theme-toggle" class="r96-quick-setting-row" type="button">
+                <span>
+                  <img id="r96-theme-icon" src="https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/modo-oscuro.png" alt="">
+                  <span>Apariencia</span>
+                </span>
+                <strong id="r96-theme-value">Oscuro</strong>
+              </button>
+            </div>
+          </div>
           <div class="r96-account-wrap">
             <button class="r96-secondary r96-account-button" id="r96-login" type="button">Iniciar sesión</button>
             <div id="r96-account-panel" class="r96-account-panel" hidden></div>
@@ -212,9 +226,12 @@
 
   const setThemeButton=()=>{
     const button=root.querySelector("#r96-theme-toggle");
+    const value=root.querySelector("#r96-theme-value");
+    const icon=root.querySelector("#r96-theme-icon");
     if(!button) return;
     const dark=root.dataset.theme==="dark";
-    button.textContent=dark?"☀️":"🌙";
+    if(value) value.textContent=dark?"Oscuro":"Claro";
+    if(icon) icon.src="https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/"+(dark?"modo-oscuro":"modo-claro")+".png";
     button.setAttribute("aria-label",dark?"Cambiar a modo claro":"Cambiar a modo oscuro");
     button.title=dark?"Modo claro":"Modo oscuro";
   };
@@ -359,6 +376,7 @@
     const role=developer
       ? (developer.roleKey==="owner"?"Propietario R96":"Desarrollador R96")
       : "Miembro";
+    const accountLabel="Cuenta personal";
     const avatar=member.photoUrl
       ? `<span class="r96-account-avatar r96-account-avatar-image"><img src="${esc(member.photoUrl)}" alt=""></span>`
       : `<span class="r96-account-avatar">${esc((member.displayName||"U").slice(0,1).toUpperCase())}</span>`;
@@ -370,7 +388,7 @@
         <span class="r96-account-button-copy">
           <strong>${esc(member.displayName||"Usuario")}</strong>
           <small>${esc(member.loginEmail||"")}</small>
-          <em>${esc(role)}</em>
+          <em class="r96-account-type">${esc(accountLabel)}</em>
         </span>
         <span class="r96-account-caret">⌄</span>`;
       header.dataset.authenticated="1";
@@ -466,9 +484,24 @@
   const bind=()=>{
     const menu=root.querySelector("#r96-menu");
     const panel=root.querySelector("#r96-menu-panel");
+    const quickButton=root.querySelector("#r96-quick-settings-button");
+    const quickPanel=root.querySelector("#r96-quick-settings-panel");
+    const accountPanel=root.querySelector("#r96-account-panel");
 
-    menu?.addEventListener("click",()=>{
+    menu?.addEventListener("click",(event)=>{
+      event.stopPropagation();
       panel.hidden=!panel.hidden;
+      if(quickPanel) quickPanel.hidden=true;
+      if(accountPanel) accountPanel.hidden=true;
+    });
+
+    quickButton?.addEventListener("click",(event)=>{
+      event.stopPropagation();
+      if(!quickPanel) return;
+      quickPanel.hidden=!quickPanel.hidden;
+      quickButton.setAttribute("aria-expanded",quickPanel.hidden?"false":"true");
+      if(panel) panel.hidden=true;
+      if(accountPanel) accountPanel.hidden=true;
     });
 
     root.querySelector("#r96-theme-toggle")?.addEventListener("click",(event)=>{
@@ -481,6 +514,9 @@
 
     root.querySelector("#r96-login")?.addEventListener("click",(event)=>{
       if(event.currentTarget.dataset.authenticated==="1"){
+        event.stopPropagation();
+        if(quickPanel) quickPanel.hidden=true;
+        if(panel) panel.hidden=true;
         toggleAccountPanel();
         return;
       }
@@ -507,8 +543,16 @@
 
     root.addEventListener("click",(event)=>{
       const button=event.target.closest("[data-r96-game]");
-      if(!button) return;
-      openGame(button.dataset.r96Game);
+      if(button){
+        openGame(button.dataset.r96Game);
+        return;
+      }
+      if(!event.target.closest(".r96-menu-wrap") && panel) panel.hidden=true;
+      if(!event.target.closest(".r96-quick-settings-wrap") && quickPanel){
+        quickPanel.hidden=true;
+        quickButton?.setAttribute("aria-expanded","false");
+      }
+      if(!event.target.closest(".r96-account-wrap") && accountPanel) accountPanel.hidden=true;
     },{once:false});
   };
 
