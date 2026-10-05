@@ -404,3 +404,61 @@
   }
   .r96-account-caret{font-size:.8rem}
 }
+
+
+/* R96 ACCOUNT VISIBILITY PRIORITY · 2026-10-04 */
+.r96-nav-right{
+  overflow:visible!important;
+}
+.r96-account-wrap{
+  flex:0 0 auto!important;
+  min-width:max-content!important;
+  position:relative!important;
+  z-index:4;
+}
+.r96-account-button{
+  flex:0 0 auto!important;
+}
+.r96-account-button.is-authenticated{
+  width:276px!important;
+  min-width:276px!important;
+  max-width:276px!important;
+}
+.r96-quick-settings-wrap{
+  flex:0 0 auto!important;
+  z-index:5;
+}
+@media(max-width:1280px) and (min-width:1081px){
+  .r96-stats{display:none!important}
+}
+@media(max-width:1160px) and (min-width:1081px){
+  .r96-links{display:none!important}
+}
+@media(max-width:1080px){
+  .r96-nav-right{
+    width:100%!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    flex-wrap:nowrap!important;
+  }
+  .r96-links,
+  .r96-stats{
+    display:none!important;
+  }
+  .r96-account-wrap{
+    margin-left:0!important;
+  }
+}
+@media(max-width:720px){
+  .r96-account-wrap{
+    min-width:0!important;
+    flex:1 1 auto!important;
+  }
+  .r96-account-button.is-authenticated{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+}
