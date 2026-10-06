@@ -1,5 +1,5 @@
 (() => {
-  const REV="r96-owner-invite-20261005-44";
+  const REV="r96-owner-invite-20261005-45";
   if(document.getElementById("r96-app")) return;
 
   const css=document.createElement("link");
@@ -986,6 +986,26 @@
     }
   };
 
+  const refreshInviteStateDirect=async(attempt=0)=>{
+    try{
+      const data=await accountApi({action:"invite.state"});
+      inviteState={
+        canInviteDevelopers:data?.canInviteDevelopers===true,
+        ownerEmail:String(data?.ownerEmail||""),
+        invites:Array.isArray(data?.invites)?data.invites:[]
+      };
+      syncInviteButton();
+      return inviteState.canInviteDevelopers===true;
+    }catch(_){
+      if(attempt<8){
+        const delays=[250,400,650,900,1250,1650,2200,2800];
+        await sleep(delays[attempt]||2800);
+        return refreshInviteStateDirect(attempt+1);
+      }
+      return false;
+    }
+  };
+
   const renderHome=async()=>{
     root.innerHTML=shell();
     bind();
@@ -993,6 +1013,7 @@
     bindParentAccountBridge();
     announceAccountBridgeReady();
     syncInviteButton();
+    refreshInviteStateDirect();
     refreshAccountState();
 
     try{
@@ -1067,6 +1088,13 @@
       root.dataset.theme=next;
       localStorage.setItem("risin96ames-theme",next);
       setThemeButton();
+    });
+
+    root.querySelector("#r96-owner-invite")?.addEventListener("click",(event)=>{
+      event.stopPropagation();
+      if(panel) panel.hidden=true;
+      if(accountPanel) accountPanel.hidden=true;
+      openInviteCreateModal();
     });
 
     root.querySelector("#r96-login")?.addEventListener("click",(event)=>{
