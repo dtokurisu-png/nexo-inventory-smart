@@ -1666,6 +1666,16 @@ async function start(){
     }
   }
 
+  const profileAction=String(params.get('nxoProfile')||'').trim().toLowerCase();
+  if(profileAction==='settings'){
+    const u=new URL(location.href);
+    u.searchParams.delete('nxoProfile');
+    history.replaceState(history.state||{},'',u.pathname+u.search+u.hash);
+    renderPersonal();
+    setTimeout(()=>openProfileSettings(false),0);
+    return
+  }
+
   const requestedWorkspace=params.get('nxoWorkspace');
   if(requestedWorkspace){
     try{

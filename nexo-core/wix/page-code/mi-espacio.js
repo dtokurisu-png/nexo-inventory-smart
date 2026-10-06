@@ -8,7 +8,7 @@ import {
 } from "backend/nexo-core.web";
 
 const HTML_ID = "#nexoMiEspacioHtml";
-const CENTRAL_ACCESS = "/?nexoAuth=login&nexoReturn=mi-espacio";
+const CENTRAL_ACCESS = "https://dtokurisu.wixstudio.com/my-site-1/blank-8?nexoAuth=login";
 
 function post(type, payload = {}) {
   $w(HTML_ID).postMessage({
