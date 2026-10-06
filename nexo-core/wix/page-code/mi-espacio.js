@@ -1,4 +1,5 @@
-import { authentication } from "wix-members-frontend";
+import wixLocationFrontend from "wix-location-frontend";
+import { currentMember } from "wix-members-frontend";
 import {
   getMySpace,
   openWorkspace,
@@ -7,6 +8,7 @@ import {
 } from "backend/nexo-core.web";
 
 const HTML_ID = "#nexoMiEspacioHtml";
+const CENTRAL_ACCESS = "/?nexoAuth=login&nexoReturn=mi-espacio";
 
 function post(type, payload = {}) {
   $w(HTML_ID).postMessage({
@@ -16,12 +18,27 @@ function post(type, payload = {}) {
   });
 }
 
+function goCentralAccess() {
+  wixLocationFrontend.to(CENTRAL_ACCESS);
+}
+
+async function hasSignedInMember() {
+  try {
+    const member = await currentMember.getMember({ fieldsets: ["FULL"] });
+    return Boolean(member?._id || member?.id);
+  } catch (_) {
+    return false;
+  }
+}
+
 async function loadPersonal() {
   try {
     const state = await getMySpace();
     post("NEXO_PERSONAL_STATE", state);
   } catch (error) {
-    post("NEXO_MY_SPACE_ERROR", { message: error?.message || "No se pudo cargar Mi espacio." });
+    post("NEXO_MY_SPACE_ERROR", {
+      message: error?.message || "No se pudo cargar Mi espacio."
+    });
   }
 }
 
@@ -31,13 +48,15 @@ $w.onReady(function () {
     if (!message || message.source !== "nexo-mi-espacio") return;
 
     try {
-      if (message.type === "NEXO_MY_SPACE_READY" || message.type === "NEXO_MY_SPACE_REQUEST") {
-        if (!authentication.loggedIn()) {
-          authentication.promptLogin({ mode: "login", modal: true })
-            .then(loadPersonal)
-            .catch(() => post("NEXO_MY_SPACE_ERROR", { message: "Inicia sesión para entrar a Nexo." }));
+      if (
+        message.type === "NEXO_MY_SPACE_READY" ||
+        message.type === "NEXO_MY_SPACE_REQUEST"
+      ) {
+        if (!(await hasSignedInMember())) {
+          goCentralAccess();
           return;
         }
+
         await loadPersonal();
         return;
       }
@@ -65,11 +84,14 @@ $w.onReady(function () {
 
       if (message.type === "NEXO_OPEN_TOOL") {
         post("NEXO_MY_SPACE_ERROR", {
-          message: "La navegación de esta herramienta se conectará a su ruta Wix en la siguiente integración."
+          message:
+            "La navegación de esta herramienta se conectará a su ruta Wix en la siguiente integración."
         });
       }
     } catch (error) {
-      post("NEXO_MY_SPACE_ERROR", { message: error?.message || "No se pudo completar la acción." });
+      post("NEXO_MY_SPACE_ERROR", {
+        message: error?.message || "No se pudo completar la acción."
+      });
     }
   });
 });
