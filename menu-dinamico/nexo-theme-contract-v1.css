@@ -1,10 +1,13 @@
-/* Nexo Fichas Técnicas theme contract · 2026-10-01
+/* Nexo Fichas Técnicas theme contract · 2026-10-06
+   Internal recipe surfaces are intentionally opaque; overlays remain translucent only when functionally required.
+
+   Original contract · 2026-10-01
    Values come exclusively from nexo-core/theme-tokens.json through theme-runtime.js.
    Product CSS may define structure; this file owns theme application. */
 
 :root{
   --bg:var(--nxo-background);
-  --panel:var(--nxo-surface-glass);
+  --panel:var(--nxo-surface);
   --ink:var(--nxo-text-primary);
   --muted:var(--nxo-text-muted);
   --line:var(--nxo-border);
@@ -128,13 +131,13 @@ html.nexoMobile .nexoQuickSettingsMenu{
   color:var(--nxo-text-muted)!important
 }
 .card,.section,.modal,.photo,.heroImage,.empty,.taxonomyMaster,.nexoBatchPanel{
-  background:var(--nxo-surface-glass)!important;
+  background:var(--nxo-surface)!important;
   border-color:var(--nxo-border)!important;
   color:var(--nxo-text-primary)!important;
   box-shadow:0 12px 28px var(--nxo-shadow)!important
 }
 .recipeCard:hover,.recipeCard:focus-visible,.taxonomyMaster:hover,.taxonomyMaster:focus-visible{
-  background:var(--nxo-surface-glass-hover)!important;
+  background:var(--nxo-surface-raised)!important;
   border-color:var(--nxo-interaction)!important
 }
 .thumb,.pic,.taxonomyMasterImage,.nexoPhotoPreview,.nexoPhotoVideo{
@@ -146,7 +149,7 @@ html.nexoMobile .nexoQuickSettingsMenu{
 .search,.yield,.secondary,.prep,.commentText,.timerField input,.timerQuick button,
 .timerActions button,.nexoBatchClose,.nexoBatchOption,.nexoBatchInput,.nexoPhotoChoice,
 .nexoPhotoSecondary,.nexoPhotoCancel{
-  background:var(--nxo-control-background)!important;
+  background:var(--nxo-surface-raised)!important;
   color:var(--nxo-text-primary)!important;
   border-color:var(--nxo-border)!important
 }
@@ -226,7 +229,7 @@ html.nexoMobile .nexoQuickSettingsMenu{
   border-color:var(--nxo-interaction)!important
 }
 .taxonomyProductPhotoBtn{
-  background:var(--nxo-control-background)!important;
+  background:var(--nxo-surface-raised)!important;
   color:var(--nxo-taxonomy-product)!important;
   border-color:var(--nxo-taxonomy-product)!important
 }
@@ -236,11 +239,11 @@ html.nexoMobile .nexoQuickSettingsMenu{
   border-color:var(--nxo-warning)!important
 }
 .prep{
-  background:var(--nxo-control-background)!important;
+  background:var(--nxo-surface-raised)!important;
   color:var(--nxo-text-primary)!important
 }
 .prep.active{
-  background:var(--nxo-control-background)!important;
+  background:var(--nxo-surface-raised)!important;
   border-color:var(--nxo-taxonomy-product)!important;
   color:var(--nxo-taxonomy-product)!important
 }
@@ -300,7 +303,7 @@ html.nexoMobile .nexoQuickSettingsMenu{
 }
 .note.nexoReviewNote,.nexoBatchError{color:var(--nxo-danger)!important}
 .progressLegend,.miseCheck,.mopCheck{
-  background:var(--nxo-control-background)!important;
+  background:var(--nxo-surface-raised)!important;
   color:transparent!important;
   border-color:var(--nxo-border)!important
 }
@@ -355,7 +358,7 @@ html.nexoMobile .nexoQuickSettingsMenu{
 
 /* Timers */
 .timerCreate,.timerItem,.timerNotify{
-  background:var(--nxo-surface-glass)!important;
+  background:var(--nxo-surface)!important;
   border-color:var(--nxo-border)!important
 }
 .timerQuick button,.timerActions button{
