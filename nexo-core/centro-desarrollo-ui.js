@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261007-15';
+window.__nexoDevelopmentCenterStage0Version='20261007-16';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -173,36 +173,41 @@ html[data-nxo-theme="night"] .nxo-dev-quick-row:focus-visible strong{
   background:color-mix(in srgb,var(--nxo-accent-contrast) 8%,transparent)
 }
 
-/* Global page canvas consumes canonical theme tokens. */
+/* Development Center canvas hierarchy.
+   ONE background layer only: the exterior page canvas.
+   The Wix content shell above it stays transparent. */
 html[data-nxo-theme],
-html[data-nxo-theme] body,
+html[data-nxo-theme] body{
+  min-height:100%!important;
+  color:var(--nxo-text-primary)!important
+}
+
+html[data-nxo-theme="day"],
+html[data-nxo-theme="day"] body{
+  background:
+    radial-gradient(circle at 3% 5%,rgba(47,79,147,.18),transparent 30%),
+    radial-gradient(circle at 97% 9%,rgba(231,144,105,.20),transparent 29%),
+    radial-gradient(circle at 79% 96%,rgba(36,107,54,.07),transparent 25%),
+    linear-gradient(135deg,#f5f2ea 0%,var(--nxo-background) 50%,var(--nxo-background-alt) 100%)!important
+}
+
+html[data-nxo-theme="night"],
+html[data-nxo-theme="night"] body{
+  background:
+    radial-gradient(circle at 4% 7%,rgba(47,79,147,.18),transparent 30%),
+    radial-gradient(circle at 96% 8%,rgba(225,189,105,.10),transparent 28%),
+    radial-gradient(circle at 78% 96%,rgba(85,201,133,.045),transparent 24%),
+    linear-gradient(135deg,var(--nxo-background) 0%,var(--nxo-background-alt) 58%,#080b10 100%)!important
+}
+
+/* Everything between the exterior canvas and the actual cards is transparent. */
 html[data-nxo-theme] #SITE_CONTAINER,
 html[data-nxo-theme] #masterPage,
 html[data-nxo-theme] #PAGES_CONTAINER,
 html[data-nxo-theme] #SITE_PAGES,
-html[data-nxo-theme] main{
-  color:var(--nxo-text-primary)!important;
-  background:
-    radial-gradient(circle at 7% 3%,color-mix(in srgb,var(--nxo-accent) 12%,transparent),transparent 29%),
-    radial-gradient(circle at 91% 8%,color-mix(in srgb,var(--nxo-interaction) 12%,transparent),transparent 28%),
-    radial-gradient(circle at 76% 88%,color-mix(in srgb,var(--nxo-positive) 7%,transparent),transparent 26%),
-    linear-gradient(135deg,var(--nxo-background),var(--nxo-background-alt))!important
-}
-
-/* NIGHT owns the complete canvas, not only the cards. */
-html[data-nxo-theme="night"],
-html[data-nxo-theme="night"] body,
-html[data-nxo-theme="night"] #SITE_CONTAINER,
-html[data-nxo-theme="night"] #masterPage,
-html[data-nxo-theme="night"] #PAGES_CONTAINER,
-html[data-nxo-theme="night"] #SITE_PAGES,
-html[data-nxo-theme="night"] main{
-  background-color:var(--nxo-background)!important;
-  color:var(--nxo-text-primary)!important
-}
-
-/* Wix editor background layers must not paint over the Nexo canvas. */
+html[data-nxo-theme] main,
 html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-canvas-layer="1"],
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-content-shell="1"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="section-container"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="section-bg"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="container-bg"],
@@ -214,6 +219,13 @@ html[data-nxo-theme] #PAGES_CONTAINER [data-testid="pageBackground"],
 html[data-nxo-theme] #PAGES_CONTAINER .wixui-section{
   background-color:transparent!important;
   background-image:none!important
+}
+
+/* The large Development Center wrapper is a layout shell, not a surface. */
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-content-shell="1"]{
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important
 }
 
 /* Text color contract for editor-native content. */
@@ -1095,47 +1107,76 @@ function applyCards(){
   applyAllPageActions()
 }
 
+function commonAncestor(elements,root){
+  const list=elements.filter(Boolean);
+  if(!list.length)return null;
+  let node=list[0];
+  while(node&&node!==root){
+    if(list.every(el=>node===el||node.contains(el)))return node;
+    node=node.parentElement
+  }
+  return root
+}
+
 function normalizeCanvasLayers(){
   const root=document.getElementById('PAGES_CONTAINER');
   if(!root)return;
 
+  // Remove stale shell flags so rerenders cannot accumulate structure.
+  root.querySelectorAll('[data-nxo-dev-content-shell="1"]').forEach(el=>{
+    delete el.dataset.nxoDevContentShell
+  });
+  root.querySelectorAll('[data-nxo-dev-canvas-layer="1"]').forEach(el=>{
+    delete el.dataset.nxoDevCanvasLayer
+  });
+
+  const cards=[...root.querySelectorAll('[data-nxo-dev-card="1"]')];
+  const shell=commonAncestor(cards,root);
+
+  // The common wrapper and every layout ancestor up to PAGES_CONTAINER
+  // are intentionally transparent. Cards remain real surfaces.
+  let node=shell;
+  while(node&&node!==root){
+    if(!node.matches?.('[data-nxo-dev-card="1"]')){
+      node.dataset.nxoDevContentShell='1'
+    }
+    node=node.parentElement
+  }
+
   const viewportWidth=Math.max(document.documentElement.clientWidth||0,window.innerWidth||0);
   const viewportHeight=Math.max(document.documentElement.clientHeight||0,window.innerHeight||0);
 
-  const candidates=[
-    root,
-    ...root.querySelectorAll('main,section,div,[data-testid]')
-  ];
-
-  candidates.forEach(el=>{
+  [...root.querySelectorAll('main,section,div,[data-testid]')].forEach(el=>{
     if(!el?.getBoundingClientRect)return;
     if(el.closest?.('#nxo-dev-preview,#nxo-dev-header,[data-nxo-dev-card="1"]'))return;
 
     const r=el.getBoundingClientRect();
-    if(r.width<viewportWidth*.55||r.height<Math.min(140,viewportHeight*.22))return;
+    const large=r.width>=viewportWidth*.68&&r.height>=Math.min(120,viewportHeight*.18);
+    if(!large)return;
 
+    const testid=String(el.getAttribute?.('data-testid')||'');
     const cs=getComputedStyle(el);
     const bg=String(cs.backgroundColor||'').replace(/\s+/g,'').toLowerCase();
-    const isWhite=
+    const opaqueSurface=
       bg==='rgb(255,255,255)'||
       bg==='rgba(255,255,255,1)'||
+      bg==='rgb(0,0,0)'||
+      bg==='rgba(0,0,0,1)'||
       bg==='rgb(250,250,250)'||
       bg==='rgb(248,248,248)'||
       bg==='rgb(245,245,245)';
+    const knownLayout=/section|background|bg|container|page|column|strip/i.test(testid);
 
-    const testid=String(el.getAttribute?.('data-testid')||'');
-    const isKnownLayer=/section|background|bg|container|page/i.test(testid);
-
-    if(isWhite||isKnownLayer){
+    if(opaqueSurface||knownLayout){
       el.dataset.nxoDevCanvasLayer='1'
     }
   })
 }
 
 function refresh(){
-  normalizeCanvasLayers();
   renameRecipeBooks(document.getElementById('PAGES_CONTAINER')||document.body);
   applyCards();
+  normalizeCanvasLayers();
   syncQuickTheme()
 }
 function schedule(){
