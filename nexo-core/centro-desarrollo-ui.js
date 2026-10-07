@@ -352,29 +352,61 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-action{
 
 /* Marketplace preview rail */
 #nxo-dev-preview{
-  position:fixed;
-  top:64px;
-  right:0;
-  bottom:0;
-  z-index:2147483150;
-  width:min(360px,88vw);
-  box-sizing:border-box;
-  padding:18px;
-  color:var(--nxo-text-primary);
-  background:var(--nxo-surface-raised);
-  border-left:1px solid var(--nxo-border);
-  box-shadow:-18px 0 44px var(--nxo-shadow);
-  -webkit-backdrop-filter:blur(18px) saturate(118%);
-  backdrop-filter:blur(18px) saturate(118%);
-  transform:translateX(105%);
-  opacity:.98;
-  pointer-events:none;
-  transition:transform .24s ease,opacity .18s ease;
-  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+  position:fixed!important;
+  top:64px!important;
+  right:0!important;
+  bottom:0!important;
+  left:auto!important;
+  z-index:2147483600!important;
+  display:block!important;
+  visibility:visible!important;
+  width:min(360px,88vw)!important;
+  box-sizing:border-box!important;
+  padding:18px!important;
+  color:var(--nxo-text-primary)!important;
+  background:var(--nxo-surface-raised)!important;
+  border-left:1px solid var(--nxo-border)!important;
+  box-shadow:-18px 0 44px var(--nxo-shadow)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(118%)!important;
+  backdrop-filter:blur(18px) saturate(118%)!important;
+  transform:translate3d(102%,0,0)!important;
+  opacity:.99!important;
+  pointer-events:none!important;
+  transition:transform .24s ease!important;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important
 }
 #nxo-dev-preview.open{
-  transform:translateX(0);
-  pointer-events:auto
+  transform:translate3d(0,0,0)!important;
+  pointer-events:auto!important
+}
+#nxo-dev-preview-handle{
+  position:fixed!important;
+  right:0!important;
+  top:50%!important;
+  z-index:2147483599!important;
+  width:28px!important;
+  height:72px!important;
+  display:grid!important;
+  place-items:center!important;
+  transform:translateY(-50%)!important;
+  border:1px solid var(--nxo-header-border)!important;
+  border-right:0!important;
+  border-radius:12px 0 0 12px!important;
+  color:var(--nxo-header-text)!important;
+  background:var(--nxo-header-background)!important;
+  box-shadow:-8px 0 24px var(--nxo-shadow)!important;
+  cursor:pointer!important;
+  font:900 20px/1 Inter,system-ui,sans-serif!important;
+  transition:background .16s ease,color .16s ease,transform .16s ease!important
+}
+#nxo-dev-preview-handle:hover,
+#nxo-dev-preview-handle:focus-visible{
+  outline:none!important;
+  color:var(--nxo-interaction-contrast)!important;
+  background:var(--nxo-interaction)!important
+}
+#nxo-dev-preview.open + #nxo-dev-preview-handle{
+  transform:translateY(-50%) translateX(100%)!important
 }
 .nxo-dev-preview-head{
   display:flex;
@@ -434,7 +466,8 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-action{
   box-shadow:0 18px 38px var(--nxo-shadow),0 0 0 2px var(--nxo-focus-ring)!important
 }
 @media(max-width:760px){
-  #nxo-dev-preview{top:58px;width:min(340px,92vw);padding:16px}
+  #nxo-dev-preview{top:58px!important;width:min(340px,92vw)!important;padding:16px!important}
+  #nxo-dev-preview-handle{height:62px!important;width:26px!important}
 }
 
 /* Product icon replacement occupies the original icon slot. */
@@ -832,34 +865,61 @@ function toolForCard(card){
 }
 function ensurePreviewPanel(){
   let panel=document.getElementById('nxo-dev-preview');
-  if(panel)return panel;
+  let handle=document.getElementById('nxo-dev-preview-handle');
 
-  panel=document.createElement('aside');
-  panel.id='nxo-dev-preview';
-  panel.setAttribute('aria-hidden','true');
-  panel.innerHTML=
-    '<div class="nxo-dev-preview-head">'+
-      '<div class="nxo-dev-preview-eyebrow">Resumen de la herramienta</div>'+
-      '<button type="button" class="nxo-dev-preview-close" aria-label="Cerrar">×</button>'+
-    '</div>'+
-    '<div class="nxo-dev-preview-identity">'+
-      '<img class="nxo-dev-preview-icon" alt="">'+
-      '<h3 class="nxo-dev-preview-title"></h3>'+
-    '</div>'+
-    '<p class="nxo-dev-preview-copy"></p>';
+  if(!panel){
+    panel=document.createElement('aside');
+    panel.id='nxo-dev-preview';
+    panel.setAttribute('aria-hidden','true');
+    panel.innerHTML=
+      '<div class="nxo-dev-preview-head">'+
+        '<div class="nxo-dev-preview-eyebrow">Resumen de la herramienta</div>'+
+        '<button type="button" class="nxo-dev-preview-close" aria-label="Cerrar">×</button>'+
+      '</div>'+
+      '<div class="nxo-dev-preview-identity">'+
+        '<img class="nxo-dev-preview-icon" alt="">'+
+        '<h3 class="nxo-dev-preview-title">Selecciona una herramienta</h3>'+
+      '</div>'+
+      '<p class="nxo-dev-preview-copy">Pasa el cursor sobre una herramienta para ver un resumen rápido.</p>';
+    document.body.appendChild(panel);
 
-  document.body.appendChild(panel);
+    panel.querySelector('.nxo-dev-preview-close')?.addEventListener('click',()=>{
+      previewPinned=false;
+      closePreview(true)
+    });
+    panel.addEventListener('pointerenter',()=>clearTimeout(previewCloseTimer));
+    panel.addEventListener('pointerleave',()=>{
+      if(!previewPinned)schedulePreviewClose()
+    })
+  }
 
-  panel.querySelector('.nxo-dev-preview-close')?.addEventListener('click',()=>{
-    previewPinned=false;
-    closePreview(true)
-  });
-  panel.addEventListener('pointerenter',()=>clearTimeout(previewCloseTimer));
-  panel.addEventListener('pointerleave',()=>{
-    if(!previewPinned)schedulePreviewClose()
-  });
+  if(!handle){
+    handle=document.createElement('button');
+    handle.id='nxo-dev-preview-handle';
+    handle.type='button';
+    handle.setAttribute('aria-label','Abrir resumen de herramienta');
+    handle.textContent='‹';
+    document.body.appendChild(handle);
+    handle.addEventListener('click',()=>{
+      const current=TOOL_DEFS.find(tool=>tool.key===panel.dataset.toolKey)||null;
+      if(panel.classList.contains('open')){
+        previewPinned=false;
+        closePreview(true);
+        return
+      }
+      if(current){
+        previewPinned=true;
+        openPreview(current,document.querySelector('[data-nxo-dev-tool="'+CSS.escape(current.key)+'"]'),{pinned:true})
+      }else{
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden','false')
+      }
+    })
+  }
+
   return panel
 }
+
 function openPreview(tool,card,{pinned=false}={}){
   if(!tool)return;
   clearTimeout(previewCloseTimer);
@@ -893,18 +953,40 @@ function schedulePreviewClose(){
 }
 function bindCardPreview(card,tool){
   if(!card||!tool)return;
-  card.dataset.nxoDevTool=tool.key;
-  if(card.dataset.nxoDevPreviewBound==='1')return;
-  card.dataset.nxoDevPreviewBound='1';
+  card.dataset.nxoDevTool=tool.key
+}
 
-  card.addEventListener('pointerenter',()=>{
+function bindPreviewDelegation(){
+  if(window.__nexoDevPreviewOverHandler){
+    document.removeEventListener('pointerover',window.__nexoDevPreviewOverHandler,true)
+  }
+  if(window.__nexoDevPreviewOutHandler){
+    document.removeEventListener('pointerout',window.__nexoDevPreviewOutHandler,true)
+  }
+
+  window.__nexoDevPreviewOverHandler=function(event){
+    const card=event.target?.closest?.('[data-nxo-dev-card="1"]');
+    if(!card)return;
+    if(event.relatedTarget&&card.contains(event.relatedTarget))return;
+    const tool=toolForCard(card);
+    if(!tool)return;
     previewPinned=false;
     openPreview(tool,card,{pinned:false})
-  });
-  card.addEventListener('pointerleave',()=>{
+  };
+
+  window.__nexoDevPreviewOutHandler=function(event){
+    const card=event.target?.closest?.('[data-nxo-dev-card="1"]');
+    if(!card)return;
+    if(event.relatedTarget&&card.contains(event.relatedTarget))return;
+    const next=event.relatedTarget;
+    if(next?.closest?.('#nxo-dev-preview,#nxo-dev-preview-handle'))return;
     if(!previewPinned)schedulePreviewClose()
-  })
+  };
+
+  document.addEventListener('pointerover',window.__nexoDevPreviewOverHandler,true);
+  document.addEventListener('pointerout',window.__nexoDevPreviewOutHandler,true)
 }
+
 function bindFeatureInterception(){
   if(window.__nexoDevFeatureClickHandler){
     document.removeEventListener('click',window.__nexoDevFeatureClickHandler,true)
@@ -999,6 +1081,7 @@ async function start(){
   await window.NEXO_THEME_RUNTIME?.ready;
   ensureHeader();
   ensurePreviewPanel();
+  bindPreviewDelegation();
   bindFeatureInterception();
   refresh();
   window.addEventListener('nexo-theme-change',()=>{syncQuickTheme();schedule()});
