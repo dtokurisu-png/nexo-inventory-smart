@@ -4696,9 +4696,10 @@ button.nxo-workspace-logo-edit.uploading{
 .nxo-tools-empty{
   display:flex;
   flex-direction:column;
-  align-items:center;
+  align-items:flex-start;
   justify-content:center;
-  gap:16px
+  gap:16px;
+  text-align:left
 }
 .nxo-workspace-tool-add-cell{
   min-height:145px;
