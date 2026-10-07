@@ -411,16 +411,18 @@ html.nexoMobile .nexoQuickSettingsMenu{
   color:var(--nxo-positive-contrast)!important
 }
 
-/* Reading magnifier */
-#nexoReadingMagnifier{
+/* Paragraph reader */
+.nexoParagraphReaderPanel{
   background:var(--nxo-surface-raised)!important;
   color:var(--nxo-text-primary)!important;
   border-color:var(--nxo-border-strong)!important;
-  box-shadow:0 18px 55px var(--nxo-shadow)!important
+  box-shadow:0 24px 80px var(--nxo-shadow)!important
 }
-#nexoReadingMagnifier:after{
-  border-color:var(--nxo-border-strong)!important
+.nexoParagraphReaderHead,.nexoParagraphReaderFooter{
+  background:var(--nxo-surface-raised)!important;
+  border-color:var(--nxo-border)!important
 }
+.nexoParagraphReaderText,.nexoParagraphReaderTitle{color:var(--nxo-text-primary)!important}
 
 /* Reduced motion */
 @media(prefers-reduced-motion:reduce){
