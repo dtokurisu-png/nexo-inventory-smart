@@ -86,8 +86,10 @@ html.nexoMobile .swatch{width:8px!important;height:8px!important;border-radius:2
 html.nexoMobile .status{padding:5px 6px!important;border-radius:5px!important;bottom:max(6px,env(safe-area-inset-bottom))!important}
 html.nexoMobile .recipeCard .thumb,html.nexoMobile .taxonomyCategory .recipeCard .thumb{aspect-ratio:1/1!important}
 html.nexoMobile .recipeCard .thumb img,html.nexoMobile .taxonomyCategory .recipeCard .thumb img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center center!important;background:var(--nxo-media-background)!important}
-html.nexoMobile .heroPhotoBtn{right:4px!important;bottom:4px!important;width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;padding:0!important;border-radius:999px!important;font-size:0!important;line-height:1!important;display:grid!important;place-items:center!important}
-html.nexoMobile .heroPhotoBtn::before{content:"📷";font-size:11px!important;line-height:1!important}
+html.nexoMobile .heroPhotoBtn{right:4px!important;bottom:4px!important;width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;padding:0!important;border-radius:999px!important;font-size:0!important;line-height:0!important;display:grid!important;place-items:center!important;appearance:none!important;-webkit-appearance:none!important}
+html.nexoMobile .heroPhotoBtn::before{content:none!important;display:none!important}
+html.nexoMobile .heroPhotoBtn>.nexoUiIcon{display:block!important;width:12px!important;height:12px!important;margin:0!important;object-fit:contain!important;object-position:center!important}
+html.nexoMobile .heroPhotoBtn>span{display:none!important}
 html.nexoMobile .taxonomyProductCard .thumb,
 html.nexoMobile .cardProduct .thumb,
 html.nexoMobile .cardDish .thumb,
