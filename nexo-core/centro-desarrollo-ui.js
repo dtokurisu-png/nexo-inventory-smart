@@ -273,6 +273,24 @@ html[data-nxo-theme="night"] .nxo-dev-action:focus-visible .nxo-dev-action-surfa
   outline:none!important
 }
 html[data-nxo-theme] .nxo-dev-action:active{transform:translateY(0) scale(.99)!important}
+/* Stage 1 preparation · compact marketplace cards */
+html[data-nxo-theme] [data-nxo-dev-card="1"]{
+  min-height:0!important;
+  padding-top:14px!important;
+  padding-bottom:14px!important
+}
+html[data-nxo-theme] [data-nxo-dev-card="1"] [data-nxo-dev-description="1"],
+html[data-nxo-theme] [data-nxo-dev-card="1"] [data-nxo-dev-tag="1"]{
+  display:none!important
+}
+html[data-nxo-theme] [data-nxo-dev-card="1"] [data-nxo-dev-tool-title]{
+  margin-top:4px!important;
+  margin-bottom:8px!important
+}
+html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-action{
+  margin-top:8px!important
+}
+
 /* Product icon replacement occupies the original icon slot. */
 [data-nxo-dev-icon-slot="1"]{
   display:grid!important;place-items:center!important;
@@ -550,11 +568,81 @@ function markActionSurface(action){
   if(visual)visual.classList.add('nxo-dev-action-surface')
 }
 
+function hideCardMetadata(card,titleEl){
+  if(!card||!titleEl)return;
+  const titleKey=norm(titleEl.textContent);
+  const actionWords=new Set([
+    'abrir herramienta','open tool','ver caracteristicas','view features',
+    'aun no disponible','not available yet','proximamente','coming soon'
+  ]);
+  const tagWords=[
+    /^herramienta\b/,
+    /^tool\b/,
+    /^operativa\b/,
+    /^operational\b/,
+    /^gratis$/,
+    /^free$/,
+    /^personal$/,
+    /^workspace$/,
+    /^aprendizaje$/,
+    /^learning core$/,
+    /^learning$/,
+    /^knowledge$/,
+    /^operations?$/,
+    /^operaciones$/
+  ];
+
+  const nodes=[...card.querySelectorAll('p,small,span,div')];
+  nodes.forEach(el=>{
+    if(el===titleEl||el.contains(titleEl)||titleEl.contains(el))return;
+    if(el.closest('button,a,[role="button"]'))return;
+    if(el.closest('[data-nxo-dev-icon-slot="1"]'))return;
+
+    const text=String(el.textContent||'').replace(/\s+/g,' ').trim();
+    const key=norm(text);
+    if(!key||key===titleKey)return;
+    if(actionWords.has(key))return;
+
+    const childText=[...el.children].map(ch=>String(ch.textContent||'').trim()).filter(Boolean).join(' ');
+    if(el.children.length&&norm(childText)!==key)return;
+
+    if(tagWords.some(re=>re.test(key))){
+      el.dataset.nxoDevTag='1';
+      return
+    }
+
+    if(text.length>=32){
+      el.dataset.nxoDevDescription='1'
+    }
+  })
+}
+
+function setActionCopy(action){
+  if(!action)return;
+  const key=norm(action.textContent);
+  if(![
+    'abrir herramienta',
+    'open tool',
+    'abrir',
+    'open'
+  ].includes(key))return;
+
+  const walker=document.createTreeWalker(action,NodeFilter.SHOW_TEXT);
+  const textNodes=[];
+  while(walker.nextNode())textNodes.push(walker.currentNode);
+  const target=textNodes.find(n=>String(n.nodeValue||'').trim())||null;
+  if(target)target.nodeValue='Ver características';
+  else action.textContent='Ver características';
+
+  action.dataset.nxoDevFeatureCta='1';
+}
+
 function applyCardActions(card,titleEl){
   [...card.querySelectorAll('button,a,[role="button"],[data-testid="buttonElement"],[data-testid="linkElement"]')].forEach(action=>{
     if(action.closest('#nxo-dev-header'))return;
     if(action===card||action.contains(titleEl))return;
     if(action.closest('[data-nxo-dev-icon-slot="1"]'))return;
+    setActionCopy(action);
     markActionSurface(action)
   })
 }
@@ -573,6 +661,7 @@ function applyAllPageActions(){
     if(action.closest('#nxo-dev-header'))return;
     const text=norm(action.textContent);
     if(!text)return;
+    setActionCopy(action);
     markActionSurface(action)
   })
 }
@@ -583,6 +672,7 @@ function applyCards(){
     const card=closestCard(title);
     if(!tool||!card)return;
     installProductIcon(card,title,tool);
+    hideCardMetadata(card,title);
     applyCardActions(card,title)
   });
   applyAllPageActions()
