@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261007-17';
+window.__nexoDevelopmentCenterStage0Version='20261007-18';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -192,11 +192,13 @@ html[data-nxo-theme="day"] body{
 }
 
 html[data-nxo-theme="night"]{
-  background:var(--nxo-background)!important
+  background:var(--nxo-header-background)!important
 }
 html[data-nxo-theme="night"] body{
-  background:var(--nxo-header-background)!important;
-  background-image:none!important
+  background:
+    radial-gradient(circle at 6% 8%,color-mix(in srgb,var(--nxo-accent) 13%,transparent),transparent 30%),
+    radial-gradient(circle at 94% 92%,color-mix(in srgb,var(--nxo-accent) 9%,transparent),transparent 28%),
+    linear-gradient(var(--nxo-header-background),var(--nxo-header-background))!important
 }
 
 /* Everything between the exterior canvas and the actual cards is transparent. */
