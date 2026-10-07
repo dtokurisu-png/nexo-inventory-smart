@@ -4707,3 +4707,21 @@ button.nxo-workspace-logo-edit.uploading{
   align-items:center;
   justify-content:center
 }
+
+
+/* =========================================================
+   BLUE SURFACE ICON CONTRAST · 2026-10-07
+   White edge + soft halo only on Nexo blue surfaces.
+   Applies to My Space and Workspace shells.
+========================================================= */
+.nxo-app[data-theme="day"] .nxo-topbar .nxo-icon-img,
+.nxo-app[data-theme="day"] .nxo-tool-icon .nxo-icon-img,
+.nxo-app[data-theme="day"] .nxo-tab.active .nxo-icon-img,
+.nxo-app[data-theme="day"] .nxo-btn:not(.nxo-btn-gold):not(.nxo-btn-danger) .nxo-icon-img{
+  filter:
+    drop-shadow(1px 0 0 rgba(255,255,255,.96))
+    drop-shadow(-1px 0 0 rgba(255,255,255,.96))
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 -1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 4px rgba(255,255,255,.78))!important
+}
