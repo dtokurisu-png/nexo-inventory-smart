@@ -14,8 +14,7 @@ const TOOL_DEFS=[
   {key:'technical',icon:'ficha-tecnica',names:['fichas tecnicas dinamicas','dynamic technical sheets']},
   {key:'work',icon:'panel',names:['centro de trabajo','work center']},
   {key:'recipes',icon:'platos',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']}
-]
-const TOOL_URLS=new Set(TOOL_DEFS.map(x=>x.image));
+];
 let scheduled=false,observer=null;
 
 function norm(v){
@@ -438,8 +437,9 @@ function visualCandidateScore(el,titleRect,cardRect){
 
 function isOfficialProductImage(img,tool){
   if(!img||!tool)return false;
+  const expected=iconUrl(tool.icon);
   return img.classList.contains('nxo-dev-product-icon')&&
-    (img.getAttribute('src')===tool.image||img.src===tool.image)
+    (img.getAttribute('src')===expected||img.src===expected)
 }
 
 function genericVisualCandidates(card,titleEl){
@@ -484,7 +484,7 @@ function installProductIcon(card,titleEl,tool){
 
   // Stable path: keep the official icon once installed. Never delete/rebuild it.
   if(slot&&official){
-    if(!isOfficialProductImage(official,tool))official.src=tool.image;
+    if(!isOfficialProductImage(official,tool))official.src=iconUrl(tool.icon);
     suppressExtraGenericIcons(card,titleEl,slot);
     return
   }
@@ -515,7 +515,7 @@ function installProductIcon(card,titleEl,tool){
 
   official=document.createElement('img');
   official.className='nxo-dev-product-icon';
-  official.src=tool.image;
+  official.src=iconUrl(tool.icon);
   official.alt='';
   official.setAttribute('aria-hidden','true');
   slot.appendChild(official);
