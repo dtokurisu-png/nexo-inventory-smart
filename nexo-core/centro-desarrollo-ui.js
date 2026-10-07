@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261007-18';
+window.__nexoDevelopmentCenterStage0Version='20261007-17';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -535,6 +535,18 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-action{
   max-width:72px!important;max-height:72px!important;min-width:34px!important;min-height:34px!important;
   object-fit:contain!important;object-position:center!important;margin:auto!important;
   filter:drop-shadow(0 6px 10px var(--nxo-shadow))
+}
+
+/* White silhouette halo for official icons placed on Nexo blue surfaces. */
+html[data-nxo-theme="day"] #nxo-dev-header .nxo-dev-quick-button img,
+html[data-nxo-theme="day"] .nxo-dev-action img,
+html[data-nxo-theme="day"] .nxo-dev-action-surface img{
+  filter:
+    drop-shadow(1px 0 0 rgba(255,255,255,.96))
+    drop-shadow(-1px 0 0 rgba(255,255,255,.96))
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 -1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 4px rgba(255,255,255,.78))!important
 }
 @media(max-width:760px){
   #nxo-dev-header{min-height:58px;padding:0 12px;gap:10px}
