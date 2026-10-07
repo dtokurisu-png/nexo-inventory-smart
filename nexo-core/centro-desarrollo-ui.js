@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261007-13';
+window.__nexoDevelopmentCenterStage0Version='20261007-14';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -13,6 +13,7 @@ const TOOL_DEFS=[
   {key:'library',icon:'guia',title:'Biblioteca de engranaje',summary:'Recursos, conocimiento y materiales reutilizables de Nexo.',names:['biblioteca de engranaje']},
   {key:'inventory',icon:'productos',title:'Inventario Smart',summary:'Productos, materiales e inventario operativo del espacio de trabajo.',names:['inventario smart']},
   {key:'technical',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Biblioteca y colecciones de fichas técnicas conectadas con Inventario Smart.',names:['fichas tecnicas dinamicas','dynamic technical sheets']},
+  {key:'schedules',icon:'recordatorio',title:'Horarios',summary:'Jornadas y horarios semanales con carga desde imagen, análisis GPT y publicación.',names:['horarios','schedule','schedules']},
   {key:'work',icon:'panel',title:'Centro de Trabajo',summary:'Tareas, horarios, personal y operación colaborativa del espacio de trabajo.',names:['centro de trabajo','work center']},
   {key:'recipes',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']}
 ];
