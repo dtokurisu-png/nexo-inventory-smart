@@ -6,7 +6,7 @@
 <meta name="theme-color" content="transparent">
 <title>Recetario dinámico · Menú 9:26 a 12:26</title>
 <script src="../nexo-core/theme-runtime.js?v=20261001-theme-runtime-2"></script>
-<link rel="stylesheet" href="./nexo-theme-contract-v1.css?v=20261006-solid-internals-5">
+<link rel="stylesheet" href="./nexo-theme-contract-v1.css?v=20261006-mobile-icon-align-6">
 <style>
 :root{--bg:var(--nxo-background);--panel:var(--nxo-surface);--ink:var(--nxo-text-primary);--muted:var(--nxo-text-muted);--line:var(--nxo-border);--accent:var(--nxo-accent);--header:64px;--radius:18px;--shadow:0 14px 42px var(--nxo-shadow);--dish:var(--nxo-taxonomy-dish);--prep:var(--nxo-taxonomy-preparation);--product:var(--nxo-taxonomy-product);--metricMass:var(--nxo-unit-metric-mass);--imperialMass:var(--nxo-unit-imperial-mass);--metricVolume:var(--nxo-unit-metric-volume);--count:var(--nxo-unit-count);--spoon:var(--nxo-unit-spoon);--cup:var(--nxo-unit-cup);--otherUnit:var(--nxo-unit-other)}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}body{overscroll-behavior-y:none}.app{min-height:100dvh;padding-top:calc(var(--header) + env(safe-area-inset-top))}.topbar{position:fixed;z-index:50;left:0;right:0;top:0;height:calc(var(--header) + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));display:flex;align-items:center;gap:9px;background:var(--nxo-header-background);border-bottom:1px solid var(--nxo-header-border);box-shadow:0 5px 16px var(--nxo-shadow)}.icon,.lang,.installBtn{height:42px;border:1px solid var(--nxo-header-border);background:transparent;border-radius:11px;color:var(--nxo-header-text);transition:transform .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease,border-color .14s ease}.icon{width:42px}.lang,.installBtn{padding:0 11px;font-weight:800}.icon:hover,.lang:hover,.installBtn:hover,.icon:focus-visible,.lang:focus-visible,.installBtn:focus-visible{background:var(--nxo-interaction);color:var(--nxo-interaction-contrast);border-color:var(--nxo-interaction);transform:translateY(-1px);box-shadow:0 8px 16px var(--nxo-shadow);outline:none}.icon:active,.lang:active,.installBtn:active{transform:translateY(0) scale(.99)}.brand{min-width:0;display:flex;align-items:center;gap:9px;font-weight:900;color:var(--nxo-header-text)}.mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--nxo-accent);color:var(--nxo-accent-contrast);border:1px solid var(--nxo-header-border);font-size:13px}.brandText{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.spacer{flex:1}
@@ -134,98 +134,6 @@ html.nexoMobile .timerActions button{min-height:32px;font-size:11px;padding:6px 
 .modalClose .nexoUiIcon{width:18px;height:18px}
 @media(max-width:700px){.icon .nexoUiIcon,.nexoQuickSettingsButton .nexoUiIcon{width:19px;height:19px}}
 
-/* CANONICAL MOBILE ICON ALIGNMENT · 2026-10-06 */
-html.nexoMobile .nexoUiIcon{
-  display:block!important;
-  margin:0!important;
-  padding:0!important;
-  align-self:center!important;
-  justify-self:center!important;
-  object-fit:contain!important;
-  object-position:50% 50%!important;
-  vertical-align:middle!important
-}
-html.nexoMobile .icon,
-html.nexoMobile .nexoQuickSettingsButton,
-html.nexoMobile .modalClose{
-  appearance:none!important;
-  -webkit-appearance:none!important;
-  display:grid!important;
-  place-items:center!important;
-  align-content:center!important;
-  justify-content:center!important;
-  padding:0!important;
-  margin:0!important;
-  line-height:0!important;
-  text-align:center!important
-}
-html.nexoMobile .icon>.nexoUiIcon,
-html.nexoMobile .nexoQuickSettingsButton>.nexoUiIcon{
-  width:15px!important;
-  height:15px!important
-}
-html.nexoMobile .modalClose>.nexoUiIcon{
-  width:13px!important;
-  height:13px!important
-}
-html.nexoMobile .chip,
-html.nexoMobile .primary,
-html.nexoMobile .secondary,
-html.nexoMobile .timerActions button,
-html.nexoMobile .taxonomyProductPhotoBtn,
-html.nexoMobile .nexoWorkspaceBtn,
-html.nexoMobile .nexoWorkspaceTabs button,
-html.nexoMobile .nexoQuickSettingRow,
-html.nexoMobile .nexoSettingLabel{
-  align-items:center!important
-}
-html.nexoMobile .chip>.nexoUiIcon,
-html.nexoMobile .primary>.nexoUiIcon,
-html.nexoMobile .secondary>.nexoUiIcon,
-html.nexoMobile .timerActions button>.nexoUiIcon,
-html.nexoMobile .taxonomyProductPhotoBtn>.nexoUiIcon,
-html.nexoMobile .nexoWorkspaceBtn>.nexoUiIcon,
-html.nexoMobile .nexoWorkspaceTabs button>.nexoUiIcon{
-  align-self:center!important;
-  flex:0 0 auto!important
-}
-html.nexoMobile .searchWrap>.nexoUiIcon{
-  top:50%!important;
-  transform:translateY(-50%)!important;
-  margin:0!important
-}
-html.nexoMobile .heroPhotoBtn{
-  appearance:none!important;
-  -webkit-appearance:none!important;
-  display:grid!important;
-  place-items:center!important;
-  align-content:center!important;
-  justify-content:center!important;
-  padding:0!important;
-  line-height:0!important;
-  font-size:0!important
-}
-html.nexoMobile .heroPhotoBtn::before{
-  content:none!important;
-  display:none!important
-}
-html.nexoMobile .heroPhotoBtn>.nexoUiIcon{
-  display:block!important;
-  width:12px!important;
-  height:12px!important;
-  margin:0!important
-}
-html.nexoMobile .heroPhotoBtn>span{display:none!important}
-html.nexoMobile .miseCheck,
-html.nexoMobile .mopCheck{
-  display:grid!important;
-  place-items:center!important;
-  align-content:center!important;
-  justify-content:center!important;
-  padding:0!important;
-  line-height:1!important;
-  text-align:center!important
-}
 </style>
 </head>
 <body>
