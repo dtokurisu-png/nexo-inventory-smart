@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261007-10';
+window.__nexoDevelopmentCenterStage0Version='20261007-11';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -273,6 +273,64 @@ html[data-nxo-theme="night"] .nxo-dev-action:focus-visible .nxo-dev-action-surfa
   outline:none!important
 }
 html[data-nxo-theme] .nxo-dev-action:active{transform:translateY(0) scale(.99)!important}
+/* Stage 1 preparation · compact marketplace geometry */
+html[data-nxo-theme] [data-nxo-dev-card="1"]{
+  width:75%!important;
+  max-width:75%!important;
+  box-sizing:border-box!important;
+  margin-right:auto!important;
+  padding:12px 14px!important
+}
+html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+  width:100%!important;
+  margin:0 0 8px!important;
+  padding:0!important
+}
+html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-icon-slot="1"]{
+  flex:0 0 46px!important;
+  width:46px!important;
+  height:46px!important;
+  min-width:46px!important;
+  min-height:46px!important;
+  margin:0!important
+}
+html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row .nxo-dev-product-icon{
+  width:46px!important;
+  height:46px!important;
+  min-width:46px!important;
+  min-height:46px!important;
+  max-width:46px!important;
+  max-height:46px!important;
+  margin:0!important
+}
+html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-tool-title]{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important
+}
+@media(max-width:760px){
+  html[data-nxo-theme] [data-nxo-dev-card="1"]{
+    width:100%!important;
+    max-width:100%!important;
+    padding:11px 12px!important
+  }
+  html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-icon-slot="1"],
+  html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row .nxo-dev-product-icon{
+    flex-basis:42px!important;
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    min-height:42px!important;
+    max-width:42px!important;
+    max-height:42px!important
+  }
+}
+
 /* Stage 1 preparation · compact marketplace cards */
 html[data-nxo-theme] [data-nxo-dev-card="1"]{
   min-height:0!important;
@@ -568,6 +626,23 @@ function markActionSurface(action){
   if(visual)visual.classList.add('nxo-dev-action-surface')
 }
 
+function arrangeCardTitleRow(card,titleEl){
+  if(!card||!titleEl)return;
+  const slot=card.querySelector('[data-nxo-dev-icon-slot="1"]');
+  if(!slot)return;
+
+  let row=card.querySelector('.nxo-dev-title-row');
+  if(!row){
+    row=document.createElement('div');
+    row.className='nxo-dev-title-row';
+    const anchor=titleEl;
+    anchor.parentElement?.insertBefore(row,anchor);
+  }
+
+  if(slot.parentElement!==row)row.appendChild(slot);
+  if(titleEl.parentElement!==row)row.appendChild(titleEl);
+}
+
 function hideCardMetadata(card,titleEl){
   if(!card||!titleEl)return;
   const titleKey=norm(titleEl.textContent);
@@ -672,6 +747,7 @@ function applyCards(){
     const card=closestCard(title);
     if(!tool||!card)return;
     installProductIcon(card,title,tool);
+    arrangeCardTitleRow(card,title);
     hideCardMetadata(card,title);
     applyCardActions(card,title)
   });
