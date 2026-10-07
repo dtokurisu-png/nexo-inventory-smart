@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-clear-progress-20261006-37';
-const ENGINE_REVISION='clear-progress-20261006-33';
+const ACCESS_REVISION='fichas-mobile-icon-align-20261006-38';
+const ENGINE_REVISION='mobile-icon-align-20261006-34';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
