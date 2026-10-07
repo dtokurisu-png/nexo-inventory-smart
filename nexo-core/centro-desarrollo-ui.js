@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261007-14';
+window.__nexoDevelopmentCenterStage0Version='20261007-15';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -174,10 +174,13 @@ html[data-nxo-theme="night"] .nxo-dev-quick-row:focus-visible strong{
 }
 
 /* Global page canvas consumes canonical theme tokens. */
+html[data-nxo-theme],
 html[data-nxo-theme] body,
 html[data-nxo-theme] #SITE_CONTAINER,
 html[data-nxo-theme] #masterPage,
-html[data-nxo-theme] #PAGES_CONTAINER{
+html[data-nxo-theme] #PAGES_CONTAINER,
+html[data-nxo-theme] #SITE_PAGES,
+html[data-nxo-theme] main{
   color:var(--nxo-text-primary)!important;
   background:
     radial-gradient(circle at 7% 3%,color-mix(in srgb,var(--nxo-accent) 12%,transparent),transparent 29%),
@@ -185,24 +188,52 @@ html[data-nxo-theme] #PAGES_CONTAINER{
     radial-gradient(circle at 76% 88%,color-mix(in srgb,var(--nxo-positive) 7%,transparent),transparent 26%),
     linear-gradient(135deg,var(--nxo-background),var(--nxo-background-alt))!important
 }
-/* Wix editor backgrounds are presentation leftovers; the canonical canvas owns them. */
-html[data-nxo-theme] #PAGES_CONTAINER>div,
-html[data-nxo-theme] #PAGES_CONTAINER main,
-html[data-nxo-theme] #PAGES_CONTAINER section,
-html[data-nxo-theme] #PAGES_CONTAINER .wixui-section,
+
+/* NIGHT owns the complete canvas, not only the cards. */
+html[data-nxo-theme="night"],
+html[data-nxo-theme="night"] body,
+html[data-nxo-theme="night"] #SITE_CONTAINER,
+html[data-nxo-theme="night"] #masterPage,
+html[data-nxo-theme="night"] #PAGES_CONTAINER,
+html[data-nxo-theme="night"] #SITE_PAGES,
+html[data-nxo-theme="night"] main{
+  background-color:var(--nxo-background)!important;
+  color:var(--nxo-text-primary)!important
+}
+
+/* Wix editor background layers must not paint over the Nexo canvas. */
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-canvas-layer="1"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="section-container"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="section-bg"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="container-bg"],
-html[data-nxo-theme] #PAGES_CONTAINER [data-testid="background-media"]{
+html[data-nxo-theme] #PAGES_CONTAINER [data-testid="background-media"],
+html[data-nxo-theme] #PAGES_CONTAINER [data-testid="colorUnderlay"],
+html[data-nxo-theme] #PAGES_CONTAINER [data-testid="bgLayers"],
+html[data-nxo-theme] #PAGES_CONTAINER [data-testid="page-bg"],
+html[data-nxo-theme] #PAGES_CONTAINER [data-testid="pageBackground"],
+html[data-nxo-theme] #PAGES_CONTAINER .wixui-section{
   background-color:transparent!important;
   background-image:none!important
 }
+
+/* Text color contract for editor-native content. */
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="richTextElement"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="richTextElement"] *,
 html[data-nxo-theme] #PAGES_CONTAINER .wixui-rich-text,
 html[data-nxo-theme] #PAGES_CONTAINER .wixui-rich-text *,
-html[data-nxo-theme] #PAGES_CONTAINER .wixui-text{
+html[data-nxo-theme] #PAGES_CONTAINER .wixui-text,
+html[data-nxo-theme] #PAGES_CONTAINER h1,
+html[data-nxo-theme] #PAGES_CONTAINER h2,
+html[data-nxo-theme] #PAGES_CONTAINER h3,
+html[data-nxo-theme] #PAGES_CONTAINER h4,
+html[data-nxo-theme] #PAGES_CONTAINER h5,
+html[data-nxo-theme] #PAGES_CONTAINER h6,
+html[data-nxo-theme] #PAGES_CONTAINER strong{
   color:var(--nxo-text-primary)!important
+}
+html[data-nxo-theme] #PAGES_CONTAINER p,
+html[data-nxo-theme] #PAGES_CONTAINER small{
+  color:var(--nxo-text-secondary)!important
 }
 
 /* Tool cards use the same semantic glass contract as Mi Espacio. */
@@ -1064,7 +1095,45 @@ function applyCards(){
   applyAllPageActions()
 }
 
+function normalizeCanvasLayers(){
+  const root=document.getElementById('PAGES_CONTAINER');
+  if(!root)return;
+
+  const viewportWidth=Math.max(document.documentElement.clientWidth||0,window.innerWidth||0);
+  const viewportHeight=Math.max(document.documentElement.clientHeight||0,window.innerHeight||0);
+
+  const candidates=[
+    root,
+    ...root.querySelectorAll('main,section,div,[data-testid]')
+  ];
+
+  candidates.forEach(el=>{
+    if(!el?.getBoundingClientRect)return;
+    if(el.closest?.('#nxo-dev-preview,#nxo-dev-header,[data-nxo-dev-card="1"]'))return;
+
+    const r=el.getBoundingClientRect();
+    if(r.width<viewportWidth*.55||r.height<Math.min(140,viewportHeight*.22))return;
+
+    const cs=getComputedStyle(el);
+    const bg=String(cs.backgroundColor||'').replace(/\s+/g,'').toLowerCase();
+    const isWhite=
+      bg==='rgb(255,255,255)'||
+      bg==='rgba(255,255,255,1)'||
+      bg==='rgb(250,250,250)'||
+      bg==='rgb(248,248,248)'||
+      bg==='rgb(245,245,245)';
+
+    const testid=String(el.getAttribute?.('data-testid')||'');
+    const isKnownLayer=/section|background|bg|container|page/i.test(testid);
+
+    if(isWhite||isKnownLayer){
+      el.dataset.nxoDevCanvasLayer='1'
+    }
+  })
+}
+
 function refresh(){
+  normalizeCanvasLayers();
   renameRecipeBooks(document.getElementById('PAGES_CONTAINER')||document.body);
   applyCards();
   syncQuickTheme()
@@ -1084,7 +1153,7 @@ async function start(){
   bindPreviewDelegation();
   bindFeatureInterception();
   refresh();
-  window.addEventListener('nexo-theme-change',()=>{syncQuickTheme();schedule()});
+  window.addEventListener('nexo-theme-change',()=>{normalizeCanvasLayers();syncQuickTheme();schedule()});
   window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()});
   observer=new MutationObserver(schedule);
   const target=document.getElementById('PAGES_CONTAINER')||document.body;
