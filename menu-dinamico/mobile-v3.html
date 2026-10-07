@@ -133,6 +133,99 @@ html.nexoMobile .timerActions button{min-height:32px;font-size:11px;padding:6px 
 .modalClose{display:grid;place-items:center}
 .modalClose .nexoUiIcon{width:18px;height:18px}
 @media(max-width:700px){.icon .nexoUiIcon,.nexoQuickSettingsButton .nexoUiIcon{width:19px;height:19px}}
+
+/* CANONICAL MOBILE ICON ALIGNMENT · 2026-10-06 */
+html.nexoMobile .nexoUiIcon{
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  align-self:center!important;
+  justify-self:center!important;
+  object-fit:contain!important;
+  object-position:50% 50%!important;
+  vertical-align:middle!important
+}
+html.nexoMobile .icon,
+html.nexoMobile .nexoQuickSettingsButton,
+html.nexoMobile .modalClose{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  display:grid!important;
+  place-items:center!important;
+  align-content:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  margin:0!important;
+  line-height:0!important;
+  text-align:center!important
+}
+html.nexoMobile .icon>.nexoUiIcon,
+html.nexoMobile .nexoQuickSettingsButton>.nexoUiIcon{
+  width:15px!important;
+  height:15px!important
+}
+html.nexoMobile .modalClose>.nexoUiIcon{
+  width:13px!important;
+  height:13px!important
+}
+html.nexoMobile .chip,
+html.nexoMobile .primary,
+html.nexoMobile .secondary,
+html.nexoMobile .timerActions button,
+html.nexoMobile .taxonomyProductPhotoBtn,
+html.nexoMobile .nexoWorkspaceBtn,
+html.nexoMobile .nexoWorkspaceTabs button,
+html.nexoMobile .nexoQuickSettingRow,
+html.nexoMobile .nexoSettingLabel{
+  align-items:center!important
+}
+html.nexoMobile .chip>.nexoUiIcon,
+html.nexoMobile .primary>.nexoUiIcon,
+html.nexoMobile .secondary>.nexoUiIcon,
+html.nexoMobile .timerActions button>.nexoUiIcon,
+html.nexoMobile .taxonomyProductPhotoBtn>.nexoUiIcon,
+html.nexoMobile .nexoWorkspaceBtn>.nexoUiIcon,
+html.nexoMobile .nexoWorkspaceTabs button>.nexoUiIcon{
+  align-self:center!important;
+  flex:0 0 auto!important
+}
+html.nexoMobile .searchWrap>.nexoUiIcon{
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  margin:0!important
+}
+html.nexoMobile .heroPhotoBtn{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  display:grid!important;
+  place-items:center!important;
+  align-content:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  line-height:0!important;
+  font-size:0!important
+}
+html.nexoMobile .heroPhotoBtn::before{
+  content:none!important;
+  display:none!important
+}
+html.nexoMobile .heroPhotoBtn>.nexoUiIcon{
+  display:block!important;
+  width:12px!important;
+  height:12px!important;
+  margin:0!important
+}
+html.nexoMobile .heroPhotoBtn>span{display:none!important}
+html.nexoMobile .miseCheck,
+html.nexoMobile .mopCheck{
+  display:grid!important;
+  place-items:center!important;
+  align-content:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  line-height:1!important;
+  text-align:center!important
+}
 </style>
 </head>
 <body>
