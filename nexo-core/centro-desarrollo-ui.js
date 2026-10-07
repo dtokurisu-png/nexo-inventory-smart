@@ -1,18 +1,20 @@
 (function(){
 'use strict';
-if(window.__nexoDevelopmentCenterStage0V3)return;
-window.__nexoDevelopmentCenterStage0V3=true;
+if(window.__nexoDevelopmentCenterStage0V4)return;
+window.__nexoDevelopmentCenterStage0V4=true;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
-  {key:'learning',names:['nexo learning core','learning core'],image:'https://static.wixstatic.com/media/8b64a8_000c4b28e51a4cbb9b6ead5df43c77d2~mv2.png'},
-  {key:'library',names:['biblioteca de engranaje'],image:'https://static.wixstatic.com/media/8b64a8_63b78c3f3c1c49a8a63d7ac60ccfe80f~mv2.png'},
-  {key:'inventory',names:['inventario smart'],image:'https://static.wixstatic.com/media/8b64a8_547e0719f4a4416692df3ca8f62708e2~mv2.png'},
-  {key:'recipes',names:['recetarios dinamicos','menus dinamicos','menu dinamico'],image:'https://static.wixstatic.com/media/8b64a8_748210fdcc814399a2d02bc1695b857b~mv2.png'}
-];
+  {key:'learning',icon:'desarrollo',names:['nexo learning core','learning core']},
+  {key:'library',icon:'guia',names:['biblioteca de engranaje']},
+  {key:'inventory',icon:'productos',names:['inventario smart']},
+  {key:'technical',icon:'ficha-tecnica',names:['fichas tecnicas dinamicas','dynamic technical sheets']},
+  {key:'work',icon:'panel',names:['centro de trabajo','work center']},
+  {key:'recipes',icon:'platos',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']}
+]
 const TOOL_URLS=new Set(TOOL_DEFS.map(x=>x.image));
 let scheduled=false,observer=null;
 
@@ -381,8 +383,23 @@ function renameRecipeBooks(root){
 }
 
 function findToolTitles(){
-  return [...document.querySelectorAll('#PAGES_CONTAINER h1,#PAGES_CONTAINER h2,#PAGES_CONTAINER h3,#PAGES_CONTAINER h4,#PAGES_CONTAINER h5,#PAGES_CONTAINER h6,#PAGES_CONTAINER p,#PAGES_CONTAINER span,#PAGES_CONTAINER a,#PAGES_CONTAINER button,#PAGES_CONTAINER div')]
-    .filter(el=>el.children.length===0&&toolForText(el.textContent))
+  const root=document.getElementById('PAGES_CONTAINER')||document.body;
+  if(!root)return[];
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  const found=[],seen=new Set();
+  while(walker.nextNode()){
+    const node=walker.currentNode;
+    const tool=toolForText(node.nodeValue);
+    if(!tool)continue;
+    let el=node.parentElement;
+    while(el&&el!==root&&norm(el.textContent)!==norm(node.nodeValue))el=el.parentElement;
+    el=el&&el!==root?el:node.parentElement;
+    if(el&&!seen.has(el)){
+      el.dataset.nxoDevToolTitle=tool.key;
+      found.push(el);seen.add(el)
+    }
+  }
+  return found
 }
 
 function closestCard(el){
@@ -533,7 +550,7 @@ function markActionSurface(action){
 }
 
 function applyCardActions(card,titleEl){
-  [...card.querySelectorAll('button,a,[role="button"]')].forEach(action=>{
+  [...card.querySelectorAll('button,a,[role="button"],[data-testid="buttonElement"],[data-testid="linkElement"]')].forEach(action=>{
     if(action.closest('#nxo-dev-header'))return;
     if(action===card||action.contains(titleEl))return;
     if(action.closest('[data-nxo-dev-icon-slot="1"]'))return;
@@ -541,14 +558,33 @@ function applyCardActions(card,titleEl){
   })
 }
 
+function applyAllPageActions(){
+  const root=document.getElementById('PAGES_CONTAINER')||document.body;
+  if(!root)return;
+  const selectors=[
+    'button',
+    'a[data-testid="linkElement"]',
+    '[data-testid="buttonElement"]',
+    '[role="button"]',
+    '[class*="StylableButton"]'
+  ].join(',');
+  [...root.querySelectorAll(selectors)].forEach(action=>{
+    if(action.closest('#nxo-dev-header'))return;
+    const text=norm(action.textContent);
+    if(!text)return;
+    markActionSurface(action)
+  })
+}
+
 function applyCards(){
   findToolTitles().forEach(title=>{
-    const tool=toolForText(title.textContent);
+    const tool=TOOL_DEFS.find(t=>t.key===title.dataset.nxoDevToolTitle)||toolForText(title.textContent);
     const card=closestCard(title);
     if(!tool||!card)return;
     installProductIcon(card,title,tool);
     applyCardActions(card,title)
-  })
+  });
+  applyAllPageActions()
 }
 
 function refresh(){
