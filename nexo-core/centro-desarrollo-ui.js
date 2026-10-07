@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261007-8';
+window.__nexoDevelopmentCenterStage0Version='20261007-9';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -239,9 +239,9 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] small{color:var(--nxo-text-muted)!i
 /* Real CTA controls inside tool cards. The runtime marks the actual Wix surface. */
 html[data-nxo-theme] .nxo-dev-action,
 html[data-nxo-theme] .nxo-dev-action-surface{
-  color:var(--nxo-button-secondary-text)!important;
-  background:var(--nxo-button-secondary-bg)!important;
-  border-color:var(--nxo-button-secondary-border)!important;
+  color:var(--nxo-header-text)!important;
+  background:var(--nxo-header-background)!important;
+  border-color:var(--nxo-header-border)!important;
   border-style:solid!important;
   border-width:1px!important;
   border-radius:10px!important;
