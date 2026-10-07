@@ -905,13 +905,18 @@ function bindCardPreview(card,tool){
   })
 }
 function bindFeatureInterception(){
-  if(window.__nexoDevFeatureCaptureBound)return;
-  window.__nexoDevFeatureCaptureBound=true;
+  if(window.__nexoDevFeatureClickHandler){
+    document.removeEventListener('click',window.__nexoDevFeatureClickHandler,true)
+  }
+  if(window.__nexoDevFeatureKeyHandler){
+    document.removeEventListener('keydown',window.__nexoDevFeatureKeyHandler)
+  }
 
-  document.addEventListener('click',event=>{
-    const action=event.target?.closest?.('[data-nxo-dev-feature-cta="1"]');
-    if(!action)return;
-    const card=action.closest('[data-nxo-dev-card="1"]');
+  window.__nexoDevFeatureClickHandler=function(event){
+    const card=event.target?.closest?.('[data-nxo-dev-card="1"]');
+    if(!card)return;
+    if(event.target?.closest?.('#nxo-dev-header,#nxo-dev-preview'))return;
+
     const tool=toolForCard(card);
     if(!tool)return;
 
@@ -919,14 +924,18 @@ function bindFeatureInterception(){
     event.stopPropagation();
     event.stopImmediatePropagation();
     openPreview(tool,card,{pinned:true})
-  },true);
+  };
 
-  document.addEventListener('keydown',event=>{
+  window.__nexoDevFeatureKeyHandler=function(event){
     if(event.key==='Escape'){
       previewPinned=false;
       closePreview(true)
     }
-  })
+  };
+
+  window.__nexoDevFeatureCaptureBound=true;
+  document.addEventListener('click',window.__nexoDevFeatureClickHandler,true);
+  document.addEventListener('keydown',window.__nexoDevFeatureKeyHandler)
 }
 
 function applyCardActions(card,titleEl){
