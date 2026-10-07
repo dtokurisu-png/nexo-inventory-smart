@@ -481,3 +481,75 @@ html.nexoMobile .nexoQuickSettingsMenu{
   object-position:center center!important;
   margin:0!important
 }
+
+/* CANONICAL MOBILE ICON ALIGNMENT · 2026-10-06 */
+html[data-theme].nexoMobile body .nexoUiIcon{
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  align-self:center!important;
+  justify-self:center!important;
+  object-fit:contain!important;
+  object-position:50% 50%!important;
+  vertical-align:middle!important
+}
+html[data-theme].nexoMobile body .icon,
+html[data-theme].nexoMobile body .nexoQuickSettingsButton,
+html[data-theme].nexoMobile body .modalHead .modalClose{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  display:grid!important;
+  place-items:center!important;
+  align-content:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  margin:0!important;
+  line-height:0!important;
+  text-align:center!important
+}
+html[data-theme].nexoMobile body .icon>.nexoUiIcon,
+html[data-theme].nexoMobile body .nexoQuickSettingsButton>.nexoUiIcon{
+  width:15px!important;
+  height:15px!important
+}
+html[data-theme].nexoMobile body .modalHead .modalClose>.nexoUiIcon{
+  width:13px!important;
+  height:13px!important
+}
+html[data-theme].nexoMobile body .chip,
+html[data-theme].nexoMobile body .primary,
+html[data-theme].nexoMobile body .secondary,
+html[data-theme].nexoMobile body .timerActions button,
+html[data-theme].nexoMobile body .taxonomyProductPhotoBtn,
+html[data-theme].nexoMobile body .nexoWorkspaceBtn,
+html[data-theme].nexoMobile body .nexoWorkspaceTabs button,
+html[data-theme].nexoMobile body .nexoQuickSettingRow,
+html[data-theme].nexoMobile body .nexoSettingLabel{
+  align-items:center!important
+}
+html[data-theme].nexoMobile body .chip>.nexoUiIcon,
+html[data-theme].nexoMobile body .primary>.nexoUiIcon,
+html[data-theme].nexoMobile body .secondary>.nexoUiIcon,
+html[data-theme].nexoMobile body .timerActions button>.nexoUiIcon,
+html[data-theme].nexoMobile body .taxonomyProductPhotoBtn>.nexoUiIcon,
+html[data-theme].nexoMobile body .nexoWorkspaceBtn>.nexoUiIcon,
+html[data-theme].nexoMobile body .nexoWorkspaceTabs button>.nexoUiIcon{
+  align-self:center!important;
+  flex:0 0 auto!important
+}
+html[data-theme].nexoMobile body .searchWrap>.nexoUiIcon{
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  margin:0!important
+}
+html[data-theme].nexoMobile body .miseCheck,
+html[data-theme].nexoMobile body .mopCheck{
+  display:grid!important;
+  place-items:center!important;
+  align-content:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  line-height:1!important;
+  text-align:center!important
+}
+
