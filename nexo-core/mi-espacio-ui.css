@@ -4691,3 +4691,39 @@ button.nxo-workspace-logo-edit.uploading{
   .nxo-today-shift-main strong,
   .nxo-today-shift-card>div>strong{font-size:15px}
 }
+
+
+/* Workspace tool installer — independent from Pending notes */
+.nxo-tool-add-slot{
+  margin-top:14px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+}
+.nxo-tool-add{
+  appearance:none;
+  width:86px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  border:1px dashed var(--nxo-theme-border);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--nxo-theme-surface-raised) 78%,transparent);
+  color:var(--nxo-theme-text);
+  cursor:pointer;
+  transition:transform var(--nxo-motion),border-color var(--nxo-motion),background var(--nxo-motion),box-shadow var(--nxo-motion);
+}
+.nxo-tool-add span{
+  font:780 34px/1 Inter,system-ui,sans-serif;
+  transform:translateY(-1px);
+}
+.nxo-tool-add:hover,
+.nxo-tool-add:focus-visible{
+  outline:none;
+  transform:translateY(-1px);
+  border-style:solid;
+  border-color:var(--nxo-theme-interaction);
+  background:color-mix(in srgb,var(--nxo-theme-interaction) 16%,var(--nxo-theme-surface-raised));
+  box-shadow:0 8px 18px rgba(0,0,0,.10);
+}
+.nxo-tool-add:active{transform:translateY(0)}
