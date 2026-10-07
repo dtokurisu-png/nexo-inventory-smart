@@ -1,7 +1,7 @@
 (function(){
 'use strict';
-if(window.__nexoDevelopmentCenterStage0V2)return;
-window.__nexoDevelopmentCenterStage0V2=true;
+if(window.__nexoDevelopmentCenterStage0V3)return;
+window.__nexoDevelopmentCenterStage0V3=true;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -179,11 +179,20 @@ html[data-nxo-theme] #PAGES_CONTAINER{
   background:
     radial-gradient(circle at 7% 3%,color-mix(in srgb,var(--nxo-accent) 12%,transparent),transparent 29%),
     radial-gradient(circle at 91% 8%,color-mix(in srgb,var(--nxo-interaction) 12%,transparent),transparent 28%),
+    radial-gradient(circle at 76% 88%,color-mix(in srgb,var(--nxo-positive) 7%,transparent),transparent 26%),
     linear-gradient(135deg,var(--nxo-background),var(--nxo-background-alt))!important
 }
+/* Wix editor backgrounds are presentation leftovers; the canonical canvas owns them. */
+html[data-nxo-theme] #PAGES_CONTAINER>div,
+html[data-nxo-theme] #PAGES_CONTAINER main,
+html[data-nxo-theme] #PAGES_CONTAINER section,
+html[data-nxo-theme] #PAGES_CONTAINER .wixui-section,
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="section-container"],
-html[data-nxo-theme] #PAGES_CONTAINER .wixui-section{
-  background-color:transparent!important
+html[data-nxo-theme] #PAGES_CONTAINER [data-testid="section-bg"],
+html[data-nxo-theme] #PAGES_CONTAINER [data-testid="container-bg"],
+html[data-nxo-theme] #PAGES_CONTAINER [data-testid="background-media"]{
+  background-color:transparent!important;
+  background-image:none!important
 }
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="richTextElement"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="richTextElement"] *,
@@ -192,6 +201,8 @@ html[data-nxo-theme] #PAGES_CONTAINER .wixui-rich-text *,
 html[data-nxo-theme] #PAGES_CONTAINER .wixui-text{
   color:var(--nxo-text-primary)!important
 }
+
+/* Tool cards use the same semantic glass contract as Mi Espacio. */
 html[data-nxo-theme] [data-nxo-dev-card="1"]{
   position:relative!important;overflow:hidden!important;
   color:var(--nxo-text-primary)!important;
@@ -223,38 +234,43 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] strong{color:var(--nxo-text-primary
 html[data-nxo-theme] [data-nxo-dev-card="1"] p,
 html[data-nxo-theme] [data-nxo-dev-card="1"] small{color:var(--nxo-text-muted)!important}
 
-/* Canonical generic action logic: semantic button tokens -> interaction hover. */
-html[data-nxo-theme] #PAGES_CONTAINER .wixui-button,
-html[data-nxo-theme] #PAGES_CONTAINER button,
-html[data-nxo-theme] #PAGES_CONTAINER [role="button"]{
+/* Real CTA controls inside tool cards. The runtime marks the actual Wix surface. */
+html[data-nxo-theme] .nxo-dev-action,
+html[data-nxo-theme] .nxo-dev-action-surface{
   color:var(--nxo-button-secondary-text)!important;
   background:var(--nxo-button-secondary-bg)!important;
   border-color:var(--nxo-button-secondary-border)!important;
+  border-style:solid!important;
+  border-width:1px!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
   transition:background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease!important
 }
-html[data-nxo-theme="day"] #PAGES_CONTAINER .wixui-button:hover,
-html[data-nxo-theme="day"] #PAGES_CONTAINER .wixui-button:focus-visible,
-html[data-nxo-theme="day"] #PAGES_CONTAINER button:hover,
-html[data-nxo-theme="day"] #PAGES_CONTAINER button:focus-visible,
-html[data-nxo-theme="day"] #PAGES_CONTAINER [role="button"]:hover,
-html[data-nxo-theme="day"] #PAGES_CONTAINER [role="button"]:focus-visible{
+html[data-nxo-theme] .nxo-dev-action *,
+html[data-nxo-theme] .nxo-dev-action-surface *{
+  color:inherit!important
+}
+html[data-nxo-theme="day"] .nxo-dev-action:hover,
+html[data-nxo-theme="day"] .nxo-dev-action:focus-visible,
+html[data-nxo-theme="day"] .nxo-dev-action:hover .nxo-dev-action-surface,
+html[data-nxo-theme="day"] .nxo-dev-action:focus-visible .nxo-dev-action-surface{
   color:var(--nxo-interaction-contrast)!important;
   background:var(--nxo-interaction)!important;
   border-color:var(--nxo-border-strong)!important;
-  box-shadow:0 0 0 3px var(--nxo-focus-ring)!important
+  box-shadow:0 10px 20px var(--nxo-shadow),0 0 0 3px var(--nxo-focus-ring)!important;
+  outline:none!important
 }
-html[data-nxo-theme="night"] #PAGES_CONTAINER .wixui-button:hover,
-html[data-nxo-theme="night"] #PAGES_CONTAINER .wixui-button:focus-visible,
-html[data-nxo-theme="night"] #PAGES_CONTAINER button:hover,
-html[data-nxo-theme="night"] #PAGES_CONTAINER button:focus-visible,
-html[data-nxo-theme="night"] #PAGES_CONTAINER [role="button"]:hover,
-html[data-nxo-theme="night"] #PAGES_CONTAINER [role="button"]:focus-visible{
-  color:var(--nxo-text-primary)!important;
-  background:var(--nxo-accent-soft)!important;
+html[data-nxo-theme="night"] .nxo-dev-action:hover,
+html[data-nxo-theme="night"] .nxo-dev-action:focus-visible,
+html[data-nxo-theme="night"] .nxo-dev-action:hover .nxo-dev-action-surface,
+html[data-nxo-theme="night"] .nxo-dev-action:focus-visible .nxo-dev-action-surface{
+  color:var(--nxo-interaction-contrast)!important;
+  background:var(--nxo-interaction)!important;
   border-color:var(--nxo-interaction)!important;
-  box-shadow:0 0 0 3px var(--nxo-focus-ring)!important
+  box-shadow:0 0 0 3px var(--nxo-focus-ring)!important;
+  outline:none!important
 }
-
+html[data-nxo-theme] .nxo-dev-action:active{transform:translateY(0) scale(.99)!important}
 /* Product icon replacement occupies the original icon slot. */
 [data-nxo-dev-icon-slot="1"]{
   display:grid!important;place-items:center!important;
@@ -386,17 +402,59 @@ function closestCard(el){
 
 function visualCandidateScore(el,titleRect,cardRect){
   if(!el||!el.getBoundingClientRect)return Infinity;
+  if(el.closest('#nxo-dev-header'))return Infinity;
   const r=el.getBoundingClientRect();
   if(r.width<20||r.height<20||r.width>125||r.height>125)return Infinity;
-  if(r.left<titleRect.left-180||r.left>titleRect.left+100)return Infinity;
-  if(r.top>titleRect.bottom+70||r.bottom<titleRect.top-100)return Infinity;
+  if(r.left<titleRect.left-190||r.left>titleRect.left+80)return Infinity;
+  if(r.top>titleRect.bottom+75||r.bottom<titleRect.top-110)return Infinity;
   const cx=r.left+r.width/2,cy=r.top+r.height/2;
-  const tx=Math.max(cardRect.left+26,titleRect.left-42),ty=titleRect.top+Math.min(titleRect.height,38)/2;
+  const tx=Math.max(cardRect.left+24,titleRect.left-44);
+  const ty=titleRect.top+Math.min(titleRect.height,38)/2;
   let score=Math.hypot(cx-tx,cy-ty);
-  if(el.matches('img,svg'))score-=40;
-  if(el.querySelector?.('img,svg'))score-=30;
-  if(/icon|image|media|graphic/i.test(String(el.className||'')+' '+String(el.getAttribute?.('data-testid')||'')))score-=20;
+  if(el.matches('img,svg'))score-=55;
+  if(el.querySelector?.('img,svg'))score-=42;
+  const text=String(el.textContent||'').trim();
+  if(text&&text.length<=4&&!/[A-Za-z0-9]/.test(text))score-=34;
+  if(/icon|image|media|graphic|symbol/i.test(String(el.className||'')+' '+String(el.getAttribute?.('data-testid')||'')))score-=24;
   return score
+}
+
+function isOfficialProductImage(img,tool){
+  if(!img||!tool)return false;
+  return img.classList.contains('nxo-dev-product-icon')&&
+    (img.getAttribute('src')===tool.image||img.src===tool.image)
+}
+
+function genericVisualCandidates(card,titleEl){
+  const titleRect=titleEl.getBoundingClientRect();
+  const cardRect=card.getBoundingClientRect();
+  return [...card.querySelectorAll('img,svg,span,div')]
+    .filter(el=>{
+      if(el.closest('#nxo-dev-header'))return false;
+      if(el.classList?.contains('nxo-dev-product-icon'))return false;
+      if(el.closest('[data-nxo-dev-icon-slot="1"]'))return false;
+      if(el===titleEl||el.contains(titleEl))return false;
+      const r=el.getBoundingClientRect();
+      if(r.width<18||r.height<18||r.width>130||r.height>130)return false;
+      if(r.right>titleRect.left+90)return false;
+      if(r.top>titleRect.bottom+90||r.bottom<titleRect.top-120)return false;
+      const text=String(el.textContent||'').trim();
+      const hasGraphic=el.matches('img,svg')||!!el.querySelector?.('img,svg');
+      const isSymbol=!!text&&text.length<=4&&!/[A-Za-z0-9]/.test(text);
+      const named=/icon|image|media|graphic|symbol/i.test(String(el.className||'')+' '+String(el.getAttribute?.('data-testid')||''));
+      return hasGraphic||isSymbol||named
+    })
+    .sort((a,b)=>visualCandidateScore(a,titleRect,cardRect)-visualCandidateScore(b,titleRect,cardRect))
+}
+
+function suppressExtraGenericIcons(card,titleEl,officialSlot){
+  genericVisualCandidates(card,titleEl).forEach(el=>{
+    if(el===officialSlot||officialSlot?.contains(el)||el.contains(officialSlot))return;
+    // Never hide interactive controls; only visual-only legacy icon nodes.
+    if(el.matches('button,a,[role="button"]')||el.closest('button,a,[role="button"]'))return;
+    el.dataset.nxoDevLegacyIcon='1';
+    el.style.setProperty('display','none','important')
+  })
 }
 
 function installProductIcon(card,titleEl,tool){
@@ -404,22 +462,23 @@ function installProductIcon(card,titleEl,tool){
   card.dataset.nxoDevCard='1';
   card.dataset.nxoDevTool=tool.key;
 
-  // Remove every product artwork previously appended to the wrong location.
-  [...card.querySelectorAll('img')].forEach(img=>{
-    if(TOOL_URLS.has(img.src)||img.classList.contains('nxo-dev-product-icon')){
-      const parent=img.parentElement;
-      img.remove();
-      if(parent?.dataset?.nxoDevIconSlot==='1')parent.removeAttribute('data-nxo-dev-icon-slot')
-    }
-  });
+  let slot=card.querySelector('[data-nxo-dev-icon-slot="1"]');
+  let official=slot?.querySelector('.nxo-dev-product-icon')||null;
 
-  const titleRect=titleEl.getBoundingClientRect();
-  const cardRect=card.getBoundingClientRect();
-  const descendants=[...card.querySelectorAll('img,svg,span,div')].filter(el=>!el.contains(titleEl)&&el!==titleEl);
-  let slot=descendants
-    .map(el=>({el,score:visualCandidateScore(el,titleRect,cardRect)}))
-    .filter(x=>Number.isFinite(x.score))
-    .sort((a,b)=>a.score-b.score)[0]?.el||null;
+  // Stable path: keep the official icon once installed. Never delete/rebuild it.
+  if(slot&&official){
+    if(!isOfficialProductImage(official,tool))official.src=tool.image;
+    suppressExtraGenericIcons(card,titleEl,slot);
+    return
+  }
+
+  const candidates=genericVisualCandidates(card,titleEl);
+  slot=candidates[0]||null;
+
+  if(slot?.matches('img,svg')&&slot.parentElement&&slot.parentElement!==card){
+    const pr=slot.parentElement.getBoundingClientRect();
+    if(pr.width<=135&&pr.height<=135)slot=slot.parentElement
+  }
 
   if(!slot){
     slot=document.createElement('span');
@@ -427,33 +486,68 @@ function installProductIcon(card,titleEl,tool){
     parent.insertBefore(slot,titleEl)
   }
 
-  // If the best candidate is the graphic itself, use its parent as the original slot.
-  if(slot.matches('img,svg')&&slot.parentElement&&slot.parentElement!==card){
-    const pr=slot.parentElement.getBoundingClientRect();
-    if(pr.width<=130&&pr.height<=130)slot=slot.parentElement
-  }
-
   const r=slot.getBoundingClientRect();
+  slot.dataset.nxoDevIconSlot='1';
+  slot.removeAttribute('data-nxo-dev-legacy-icon');
+  slot.style.removeProperty('display');
   slot.innerHTML='';
   slot.textContent='';
   slot.style.backgroundImage='none';
-  slot.dataset.nxoDevIconSlot='1';
   if(r.width>0)slot.style.width=Math.max(38,Math.min(82,r.width))+'px';
   if(r.height>0)slot.style.height=Math.max(38,Math.min(82,r.height))+'px';
 
-  const img=document.createElement('img');
-  img.className='nxo-dev-product-icon';
-  img.src=tool.image;
-  img.alt='';
-  img.setAttribute('aria-hidden','true');
-  slot.appendChild(img)
+  official=document.createElement('img');
+  official.className='nxo-dev-product-icon';
+  official.src=tool.image;
+  official.alt='';
+  official.setAttribute('aria-hidden','true');
+  slot.appendChild(official);
+
+  suppressExtraGenericIcons(card,titleEl,slot)
+}
+
+function sameRect(a,b,tolerance=5){
+  return Math.abs(a.left-b.left)<=tolerance&&Math.abs(a.top-b.top)<=tolerance&&
+    Math.abs(a.width-b.width)<=tolerance&&Math.abs(a.height-b.height)<=tolerance
+}
+
+function markActionSurface(action){
+  if(!action||action.classList.contains('nxo-dev-action'))return;
+  const r=action.getBoundingClientRect();
+  if(r.width<40||r.height<22||r.height>68)return;
+  if(r.width>Math.max(320,window.innerWidth*.46))return;
+
+  action.classList.add('nxo-dev-action');
+
+  const descendants=[...action.querySelectorAll('div,span')];
+  const visual=descendants.find(el=>{
+    const er=el.getBoundingClientRect();
+    if(!sameRect(r,er,8))return false;
+    const cs=getComputedStyle(el);
+    return cs.backgroundColor!=='rgba(0, 0, 0, 0)'||
+      cs.backgroundImage!=='none'||
+      parseFloat(cs.borderTopWidth||'0')>0||
+      parseFloat(cs.borderRadius||'0')>0
+  });
+  if(visual)visual.classList.add('nxo-dev-action-surface')
+}
+
+function applyCardActions(card,titleEl){
+  [...card.querySelectorAll('button,a,[role="button"]')].forEach(action=>{
+    if(action.closest('#nxo-dev-header'))return;
+    if(action===card||action.contains(titleEl))return;
+    if(action.closest('[data-nxo-dev-icon-slot="1"]'))return;
+    markActionSurface(action)
+  })
 }
 
 function applyCards(){
   findToolTitles().forEach(title=>{
     const tool=toolForText(title.textContent);
     const card=closestCard(title);
-    if(tool&&card)installProductIcon(card,title,tool)
+    if(!tool||!card)return;
+    installProductIcon(card,title,tool);
+    applyCardActions(card,title)
   })
 }
 
