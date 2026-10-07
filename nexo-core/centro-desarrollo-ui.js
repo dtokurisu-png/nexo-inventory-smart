@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261007-16';
+window.__nexoDevelopmentCenterStage0Version='20261007-17';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -191,13 +191,12 @@ html[data-nxo-theme="day"] body{
     linear-gradient(135deg,#f5f2ea 0%,var(--nxo-background) 50%,var(--nxo-background-alt) 100%)!important
 }
 
-html[data-nxo-theme="night"],
+html[data-nxo-theme="night"]{
+  background:var(--nxo-background)!important
+}
 html[data-nxo-theme="night"] body{
-  background:
-    radial-gradient(circle at 4% 7%,rgba(47,79,147,.18),transparent 30%),
-    radial-gradient(circle at 96% 8%,rgba(225,189,105,.10),transparent 28%),
-    radial-gradient(circle at 78% 96%,rgba(85,201,133,.045),transparent 24%),
-    linear-gradient(135deg,var(--nxo-background) 0%,var(--nxo-background-alt) 58%,#080b10 100%)!important
+  background:var(--nxo-header-background)!important;
+  background-image:none!important
 }
 
 /* Everything between the exterior canvas and the actual cards is transparent. */
@@ -226,6 +225,16 @@ html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-content-shell="1"]{
   box-shadow:none!important;
   -webkit-backdrop-filter:none!important;
   backdrop-filter:none!important
+}
+html[data-nxo-theme="night"] #SITE_CONTAINER,
+html[data-nxo-theme="night"] #masterPage,
+html[data-nxo-theme="night"] #PAGES_CONTAINER,
+html[data-nxo-theme="night"] #SITE_PAGES,
+html[data-nxo-theme="night"] main,
+html[data-nxo-theme="night"] #PAGES_CONTAINER [data-nxo-dev-content-shell="1"],
+html[data-nxo-theme="night"] #PAGES_CONTAINER [data-nxo-dev-canvas-layer="1"]{
+  background:transparent!important;
+  background-image:none!important
 }
 
 /* Text color contract for editor-native content. */
