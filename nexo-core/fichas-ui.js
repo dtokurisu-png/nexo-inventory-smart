@@ -897,13 +897,15 @@ async function savePhotoFromEngine(payload={}){
   const fileName=String(payload.fileName||file?.name||'foto.jpg');
   const mimeType=String(payload.mimeType||file?.type||'image/jpeg');
   const sizeInBytes=Number(payload.sizeInBytes||file?.size||0);
+  const photoIntent=String(payload.photoIntent||'replace');
+  const photoIndex=Number(payload.photoIndex||0);
 
   if(!file||typeof file.arrayBuffer!=='function'){
     throw new Error('PHOTO_FILE_MISSING');
   }
 
   const ticket=await api('photo.upload-url',{
-    input:{entityType,entityId,fileName,mimeType,sizeInBytes}
+    input:{entityType,entityId,fileName,mimeType,sizeInBytes,photoIntent,photoIndex}
   });
   const uploadUrl=String(ticket?.uploadUrl||'');
   if(!uploadUrl)throw new Error('PHOTO_UPLOAD_URL_MISSING');
@@ -934,7 +936,9 @@ async function savePhotoFromEngine(payload={}){
     input:{
       entityType:ticket?.entityType||entityType,
       entityId:ticket?.entityId||entityId,
-      fileId
+      fileId,
+      photoIntent:ticket?.photoIntent||photoIntent,
+      photoIndex:Number(ticket?.photoIndex??photoIndex)
     }
   });
   const image=saved?.image;
@@ -945,7 +949,10 @@ async function savePhotoFromEngine(payload={}){
     requestId,
     entityType:saved?.entityType||ticket?.entityType||entityType,
     entityId:saved?.entityId||ticket?.entityId||entityId,
-    image
+    image,
+    images:Array.isArray(saved?.images)?saved.images:null,
+    photoIntent:saved?.photoIntent||ticket?.photoIntent||photoIntent,
+    photoIndex:Number(saved?.photoIndex??ticket?.photoIndex??photoIndex)
   });
   pushEngineData().catch(()=>{});
   return image;
