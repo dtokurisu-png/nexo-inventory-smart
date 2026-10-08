@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261008-23';
+window.__nexoDevelopmentCenterStage0Version='20261008-24';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -230,6 +230,36 @@ html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action,
 html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action-surface{
   position:relative!important;
   z-index:2!important
+}
+
+/* DIAGNOSTIC: background-only content area.
+   Every visual layer inside PAGES_CONTAINER is transparent.
+   Only the dedicated Nexo page canvas is allowed to paint a background. */
+html[data-nxo-theme] #PAGES_CONTAINER *:not(#nxo-dev-page-canvas),
+html[data-nxo-theme] #PAGES_CONTAINER *:not(#nxo-dev-page-canvas)::before,
+html[data-nxo-theme] #PAGES_CONTAINER *:not(#nxo-dev-page-canvas)::after{
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important
+}
+
+/* Preserve only functional controls as visible objects, never as page-sized surfaces. */
+html[data-nxo-theme] #PAGES_CONTAINER button,
+html[data-nxo-theme] #PAGES_CONTAINER [role="button"],
+html[data-nxo-theme] #PAGES_CONTAINER a[data-testid="linkElement"]{
+  background:var(--nxo-header-background)!important;
+  color:var(--nxo-header-text)!important;
+  border-color:var(--nxo-header-border)!important
+}
+
+/* The Nexo background is the sole visual canvas. */
+html[data-nxo-theme] #nxo-dev-page-canvas{
+  display:block!important;
+  opacity:1!important;
+  visibility:visible!important
 }
 
 /* Text color contract for editor-native content. */
