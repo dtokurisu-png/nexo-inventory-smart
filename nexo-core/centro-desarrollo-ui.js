@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-33';
+const VERSION='20261008-34';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -20,15 +20,15 @@ const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-c
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
-  {key:'learning',icon:'desarrollo',title:'Nexo Learning Core',summary:'Aprendizaje, rutas, práctica y progreso personal.',names:['nexo learning core','learning core']},
-  {key:'library',icon:'guia',title:'Biblioteca de engranaje',summary:'Recursos, conocimiento y materiales reutilizables de Nexo.',names:['biblioteca de engranaje']},
-  {key:'inventory',icon:'productos',title:'Inventario Smart',summary:'Productos, materiales e inventario operativo del espacio de trabajo.',names:['inventario smart']},
-  {key:'technical',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Biblioteca y colecciones de fichas técnicas conectadas con Inventario Smart.',names:['fichas tecnicas dinamicas','dynamic technical sheets']},
-  {key:'schedules',icon:'recordatorio',title:'Horarios',summary:'Jornadas y horarios semanales con carga desde imagen, análisis GPT y publicación.',names:['horarios','schedule','schedules']},
-  {key:'work',icon:'panel',title:'Centro de Trabajo',summary:'Tareas, horarios, personal y operación colaborativa del espacio de trabajo.',names:['centro de trabajo','work center']},
-  {key:'recipes',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']},
-  {key:'tasks',icon:'checklist',title:'Listas de tareas',summary:'Proyecto próximo para crear y reutilizar listas de tareas, checklists y prep lists en uso personal o Workspace.',status:'planned',names:['listas de tareas','checklist','prep list','prep lists']},
-  {key:'multichannel-notifications',icon:'notificaciones',title:'Notificaciones multicanal',summary:'Proyecto próximo para centralizar avisos y entregarlos por varios canales desde una sola lógica de notificación.',status:'planned',names:['notificaciones multicanal','multichannel notifications']}
+  {key:'learning',cmsKey:'learning-core',icon:'desarrollo',title:'Nexo Learning Core',summary:'Aprendizaje, rutas, práctica y progreso personal.',names:['nexo learning core','learning core']},
+  {key:'library',cmsKey:'gear-library',icon:'guia',title:'Biblioteca de engranaje',summary:'Recursos, conocimiento y materiales reutilizables de Nexo.',names:['biblioteca de engranaje']},
+  {key:'inventory',cmsKey:'inventory-smart',icon:'productos',title:'Inventario Smart',summary:'Productos, materiales e inventario operativo del espacio de trabajo.',names:['inventario smart']},
+  {key:'technical',cmsKey:'dynamic-specs',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Biblioteca y colecciones de fichas técnicas conectadas con Inventario Smart.',names:['fichas tecnicas dinamicas','dynamic technical sheets']},
+  {key:'schedules',cmsKey:'schedules',icon:'recordatorio',title:'Horarios',summary:'Jornadas y horarios semanales con carga desde imagen, análisis GPT y publicación.',names:['horarios','schedule','schedules']},
+  {key:'work',cmsKey:'work-center',icon:'panel',title:'Centro de Trabajo',summary:'Tareas, horarios, personal y operación colaborativa del espacio de trabajo.',names:['centro de trabajo','work center']},
+  {key:'recipes',cmsKey:'dynamic-menus',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']},
+  {key:'tasks',cmsKey:'task-lists',icon:'checklist',title:'Listas de tareas',summary:'Proyecto próximo para crear y reutilizar listas de tareas, checklists y prep lists en uso personal o Workspace.',status:'planned',names:['listas de tareas','checklist','prep list','prep lists']},
+  {key:'multichannel-notifications',cmsKey:'multichannel-notifications',icon:'notificaciones',title:'Notificaciones multicanal',summary:'Proyecto próximo para centralizar avisos y entregarlos por varios canales desde una sola lógica de notificación.',status:'planned',names:['notificaciones multicanal','multichannel notifications']}
 ];
 let scheduled=false,observer=null;
 let quickMenuOutsideHandler=null;
@@ -39,6 +39,29 @@ function norm(v){
     .replace(/\s+/g,' ').trim().toLowerCase()
 }
 function iconUrl(name){return ICON_BASE+encodeURIComponent(name)+'.png'}
+function escapeHtml(value){
+  return String(value??'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;')
+}
+function statusLabel(value){
+  const status=String(value||'').trim().toUpperCase();
+  if(status==='ACTIVE')return 'Disponible';
+  if(status==='BUILDING')return 'En desarrollo';
+  if(status==='PLANNED')return 'Próximamente';
+  if(status==='LEGACY')return 'Integración heredada';
+  return status||'Información'
+}
+function scopeLabel(value){
+  const scope=String(value||'').trim().toLowerCase();
+  if(scope==='personal')return 'Personal';
+  if(scope==='workspace')return 'Workspace';
+  return value||''
+}
+
 function theme(){
   return window.NEXO_THEME_RUNTIME?.getTheme?.()||
     (document.documentElement.dataset.nxoTheme==='night'?'night':'day')
@@ -399,6 +422,129 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
     max-width:42px!important;
     max-height:42px!important
   }
+}
+
+/* Stage 2 · individual tool detail view. */
+#nxo-dev-tool-detail[hidden]{display:none!important}
+#nxo-dev-tool-detail{
+  width:min(1120px,100%);
+  height:calc(100vh - 64px);
+  height:calc(100dvh - 64px);
+  margin:0 auto;
+  padding:28px 20px 38px;
+  box-sizing:border-box;
+  color:var(--nxo-text-primary)
+}
+.nxo-dev-detail-scroll{
+  height:100%;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+  padding:2px 4px 28px
+}
+.nxo-dev-detail-scroll::-webkit-scrollbar{display:none;width:0;height:0}
+.nxo-dev-detail-back{
+  appearance:none;
+  border:1px solid var(--nxo-border);
+  border-radius:12px;
+  background:var(--nxo-surface-glass);
+  color:var(--nxo-text-primary);
+  padding:9px 12px;
+  font:760 11px/1 Inter,system-ui,sans-serif;
+  cursor:pointer;
+  box-shadow:0 7px 18px var(--nxo-shadow)
+}
+.nxo-dev-detail-back:hover,.nxo-dev-detail-back:focus-visible{
+  outline:none;
+  border-color:var(--nxo-border-strong);
+  transform:translateY(-1px)
+}
+.nxo-dev-detail-hero{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin:24px 0 20px
+}
+.nxo-dev-detail-icon-wrap{
+  width:70px;height:70px;flex:0 0 70px;
+  display:grid;place-items:center;
+  border:1px solid var(--nxo-border);
+  border-radius:20px;
+  background:var(--nxo-surface-glass);
+  box-shadow:0 12px 28px var(--nxo-shadow)
+}
+.nxo-dev-detail-icon{width:52px;height:52px;display:block;object-fit:contain}
+.nxo-dev-detail-heading{min-width:0}
+.nxo-dev-detail-eyebrow{
+  margin-bottom:5px;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:var(--nxo-accent)
+}
+.nxo-dev-detail-title{
+  margin:0;
+  font-size:clamp(26px,4vw,40px);
+  line-height:1.08;
+  letter-spacing:-.025em;
+  color:var(--nxo-text-primary)
+}
+.nxo-dev-detail-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.nxo-dev-detail-chip{
+  display:inline-flex;align-items:center;min-height:25px;
+  padding:4px 9px;border:1px solid var(--nxo-border);border-radius:999px;
+  background:var(--nxo-surface-glass);color:var(--nxo-text-secondary);
+  font-size:10px;font-weight:760
+}
+.nxo-dev-detail-chip.status{
+  color:var(--nxo-accent);
+  border-color:color-mix(in srgb,var(--nxo-accent) 34%,var(--nxo-border))
+}
+.nxo-dev-detail-description{
+  max-width:880px;margin:0 0 22px;color:var(--nxo-text-secondary);
+  font-size:14px;line-height:1.7
+}
+.nxo-dev-detail-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);
+  gap:14px;align-items:start
+}
+.nxo-dev-detail-card{
+  border:1px solid var(--nxo-border);border-radius:18px;
+  background:var(--nxo-surface-glass);box-shadow:0 12px 32px var(--nxo-shadow);
+  padding:17px
+}
+.nxo-dev-detail-card + .nxo-dev-detail-card{margin-top:14px}
+.nxo-dev-detail-card h3{margin:0 0 11px;color:var(--nxo-text-primary);font-size:13px;line-height:1.2}
+.nxo-dev-detail-list{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.nxo-dev-detail-list li{
+  position:relative;padding-left:16px;color:var(--nxo-text-secondary);
+  font-size:12px;line-height:1.5
+}
+.nxo-dev-detail-list li::before{
+  content:'';position:absolute;left:1px;top:.58em;width:6px;height:6px;
+  border-radius:50%;background:var(--nxo-accent);
+  box-shadow:0 0 8px color-mix(in srgb,var(--nxo-accent) 46%,transparent)
+}
+.nxo-dev-detail-empty{color:var(--nxo-text-muted);font-size:12px;line-height:1.5}
+.nxo-dev-detail-loading,.nxo-dev-detail-error{
+  margin-top:28px;padding:18px;border:1px solid var(--nxo-border);
+  border-radius:16px;background:var(--nxo-surface-glass);
+  color:var(--nxo-text-secondary);font-size:13px
+}
+.nxo-dev-detail-error{color:var(--nxo-danger)}
+@media(max-width:760px){
+  #nxo-dev-tool-detail{
+    height:calc(100vh - 58px);
+    height:calc(100dvh - 58px);
+    padding:20px 14px 30px
+  }
+  .nxo-dev-detail-hero{align-items:flex-start;gap:12px}
+  .nxo-dev-detail-icon-wrap{width:58px;height:58px;flex-basis:58px;border-radius:16px}
+  .nxo-dev-detail-icon{width:44px;height:44px}
+  .nxo-dev-detail-grid{grid-template-columns:1fr}
 }
 
 /* Tool cards use the same semantic glass contract as Mi Espacio. */
@@ -929,11 +1075,22 @@ function bindFeatureInterception(){
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
+
+    const action=event.target?.closest?.('.nxo-dev-action');
+    if(action&&!action.disabled){
+      openToolDetail(tool,action);
+      return
+    }
+
     openPreview(tool,card,{pinned:true})
   };
 
   window.__nexoDevFeatureKeyHandler=function(event){
     if(event.key==='Escape'){
+      if(toolDetailIsOpen()){
+        closeToolDetail();
+        return
+      }
       previewPinned=false;
       closePreview(true)
     }
@@ -941,6 +1098,128 @@ function bindFeatureInterception(){
 
   document.addEventListener('click',window.__nexoDevFeatureClickHandler,true);
   document.addEventListener('keydown',window.__nexoDevFeatureKeyHandler)
+}
+
+let detailRequestId=0;
+let lastDetailTrigger=null;
+
+function ensureToolDetailView(){
+  const app=ensureDevelopmentApp();
+  let view=document.getElementById('nxo-dev-tool-detail');
+  if(view)return view;
+
+  view=document.createElement('section');
+  view.id='nxo-dev-tool-detail';
+  view.hidden=true;
+  view.innerHTML=
+    '<div class="nxo-dev-detail-scroll">'+
+      '<button type="button" class="nxo-dev-detail-back" id="nxo-dev-detail-back">← Volver al catálogo</button>'+
+      '<div id="nxo-dev-detail-content"></div>'+
+    '</div>';
+  app.appendChild(view);
+
+  view.querySelector('#nxo-dev-detail-back')?.addEventListener('click',closeToolDetail,{signal:runtimeAbort.signal});
+  return view
+}
+
+function detailList(title,items){
+  const values=Array.isArray(items)?items.filter(Boolean):[];
+  return '<section class="nxo-dev-detail-card">'+
+    '<h3>'+escapeHtml(title)+'</h3>'+
+    (values.length
+      ? '<ul class="nxo-dev-detail-list">'+values.map(item=>'<li>'+escapeHtml(item)+'</li>').join('')+'</ul>'
+      : '<div class="nxo-dev-detail-empty">Sin información adicional por ahora.</div>')+
+  '</section>'
+}
+
+async function fetchToolDetail(tool){
+  const response=await fetch('/_functions/nexoDevelopmentToolDetail',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({toolKey:tool.cmsKey||tool.key}),
+    credentials:'same-origin'
+  });
+  const payload=await response.json().catch(()=>null);
+  if(!response.ok||!payload?.ok||!payload?.data){
+    throw new Error(payload?.error||'No se pudo cargar la ficha.')
+  }
+  return payload.data
+}
+
+function renderToolDetail(tool,data){
+  const content=document.getElementById('nxo-dev-detail-content');
+  if(!content)return;
+
+  const scopes=Array.isArray(data?.scopeModes)?data.scopeModes:[];
+  const chips=[
+    '<span class="nxo-dev-detail-chip status">'+escapeHtml(statusLabel(data?.status))+'</span>',
+    ...scopes.map(scope=>'<span class="nxo-dev-detail-chip">'+escapeHtml(scopeLabel(scope))+'</span>')
+  ].join('');
+
+  content.innerHTML=
+    '<div class="nxo-dev-detail-hero">'+
+      '<div class="nxo-dev-detail-icon-wrap"><img class="nxo-dev-detail-icon" src="'+iconUrl(tool.icon)+'" alt=""></div>'+
+      '<div class="nxo-dev-detail-heading">'+
+        '<div class="nxo-dev-detail-eyebrow">Ficha de herramienta</div>'+
+        '<h2 class="nxo-dev-detail-title">'+escapeHtml(data?.nameEs||tool.title)+'</h2>'+
+        '<div class="nxo-dev-detail-meta">'+chips+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<p class="nxo-dev-detail-description">'+escapeHtml(data?.detailDescriptionEs||data?.descriptionEs||tool.summary)+'</p>'+
+    '<div class="nxo-dev-detail-grid">'+
+      '<div>'+detailList('Capacidades',data?.capabilitiesEs)+'</div>'+
+      '<aside>'+
+        detailList('Requisitos',data?.requirementsEs)+
+        detailList('Integraciones',data?.integrationsEs)+
+      '</aside>'+
+    '</div>'
+}
+
+async function openToolDetail(tool,trigger){
+  if(!tool||tool.status==='planned')return;
+  const requestId=++detailRequestId;
+  lastDetailTrigger=trigger||document.activeElement;
+
+  previewPinned=false;
+  closePreview(true);
+
+  const app=ensureDevelopmentApp();
+  const shell=app.querySelector('.nxo-dev-owned-shell');
+  const view=ensureToolDetailView();
+  const content=view.querySelector('#nxo-dev-detail-content');
+
+  if(shell)shell.hidden=true;
+  view.hidden=false;
+  content.innerHTML='<div class="nxo-dev-detail-loading">Cargando ficha de herramienta…</div>';
+  view.querySelector('.nxo-dev-detail-scroll')?.scrollTo({top:0,behavior:'auto'});
+
+  try{
+    const data=await fetchToolDetail(tool);
+    if(requestId!==detailRequestId||view.hidden)return;
+    renderToolDetail(tool,data)
+  }catch(error){
+    if(requestId!==detailRequestId||view.hidden)return;
+    content.innerHTML='<div class="nxo-dev-detail-error">'+escapeHtml(error?.message||'No se pudo cargar la ficha.')+'</div>'
+  }
+}
+
+function closeToolDetail(){
+  const app=document.getElementById('nxo-dev-app');
+  const view=document.getElementById('nxo-dev-tool-detail');
+  const shell=app?.querySelector('.nxo-dev-owned-shell');
+  detailRequestId++;
+
+  if(view)view.hidden=true;
+  if(shell)shell.hidden=false;
+  requestAnimationFrame(()=>{
+    syncCatalogScrollControls();
+    try{lastDetailTrigger?.focus?.()}catch(_){}
+  })
+}
+
+function toolDetailIsOpen(){
+  const view=document.getElementById('nxo-dev-tool-detail');
+  return !!view&&!view.hidden
 }
 
 function ensureDevelopmentApp(){
@@ -1050,6 +1329,8 @@ function destroy(){
   observer=null;
   scheduled=false;
   clearTimeout(previewCloseTimer);
+  detailRequestId++;
+  lastDetailTrigger=null;
 
   try{runtimeAbort.abort()}catch(_){}
 
