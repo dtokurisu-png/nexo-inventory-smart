@@ -1,8 +1,19 @@
 (function(){
 'use strict';
-if(window.__nexoDevelopmentCenterStage0V4)return;
-window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261008-27';
+
+const VERSION='20261008-28';
+const previousRuntime=window.__nexoDevelopmentCenterRuntime;
+if(previousRuntime&&typeof previousRuntime.destroy==='function'){
+  try{previousRuntime.destroy()}catch(_){}
+}
+
+const runtimeAbort=new AbortController();
+const runtime={
+  version:VERSION,
+  destroy:null
+};
+window.__nexoDevelopmentCenterRuntime=runtime;
+window.__nexoDevelopmentCenterStage0Version=VERSION;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -18,6 +29,7 @@ const TOOL_DEFS=[
   {key:'recipes',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']}
 ];
 let scheduled=false,observer=null;
+let quickMenuOutsideHandler=null;
 
 function norm(v){
   return String(v||'')
@@ -549,10 +561,6 @@ function ensureHeader(){
   let header=document.getElementById('nxo-dev-header');
   if(header)return header;
 
-  // Remove the obsolete floating control from stage 0 v1.
-  document.getElementById('nxo-dev-theme-toggle')?.remove();
-  document.getElementById('nexoDevelopmentThemeToggle')?.remove();
-
   header=document.createElement('header');
   header.id='nxo-dev-header';
   header.innerHTML=
@@ -598,12 +606,13 @@ function ensureHeader(){
   });
   header.querySelector('#nxo-dev-back').addEventListener('click',goBack);
   header.querySelector('#nxo-dev-brand-home').addEventListener('click',goMySpace);
-  document.addEventListener('click',event=>{
+  quickMenuOutsideHandler=event=>{
     if(!header.contains(event.target)){
       menu.classList.remove('open');
       quickButton.setAttribute('aria-expanded','false')
     }
-  });
+  };
+  document.addEventListener('click',quickMenuOutsideHandler,{signal:runtimeAbort.signal});
   syncQuickTheme();
   return header
 }
@@ -1057,7 +1066,6 @@ function bindFeatureInterception(){
     }
   };
 
-  window.__nexoDevFeatureCaptureBound=true;
   document.addEventListener('click',window.__nexoDevFeatureClickHandler,true);
   document.addEventListener('keydown',window.__nexoDevFeatureKeyHandler)
 }
@@ -1174,25 +1182,79 @@ function schedule(){
   requestAnimationFrame(()=>{scheduled=false;refresh()})
 }
 
+function destroy(){
+  try{observer?.disconnect()}catch(_){}
+  observer=null;
+  scheduled=false;
+  clearTimeout(previewCloseTimer);
+
+  try{runtimeAbort.abort()}catch(_){}
+
+  if(window.__nexoDevPreviewOverHandler){
+    document.removeEventListener('pointerover',window.__nexoDevPreviewOverHandler,true);
+    window.__nexoDevPreviewOverHandler=null
+  }
+  if(window.__nexoDevPreviewOutHandler){
+    document.removeEventListener('pointerout',window.__nexoDevPreviewOutHandler,true);
+    window.__nexoDevPreviewOutHandler=null
+  }
+  if(window.__nexoDevFeatureClickHandler){
+    document.removeEventListener('click',window.__nexoDevFeatureClickHandler,true);
+    window.__nexoDevFeatureClickHandler=null
+  }
+  if(window.__nexoDevFeatureKeyHandler){
+    document.removeEventListener('keydown',window.__nexoDevFeatureKeyHandler);
+    window.__nexoDevFeatureKeyHandler=null
+  }
+
+  document.querySelectorAll('[data-nxo-dev-night-lift="1"],[data-nxo-dev-night-front="1"]').forEach(el=>{
+    delete el.dataset.nxoDevNightLift;
+    delete el.dataset.nxoDevNightFront
+  });
+
+  [
+    'nxo-dev-center-css',
+    'nxo-dev-header',
+    'nxo-dev-preview',
+    'nxo-dev-preview-handle',
+    'nxo-dev-page-canvas'
+  ].forEach(id=>document.getElementById(id)?.remove());
+
+  if(window.__nexoDevelopmentCenterRuntime===runtime){
+    delete window.__nexoDevelopmentCenterRuntime
+  }
+  if(window.__nexoDevelopmentCenterStage0Version===VERSION){
+    window.__nexoDevelopmentCenterStage0Version=''
+  }
+}
+
+runtime.destroy=destroy;
+
 async function start(){
+  if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
   ensureStyle();
   await ensureThemeRuntime();
+  if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
   await window.NEXO_THEME_RUNTIME?.ready;
+  if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
+
   ensureHeader();
   ensurePageCanvas();
   ensurePreviewPanel();
   bindPreviewDelegation();
   bindFeatureInterception();
   refresh();
-  window.addEventListener('nexo-theme-change',()=>{syncQuickTheme();schedule()});
-  window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()});
+
+  window.addEventListener('nexo-theme-change',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
+  window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
+
   observer=new MutationObserver(schedule);
   const target=document.getElementById('PAGES_CONTAINER')||document.body;
   observer.observe(target,{subtree:true,childList:true,characterData:true})
 }
 
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',start,{once:true})
+  document.addEventListener('DOMContentLoaded',start,{once:true,signal:runtimeAbort.signal})
 }else{
   start()
 }
