@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-30';
+const VERSION='20261008-31';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -26,7 +26,9 @@ const TOOL_DEFS=[
   {key:'technical',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Biblioteca y colecciones de fichas técnicas conectadas con Inventario Smart.',names:['fichas tecnicas dinamicas','dynamic technical sheets']},
   {key:'schedules',icon:'recordatorio',title:'Horarios',summary:'Jornadas y horarios semanales con carga desde imagen, análisis GPT y publicación.',names:['horarios','schedule','schedules']},
   {key:'work',icon:'panel',title:'Centro de Trabajo',summary:'Tareas, horarios, personal y operación colaborativa del espacio de trabajo.',names:['centro de trabajo','work center']},
-  {key:'recipes',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']}
+  {key:'recipes',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']},
+  {key:'tasks',icon:'checklist',title:'Listas de tareas',summary:'Proyecto próximo para crear y reutilizar listas de tareas, checklists y prep lists en uso personal o Workspace.',status:'planned',names:['listas de tareas','checklist','prep list','prep lists']},
+  {key:'multichannel-notifications',icon:'notificaciones',title:'Notificaciones multicanal',summary:'Proyecto próximo para centralizar avisos y entregarlos por varios canales desde una sola lógica de notificación.',status:'planned',names:['notificaciones multicanal','multichannel notifications']}
 ];
 let scheduled=false,observer=null;
 let quickMenuOutsideHandler=null;
@@ -398,6 +400,18 @@ html[data-nxo-theme="night"] .nxo-dev-action:focus-visible .nxo-dev-action-surfa
   outline:none!important
 }
 html[data-nxo-theme] .nxo-dev-action:active{transform:translateY(0) scale(.99)!important}
+html[data-nxo-theme] .nxo-dev-action[disabled]{
+  cursor:not-allowed!important;
+  opacity:.62!important;
+  transform:none!important
+}
+html[data-nxo-theme] .nxo-dev-action[disabled]:hover,
+html[data-nxo-theme] .nxo-dev-action[disabled]:focus-visible{
+  color:var(--nxo-header-text)!important;
+  background:var(--nxo-header-background)!important;
+  border-color:var(--nxo-header-border)!important;
+  box-shadow:none!important
+}
 /* Stage 1 preparation · compact marketplace geometry */
 html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"]{
   width:75%!important;
@@ -890,7 +904,9 @@ function ensureDevelopmentApp(){
         '<h2 data-nxo-dev-tool-title="'+tool.key+'">'+tool.title+'</h2>'+
       '</div>'+
       '<p data-nxo-dev-description="1">'+tool.summary+'</p>'+
-      '<button type="button" class="nxo-dev-action nxo-dev-action-surface">Ver características</button>';
+      (tool.status==='planned'
+        ? '<button type="button" class="nxo-dev-action nxo-dev-action-surface" disabled aria-disabled="true">Próximamente</button>'
+        : '<button type="button" class="nxo-dev-action nxo-dev-action-surface">Ver características</button>');
 
     slot.appendChild(card);
     grid.appendChild(slot)
