@@ -58,7 +58,7 @@ const closeButton=layer.querySelector('.nexoParagraphReaderClose');
 const doneButton=layer.querySelector('.nexoParagraphReaderDone');
 let timer=null,pendingBlock=null,startX=0,startY=0,opened=false,suppressClickUntil=0,previousFocus=null;
 
-const candidateSelector='[data-nexo-reader-paragraph],.mopStepText,.mop,.note,.reviewAlert,.modalText,.photoBody p,.nexoBatchIntro,.nexoBatchHint,p';
+const candidateSelector='[data-nexo-reader-paragraph],.mopStepText,.mop,.row .nameProduct,.note,.reviewAlert,.modalText,.photoBody p,.nexoBatchIntro,.nexoBatchHint,p';
 const blockedSelector='input,textarea,select,[contenteditable="true"],.miseCheck,.mopCheck,.icon,.lang,.installBtn,.taxonomyImageClose,.taxonomyProductPhotoBtn,.heroPhotoBtn,[data-photo-target],#nexoPhotoLayer,#nexoBatchLayer,#nexoParagraphReader,.unitBtn,.nexoProgressReset';
 
 function currentLang(){return document.documentElement.lang==='en'?'en':'es'}
