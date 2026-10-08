@@ -80,7 +80,7 @@ function ensureStyle(){
   const style=document.createElement('style');
   style.id='nxo-dev-center-css';
   style.textContent=`
-/* DEVELOPMENT CENTER · Stage 0 visual contract
+/* DEVELOPMENT CENTER · Canonical visual contract
    Values come only from Nexo theme-runtime semantic variables. */
 #nxo-dev-header{
   position:sticky;top:0;z-index:2147483200;
