@@ -192,13 +192,15 @@ html[data-nxo-theme="day"] body{
 }
 
 html[data-nxo-theme="night"]{
-  background:var(--nxo-header-background)!important
+  min-height:100vh!important;
+  background:var(--nxo-background)!important
 }
 html[data-nxo-theme="night"] body{
+  min-height:100vh!important;
   background:
-    radial-gradient(circle at 6% 8%,color-mix(in srgb,var(--nxo-accent) 13%,transparent),transparent 30%),
-    radial-gradient(circle at 94% 92%,color-mix(in srgb,var(--nxo-accent) 9%,transparent),transparent 28%),
-    linear-gradient(var(--nxo-header-background),var(--nxo-header-background))!important
+    radial-gradient(circle at 6% 8%,color-mix(in srgb,var(--nxo-accent) 14%,transparent),transparent 30%),
+    radial-gradient(circle at 94% 92%,color-mix(in srgb,var(--nxo-accent) 10%,transparent),transparent 28%),
+    linear-gradient(var(--nxo-background),var(--nxo-background))!important
 }
 
 /* Everything between the exterior canvas and the actual cards is transparent. */
@@ -207,8 +209,8 @@ html[data-nxo-theme] #masterPage,
 html[data-nxo-theme] #PAGES_CONTAINER,
 html[data-nxo-theme] #SITE_PAGES,
 html[data-nxo-theme] main,
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-canvas-layer="1"],
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-content-shell="1"],
+html[data-nxo-theme] [data-nxo-dev-canvas-layer="1"],
+html[data-nxo-theme] [data-nxo-dev-content-shell="1"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="section-container"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="section-bg"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="container-bg"],
@@ -219,6 +221,13 @@ html[data-nxo-theme] #PAGES_CONTAINER [data-testid="page-bg"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="pageBackground"],
 html[data-nxo-theme] #PAGES_CONTAINER .wixui-section{
   background-color:transparent!important;
+  background-image:none!important
+}
+html[data-nxo-theme] [data-nxo-dev-canvas-layer="1"]::before,
+html[data-nxo-theme] [data-nxo-dev-canvas-layer="1"]::after,
+html[data-nxo-theme] [data-nxo-dev-content-shell="1"]::before,
+html[data-nxo-theme] [data-nxo-dev-content-shell="1"]::after{
+  background:transparent!important;
   background-image:none!important
 }
 
@@ -1142,57 +1151,59 @@ function commonAncestor(elements,root){
 }
 
 function normalizeCanvasLayers(){
-  const root=document.getElementById('PAGES_CONTAINER');
-  if(!root)return;
+  const pages=document.getElementById('PAGES_CONTAINER');
+  if(!pages)return;
 
-  // Remove stale shell flags so rerenders cannot accumulate structure.
-  root.querySelectorAll('[data-nxo-dev-content-shell="1"]').forEach(el=>{
-    delete el.dataset.nxoDevContentShell
+  const roots=[
+    document.getElementById('SITE_CONTAINER'),
+    document.getElementById('masterPage'),
+    document.getElementById('SITE_PAGES'),
+    pages
+  ].filter(Boolean);
+
+  roots.forEach(root=>{
+    root.querySelectorAll?.('[data-nxo-dev-content-shell="1"]').forEach(el=>{
+      delete el.dataset.nxoDevContentShell
+    });
+    root.querySelectorAll?.('[data-nxo-dev-canvas-layer="1"]').forEach(el=>{
+      delete el.dataset.nxoDevCanvasLayer
+    })
   });
-  root.querySelectorAll('[data-nxo-dev-canvas-layer="1"]').forEach(el=>{
-    delete el.dataset.nxoDevCanvasLayer
-  });
 
-  const cards=[...root.querySelectorAll('[data-nxo-dev-card="1"]')];
-  const shell=commonAncestor(cards,root);
+  const cards=[...pages.querySelectorAll('[data-nxo-dev-card="1"]')];
+  const shell=commonAncestor(cards,pages);
 
-  // The common wrapper and every layout ancestor up to PAGES_CONTAINER
-  // are intentionally transparent. Cards remain real surfaces.
   let node=shell;
-  while(node&&node!==root){
-    if(!node.matches?.('[data-nxo-dev-card="1"]')){
+  while(node&&node!==document.body){
+    if(!node.matches?.('[data-nxo-dev-card="1"]')&&!node.closest?.('#nxo-dev-header,#nxo-dev-preview')){
       node.dataset.nxoDevContentShell='1'
     }
+    if(node===document.getElementById('SITE_CONTAINER'))break;
     node=node.parentElement
   }
 
   const viewportWidth=Math.max(document.documentElement.clientWidth||0,window.innerWidth||0);
   const viewportHeight=Math.max(document.documentElement.clientHeight||0,window.innerHeight||0);
+  const all=new Set();
 
-  [...root.querySelectorAll('main,section,div,[data-testid]')].forEach(el=>{
+  roots.forEach(root=>{
+    all.add(root);
+    root.querySelectorAll?.('main,section,div,[data-testid]').forEach(el=>all.add(el))
+  });
+
+  all.forEach(el=>{
     if(!el?.getBoundingClientRect)return;
-    if(el.closest?.('#nxo-dev-preview,#nxo-dev-header,[data-nxo-dev-card="1"]'))return;
+    if(el.matches?.('[data-nxo-dev-card="1"]'))return;
+    if(el.closest?.('[data-nxo-dev-card="1"],#nxo-dev-preview,#nxo-dev-header'))return;
 
     const r=el.getBoundingClientRect();
-    const large=r.width>=viewportWidth*.68&&r.height>=Math.min(120,viewportHeight*.18);
+    const large=
+      r.width>=viewportWidth*.56 &&
+      r.height>=Math.min(110,viewportHeight*.17);
     if(!large)return;
 
-    const testid=String(el.getAttribute?.('data-testid')||'');
-    const cs=getComputedStyle(el);
-    const bg=String(cs.backgroundColor||'').replace(/\s+/g,'').toLowerCase();
-    const opaqueSurface=
-      bg==='rgb(255,255,255)'||
-      bg==='rgba(255,255,255,1)'||
-      bg==='rgb(0,0,0)'||
-      bg==='rgba(0,0,0,1)'||
-      bg==='rgb(250,250,250)'||
-      bg==='rgb(248,248,248)'||
-      bg==='rgb(245,245,245)';
-    const knownLayout=/section|background|bg|container|page|column|strip/i.test(testid);
-
-    if(opaqueSurface||knownLayout){
-      el.dataset.nxoDevCanvasLayer='1'
-    }
+    // Large Wix layout surfaces never own color in Development Center.
+    el.dataset.nxoDevCanvasLayer='1'
   })
 }
 
