@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-31';
+const VERSION='20261008-32';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -212,12 +212,25 @@ html[data-nxo-theme="night"] #nxo-dev-app{
 }
 .nxo-dev-owned-shell{
   width:min(1120px,100%);
+  height:calc(100vh - 64px);
+  height:calc(100dvh - 64px);
   margin:auto;
   padding:42px 20px 60px;
-  box-sizing:border-box
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden
 }
 .nxo-dev-owned-hero{
+  flex:0 0 auto;
   margin-bottom:28px
+}
+.nxo-dev-owned-catalog-scroll{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain
 }
 .nxo-dev-owned-eyebrow{
   font-size:11px;
@@ -312,7 +325,11 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
   line-height:1.2!important
 }
 @media(max-width:760px){
-  .nxo-dev-owned-shell{padding:28px 14px 44px}
+  .nxo-dev-owned-shell{
+    height:calc(100vh - 58px);
+    height:calc(100dvh - 58px);
+    padding:28px 14px 44px
+  }
   .nxo-dev-owned-grid{grid-template-columns:1fr}
   html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"]{
     width:100%!important;
@@ -886,7 +903,9 @@ function ensureDevelopmentApp(){
         '<h1>Centro de desarrollo</h1>'+
         '<p>Herramientas operativas, de aprendizaje y desarrollo conectadas al ecosistema Nexo.</p>'+
       '</section>'+
-      '<section class="nxo-dev-owned-grid" id="nxo-dev-owned-grid"></section>'+
+      '<div class="nxo-dev-owned-catalog-scroll" id="nxo-dev-owned-catalog-scroll">'+
+        '<section class="nxo-dev-owned-grid" id="nxo-dev-owned-grid"></section>'+
+      '</div>'+
     '</div>';
 
   const grid=app.querySelector('#nxo-dev-owned-grid');
