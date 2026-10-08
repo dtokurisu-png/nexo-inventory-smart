@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-34';
+const VERSION='20261008-35';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -238,6 +238,7 @@ html[data-nxo-theme="night"] #nxo-dev-app{
     radial-gradient(circle at 94% 92%,color-mix(in srgb,var(--nxo-accent) 10%,transparent),transparent 28%),
     linear-gradient(var(--nxo-background),var(--nxo-background))!important
 }
+#nxo-dev-app .nxo-dev-owned-shell[hidden]{display:none!important}
 .nxo-dev-owned-shell{
   width:min(1120px,100%);
   height:calc(100vh - 64px);
