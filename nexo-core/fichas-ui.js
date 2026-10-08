@@ -1,7 +1,7 @@
 (function(){
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
-const ACCESS_REVISION='fichas-paragraph-reader-20261006-39';
+const ACCESS_REVISION='fichas-workspace-context-20261007-40';
 const ENGINE_REVISION='paragraph-reader-20261006-35';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
@@ -24,7 +24,18 @@ let numaSending=false;
 let requestedSheetOpened=false;
 let engineDataCache=null;
 const launchQuery=new URLSearchParams(location.search);
-const requestedWorkspaceId=String(launchQuery.get('nxoWorkspace')||'').trim();
+function workspaceIdFromLaunch(){
+  const direct=String(launchQuery.get('nxoWorkspace')||'').trim();
+  if(direct)return direct;
+  const rawBack=String(launchQuery.get('nxoBack')||'').trim();
+  if(!rawBack)return'';
+  try{
+    const backUrl=new URL(rawBack,location.href);
+    if(backUrl.origin!==location.origin)return'';
+    return String(backUrl.searchParams.get('nxoWorkspace')||'').trim();
+  }catch(_){return''}
+}
+const requestedWorkspaceId=workspaceIdFromLaunch();
 const requestedWorkspaceName=String(launchQuery.get('nxoWorkspaceName')||'').trim();
 const workspaceLabel=requestedWorkspaceName||launchQuery.get('nxoBackLabel')||'Workspace';
 const workspaceToolName=String(launchQuery.get('nxoToolName')||'Fichas Técnicas Dinámicas').trim()||'Fichas Técnicas Dinámicas';
@@ -1047,6 +1058,9 @@ async function start(){
   await ensureThemeRuntime();
   applyWorkspaceTheme(workspaceTheme,{persist:false,notifyEngine:false});
   loading();
+  if(!requestedWorkspaceId){
+    throw new Error('Abre Fichas Técnicas Dinámicas desde Herramientas dentro de un Workspace.');
+  }
   const bootToken=await waitBoot();
   accessStage='EXCHANGE';
   stripBoot();
