@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261007-19';
+window.__nexoDevelopmentCenterStage0Version='20261007-20';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -248,6 +248,49 @@ html[data-nxo-theme="night"] #PAGES_CONTAINER [data-nxo-dev-canvas-layer="1"]{
   background-image:none!important
 }
 
+/* Dedicated Nexo canvas.
+   Wix owns layout only on this route; Nexo owns every visible page background. */
+#nxo-dev-page-canvas{
+  position:fixed!important;
+  inset:64px 0 0 0!important;
+  z-index:2147480000!important;
+  pointer-events:none!important;
+  display:block!important
+}
+html[data-nxo-theme="day"] #nxo-dev-page-canvas{
+  background:
+    radial-gradient(circle at 3% 5%,rgba(47,79,147,.18),transparent 30%),
+    radial-gradient(circle at 97% 9%,rgba(231,144,105,.20),transparent 29%),
+    radial-gradient(circle at 79% 96%,rgba(36,107,54,.07),transparent 25%),
+    linear-gradient(135deg,#f5f2ea 0%,var(--nxo-background) 50%,var(--nxo-background-alt) 100%)!important
+}
+html[data-nxo-theme="night"] #nxo-dev-page-canvas{
+  background:
+    radial-gradient(circle at 6% 8%,color-mix(in srgb,var(--nxo-accent) 14%,transparent),transparent 30%),
+    radial-gradient(circle at 94% 92%,color-mix(in srgb,var(--nxo-accent) 10%,transparent),transparent 28%),
+    linear-gradient(var(--nxo-background),var(--nxo-background))!important
+}
+
+/* The Wix page is transparent layout; real Nexo surfaces are restored below. */
+html[data-nxo-theme] #SITE_CONTAINER,
+html[data-nxo-theme] #SITE_CONTAINER > *,
+html[data-nxo-theme] #masterPage,
+html[data-nxo-theme] #PAGES_CONTAINER,
+html[data-nxo-theme] #SITE_PAGES{
+  background-color:transparent!important;
+  background-image:none!important
+}
+html[data-nxo-theme] #PAGES_CONTAINER *:not([data-nxo-dev-card="1"]):not([data-nxo-dev-card="1"] *){
+  background-color:transparent!important;
+  background-image:none!important
+}
+
+/* All actual page content sits above the dedicated canvas. */
+html[data-nxo-theme] #PAGES_CONTAINER{
+  position:relative!important;
+  z-index:2147480100!important
+}
+
 /* Text color contract for editor-native content. */
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="richTextElement"],
 html[data-nxo-theme] #PAGES_CONTAINER [data-testid="richTextElement"] *,
@@ -269,7 +312,7 @@ html[data-nxo-theme] #PAGES_CONTAINER small{
 }
 
 /* Tool cards use the same semantic glass contract as Mi Espacio. */
-html[data-nxo-theme] [data-nxo-dev-card="1"]{
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
   position:relative!important;overflow:hidden!important;
   color:var(--nxo-text-primary)!important;
   border:1px solid var(--nxo-border)!important;
@@ -280,29 +323,29 @@ html[data-nxo-theme] [data-nxo-dev-card="1"]{
   box-shadow:0 14px 34px var(--nxo-shadow),inset 0 1px 0 color-mix(in srgb,var(--nxo-text-primary) 5%,transparent)!important;
   transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease!important
 }
-html[data-nxo-theme] [data-nxo-dev-card="1"]::before{
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]::before{
   content:"";position:absolute;inset:0 auto auto 0;width:100%;height:2px;
   background:linear-gradient(90deg,var(--nxo-accent),var(--nxo-interaction),var(--nxo-positive));
   opacity:.66;pointer-events:none
 }
-html[data-nxo-theme] [data-nxo-dev-card="1"]:hover,
-html[data-nxo-theme] [data-nxo-dev-card="1"]:focus-within{
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]:hover,
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]:focus-within{
   transform:translateY(-3px)!important;
   border-color:var(--nxo-interaction)!important;
   background:var(--nxo-surface-glass-hover)!important;
   box-shadow:0 18px 38px var(--nxo-shadow),0 0 0 2px var(--nxo-focus-ring)!important
 }
-html[data-nxo-theme] [data-nxo-dev-card="1"] h1,
-html[data-nxo-theme] [data-nxo-dev-card="1"] h2,
-html[data-nxo-theme] [data-nxo-dev-card="1"] h3,
-html[data-nxo-theme] [data-nxo-dev-card="1"] h4,
-html[data-nxo-theme] [data-nxo-dev-card="1"] strong{color:var(--nxo-text-primary)!important}
-html[data-nxo-theme] [data-nxo-dev-card="1"] p,
-html[data-nxo-theme] [data-nxo-dev-card="1"] small{color:var(--nxo-text-muted)!important}
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] h1,
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] h2,
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] h3,
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] h4,
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] strong{color:var(--nxo-text-primary)!important}
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] p,
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] small{color:var(--nxo-text-muted)!important}
 
 /* Real CTA controls inside tool cards. The runtime marks the actual Wix surface. */
-html[data-nxo-theme] .nxo-dev-action,
-html[data-nxo-theme] .nxo-dev-action-surface{
+html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action,
+html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action-surface{
   color:var(--nxo-header-text)!important;
   background:var(--nxo-header-background)!important;
   border-color:var(--nxo-header-border)!important;
@@ -312,8 +355,8 @@ html[data-nxo-theme] .nxo-dev-action-surface{
   box-shadow:none!important;
   transition:background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease!important
 }
-html[data-nxo-theme] .nxo-dev-action *,
-html[data-nxo-theme] .nxo-dev-action-surface *{
+html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action *,
+html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action-surface *{
   color:inherit!important
 }
 html[data-nxo-theme="day"] .nxo-dev-action:hover,
@@ -338,7 +381,7 @@ html[data-nxo-theme="night"] .nxo-dev-action:focus-visible .nxo-dev-action-surfa
 }
 html[data-nxo-theme] .nxo-dev-action:active{transform:translateY(0) scale(.99)!important}
 /* Stage 1 preparation · compact marketplace geometry */
-html[data-nxo-theme] [data-nxo-dev-card="1"]{
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
   width:75%!important;
   max-width:75%!important;
   box-sizing:border-box!important;
@@ -378,7 +421,7 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-to
   padding:0!important
 }
 @media(max-width:760px){
-  html[data-nxo-theme] [data-nxo-dev-card="1"]{
+  html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
     width:100%!important;
     max-width:100%!important;
     padding:11px 12px!important
@@ -396,7 +439,7 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-to
 }
 
 /* Stage 1 preparation · compact marketplace cards */
-html[data-nxo-theme] [data-nxo-dev-card="1"]{
+html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
   min-height:0!important;
   padding-top:14px!important;
   padding-bottom:14px!important
@@ -1207,7 +1250,19 @@ function normalizeCanvasLayers(){
   })
 }
 
+function ensurePageCanvas(){
+  let canvas=document.getElementById('nxo-dev-page-canvas');
+  if(!canvas){
+    canvas=document.createElement('div');
+    canvas.id='nxo-dev-page-canvas';
+    canvas.setAttribute('aria-hidden','true');
+    document.body.insertBefore(canvas,document.getElementById('SITE_CONTAINER')||document.body.firstChild)
+  }
+  return canvas
+}
+
 function refresh(){
+  ensurePageCanvas();
   renameRecipeBooks(document.getElementById('PAGES_CONTAINER')||document.body);
   applyCards();
   normalizeCanvasLayers();
@@ -1224,6 +1279,7 @@ async function start(){
   await ensureThemeRuntime();
   await window.NEXO_THEME_RUNTIME?.ready;
   ensureHeader();
+  ensurePageCanvas();
   ensurePreviewPanel();
   bindPreviewDelegation();
   bindFeatureInterception();
