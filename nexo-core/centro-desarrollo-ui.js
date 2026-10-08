@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261008-25';
+window.__nexoDevelopmentCenterStage0Version='20261008-26';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -230,36 +230,6 @@ html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action,
 html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action-surface{
   position:relative!important;
   z-index:2!important
-}
-
-/* DIAGNOSTIC: background-only content area.
-   Every visual layer inside PAGES_CONTAINER is transparent.
-   Only the dedicated Nexo page canvas is allowed to paint a background. */
-html[data-nxo-theme] #PAGES_CONTAINER *:not(#nxo-dev-page-canvas),
-html[data-nxo-theme] #PAGES_CONTAINER *:not(#nxo-dev-page-canvas)::before,
-html[data-nxo-theme] #PAGES_CONTAINER *:not(#nxo-dev-page-canvas)::after{
-  background:transparent!important;
-  background-color:transparent!important;
-  background-image:none!important;
-  box-shadow:none!important;
-  -webkit-backdrop-filter:none!important;
-  backdrop-filter:none!important
-}
-
-/* Preserve only functional controls as visible objects, never as page-sized surfaces. */
-html[data-nxo-theme] #PAGES_CONTAINER button,
-html[data-nxo-theme] #PAGES_CONTAINER [role="button"],
-html[data-nxo-theme] #PAGES_CONTAINER a[data-testid="linkElement"]{
-  background:var(--nxo-header-background)!important;
-  color:var(--nxo-header-text)!important;
-  border-color:var(--nxo-header-border)!important
-}
-
-/* The Nexo background is the sole visual canvas. */
-html[data-nxo-theme] #nxo-dev-page-canvas{
-  display:block!important;
-  opacity:1!important;
-  visibility:visible!important
 }
 
 /* Text color contract for editor-native content. */
@@ -1179,63 +1149,8 @@ function ensurePageCanvas(){
   return canvas
 }
 
-function neutralizePaintedWhiteSurface(){
-  const pages=document.getElementById('PAGES_CONTAINER');
-  if(!pages)return;
-
-  // Clear only our previous diagnostic marks; never touch Nexo-owned surfaces.
-  document.querySelectorAll('[data-nxo-dev-white-cover="1"]').forEach(el=>{
-    if(!el.isConnected)return;
-    el.style.setProperty('background','transparent','important');
-    el.style.setProperty('background-color','transparent','important');
-    el.style.setProperty('background-image','none','important')
-  });
-
-  const vw=Math.max(document.documentElement.clientWidth||0,window.innerWidth||0);
-  const vh=Math.max(document.documentElement.clientHeight||0,window.innerHeight||0);
-  const headerBottom=(document.getElementById('nxo-dev-header')?.getBoundingClientRect().bottom||64);
-  const xs=[vw*.08,vw*.28,vw*.50,vw*.72];
-  const ys=[
-    Math.min(vh-20,headerBottom+85),
-    Math.min(vh-20,headerBottom+220),
-    Math.min(vh-20,vh*.58),
-    Math.min(vh-20,vh*.82)
-  ];
-
-  const candidates=new Set();
-  xs.forEach(x=>ys.forEach(y=>{
-    document.elementsFromPoint(x,y).forEach(el=>candidates.add(el))
-  }));
-
-  const protectedNode=el=>
-    el.id==='nxo-dev-page-canvas'||
-    el.closest?.('#nxo-dev-header,#nxo-dev-preview,#nxo-dev-preview-handle,[data-nxo-dev-card="1"],button,[role="button"],a');
-
-  candidates.forEach(el=>{
-    if(!(el instanceof HTMLElement)||protectedNode(el))return;
-
-    const r=el.getBoundingClientRect();
-    if(r.width<vw*.45||r.height<Math.min(100,vh*.14))return;
-
-    const cs=getComputedStyle(el);
-    const m=String(cs.backgroundColor||'').match(/rgba?\((\d+)\D+(\d+)\D+(\d+)(?:\D+([\d.]+))?/i);
-    if(!m)return;
-
-    const red=Number(m[1]),green=Number(m[2]),blue=Number(m[3]);
-    const alpha=m[4]===undefined?1:Number(m[4]);
-    const isLight=alpha>.55&&red>225&&green>225&&blue>225;
-    if(!isLight)return;
-
-    el.dataset.nxoDevWhiteCover='1';
-    el.style.setProperty('background','transparent','important');
-    el.style.setProperty('background-color','transparent','important');
-    el.style.setProperty('background-image','none','important')
-  })
-}
-
 function refresh(){
   ensurePageCanvas();
-  neutralizePaintedWhiteSurface();
   renameRecipeBooks(document.getElementById('PAGES_CONTAINER')||document.body);
   applyCards();
   syncQuickTheme()
@@ -1256,8 +1171,6 @@ async function start(){
   bindPreviewDelegation();
   bindFeatureInterception();
   refresh();
-  setTimeout(()=>{neutralizePaintedWhiteSurface()},120);
-  setTimeout(()=>{neutralizePaintedWhiteSurface()},600);
   window.addEventListener('nexo-theme-change',()=>{syncQuickTheme();schedule()});
   window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()});
   observer=new MutationObserver(schedule);
