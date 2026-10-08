@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-29';
+const VERSION='20261008-30';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -181,7 +181,8 @@ html[data-nxo-theme="night"] .nxo-dev-quick-row:focus-visible strong{
   background:color-mix(in srgb,var(--nxo-accent-contrast) 8%,transparent)
 }
 
-/* Canonical owned Development Center shell. */
+/* Canonical owned Development Center shell.
+   Geometry restored from the previously approved Development Center layout. */
 #PAGES_CONTAINER{
   display:none!important
 }
@@ -190,7 +191,6 @@ html[data-nxo-theme="night"] .nxo-dev-quick-row:focus-visible strong{
   z-index:1!important;
   min-height:calc(100vh - 64px)!important;
   width:100%!important;
-  padding:34px 24px 56px!important;
   box-sizing:border-box!important;
   color:var(--nxo-text-primary)!important;
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important
@@ -210,59 +210,123 @@ html[data-nxo-theme="night"] #nxo-dev-app{
 }
 .nxo-dev-owned-shell{
   width:min(1120px,100%);
-  margin:0 auto
+  margin:auto;
+  padding:42px 20px 60px;
+  box-sizing:border-box
 }
 .nxo-dev-owned-hero{
-  margin:0 0 22px
+  margin-bottom:28px
 }
 .nxo-dev-owned-eyebrow{
-  margin:0 0 5px;
   font-size:11px;
-  line-height:1.2;
   font-weight:800;
-  letter-spacing:.11em;
+  letter-spacing:.12em;
   text-transform:uppercase;
   color:var(--nxo-accent)
 }
 .nxo-dev-owned-hero h1{
-  margin:0 0 8px;
-  font-size:clamp(28px,4vw,44px);
-  line-height:1.05;
+  font-size:clamp(30px,5vw,48px);
+  margin:6px 0 10px;
+  letter-spacing:-.03em;
   color:var(--nxo-text-primary)
 }
 .nxo-dev-owned-hero p{
   max-width:760px;
-  margin:0;
+  color:var(--nxo-text-secondary);
   font-size:14px;
-  line-height:1.6;
-  color:var(--nxo-text-secondary)
+  line-height:1.65;
+  margin:0
 }
 .nxo-dev-owned-grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:14px;
-  align-items:start
+  gap:16px
 }
-#nxo-dev-app [data-nxo-dev-card="1"]{
-  min-height:168px;
-  padding:16px!important
+.nxo-dev-owned-slot{
+  width:100%;
+  min-width:0;
+  background:transparent
 }
-#nxo-dev-app .nxo-dev-owned-title{
-  margin:0;
-  font-size:18px;
-  line-height:1.2
+
+/* Exact compact marketplace geometry restored from the approved runtime. */
+html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"]{
+  width:75%!important;
+  max-width:75%!important;
+  box-sizing:border-box!important;
+  margin-right:auto!important;
+  min-height:0!important;
+  padding:14px 14px!important;
+  display:flex!important;
+  flex-direction:column!important
 }
-#nxo-dev-app .nxo-dev-owned-copy{
-  margin:10px 0 14px!important;
-  font-size:12px!important;
-  line-height:1.55!important
+html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-title-row{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+  width:100%!important;
+  margin:0 0 8px!important;
+  padding:0!important
 }
-#nxo-dev-app .nxo-dev-owned-action{
-  margin-top:auto
+html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-icon-slot="1"]{
+  flex:0 0 46px!important;
+  width:46px!important;
+  height:46px!important;
+  min-width:46px!important;
+  min-height:46px!important;
+  margin:0!important;
+  display:block!important
+}
+html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-title-row .nxo-dev-product-icon{
+  display:block!important;
+  width:46px!important;
+  height:46px!important;
+  min-width:46px!important;
+  min-height:46px!important;
+  max-width:46px!important;
+  max-height:46px!important;
+  margin:0!important;
+  object-fit:contain!important
+}
+html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-tool-title]{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  margin:4px 0 8px!important;
+  padding:0!important;
+  font-size:20px!important;
+  line-height:1.2!important;
+  color:var(--nxo-text-primary)!important
+}
+html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] [data-nxo-dev-description="1"],
+html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] [data-nxo-dev-tag="1"]{
+  display:none!important
+}
+html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
+  margin-top:8px!important;
+  align-self:flex-start!important;
+  padding:9px 13px!important;
+  font-weight:700!important;
+  font-size:11px!important;
+  line-height:1.2!important
 }
 @media(max-width:760px){
-  #nxo-dev-app{padding:24px 14px 42px!important}
+  .nxo-dev-owned-shell{padding:28px 14px 44px}
   .nxo-dev-owned-grid{grid-template-columns:1fr}
+  html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"]{
+    width:100%!important;
+    max-width:100%!important;
+    padding:11px 12px!important
+  }
+  html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-icon-slot="1"],
+  html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-title-row .nxo-dev-product-icon{
+    flex-basis:42px!important;
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    min-height:42px!important;
+    max-width:42px!important;
+    max-height:42px!important
+  }
 }
 
 /* Tool cards use the same semantic glass contract as Mi Espacio. */
@@ -814,17 +878,22 @@ function ensureDevelopmentApp(){
   const grid=app.querySelector('#nxo-dev-owned-grid');
 
   TOOL_DEFS.forEach(tool=>{
+    const slot=document.createElement('div');
+    slot.className='nxo-dev-owned-slot';
+
     const card=document.createElement('article');
     card.dataset.nxoDevCard='1';
     card.dataset.nxoDevTool=tool.key;
     card.innerHTML=
       '<div class="nxo-dev-title-row">'+
-        '<span class="nxo-dev-product-icon" data-nxo-dev-icon-slot="1"><img src="'+iconUrl(tool.icon)+'" alt=""></span>'+
-        '<h2 class="nxo-dev-owned-title">'+tool.title+'</h2>'+
+        '<span data-nxo-dev-icon-slot="1"><img class="nxo-dev-product-icon" src="'+iconUrl(tool.icon)+'" alt="" aria-hidden="true"></span>'+
+        '<h2 data-nxo-dev-tool-title="'+tool.key+'">'+tool.title+'</h2>'+
       '</div>'+
-      '<p class="nxo-dev-owned-copy">'+tool.summary+'</p>'+
-      '<button type="button" class="nxo-dev-action nxo-dev-action-surface nxo-dev-owned-action">Ver características</button>';
-    grid.appendChild(card)
+      '<p data-nxo-dev-description="1">'+tool.summary+'</p>'+
+      '<button type="button" class="nxo-dev-action nxo-dev-action-surface">Ver características</button>';
+
+    slot.appendChild(card);
+    grid.appendChild(slot)
   });
 
   const header=document.getElementById('nxo-dev-header');
