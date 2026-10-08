@@ -1,0 +1,10 @@
+{
+  "scope": "centro-visual",
+  "source": "nexo-core/centro-desarrollo-ui.js",
+  "visualBlockStart": "style.textContent=`",
+  "visualBlockEnd": "`;\n  document.head.appendChild(style)",
+  "utf16Length": 23646,
+  "fnv1a64Utf16le": "48d99f8f74622e2c",
+  "restoreBranch": "locked/centro-visual-final-2026-10-08",
+  "lockedAt": "2026-10-08"
+}
