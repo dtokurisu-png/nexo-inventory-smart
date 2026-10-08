@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-32';
+const VERSION='20261008-33';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -105,6 +105,11 @@ function ensureStyle(){
   overflow:hidden
 }
 .nxo-dev-mark img{display:block;width:31px;height:31px;object-fit:contain}
+html[data-nxo-theme="night"] #nxo-dev-header .nxo-dev-mark{
+  background:#0A0D12;
+  border-color:rgba(255,255,255,.10);
+  box-shadow:0 8px 22px var(--nxo-shadow),inset 0 1px 0 rgba(255,255,255,.06)
+}
 .nxo-dev-brand-copy{display:grid;min-width:0}
 .nxo-dev-brand-copy strong{font-size:13px;line-height:1.1;color:var(--nxo-header-text)}
 .nxo-dev-brand-copy small{
@@ -225,13 +230,61 @@ html[data-nxo-theme="night"] #nxo-dev-app{
   flex:0 0 auto;
   margin-bottom:28px
 }
-.nxo-dev-owned-catalog-scroll{
+.nxo-dev-owned-catalog-frame{
+  position:relative;
   flex:1 1 auto;
+  min-height:0
+}
+.nxo-dev-owned-catalog-scroll{
+  width:100%;
+  height:100%;
   min-height:0;
   overflow-y:auto;
   overflow-x:hidden;
-  overscroll-behavior:contain
+  overscroll-behavior:contain;
+  scrollbar-width:none;
+  -ms-overflow-style:none
 }
+.nxo-dev-owned-catalog-scroll::-webkit-scrollbar{
+  width:0!important;
+  height:0!important;
+  display:none!important
+}
+.nxo-dev-scroll-arrow{
+  position:absolute;
+  right:3px;
+  z-index:6;
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--nxo-accent);
+  font:900 18px/1 Arial,sans-serif;
+  cursor:pointer;
+  opacity:.92;
+  text-shadow:0 0 7px color-mix(in srgb,var(--nxo-accent) 78%,transparent);
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--nxo-accent) 52%,transparent));
+  transition:opacity .15s ease,filter .15s ease,transform .15s ease
+}
+.nxo-dev-scroll-arrow:hover:not(:disabled),
+.nxo-dev-scroll-arrow:focus-visible:not(:disabled){
+  opacity:1;
+  transform:scale(1.12);
+  outline:none;
+  filter:drop-shadow(0 0 9px color-mix(in srgb,var(--nxo-accent) 88%,transparent))
+}
+.nxo-dev-scroll-arrow:disabled{
+  opacity:.16;
+  cursor:default;
+  filter:none;
+  text-shadow:none;
+  transform:none
+}
+.nxo-dev-scroll-arrow.up{top:1px}
+.nxo-dev-scroll-arrow.down{bottom:1px}
 .nxo-dev-owned-eyebrow{
   font-size:11px;
   font-weight:800;
@@ -903,8 +956,12 @@ function ensureDevelopmentApp(){
         '<h1>Centro de desarrollo</h1>'+
         '<p>Herramientas operativas, de aprendizaje y desarrollo conectadas al ecosistema Nexo.</p>'+
       '</section>'+
-      '<div class="nxo-dev-owned-catalog-scroll" id="nxo-dev-owned-catalog-scroll">'+
-        '<section class="nxo-dev-owned-grid" id="nxo-dev-owned-grid"></section>'+
+      '<div class="nxo-dev-owned-catalog-frame">'+
+        '<div class="nxo-dev-owned-catalog-scroll" id="nxo-dev-owned-catalog-scroll">'+
+          '<section class="nxo-dev-owned-grid" id="nxo-dev-owned-grid"></section>'+
+        '</div>'+
+        '<button type="button" class="nxo-dev-scroll-arrow up" id="nxo-dev-scroll-up" aria-label="Desplazar hacia arriba">▲</button>'+
+        '<button type="button" class="nxo-dev-scroll-arrow down" id="nxo-dev-scroll-down" aria-label="Desplazar hacia abajo">▼</button>'+
       '</div>'+
     '</div>';
 
@@ -941,8 +998,45 @@ function ensureDevelopmentApp(){
   return app
 }
 
+function syncCatalogScrollControls(){
+  const scroller=document.getElementById('nxo-dev-owned-catalog-scroll');
+  const up=document.getElementById('nxo-dev-scroll-up');
+  const down=document.getElementById('nxo-dev-scroll-down');
+  if(!scroller||!up||!down)return;
+
+  const max=Math.max(0,scroller.scrollHeight-scroller.clientHeight);
+  const atTop=scroller.scrollTop<=2;
+  const atBottom=scroller.scrollTop>=max-2;
+
+  up.disabled=atTop||max<=2;
+  down.disabled=atBottom||max<=2
+}
+
+function bindCatalogScrollControls(){
+  const scroller=document.getElementById('nxo-dev-owned-catalog-scroll');
+  const up=document.getElementById('nxo-dev-scroll-up');
+  const down=document.getElementById('nxo-dev-scroll-down');
+  if(!scroller||!up||!down||scroller.dataset.nxoScrollBound==='1')return;
+
+  scroller.dataset.nxoScrollBound='1';
+
+  const move=direction=>{
+    const amount=Math.max(160,Math.round(scroller.clientHeight*.72));
+    scroller.scrollBy({top:direction*amount,behavior:'smooth'})
+  };
+
+  up.addEventListener('click',()=>move(-1),{signal:runtimeAbort.signal});
+  down.addEventListener('click',()=>move(1),{signal:runtimeAbort.signal});
+  scroller.addEventListener('scroll',syncCatalogScrollControls,{passive:true,signal:runtimeAbort.signal});
+  window.addEventListener('resize',syncCatalogScrollControls,{passive:true,signal:runtimeAbort.signal});
+
+  requestAnimationFrame(syncCatalogScrollControls)
+}
+
 function refresh(){
   ensureDevelopmentApp();
+  bindCatalogScrollControls();
+  syncCatalogScrollControls();
   syncQuickTheme()
 }
 function schedule(){
