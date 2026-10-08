@@ -2,7 +2,7 @@
 'use strict';
 if(window.__nexoDevelopmentCenterStage0V4)return;
 window.__nexoDevelopmentCenterStage0V4=true;
-window.__nexoDevelopmentCenterStage0Version='20261008-21';
+window.__nexoDevelopmentCenterStage0Version='20261008-22';
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
@@ -1261,32 +1261,7 @@ function ensurePageCanvas(){
   return canvas
 }
 
-function ensureDiagnosticCircle(){
-  let circle=document.getElementById('nxo-dev-test-circle');
-  if(!circle){
-    circle=document.createElement('div');
-    circle.id='nxo-dev-test-circle';
-    circle.setAttribute('aria-hidden','true');
-    circle.style.cssText=[
-      'position:fixed',
-      'left:50%',
-      'top:50%',
-      'width:120px',
-      'height:120px',
-      'border-radius:50%',
-      'transform:translate(-50%,-50%)',
-      'background:#ff1744',
-      'box-shadow:0 0 0 8px rgba(255,255,255,.92),0 12px 36px rgba(0,0,0,.45)',
-      'z-index:2147483646',
-      'pointer-events:none'
-    ].join(';');
-    document.body.appendChild(circle)
-  }
-  return circle
-}
-
 function refresh(){
-  ensureDiagnosticCircle();
   ensurePageCanvas();
   renameRecipeBooks(document.getElementById('PAGES_CONTAINER')||document.body);
   applyCards();
@@ -1304,7 +1279,6 @@ async function start(){
   await ensureThemeRuntime();
   await window.NEXO_THEME_RUNTIME?.ready;
   ensureHeader();
-  ensureDiagnosticCircle();
   ensurePageCanvas();
   ensurePreviewPanel();
   bindPreviewDelegation();
