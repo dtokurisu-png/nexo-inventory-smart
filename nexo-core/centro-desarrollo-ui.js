@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-35';
+const VERSION='20261008-36';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -734,6 +734,22 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-action{
   transform:translate3d(0,0,0)!important;
   pointer-events:auto!important
 }
+@media(min-width:900px){
+  #nxo-dev-app .nxo-dev-owned-shell{
+    transition:width .22s ease,margin .22s ease
+  }
+  #nxo-dev-app .nxo-dev-owned-grid{
+    transition:gap .22s ease
+  }
+  #nxo-dev-app.nxo-dev-preview-open .nxo-dev-owned-shell{
+    width:min(970px,calc(100% - 390px));
+    margin-left:24px;
+    margin-right:auto
+  }
+  #nxo-dev-app.nxo-dev-preview-open .nxo-dev-owned-grid{
+    gap:10px
+  }
+}
 #nxo-dev-preview-handle{
   position:fixed!important;
   right:0!important;
@@ -1007,6 +1023,7 @@ function openPreview(tool,card,{pinned=false}={}){
   panel.dataset.toolKey=tool.key;
   panel.classList.add('open');
   panel.setAttribute('aria-hidden','false');
+  document.getElementById('nxo-dev-app')?.classList.add('nxo-dev-preview-open');
 
   document.querySelectorAll('[data-nxo-dev-card="1"].nxo-dev-preview-source')
     .forEach(el=>el.classList.remove('nxo-dev-preview-source'));
@@ -1019,6 +1036,7 @@ function closePreview(force=false){
     panel.classList.remove('open');
     panel.setAttribute('aria-hidden','true')
   }
+  document.getElementById('nxo-dev-app')?.classList.remove('nxo-dev-preview-open');
   document.querySelectorAll('[data-nxo-dev-card="1"].nxo-dev-preview-source')
     .forEach(el=>el.classList.remove('nxo-dev-preview-source'))
 }
