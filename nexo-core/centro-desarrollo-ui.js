@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-28';
+const VERSION='20261008-29';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -185,45 +185,88 @@ html[data-nxo-theme="night"] .nxo-dev-quick-row:focus-visible strong{
   background:color-mix(in srgb,var(--nxo-accent-contrast) 8%,transparent)
 }
 
-/* Night Z-plane.
-   Paint order in night mode:
-   Wix white surface -> Nexo night plane -> lifted content -> header/preview. */
-#nxo-dev-page-canvas{
-  position:fixed!important;
-  inset:0!important;
-  z-index:2147483000!important;
-  pointer-events:none!important;
-  display:none!important;
-  visibility:hidden!important
+/* Canonical owned Development Center shell. */
+#PAGES_CONTAINER{
+  display:none!important
 }
-html[data-nxo-theme="night"] #nxo-dev-page-canvas{
-  display:block!important;
-  visibility:visible!important;
+#nxo-dev-app{
+  position:relative!important;
+  z-index:1!important;
+  min-height:calc(100vh - 64px)!important;
+  width:100%!important;
+  padding:34px 24px 56px!important;
+  box-sizing:border-box!important;
+  color:var(--nxo-text-primary)!important;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important
+}
+html[data-nxo-theme="day"] #nxo-dev-app{
+  background:
+    radial-gradient(circle at 3% 5%,rgba(47,79,147,.18),transparent 30%),
+    radial-gradient(circle at 97% 9%,rgba(231,144,105,.20),transparent 29%),
+    radial-gradient(circle at 79% 96%,rgba(36,107,54,.07),transparent 25%),
+    linear-gradient(135deg,#f5f2ea 0%,var(--nxo-background) 50%,var(--nxo-background-alt) 100%)!important
+}
+html[data-nxo-theme="night"] #nxo-dev-app{
   background:
     radial-gradient(circle at 6% 8%,color-mix(in srgb,var(--nxo-accent) 14%,transparent),transparent 30%),
     radial-gradient(circle at 94% 92%,color-mix(in srgb,var(--nxo-accent) 10%,transparent),transparent 28%),
     linear-gradient(var(--nxo-background),var(--nxo-background))!important
 }
-
-/* Layout ancestors needed to carry real content above the night plane.
-   They are transparent so the old Wix white cannot ride above the plane. */
-html[data-nxo-theme="night"] [data-nxo-dev-night-lift="1"]{
-  position:relative!important;
-  z-index:2147483100!important;
-  background-color:transparent!important;
-  background-image:none!important;
-  box-shadow:none!important
+.nxo-dev-owned-shell{
+  width:min(1120px,100%);
+  margin:0 auto
 }
-
-/* Actual visible content sits directly above the night plane. */
-html[data-nxo-theme="night"] [data-nxo-dev-night-front="1"]{
-  position:relative!important;
-  z-index:2147483150!important
+.nxo-dev-owned-hero{
+  margin:0 0 22px
 }
-
-/* Tool cards keep their own Nexo surface while remaining above the plane. */
-html[data-nxo-theme="night"] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
-  z-index:2147483150!important
+.nxo-dev-owned-eyebrow{
+  margin:0 0 5px;
+  font-size:11px;
+  line-height:1.2;
+  font-weight:800;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:var(--nxo-accent)
+}
+.nxo-dev-owned-hero h1{
+  margin:0 0 8px;
+  font-size:clamp(28px,4vw,44px);
+  line-height:1.05;
+  color:var(--nxo-text-primary)
+}
+.nxo-dev-owned-hero p{
+  max-width:760px;
+  margin:0;
+  font-size:14px;
+  line-height:1.6;
+  color:var(--nxo-text-secondary)
+}
+.nxo-dev-owned-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  align-items:start
+}
+#nxo-dev-app [data-nxo-dev-card="1"]{
+  min-height:168px;
+  padding:16px!important
+}
+#nxo-dev-app .nxo-dev-owned-title{
+  margin:0;
+  font-size:18px;
+  line-height:1.2
+}
+#nxo-dev-app .nxo-dev-owned-copy{
+  margin:10px 0 14px!important;
+  font-size:12px!important;
+  line-height:1.55!important
+}
+#nxo-dev-app .nxo-dev-owned-action{
+  margin-top:auto
+}
+@media(max-width:760px){
+  #nxo-dev-app{padding:24px 14px 42px!important}
+  .nxo-dev-owned-grid{grid-template-columns:1fr}
 }
 
 /* Text color contract for editor-native content. */
@@ -247,7 +290,7 @@ html[data-nxo-theme] #PAGES_CONTAINER small{
 }
 
 /* Tool cards use the same semantic glass contract as Mi Espacio. */
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"]{
   position:relative!important;overflow:hidden!important;
   color:var(--nxo-text-primary)!important;
   border:1px solid var(--nxo-border)!important;
@@ -258,29 +301,29 @@ html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
   box-shadow:0 14px 34px var(--nxo-shadow),inset 0 1px 0 color-mix(in srgb,var(--nxo-text-primary) 5%,transparent)!important;
   transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease!important
 }
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]::before{
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"]::before{
   content:"";position:absolute;inset:0 auto auto 0;width:100%;height:2px;
   background:linear-gradient(90deg,var(--nxo-accent),var(--nxo-interaction),var(--nxo-positive));
   opacity:.66;pointer-events:none
 }
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]:hover,
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]:focus-within{
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"]:hover,
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"]:focus-within{
   transform:translateY(-3px)!important;
   border-color:var(--nxo-interaction)!important;
   background:var(--nxo-surface-glass-hover)!important;
   box-shadow:0 18px 38px var(--nxo-shadow),0 0 0 2px var(--nxo-focus-ring)!important
 }
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] h1,
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] h2,
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] h3,
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] h4,
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] strong{color:var(--nxo-text-primary)!important}
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] p,
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"] small{color:var(--nxo-text-muted)!important}
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"] h1,
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"] h2,
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"] h3,
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"] h4,
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"] strong{color:var(--nxo-text-primary)!important}
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"] p,
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"] small{color:var(--nxo-text-muted)!important}
 
 /* Real CTA controls inside tool cards. The runtime marks the actual Wix surface. */
-html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action,
-html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action-surface{
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) .nxo-dev-action,
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) .nxo-dev-action-surface{
   color:var(--nxo-header-text)!important;
   background:var(--nxo-header-background)!important;
   border-color:var(--nxo-header-border)!important;
@@ -290,8 +333,8 @@ html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action-surface{
   box-shadow:none!important;
   transition:background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease!important
 }
-html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action *,
-html[data-nxo-theme] #PAGES_CONTAINER .nxo-dev-action-surface *{
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) .nxo-dev-action *,
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) .nxo-dev-action-surface *{
   color:inherit!important
 }
 html[data-nxo-theme="day"] .nxo-dev-action:hover,
@@ -316,7 +359,7 @@ html[data-nxo-theme="night"] .nxo-dev-action:focus-visible .nxo-dev-action-surfa
 }
 html[data-nxo-theme] .nxo-dev-action:active{transform:translateY(0) scale(.99)!important}
 /* Stage 1 preparation · compact marketplace geometry */
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"]{
   width:75%!important;
   max-width:75%!important;
   box-sizing:border-box!important;
@@ -356,7 +399,7 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-to
   padding:0!important
 }
 @media(max-width:760px){
-  html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
+  html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"]{
     width:100%!important;
     max-width:100%!important;
     padding:11px 12px!important
@@ -374,7 +417,7 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-title-row [data-nxo-dev-to
 }
 
 /* Stage 1 preparation · compact marketplace cards */
-html[data-nxo-theme] #PAGES_CONTAINER [data-nxo-dev-card="1"]{
+html[data-nxo-theme] :is(#PAGES_CONTAINER,#nxo-dev-app) [data-nxo-dev-card="1"]{
   min-height:0!important;
   padding-top:14px!important;
   padding-bottom:14px!important
@@ -1113,67 +1156,50 @@ function applyCards(){
   applyAllPageActions()
 }
 
-function ensurePageCanvas(){
-  let plane=document.getElementById('nxo-dev-page-canvas');
-  if(!plane){
-    plane=document.createElement('div');
-    plane.id='nxo-dev-page-canvas';
-    plane.setAttribute('aria-hidden','true');
-    document.body.appendChild(plane)
-  }else if(plane.parentElement!==document.body){
-    document.body.appendChild(plane)
-  }
-  return plane
-}
+function ensureDevelopmentApp(){
+  let app=document.getElementById('nxo-dev-app');
+  if(app)return app;
 
-function markNightStack(){
-  const pages=document.getElementById('PAGES_CONTAINER');
-  if(!pages)return;
+  app=document.createElement('main');
+  app.id='nxo-dev-app';
+  app.innerHTML=
+    '<div class="nxo-dev-owned-shell">'+
+      '<section class="nxo-dev-owned-hero">'+
+        '<div class="nxo-dev-owned-eyebrow">Herramientas de desarrollo</div>'+
+        '<h1>Centro de desarrollo</h1>'+
+        '<p>Herramientas operativas, de aprendizaje y desarrollo conectadas al ecosistema Nexo.</p>'+
+      '</section>'+
+      '<section class="nxo-dev-owned-grid" id="nxo-dev-owned-grid"></section>'+
+    '</div>';
 
-  document.querySelectorAll('[data-nxo-dev-night-lift="1"],[data-nxo-dev-night-front="1"]').forEach(el=>{
-    delete el.dataset.nxoDevNightLift;
-    delete el.dataset.nxoDevNightFront
+  const grid=app.querySelector('#nxo-dev-owned-grid');
+
+  TOOL_DEFS.forEach(tool=>{
+    const card=document.createElement('article');
+    card.dataset.nxoDevCard='1';
+    card.dataset.nxoDevTool=tool.key;
+    card.innerHTML=
+      '<div class="nxo-dev-title-row">'+
+        '<span class="nxo-dev-product-icon" data-nxo-dev-icon-slot="1"><img src="'+iconUrl(tool.icon)+'" alt=""></span>'+
+        '<h2 class="nxo-dev-owned-title">'+tool.title+'</h2>'+
+      '</div>'+
+      '<p class="nxo-dev-owned-copy">'+tool.summary+'</p>'+
+      '<button type="button" class="nxo-dev-action nxo-dev-action-surface nxo-dev-owned-action">Ver características</button>';
+    grid.appendChild(card)
   });
 
-  const selectors=[
-    '[data-nxo-dev-card="1"]',
-    '[data-testid="richTextElement"]',
-    '.wixui-rich-text',
-    '.wixui-text',
-    'button',
-    '[role="button"]',
-    'a',
-    'img',
-    'svg'
-  ].join(',');
+  const header=document.getElementById('nxo-dev-header');
+  if(header&&header.parentElement){
+    header.insertAdjacentElement('afterend',app)
+  }else{
+    document.body.prepend(app)
+  }
 
-  const targets=[...pages.querySelectorAll(selectors)]
-    .filter(el=>!el.closest('#nxo-dev-header,#nxo-dev-preview,#nxo-dev-preview-handle'));
-
-  targets.forEach(target=>{
-    target.dataset.nxoDevNightFront='1';
-
-    let node=target.parentElement;
-    while(node&&node!==pages){
-      if(
-        node.id==='nxo-dev-page-canvas'||
-        node.closest?.('#nxo-dev-header,#nxo-dev-preview,#nxo-dev-preview-handle')
-      )break;
-
-      // Cards keep their own surface; wrappers around them are layout only.
-      if(!node.matches?.('[data-nxo-dev-card="1"]')){
-        node.dataset.nxoDevNightLift='1'
-      }
-      node=node.parentElement
-    }
-  })
+  return app
 }
 
 function refresh(){
-  ensurePageCanvas();
-  renameRecipeBooks(document.getElementById('PAGES_CONTAINER')||document.body);
-  applyCards();
-  markNightStack();
+  ensureDevelopmentApp();
   syncQuickTheme()
 }
 function schedule(){
@@ -1207,17 +1233,12 @@ function destroy(){
     window.__nexoDevFeatureKeyHandler=null
   }
 
-  document.querySelectorAll('[data-nxo-dev-night-lift="1"],[data-nxo-dev-night-front="1"]').forEach(el=>{
-    delete el.dataset.nxoDevNightLift;
-    delete el.dataset.nxoDevNightFront
-  });
-
   [
     'nxo-dev-center-css',
     'nxo-dev-header',
     'nxo-dev-preview',
     'nxo-dev-preview-handle',
-    'nxo-dev-page-canvas'
+    'nxo-dev-app'
   ].forEach(id=>document.getElementById(id)?.remove());
 
   if(window.__nexoDevelopmentCenterRuntime===runtime){
@@ -1239,7 +1260,7 @@ async function start(){
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
 
   ensureHeader();
-  ensurePageCanvas();
+  ensureDevelopmentApp();
   ensurePreviewPanel();
   bindPreviewDelegation();
   bindFeatureInterception();
@@ -1249,7 +1270,7 @@ async function start(){
   window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
 
   observer=new MutationObserver(schedule);
-  const target=document.getElementById('PAGES_CONTAINER')||document.body;
+  const target=document.getElementById('nxo-dev-app')||document.body;
   observer.observe(target,{subtree:true,childList:true,characterData:true})
 }
 
