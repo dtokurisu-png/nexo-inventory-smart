@@ -954,8 +954,30 @@ async function savePhotoFromEngine(payload={}){
     photoIntent:saved?.photoIntent||ticket?.photoIntent||photoIntent,
     photoIndex:Number(saved?.photoIndex??ticket?.photoIndex??photoIndex)
   });
-  pushEngineData().catch(()=>{});
   return image;
+}
+
+async function deletePhotoFromEngine(payload={}){
+  const requestId=String(payload.requestId||'');
+  const entityType=String(payload.entityType||'ingredient');
+  const entityId=String(payload.entityId||'');
+  const photoIndex=Number(payload.photoIndex||0);
+  const photoId=String(payload.photoId||'');
+
+  const saved=await api('photo.delete',{
+    input:{entityType,entityId,photoIndex,photoId}
+  });
+
+  postToEngine('DM_PHOTO_DELETED',{
+    ok:true,
+    requestId,
+    entityType:saved?.entityType||entityType,
+    entityId:saved?.entityId||entityId,
+    images:Array.isArray(saved?.images)?saved.images:[],
+    photoIndex:Number(saved?.photoIndex??0),
+    deletedPhotoId:String(saved?.deletedPhotoId||photoId||'')
+  });
+  return saved;
 }
 
 function handleEngineMessage(event){
@@ -1040,6 +1062,15 @@ function handleEngineMessage(event){
       postToEngine('DM_PHOTO_ERROR',{
         requestId:payload.requestId,
         error:String(error?.message||error||'PHOTO_SAVE_FAILED')
+      });
+    });
+    return;
+  }
+  if(message.type==='DM_DELETE_PHOTO'){
+    deletePhotoFromEngine(payload).catch(error=>{
+      postToEngine('DM_PHOTO_ERROR',{
+        requestId:payload.requestId,
+        error:String(error?.message||error||'PHOTO_DELETE_FAILED')
       });
     });
     return;
