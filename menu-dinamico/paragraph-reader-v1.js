@@ -15,7 +15,7 @@ if(!view)return;
 const style=document.createElement('style');
 style.id='nexo-paragraph-reader-style';
 style.textContent=`
-#nexoParagraphReader{position:fixed;z-index:2147483646;inset:0;display:none;align-items:center;justify-content:center;padding:14px;background:var(--nxo-overlay)}
+#nexoParagraphReader{position:fixed;z-index:2147483646;inset:0;display:none;align-items:center;justify-content:center;padding:14px;background:var(--nxo-overlay);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 #nexoParagraphReader[data-open="1"]{display:flex}
 .nexoParagraphReaderPanel{width:min(94vw,780px);max-height:88dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;border:1px solid var(--nxo-border-strong);border-radius:22px;background:var(--nxo-surface-raised);color:var(--nxo-text-primary);box-shadow:0 24px 80px var(--nxo-shadow)}
 .nexoParagraphReaderHead{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--nxo-border);background:var(--nxo-surface-raised)}
@@ -87,6 +87,7 @@ function openReader(block){
   clearPending();
   syncCopy();
   previousFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  try{window.getSelection?.()?.removeAllRanges()}catch(_){}
   readerText.textContent=text;
   layer.dataset.open='1';
   layer.setAttribute('aria-hidden','false');
@@ -112,6 +113,7 @@ function activate(){timer=null;const block=pendingBlock;pendingBlock=null;if(blo
 closeButton.addEventListener('click',closeReader);
 doneButton.addEventListener('click',closeReader);
 panel.addEventListener('click',e=>e.stopPropagation());
+layer.addEventListener('selectstart',e=>{e.preventDefault();e.stopPropagation()},{capture:true});
 layer.addEventListener('click',e=>{if(e.target===layer){e.preventDefault();e.stopPropagation()}});
 document.addEventListener('keydown',e=>{if(opened&&e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();closeReader()}},true);
 if(backButton)backButton.addEventListener('click',e=>{if(opened){e.preventDefault();e.stopImmediatePropagation();closeReader()}},true);
