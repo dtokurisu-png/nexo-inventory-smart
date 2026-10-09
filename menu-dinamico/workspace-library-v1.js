@@ -155,7 +155,6 @@ function enhanceRoot(){
   root.querySelectorAll('[data-nexo-tab]').forEach(btn=>btn.onclick=()=>{activeTab=btn.dataset.nexoTab;renderBody(root)});
   bindActions(header);
   renderBody(root);
-  try{parent.postMessage({type:'NEXO_WORKSPACE_LIBRARY_READY',payload:{view:'collections'}},'*')}catch(_){}
 }
 
 function closeLayer(){
