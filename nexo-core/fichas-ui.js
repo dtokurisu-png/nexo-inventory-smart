@@ -105,13 +105,31 @@ let workspaceLanguage=launchQuery.get('nxoLang')==='en'?'en':'es';
 const requestedSheetId=launchQuery.get('numaSheet')||'';
 const requestedSheetTitle=launchQuery.get('numaSheetTitle')||'';
 
+let numaCssLoadPromise=null;
 function ensureNumaCss(){
-  if(document.getElementById('nma-overlay-css'))return;
-  const link=document.createElement('link');
-  link.id='nma-overlay-css';
-  link.rel='stylesheet';
-  link.href=NUMA_CSS;
-  document.head.appendChild(link);
+  if(numaCssLoadPromise)return numaCssLoadPromise;
+  numaCssLoadPromise=new Promise((resolve,reject)=>{
+    let link=document.getElementById('nma-overlay-css');
+    const ready=()=>resolve(link);
+    const fail=()=>{
+      numaCssLoadPromise=null;
+      reject(new Error('NUMA_CSS_LOAD_FAILED'))
+    };
+    if(link){
+      if(link.sheet){resolve(link);return}
+      link.addEventListener('load',ready,{once:true});
+      link.addEventListener('error',fail,{once:true});
+      return
+    }
+    link=document.createElement('link');
+    link.id='nma-overlay-css';
+    link.rel='stylesheet';
+    link.href=NUMA_CSS;
+    link.addEventListener('load',ready,{once:true});
+    link.addEventListener('error',fail,{once:true});
+    document.head.appendChild(link);
+  });
+  return numaCssLoadPromise;
 }
 const NUMA_PRESENCE_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence-runtime.js?v=20261001-presence-4';
 let numaPresence=null,numaPresenceLoadPromise=null,numaTypingTimer=0;
@@ -452,10 +470,15 @@ async function numaSend(){
     if(button)button.disabled=false;
   }
 }
-function mountNuma(){
+async function mountNuma(){
   if(!sessionToken)return;
-  if(!numaPresence){ensureNumaPresenceRuntime().then(()=>{numaSyncVisualTheme();numaMountLauncherParticles();numaMountLifeParticles();}).catch(error=>console.warn('NUMA_PRESENCE_RUNTIME',error));}
-  ensureNumaCss();
+  try{
+    await Promise.all([ensureNumaCss(),ensureNumaPresenceRuntime()]);
+  }catch(error){
+    console.warn('NUMA_BOOT',error);
+    return
+  }
+  if(!sessionToken)return;
   let launcher=document.getElementById('nma-launcher');
   if(!launcher){
     launcher=document.createElement('button');
@@ -1107,7 +1130,7 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='ENGINE';
   mountEngine();
-  mountNuma();
+  void mountNuma();
 }
 start().catch(showError);
 })();
