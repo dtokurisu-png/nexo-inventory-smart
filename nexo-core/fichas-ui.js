@@ -2,7 +2,7 @@
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
 const ACCESS_REVISION='fichas-workspace-context-20261007-40';
-const ENGINE_REVISION='inline-done-20261009-43';
+const ENGINE_REVISION='workspace-ready-gate-20261009-44';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
@@ -13,6 +13,7 @@ const ENGINE='https://dtokurisu-png.github.io/nexo-inventory-smart/menu-dinamico
 let accessStage='WAITING_PAGE';
 let sessionToken='';
 let frame=null;
+let engineVisible=false;
 let loadingData=false;
 let importing=false;
 let importPreview=null;
@@ -1011,17 +1012,27 @@ function handleEngineMessage(event){
   }
   if(!message?.type)return;
   const payload=message.payload||{};
+  if(message.type==='NEXO_WORKSPACE_LIBRARY_READY'){
+    if(requestedSheetId&&!requestedSheetOpened){
+      openRequestedSheet();
+      return;
+    }
+    revealEngine();
+    return;
+  }
   if(message.type==='NUMA_RECIPE_OPENED'){
     const openedId=String(payload.sheetId||payload.recipeId||'');
     if(!requestedSheetId||openedId===String(requestedSheetId)){
       requestedSheetOpened=true;
       clearRequestedSheetParams();
       numaSetStatus('Ficha abierta','local');
+      revealEngine();
     }
     return;
   }
   if(message.type==='NUMA_RECIPE_OPEN_FAILED'){
     numaSetStatus(payload.error||'No se pudo abrir la ficha solicitada.','error');
+    revealEngine();
     return;
   }
   if(message.type==='NUMA_ENGINE_DATA_READY'){
@@ -1099,15 +1110,26 @@ function handleEngineMessage(event){
     return;
   }
 }
+function revealEngine(){
+  if(engineVisible)return;
+  engineVisible=true;
+  document.getElementById('nx-fichas-engine-gate')?.remove();
+  if(frame){
+    frame.style.opacity='1';
+    frame.style.pointerEvents='auto';
+  }
+  void mountNuma();
+}
 function mountEngine(){
   const root=mountRoot();
-  root.innerHTML='';
+  root.innerHTML='<div id="nx-fichas-engine-gate" style="position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:'+UI_THEME.background+';color:'+UI_THEME.textPrimary+';font:600 14px Inter,Arial,sans-serif"><div style="text-align:center"><div style="width:34px;height:34px;border:3px solid '+UI_THEME.border+';border-top-color:'+UI_THEME.accent+';border-radius:50%;margin:0 auto 14px;animation:nxspin .8s linear infinite"></div><strong>Cargando colecciones…</strong><style>@keyframes nxspin{to{transform:rotate(360deg)}}</style></div></div>';
+  engineVisible=false;
   frame=document.createElement('iframe');
   frame.id='nexo-dm-engine';
   frame.src=ENGINE+'&nxoLang='+encodeURIComponent(workspaceLanguage)+'&nxoTheme='+encodeURIComponent(workspaceTheme);
   frame.title=workspaceToolName;
   frame.allow='camera; notifications';
-  frame.style.cssText='display:block;width:100%;height:100%;border:0;background:'+UI_THEME.background+';';
+  frame.style.cssText='position:absolute;inset:0;z-index:1;display:block;width:100%;height:100%;border:0;background:'+UI_THEME.background+';opacity:0;pointer-events:none;transition:opacity .12s ease;';
   frame.addEventListener('load',()=>{
     postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,toolName:workspaceToolName,toolDescription:workspaceToolDescription,theme:workspaceTheme,language:workspaceLanguage});
     setTimeout(openRequestedSheet,180);
@@ -1130,7 +1152,6 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='ENGINE';
   mountEngine();
-  void mountNuma();
 }
 start().catch(showError);
 })();
