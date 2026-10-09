@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-38';
+const VERSION='20261009-39';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -551,6 +551,147 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
   color:var(--nxo-text-secondary);font-size:13px
 }
 .nxo-dev-detail-error{color:var(--nxo-danger)}
+.nxo-dev-install-card{
+  margin:0 0 18px;
+  padding:16px;
+  border:1px solid var(--nxo-border);
+  border-radius:18px;
+  background:var(--nxo-surface-glass);
+  box-shadow:0 12px 30px var(--nxo-shadow)
+}
+.nxo-dev-install-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:12px
+}
+.nxo-dev-install-head h3{
+  margin:0 0 4px;
+  font-size:14px;
+  color:var(--nxo-text-primary)
+}
+.nxo-dev-install-head p{
+  margin:0;
+  color:var(--nxo-text-muted);
+  font-size:11px;
+  line-height:1.45
+}
+.nxo-dev-install-state{
+  min-height:24px;
+  display:inline-flex;
+  align-items:center;
+  padding:4px 9px;
+  border:1px solid var(--nxo-border);
+  border-radius:999px;
+  color:var(--nxo-text-secondary);
+  background:var(--nxo-accent-soft);
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap
+}
+.nxo-dev-install-destinations{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:8px;
+  margin:12px 0
+}
+.nxo-dev-install-destination{
+  appearance:none;
+  min-height:58px;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  text-align:left;
+  border:1px solid var(--nxo-border);
+  border-radius:13px;
+  background:var(--nxo-surface-raised);
+  color:var(--nxo-text-primary);
+  cursor:pointer;
+  transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease
+}
+.nxo-dev-install-destination:hover:not(:disabled),
+.nxo-dev-install-destination:focus-visible:not(:disabled){
+  outline:none;
+  transform:translateY(-1px);
+  border-color:var(--nxo-interaction);
+  box-shadow:0 0 0 2px var(--nxo-focus-ring)
+}
+.nxo-dev-install-destination.selected{
+  border-color:var(--nxo-accent);
+  box-shadow:0 0 0 2px var(--nxo-focus-ring)
+}
+.nxo-dev-install-destination:disabled{
+  cursor:not-allowed;
+  opacity:.46
+}
+.nxo-dev-install-destination strong{
+  display:block;
+  font-size:11px;
+  line-height:1.25
+}
+.nxo-dev-install-destination small{
+  display:block;
+  margin-top:3px;
+  color:var(--nxo-text-muted);
+  font-size:9px;
+  line-height:1.3
+}
+.nxo-dev-install-badge{
+  flex:0 0 auto;
+  font-size:8px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  color:var(--nxo-accent)
+}
+.nxo-dev-install-actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  margin-top:12px
+}
+.nxo-dev-install-primary,
+.nxo-dev-install-open{
+  appearance:none;
+  min-height:36px;
+  padding:0 14px;
+  border:1px solid var(--nxo-header-border);
+  border-radius:10px;
+  background:var(--nxo-header-background);
+  color:var(--nxo-header-text);
+  font:800 11px/1 Inter,system-ui,sans-serif;
+  cursor:pointer
+}
+.nxo-dev-install-primary:hover:not(:disabled),
+.nxo-dev-install-primary:focus-visible:not(:disabled),
+.nxo-dev-install-open:hover,
+.nxo-dev-install-open:focus-visible{
+  outline:none;
+  background:var(--nxo-interaction);
+  border-color:var(--nxo-interaction);
+  color:var(--nxo-interaction-contrast)
+}
+.nxo-dev-install-primary:disabled{
+  cursor:wait;
+  opacity:.58
+}
+.nxo-dev-install-message{
+  color:var(--nxo-text-secondary);
+  font-size:10px;
+  line-height:1.45
+}
+.nxo-dev-install-message.success{color:var(--nxo-positive)}
+.nxo-dev-install-message.error{color:var(--nxo-danger)}
+.nxo-dev-install-unavailable{
+  color:var(--nxo-text-muted);
+  font-size:11px;
+  line-height:1.5
+}
+
 @media(max-width:760px){
   #nxo-dev-tool-detail{
     height:calc(100vh - 58px);
@@ -1118,6 +1259,8 @@ function bindFeatureInterception(){
 
 let detailRequestId=0;
 let lastDetailTrigger=null;
+let installState=null;
+let installBusy=false;
 
 function ensureToolDetailView(){
   const app=ensureDevelopmentApp();
@@ -1162,6 +1305,188 @@ async function fetchToolDetail(tool){
   return payload.data
 }
 
+function developmentBaseUrl(){
+  const pathname=location.pathname.replace(/\/+$/,'');
+  return location.origin+pathname.replace(/\/blank-[^/]+$/,'')
+}
+function requestedWorkspaceId(){
+  try{
+    const q=new URLSearchParams(location.search);
+    return q.get('nxoTargetWorkspace')||q.get('nxoWorkspace')||''
+  }catch(_){return''}
+}
+async function developmentInstallApi(action,payload={}){
+  const response=await fetch('/_functions/nexoDevelopmentInstall',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'same-origin',
+    body:JSON.stringify({action,...payload})
+  });
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||!data?.ok){
+    const error=new Error(data?.error||'No se pudo completar la instalación.');
+    error.code=data?.error||'INSTALL_FAILED';
+    throw error
+  }
+  return data.data
+}
+function destinationKey(destination){
+  return String(destination?.type||'')+':'+String(destination?.id||'')
+}
+function preferredDestination(options){
+  const destinations=Array.isArray(options?.destinations)?options.destinations:[];
+  const requested=requestedWorkspaceId();
+  return destinations.find(x=>x.type==='workspace'&&x.id===requested)||
+    destinations.find(x=>x.installed)||
+    destinations.find(x=>x.canInstall)||
+    destinations[0]||
+    null
+}
+function developmentToolOpenUrl(routePath,destination){
+  const path=String(routePath||'').trim();
+  if(!path)return'';
+  try{
+    const base=developmentBaseUrl();
+    const target=new URL(base+(path.startsWith('/')?path:'/'+path));
+    const back=new URL(base+'/blank-8');
+    const workspaceId=destination?.type==='workspace'?String(destination.id||''):'';
+
+    if(workspaceId){
+      target.searchParams.set('nxoWorkspace',workspaceId);
+      back.searchParams.set('nxoWorkspace',workspaceId)
+    }
+    target.searchParams.set('nxoBack',back.href);
+    target.searchParams.set('nxoBackLabel',String(destination?.name||'Mi Espacio'));
+    target.searchParams.set('nxoTheme',theme());
+    target.searchParams.set('nxoLang','es');
+    return target.href
+  }catch(_){return path}
+}
+function renderInstallZone(tool,options,selectedKey='',message='',messageType=''){
+  const zone=document.getElementById('nxo-dev-install-zone');
+  if(!zone)return;
+
+  if(!options?.installable){
+    zone.innerHTML=
+      '<section class="nxo-dev-install-card">'+
+        '<div class="nxo-dev-install-head"><div><h3>Instalación</h3><p>Esta herramienta todavía no está disponible para instalar.</p></div>'+
+        '<span class="nxo-dev-install-state">No disponible</span></div>'+
+      '</section>';
+    return
+  }
+
+  const destinations=Array.isArray(options.destinations)?options.destinations:[];
+  if(!destinations.length){
+    zone.innerHTML=
+      '<section class="nxo-dev-install-card">'+
+        '<div class="nxo-dev-install-head"><div><h3>Instalación</h3><p>No hay destinos disponibles para esta herramienta.</p></div></div>'+
+      '</section>';
+    return
+  }
+
+  let selected=destinations.find(x=>destinationKey(x)===selectedKey)||preferredDestination(options);
+  if(!selected)selected=destinations[0];
+  installState={tool,options,selectedKey:destinationKey(selected)};
+
+  const destinationHtml=destinations.map(destination=>{
+    const key=destinationKey(destination);
+    const isSelected=key===installState.selectedKey;
+    const unavailable=!destination.installed&&!destination.canInstall;
+    const subtitle=destination.installed
+      ? 'Ya instalada'
+      : unavailable
+        ? 'Sin permiso para instalar'
+        : destination.type==='workspace'?'Workspace':'Espacio personal';
+    return '<button type="button" class="nxo-dev-install-destination'+(isSelected?' selected':'')+'" data-install-destination="'+escapeHtml(key)+'" '+(unavailable?'disabled':'')+'>'+
+      '<span><strong>'+escapeHtml(destination.name)+'</strong><small>'+escapeHtml(subtitle)+'</small></span>'+
+      (destination.installed?'<span class="nxo-dev-install-badge">Instalada</span>':'')+
+    '</button>'
+  }).join('');
+
+  const action=selected.installed
+    ? '<button type="button" class="nxo-dev-install-open" id="nxo-dev-install-open">Abrir herramienta</button>'
+    : selected.canInstall
+      ? '<button type="button" class="nxo-dev-install-primary" id="nxo-dev-install-primary" '+(installBusy?'disabled':'')+'>'+(installBusy?'Instalando…':'Instalar aquí')+'</button>'
+      : '';
+
+  zone.innerHTML=
+    '<section class="nxo-dev-install-card">'+
+      '<div class="nxo-dev-install-head">'+
+        '<div><h3>Instalación</h3><p>Elige dónde quieres agregar esta herramienta.</p></div>'+
+        '<span class="nxo-dev-install-state">'+escapeHtml(selected.installed?'Instalada':'Lista para instalar')+'</span>'+
+      '</div>'+
+      '<div class="nxo-dev-install-destinations">'+destinationHtml+'</div>'+
+      '<div class="nxo-dev-install-actions">'+
+        action+
+        (message?'<span class="nxo-dev-install-message '+escapeHtml(messageType)+'">'+escapeHtml(message)+'</span>':'')+
+      '</div>'+
+    '</section>';
+
+  zone.querySelectorAll('[data-install-destination]').forEach(button=>{
+    button.addEventListener('click',()=>{
+      if(installBusy)return;
+      renderInstallZone(tool,options,button.dataset.installDestination||'',message,messageType)
+    },{signal:runtimeAbort.signal})
+  });
+
+  zone.querySelector('#nxo-dev-install-primary')?.addEventListener('click',async()=>{
+    if(installBusy||!installState)return;
+    const destination=destinations.find(x=>destinationKey(x)===installState.selectedKey);
+    if(!destination||destination.installed||!destination.canInstall)return;
+
+    installBusy=true;
+    renderInstallZone(tool,options,installState.selectedKey,'','');
+    try{
+      await developmentInstallApi('install',{
+        input:{
+          toolKey:tool.cmsKey||tool.key,
+          targetType:destination.type,
+          targetId:destination.id,
+          workspaceId:destination.type==='workspace'?destination.id:''
+        }
+      });
+      const refreshed=await developmentInstallApi('options',{toolKey:tool.cmsKey||tool.key});
+      installBusy=false;
+      renderInstallZone(tool,refreshed,destinationKey(destination),'Herramienta instalada correctamente.','success')
+    }catch(error){
+      installBusy=false;
+      renderInstallZone(tool,options,destinationKey(destination),error?.code==='AUTH_REQUIRED'?'Inicia sesión para instalar esta herramienta.':(error?.message||'No se pudo instalar.'),'error')
+    }
+  },{signal:runtimeAbort.signal});
+
+  zone.querySelector('#nxo-dev-install-open')?.addEventListener('click',()=>{
+    const destination=destinations.find(x=>destinationKey(x)===installState?.selectedKey);
+    const url=developmentToolOpenUrl(options.routePath,destination);
+    if(url)location.assign(url)
+  },{signal:runtimeAbort.signal})
+}
+async function loadInstallOptions(tool,requestId){
+  const zone=document.getElementById('nxo-dev-install-zone');
+  if(!zone)return;
+
+  zone.innerHTML=
+    '<section class="nxo-dev-install-card">'+
+      '<div class="nxo-dev-install-head"><div><h3>Instalación</h3><p>Comprobando destinos disponibles…</p></div>'+
+      '<span class="nxo-dev-install-state">Cargando</span></div>'+
+    '</section>';
+
+  try{
+    const options=await developmentInstallApi('options',{toolKey:tool.cmsKey||tool.key});
+    if(requestId!==detailRequestId||!toolDetailIsOpen())return;
+    installBusy=false;
+    renderInstallZone(tool,options)
+  }catch(error){
+    if(requestId!==detailRequestId||!toolDetailIsOpen())return;
+    installBusy=false;
+    zone.innerHTML=
+      '<section class="nxo-dev-install-card">'+
+        '<div class="nxo-dev-install-head"><div><h3>Instalación</h3><p>'+
+          escapeHtml(error?.code==='AUTH_REQUIRED'?'Inicia sesión para consultar los destinos de instalación.':(error?.message||'No se pudieron cargar los destinos.'))+
+        '</p></div><span class="nxo-dev-install-state">Pendiente</span></div>'+
+      '</section>'
+  }
+}
+
 function renderToolDetail(tool,data){
   const content=document.getElementById('nxo-dev-detail-content');
   if(!content)return;
@@ -1182,6 +1507,7 @@ function renderToolDetail(tool,data){
       '</div>'+
     '</div>'+
     '<p class="nxo-dev-detail-description">'+escapeHtml(data?.detailDescriptionEs||data?.descriptionEs||tool.summary)+'</p>'+
+    '<div id="nxo-dev-install-zone"></div>'+
     '<div class="nxo-dev-detail-grid">'+
       '<div>'+detailList('Capacidades',data?.capabilitiesEs)+'</div>'+
       '<aside>'+
@@ -1212,7 +1538,8 @@ async function openToolDetail(tool,trigger){
   try{
     const data=await fetchToolDetail(tool);
     if(requestId!==detailRequestId||view.hidden)return;
-    renderToolDetail(tool,data)
+    renderToolDetail(tool,data);
+    loadInstallOptions(tool,requestId)
   }catch(error){
     if(requestId!==detailRequestId||view.hidden)return;
     content.innerHTML='<div class="nxo-dev-detail-error">'+escapeHtml(error?.message||'No se pudo cargar la ficha.')+'</div>'
@@ -1220,6 +1547,8 @@ async function openToolDetail(tool,trigger){
 }
 
 function closeToolDetail(){
+  installState=null;
+  installBusy=false;
   const app=document.getElementById('nxo-dev-app');
   const view=document.getElementById('nxo-dev-tool-detail');
   const shell=app?.querySelector('.nxo-dev-owned-shell');
@@ -1347,6 +1676,8 @@ function destroy(){
   clearTimeout(previewCloseTimer);
   detailRequestId++;
   lastDetailTrigger=null;
+  installState=null;
+  installBusy=false;
 
   try{runtimeAbort.abort()}catch(_){}
 
