@@ -7,6 +7,8 @@ const OLD_DB='nexo-recetario-media-v1';
 const MAX_BYTES=10*1024*1024;
 const objectUrls=new Map();
 const pendingRemote=new Map();
+const appliedPendingKeys=new Set();
+const centralQueues=new Map();
 let stream=null;
 let current=null;
 let syncingPending=false;
@@ -65,12 +67,22 @@ async function saveRecordCentral(rec){
   if(!image?.id||!image?.url)throw new Error('INVALID_SAVED_IMAGE');
   const targetType=saved?.entityType||rec.entityType,targetId=saved?.entityId||rec.entityId;
   await deleteRecord(rec.key);
+  appliedPendingKeys.delete(rec.key);
   publishPhoto(targetType,targetId,image,'server',{
     images:Array.isArray(saved?.images)?saved.images:null,
     photoIntent:saved?.photoIntent||targetIntent(rec),
     photoIndex:Number(saved?.photoIndex??targetIndex(rec))
   });
   return image
+}
+function enqueueCentralSave(rec){
+  const queueKey=String(rec?.entityType||'')+':'+String(rec?.entityId||'');
+  const previous=centralQueues.get(queueKey)||Promise.resolve();
+  const run=previous.catch(()=>{}).then(()=>saveRecordCentral(rec));
+  const tail=run.catch(()=>{});
+  centralQueues.set(queueKey,tail);
+  tail.finally(()=>{if(centralQueues.get(queueKey)===tail)centralQueues.delete(queueKey)});
+  return run
 }
 async function scopedPendingRows(){
   const rows=await getRecords(),scope=photoScopeId();
@@ -92,7 +104,7 @@ async function scopedPendingRows(){
   }
   return mine.sort((a,b)=>Number(a?.updatedAt||0)-Number(b?.updatedAt||0))
 }
-async function hydrate(){try{const rows=await scopedPendingRows();for(const rec of rows){if(rec.blob)publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending',rec)}}catch(_){}}
+async function hydrate(){try{const rows=await scopedPendingRows();for(const rec of rows){if(rec.blob&&!appliedPendingKeys.has(rec.key)){publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending',rec);appliedPendingKeys.add(rec.key)}}}catch(_){}}
 async function pendingPhotoRecords(){try{return await scopedPendingRows()}catch(_){return[]}}
 async function refreshPendingBar(lastError=''){
   const rows=await pendingPhotoRecords(),n=rows.length;
@@ -116,7 +128,7 @@ async function syncPendingRecords({interactive=false}={}){
   try{
     const rows=await pendingPhotoRecords();
     for(const rec of rows){
-      try{await saveRecordCentral(rec);synced++}
+      try{await enqueueCentralSave(rec);synced++}
       catch(err){failed++;lastError=String(err?.message||err||'PHOTO_SAVE_FAILED')}
     }
   }catch(err){failed++;lastError=String(err?.message||err)}
@@ -141,11 +153,58 @@ function cameraFallback(target){const input=document.createElement('input');inpu
 async function openCamera(target){if(!navigator.mediaDevices?.getUserMedia){cameraFallback(target);return}try{const layer=makeLayer(`<h3>${esc(tr('Cámara','Camera'))}</h3><p>${esc(tr('Alinea la imagen y toca Tomar foto.','Frame the image and tap Take photo.'))}</p><video id="nexoPhotoVideo" class="nexoPhotoVideo" autoplay playsinline muted></video><div class="nexoPhotoActions"><button id="nexoCapture" class="nexoPhotoPrimary">📷 ${esc(tr('Tomar foto','Take photo'))}</button><button id="nexoCameraCancel" class="nexoPhotoSecondary">${esc(tr('Cancelar','Cancel'))}</button></div>`);stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},aspectRatio:{ideal:1},width:{ideal:1600},height:{ideal:1600}},audio:false});const video=layer.querySelector('#nexoPhotoVideo');video.srcObject=stream;layer.querySelector('#nexoCameraCancel').onclick=closeLayer;layer.querySelector('#nexoCapture').onclick=()=>capture(target,video)}catch(_){cameraFallback(target)}}
 function capture(target,video){const w=video.videoWidth||1280,h=video.videoHeight||720,src=Math.min(w,h),sx=(w-src)/2,sy=(h-src)/2,out=Math.min(src,2048),canvas=document.createElement('canvas');canvas.width=out;canvas.height=out;canvas.getContext('2d').drawImage(video,sx,sy,src,src,0,0,out,out);canvas.toBlob(blob=>{if(!blob)return;const file=new File([blob],`photo-${Date.now()}.jpg`,{type:'image/jpeg'});if(validateFile(file))review(target,file)},'image/jpeg',.9)}
 function review(target,file){stopCamera();const layer=makeLayer(`<h3>${esc(tr('Revisar foto','Review photo'))}</h3><p>${esc(tr('Si esta es la imagen correcta, toca Guardar foto o Listo.','If this is the correct image, tap Save photo or Done.'))}</p><img class="nexoPhotoPreview" alt=""><div class="nexoPhotoActions"><button id="nexoSavePhoto" class="nexoPhotoPrimary">✓ ${esc(tr('Guardar foto','Save photo'))}</button><button id="nexoChangePhoto" class="nexoPhotoSecondary">↻ ${esc(tr('Cambiar','Change'))}</button></div><div class="nexoPhotoFooter"><button id="nexoReviewCancel" class="nexoPhotoCancel">${esc(tr('Cancelar','Cancel'))}</button><button id="nexoReviewDone" class="nexoPhotoDone">✓ ${esc(tr('Listo','Done'))}</button></div><p class="nexoPhotoHint">${esc(tr('La foto se guardará en el sistema y quedará disponible en los demás dispositivos. También se conservará una copia local para uso sin conexión.','The photo will be saved to the system and become available on other devices. A local offline copy will also be kept.'))}</p>`);const preview=URL.createObjectURL(file);current={target,file,preview,saving:false};const image=layer.querySelector('.nexoPhotoPreview');if(image)image.src=preview;layer.querySelector('#nexoSavePhoto').onclick=()=>saveCurrent();layer.querySelector('#nexoChangePhoto').onclick=()=>{if(current?.saving)return;const t=current?.target;if(current?.preview)URL.revokeObjectURL(current.preview);current=null;openChooser(t)};layer.querySelector('#nexoReviewCancel').onclick=()=>{if(current?.saving)return;closeLayer()};layer.querySelector('#nexoReviewDone').onclick=()=>{if(current?.saving){closeLayer();return}saveCurrent({dismissAfterLocal:true})}}
-async function saveCurrent({dismissAfterLocal=false}={}){const c=current;if(!c||c.saving)return;c.saving=true;const button=document.getElementById('nexoSavePhoto'),change=document.getElementById('nexoChangePhoto'),cancel=document.getElementById('nexoReviewCancel'),done=document.getElementById('nexoReviewDone');if(button){button.disabled=true;button.textContent=tr('Guardando en el sistema…','Saving to system…')}if(change)change.disabled=true;if(cancel)cancel.disabled=true;if(done){done.disabled=false;done.textContent='✓ '+tr('Listo','Done')}const rec={entityType:c.target.entityType,entityId:c.target.entityId,photoIntent:targetIntent(c.target),photoIndex:targetIndex(c.target),blob:c.file,name:c.file.name||'photo.jpg',mime:c.file.type||'image/jpeg',size:c.file.size,updatedAt:Date.now(),synced:false,scopeId:photoScopeId(),workspaceId:String(data()?.context?.workspaceId||''),remoteImage:null};rec.key=keyOf(rec.entityType,rec.entityId,rec);try{await putRecord(rec);publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending',rec);if(dismissAfterLocal&&current===c)closeLayer();await saveRecordCentral(rec);await refreshPendingBar();toast(tr('✓ Foto guardada en Wix y disponible en otros dispositivos','✓ Photo saved to Wix and available on other devices'),3200);if(!dismissAfterLocal&&current===c)closeLayer()}catch(err){console.error('[NEXO/PHOTO]',err);try{await putRecord(rec)}catch(_){}publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending',rec);await refreshPendingBar(String(err?.message||err||''));toast(tr('Foto guardada temporalmente. Usa “Sincronizar ahora” cuando estés conectado.','Photo saved temporarily. Use “Sync now” when online.'),5200);if(current===c)closeLayer()}}
+async function saveCurrent({dismissAfterLocal=false}={}){
+  const c=current;
+  if(!c||c.saving)return;
+  c.saving=true;
+  const button=document.getElementById('nexoSavePhoto'),change=document.getElementById('nexoChangePhoto'),cancel=document.getElementById('nexoReviewCancel'),done=document.getElementById('nexoReviewDone');
+  if(button){button.disabled=true;button.textContent=tr('Guardando en el sistema…','Saving to system…')}
+  if(change)change.disabled=true;
+  if(cancel)cancel.disabled=true;
+  if(done){done.disabled=false;done.textContent='✓ '+tr('Listo','Done')}
+  const rec={
+    entityType:c.target.entityType,
+    entityId:c.target.entityId,
+    photoIntent:targetIntent(c.target),
+    photoIndex:targetIndex(c.target),
+    blob:c.file,
+    name:c.file.name||'photo.jpg',
+    mime:c.file.type||'image/jpeg',
+    size:c.file.size,
+    updatedAt:Date.now(),
+    synced:false,
+    scopeId:photoScopeId(),
+    workspaceId:String(data()?.context?.workspaceId||''),
+    remoteImage:null
+  };
+  rec.key=keyOf(rec.entityType,rec.entityId,rec);
+  let published=false;
+  try{
+    await putRecord(rec);
+    publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending',rec);
+    appliedPendingKeys.add(rec.key);
+    published=true;
+    if(dismissAfterLocal&&current===c)closeLayer();
+    await enqueueCentralSave(rec);
+    await refreshPendingBar();
+    toast(tr('✓ Foto guardada en Wix y disponible en otros dispositivos','✓ Photo saved to Wix and available on other devices'),3200);
+    if(!dismissAfterLocal&&current===c)closeLayer()
+  }catch(err){
+    console.error('[NEXO/PHOTO]',err);
+    try{await putRecord(rec)}catch(_){}
+    if(!published){
+      publishPhoto(rec.entityType,rec.entityId,objectUrl(rec),'local-pending',rec);
+      appliedPendingKeys.add(rec.key)
+    }
+    await refreshPendingBar(String(err?.message||err||''));
+    toast(tr('Foto guardada temporalmente. Usa “Sincronizar ahora” cuando estés conectado.','Photo saved temporarily. Use “Sync now” when online.'),5200);
+    if(current===c)closeLayer()
+  }
+}
 
 document.addEventListener('click',e=>{const control=e.target.closest?.('[data-product-photo],[data-photo-target]');if(!control)return;const target=targetFromButton(control);if(!target)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openChooser(target)},true);
 syncBarButton.onclick=()=>syncPendingRecords({interactive:true});
-addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(!m?.type)return;const p=m.payload||{};if(m.type==='DM_PHOTO_SAVED'){const wait=pendingRemote.get(p.requestId);if(wait){clearTimeout(wait.timer);pendingRemote.delete(p.requestId);wait.resolve(p)}return}if(m.type==='DM_PHOTO_ERROR'){const wait=pendingRemote.get(p.requestId);if(wait){clearTimeout(wait.timer);pendingRemote.delete(p.requestId);wait.reject(new Error(p.error||'PHOTO_SAVE_FAILED'))}return}if(m.type==='MENU_DATA_LOADED'){clearTimeout(pendingRetryTimer);setTimeout(async()=>{await hydrate();await refreshPendingBar();await syncPendingRecords()},0)}});
+addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(!m?.type)return;const p=m.payload||{};if(m.type==='DM_PHOTO_SAVED'){const wait=pendingRemote.get(p.requestId);if(wait){clearTimeout(wait.timer);pendingRemote.delete(p.requestId);wait.resolve(p)}return}if(m.type==='DM_PHOTO_ERROR'){const wait=pendingRemote.get(p.requestId);if(wait){clearTimeout(wait.timer);pendingRemote.delete(p.requestId);wait.reject(new Error(p.error||'PHOTO_SAVE_FAILED'))}return}if(m.type==='MENU_DATA_LOADED'){clearTimeout(pendingRetryTimer);appliedPendingKeys.clear();setTimeout(async()=>{await hydrate();await refreshPendingBar();await syncPendingRecords()},0)}});
 addEventListener('online',()=>setTimeout(()=>syncPendingRecords(),300));
 addEventListener('beforeunload',()=>{clearTimeout(pendingRetryTimer);stopCamera();for(const item of objectUrls.values())URL.revokeObjectURL(item.url)});
 window.NEXO_PHOTO_API={syncPending:()=>syncPendingRecords({interactive:true}),pending:pendingPhotoRecords,refresh:refreshPendingBar};
