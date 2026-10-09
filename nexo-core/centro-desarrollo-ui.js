@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-39';
+const VERSION='20261009-40';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -28,7 +28,10 @@ const TOOL_DEFS=[
   {key:'work',cmsKey:'work-center',icon:'panel',title:'Centro de Trabajo',summary:'Tareas, horarios, personal y operación colaborativa del espacio de trabajo.',names:['centro de trabajo','work center']},
   {key:'recipes',cmsKey:'dynamic-menus',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']},
   {key:'tasks',cmsKey:'task-lists',icon:'checklist',title:'Listas de tareas',summary:'Proyecto próximo para crear y reutilizar listas de tareas, checklists y prep lists en uso personal o Workspace.',status:'planned',names:['listas de tareas','checklist','prep list','prep lists']},
-  {key:'multichannel-notifications',cmsKey:'multichannel-notifications',icon:'notificaciones',title:'Notificaciones multicanal',summary:'Proyecto próximo para centralizar avisos y entregarlos por varios canales desde una sola lógica de notificación.',status:'planned',names:['notificaciones multicanal','multichannel notifications']}
+  {key:'multichannel-notifications',cmsKey:'multichannel-notifications',icon:'notificaciones',title:'Notificaciones multicanal',summary:'Proyecto próximo para centralizar avisos y entregarlos por varios canales desde una sola lógica de notificación.',status:'planned',names:['notificaciones multicanal','multichannel notifications']},
+  {key:'numa',cmsKey:'numa-assistant',icon:'ayuda',title:'Numa',summary:'Asistente opcional de Mi Espacio y Workspace, preparado para capacidades locales y servicios de IA medidos por uso.',status:'planned',names:['numa','asistente numa']},
+  {key:'maria',cmsKey:'maria-editorial',icon:'guia',title:'María',summary:'Asistente futuro de lectura, transcripción y apoyo editorial para Camino Editorial.',status:'planned',names:['maria','maría','asistente maria','asistente maría']},
+  {key:'camino-agents',cmsKey:'camino-editorial-agents',icon:'comentarios',title:'Agentes de Camino Editorial',summary:'Contenedor futuro para agentes editoriales que se definirán y comercializarán uno por uno.',status:'planned',names:['agentes de camino editorial','agentes editoriales','camino editorial agents']}
 ];
 let scheduled=false,observer=null;
 let quickMenuOutsideHandler=null;
