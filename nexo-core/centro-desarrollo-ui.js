@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-42';
+const VERSION='20261009-43';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1290,11 +1290,68 @@ function ensureToolDetailView(){
 
 function detailList(title,items){
   const values=Array.isArray(items)?items.filter(Boolean):[];
+  if(!values.length)return'';
   return '<section class="nxo-dev-detail-card">'+
     '<h3>'+escapeHtml(title)+'</h3>'+
-    (values.length
-      ? '<ul class="nxo-dev-detail-list">'+values.map(item=>'<li>'+escapeHtml(item)+'</li>').join('')+'</ul>'
-      : '<div class="nxo-dev-detail-empty">Sin información adicional por ahora.</div>')+
+    '<ul class="nxo-dev-detail-list">'+values.map(item=>'<li>'+escapeHtml(item)+'</li>').join('')+'</ul>'+
+  '</section>'
+}
+function detailSafeUrl(value){
+  const raw=String(value||'').trim();
+  if(!raw)return'';
+  try{
+    const url=new URL(raw);
+    return ['http:','https:'].includes(url.protocol)?url.href:''
+  }catch(_){return''}
+}
+function detailLinks(title,items){
+  const values=(Array.isArray(items)?items:[]).map(item=>({
+    label:String(item?.label||'').trim(),
+    url:detailSafeUrl(item?.url)
+  })).filter(item=>item.label&&item.url);
+  if(!values.length)return'';
+  return '<section class="nxo-dev-detail-card">'+
+    '<h3>'+escapeHtml(title)+'</h3>'+
+    '<ul class="nxo-dev-detail-list">'+values.map(item=>
+      '<li><a href="'+escapeHtml(item.url)+'" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;text-underline-offset:2px">'+escapeHtml(item.label)+'</a></li>'
+    ).join('')+'</ul>'+
+  '</section>'
+}
+function detailRelated(items){
+  const values=(Array.isArray(items)?items:[]).filter(item=>item?.nameEs);
+  if(!values.length)return'';
+  return '<section class="nxo-dev-detail-card">'+
+    '<h3>Productos relacionados</h3>'+
+    '<ul class="nxo-dev-detail-list">'+values.map(item=>
+      '<li>'+escapeHtml(item.nameEs)+' · '+escapeHtml(statusLabel(item.status))+'</li>'
+    ).join('')+'</ul>'+
+  '</section>'
+}
+function detailMedia(items){
+  const values=(Array.isArray(items)?items:[]).map(item=>({
+    type:String(item?.type||'').toLowerCase(),
+    url:detailSafeUrl(item?.url),
+    title:String(item?.title||'').trim(),
+    alt:String(item?.alt||'').trim()
+  })).filter(item=>item.url&&['image','video'].includes(item.type));
+  if(!values.length)return'';
+  return '<section class="nxo-dev-detail-card" style="margin-bottom:14px">'+
+    '<h3>Multimedia</h3>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">'+
+      values.map(item=>{
+        const label=item.title||item.alt||'Multimedia del producto';
+        if(item.type==='video'){
+          return '<figure style="margin:0;display:grid;gap:7px">'+
+            '<video controls preload="metadata" src="'+escapeHtml(item.url)+'" style="display:block;width:100%;max-height:320px;border-radius:12px;background:var(--nxo-surface)"></video>'+
+            (label?'<figcaption style="font-size:11px;color:var(--nxo-text-muted)">'+escapeHtml(label)+'</figcaption>':'')+
+          '</figure>'
+        }
+        return '<figure style="margin:0;display:grid;gap:7px">'+
+          '<img src="'+escapeHtml(item.url)+'" alt="'+escapeHtml(item.alt||item.title)+'" loading="lazy" decoding="async" style="display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:1px solid var(--nxo-border);background:var(--nxo-surface)">'+
+          (label?'<figcaption style="font-size:11px;color:var(--nxo-text-muted)">'+escapeHtml(label)+'</figcaption>':'')+
+        '</figure>'
+      }).join('')+
+    '</div>'+
   '</section>'
 }
 
@@ -1511,24 +1568,32 @@ function renderToolDetail(tool,data){
     '<span class="nxo-dev-detail-chip status">'+escapeHtml(statusLabel(data?.status))+'</span>',
     ...scopes.map(scope=>'<span class="nxo-dev-detail-chip">'+escapeHtml(scopeLabel(scope))+'</span>')
   ].join('');
+  const mediaHtml=detailMedia(data?.media);
+  const leftHtml=
+    detailList('Capacidades',data?.capabilitiesEs)+
+    detailList('Compatibilidad',data?.compatibilityEs)+
+    detailList('Público recomendado',data?.audienceEs);
+  const rightHtml=
+    detailList('Requisitos',data?.requirementsEs)+
+    detailList('Integraciones',data?.integrationsEs)+
+    detailLinks('Documentación',data?.documentation)+
+    detailRelated(data?.relatedProducts);
 
   content.innerHTML=
     '<div class="nxo-dev-detail-hero">'+
       '<div class="nxo-dev-detail-icon-wrap"><img class="nxo-dev-detail-icon" src="'+iconUrl(tool.icon)+'" alt=""></div>'+
       '<div class="nxo-dev-detail-heading">'+
-        '<div class="nxo-dev-detail-eyebrow">Ficha de herramienta</div>'+
+        '<div class="nxo-dev-detail-eyebrow">Ficha de producto</div>'+
         '<h2 class="nxo-dev-detail-title">'+escapeHtml(tool.title||data?.nameEs)+'</h2>'+
         '<div class="nxo-dev-detail-meta">'+chips+'</div>'+
       '</div>'+
     '</div>'+
     '<p class="nxo-dev-detail-description">'+escapeHtml(data?.detailDescriptionEs||data?.descriptionEs||tool.summary)+'</p>'+
+    mediaHtml+
     '<div id="nxo-dev-install-zone"></div>'+
     '<div class="nxo-dev-detail-grid">'+
-      '<div>'+detailList('Capacidades',data?.capabilitiesEs)+'</div>'+
-      '<aside>'+
-        detailList('Requisitos',data?.requirementsEs)+
-        detailList('Integraciones',data?.integrationsEs)+
-      '</aside>'+
+      '<div>'+leftHtml+'</div>'+
+      '<aside>'+rightHtml+'</aside>'+
     '</div>'
 }
 
