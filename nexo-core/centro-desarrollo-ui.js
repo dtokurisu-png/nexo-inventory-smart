@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-40';
+const VERSION='20261009-41';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1194,6 +1194,9 @@ function bindPreviewDelegation(){
   }
 
   window.__nexoDevPreviewOverHandler=function(event){
+    // Hover preview is a mouse-only interaction. Touch/pen pointerover fires
+    // before the browser knows whether the gesture is a tap or a scroll.
+    if(event.pointerType&&event.pointerType!=='mouse')return;
     const card=event.target?.closest?.('[data-nxo-dev-card="1"]');
     if(!card)return;
     if(event.relatedTarget&&card.contains(event.relatedTarget))return;
@@ -1204,6 +1207,7 @@ function bindPreviewDelegation(){
   };
 
   window.__nexoDevPreviewOutHandler=function(event){
+    if(event.pointerType&&event.pointerType!=='mouse')return;
     const card=event.target?.closest?.('[data-nxo-dev-card="1"]');
     if(!card)return;
     if(event.relatedTarget&&card.contains(event.relatedTarget))return;
