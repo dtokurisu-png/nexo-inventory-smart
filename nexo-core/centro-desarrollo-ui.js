@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261008-37';
+const VERSION='20261008-38';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -259,21 +259,20 @@ html[data-nxo-theme="night"] #nxo-dev-app{
   flex:1 1 auto;
   min-height:0
 }
-@media(min-width:900px) and (max-width:1119px){
+@media(min-width:900px){
+  .nxo-dev-owned-shell{
+    overflow:visible
+  }
   .nxo-dev-owned-catalog-frame{
-    width:calc(100vw - 390px);
-    margin-left:4px;
+    width:calc(100vw - 414px);
+    max-width:none;
+    left:calc(50% - 50vw + 24px);
     margin-right:auto
   }
-  .nxo-dev-owned-grid{gap:10px}
-}
-@media(min-width:1120px){
-  .nxo-dev-owned-catalog-frame{
-    width:min(970px,calc(100vw - 390px));
-    left:calc(584px - 50vw);
-    margin-right:auto
+  .nxo-dev-owned-grid{
+    column-gap:8px;
+    row-gap:16px
   }
-  .nxo-dev-owned-grid{gap:10px}
 }
 .nxo-dev-owned-catalog-scroll{
   width:100%;
