@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-41';
+const VERSION='20261009-42';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -25,8 +25,8 @@ const TOOL_DEFS=[
   {key:'inventory',cmsKey:'inventory-smart',icon:'productos',title:'Inventario Smart',summary:'Productos, materiales e inventario operativo del espacio de trabajo.',names:['inventario smart']},
   {key:'technical',cmsKey:'dynamic-specs',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Biblioteca y colecciones de fichas técnicas conectadas con Inventario Smart.',names:['fichas tecnicas dinamicas','dynamic technical sheets']},
   {key:'schedules',cmsKey:'schedules',icon:'recordatorio',title:'Horarios',summary:'Jornadas y horarios semanales con carga desde imagen, análisis GPT y publicación.',names:['horarios','schedule','schedules']},
-  {key:'work',cmsKey:'work-center',icon:'panel',title:'Centro de Trabajo',summary:'Tareas, horarios, personal y operación colaborativa del espacio de trabajo.',names:['centro de trabajo','work center']},
-  {key:'recipes',cmsKey:'dynamic-menus',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']},
+  {key:'work',cmsKey:'work-center',icon:'panel',title:'Centro de Trabajo',summary:'Tareas, horarios, personal y operación colaborativa del espacio de trabajo.',status:'planned',names:['centro de trabajo','work center']},
+  {key:'recipes',cmsKey:'dynamic-specs',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas dentro del motor canónico de Fichas Técnicas Dinámicas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']},
   {key:'tasks',cmsKey:'task-lists',icon:'checklist',title:'Listas de tareas',summary:'Proyecto próximo para crear y reutilizar listas de tareas, checklists y prep lists en uso personal o Workspace.',status:'planned',names:['listas de tareas','checklist','prep list','prep lists']},
   {key:'multichannel-notifications',cmsKey:'multichannel-notifications',icon:'notificaciones',title:'Notificaciones multicanal',summary:'Proyecto próximo para centralizar avisos y entregarlos por varios canales desde una sola lógica de notificación.',status:'planned',names:['notificaciones multicanal','multichannel notifications']},
   {key:'numa',cmsKey:'numa-assistant',icon:'ayuda',title:'Numa',summary:'Asistente opcional de Mi Espacio y Workspace, preparado para capacidades locales y servicios de IA medidos por uso.',status:'planned',names:['numa','asistente numa']},
@@ -1298,8 +1298,16 @@ function detailList(title,items){
   '</section>'
 }
 
+function developmentFunctionUrl(functionName){
+  const name=String(functionName||'').replace(/^\/+|\/+$/g,'');
+  const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
+  const firstSegment=location.pathname.split('/').filter(Boolean)[0]||'';
+  const basePath=freeSite&&firstSegment?'/'+firstSegment:'';
+  return basePath+'/_functions/'+name
+}
+
 async function fetchToolDetail(tool){
-  const response=await fetch('/_functions/nexoDevelopmentToolDetail',{
+  const response=await fetch(developmentFunctionUrl('nexoDevelopmentToolDetail'),{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({toolKey:tool.cmsKey||tool.key}),
@@ -1323,7 +1331,7 @@ function requestedWorkspaceId(){
   }catch(_){return''}
 }
 async function developmentInstallApi(action,payload={}){
-  const response=await fetch('/_functions/nexoDevelopmentInstall',{
+  const response=await fetch(developmentFunctionUrl('nexoDevelopmentInstall'),{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     credentials:'same-origin',
@@ -1509,7 +1517,7 @@ function renderToolDetail(tool,data){
       '<div class="nxo-dev-detail-icon-wrap"><img class="nxo-dev-detail-icon" src="'+iconUrl(tool.icon)+'" alt=""></div>'+
       '<div class="nxo-dev-detail-heading">'+
         '<div class="nxo-dev-detail-eyebrow">Ficha de herramienta</div>'+
-        '<h2 class="nxo-dev-detail-title">'+escapeHtml(data?.nameEs||tool.title)+'</h2>'+
+        '<h2 class="nxo-dev-detail-title">'+escapeHtml(tool.title||data?.nameEs)+'</h2>'+
         '<div class="nxo-dev-detail-meta">'+chips+'</div>'+
       '</div>'+
     '</div>'+
