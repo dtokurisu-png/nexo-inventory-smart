@@ -296,6 +296,7 @@ function applyHome(){if(view.querySelector('.recipeView')){syncBack();return}if(
 back.addEventListener('click',e=>{if(state.productModal){e.preventDefault();e.stopImmediatePropagation();state.closeProduct?.();return}if(view.querySelector('[data-taxonomy-view]')&&state.mode!=='root'){e.preventDefault();e.stopImmediatePropagation();state.mode='root';renderRoot()}},true);
 home.addEventListener('click',()=>{state.mode='root';if(state.productModal)state.closeProduct?.()},true);
 window.addEventListener('NEXO_NATIVE_RENDERED',e=>{if(e.detail?.kind==='recipe'&&e.detail?.recipeId)rememberRecipe(e.detail.recipeId);if(e.detail?.kind==='home')applyHome();else syncBack()});
+window.addEventListener('NEXO_WORKSPACE_HOME_REQUEST',()=>queueMicrotask(applyHome));
 window.addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(m?.type==='MENU_DATA_LOADED')queueMicrotask(applyHome);if(m?.type==='NEXO_WORKSPACE_CONTEXT'){window.__NEXO_WORKSPACE_MODE__=!!m?.payload?.workspaceMode;queueMicrotask(syncBack)}});
 window.addEventListener('NEXO_PHOTO_CHANGED',()=>{if(view.querySelector('[data-taxonomy-view]'))applyHome()});
 addEventListener('beforeunload',()=>{clearInterval(state.searchWatch)});
