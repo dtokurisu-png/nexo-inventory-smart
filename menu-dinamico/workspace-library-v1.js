@@ -519,10 +519,10 @@ function showStageTwoComplete(layerEl,draft){
     '<h3>'+esc(title||draft.title)+'</h3>'+
     '<div class="nexoCreatorSummary"><div><span>'+esc(tr('Categoría','Category'))+'</span><strong>'+esc(draft.category||tr('Sin definir','Not set'))+'</strong></div><div><span>'+esc(tr('Rendimiento','Yield'))+'</span><strong>'+esc(yieldText)+'</strong></div></div>'+
     '<p>'+esc(tr('La cabecera de la ficha quedó guardada en el borrador. La Etapa 3 añadirá los ingredientes existentes o nuevos.','The sheet header is saved in the draft. Stage 3 will add existing or new ingredients.'))+'</p>'+
-    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-edit-two>'+esc(tr('Editar etapa 2','Edit stage 2'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-creator-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-edit-two>'+esc(tr('Editar etapa 2','Edit stage 2'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-creator-stage-three>'+esc(tr('Continuar a etapa 3','Continue to stage 3'))+'</button></div>'+
   '</div>';
   body.querySelector('[data-creator-edit-two]').onclick=()=>openCreateStageTwo();
-  body.querySelector('[data-creator-close]').onclick=closeLayer
+  body.querySelector('[data-creator-stage-three]').onclick=()=>openCreateStageThree()
 }
 function bindCreatorStageTwo(layerEl,draft){
   const form=layerEl.querySelector('[data-nexo-creator-stage-two]');
@@ -584,9 +584,373 @@ function openCreateStageTwo(){
   el.querySelector('.nexoWorkspaceModal')?.classList.add('nexoCreatorModalWide');
   bindCreatorStageTwo(el,draft)
 }
+
+function creatorDraftId(prefix='draft'){
+  try{return prefix+'-'+crypto.randomUUID()}catch(_){return prefix+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,10)}
+}
+function creatorExistingIngredients(){
+  return (data().ingredients||[])
+    .filter(row=>row&&row.active!==false)
+    .sort((a,b)=>{
+      const an=String((lang()==='en'?(a.nameEn||a.nameEs):(a.nameEs||a.nameEn))||'');
+      const bn=String((lang()==='en'?(b.nameEn||b.nameEs):(b.nameEs||b.nameEn))||'');
+      return an.localeCompare(bn,lang()==='en'?'en':'es')
+    })
+}
+function creatorIngredientName(row){
+  return String(lang()==='en'?(row?.nameEn||row?.nameEs||''):(row?.nameEs||row?.nameEn||''))
+}
+function creatorIngredientSearchCorpus(row){
+  return searchNorm([row?.nameEs,row?.nameEn,row?.descriptionEs,row?.descriptionEn].filter(Boolean).join(' '))
+}
+function creatorIngredientMatches(row,query){
+  const q=searchNorm(query);
+  if(!q)return false;
+  return q.split(' ').filter(Boolean).every(token=>creatorIngredientSearchCorpus(row).includes(token))
+}
+function creatorIngredientComponents(draft){
+  return (Array.isArray(draft?.components)?draft.components:[])
+    .filter(row=>row&&String(row.componentType||'').toUpperCase()==='INGREDIENT')
+    .sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0))
+}
+function creatorComponentDisplay(row){
+  if(row?.ingredientSource==='new'){
+    const ing=row.newIngredient||{};
+    return String(lang()==='en'?(ing.nameEn||ing.nameEs||''):(ing.nameEs||ing.nameEn||''))
+  }
+  const found=creatorExistingIngredients().find(ing=>String(ing._id||ing.id||'')===String(row?.targetIngredientId||''));
+  return creatorIngredientName(found)||String(lang()==='en'?(row?.displayEn||row?.displayEs||''):(row?.displayEs||row?.displayEn||''))||tr('Ingrediente','Ingredient')
+}
+function creatorIngredientImage(row){
+  const found=creatorExistingIngredients().find(ing=>String(ing._id||ing.id||'')===String(row?.targetIngredientId||''));
+  if(!found)return '';
+  const images=Array.isArray(found.images)?found.images:[];
+  return img(images[0]||found.baseImage||'')
+}
+function creatorNormalizeComponentUnit(raw){
+  const pair=creatorUnitPair(raw);
+  return {es:pair.es,en:pair.en}
+}
+function creatorStageThreeMarkup(draft={}){
+  const count=creatorIngredientComponents(draft).length;
+  return '<form class="nexoCreatorStage nexoCreatorStageThree" data-nexo-creator-stage-three novalidate>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 3 de 8','Stage 3 of 8'))+'</span><strong>'+esc(tr('Ingredientes existentes o nuevos','Existing or new ingredients'))+'</strong></div>'+
+    '<div class="nexoCreatorStageSummary"><span>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</span><strong data-creator-ingredient-count>'+count+' '+esc(tr(count===1?'ingrediente':'ingredientes',count===1?'ingredient':'ingredients'))+'</strong></div>'+
+    '<p class="nexoCreatorIntro">'+esc(tr('Agrega los insumos base de esta ficha. Las preparaciones reutilizables se manejan en la Etapa 4.','Add the base ingredients for this sheet. Reusable preparations are handled in Stage 4.'))+'</p>'+
+    '<section class="nexoCreatorIngredientAdd">'+
+      '<div class="nexoCreatorIngredientSearchBox">'+
+        '<label class="nexoCreatorField"><span>'+esc(tr('Buscar ingrediente existente','Search existing ingredient'))+'</span><input data-creator-ingredient-search autocomplete="off" placeholder="'+esc(tr('Escribe cebolla, tomate, harina…','Type onion, tomato, flour…'))+'"></label>'+
+        '<div class="nexoCreatorIngredientResults" data-creator-ingredient-results><p>'+esc(tr('Escribe para buscar entre los ingredientes disponibles en este Workspace.','Type to search ingredients available in this Workspace.'))+'</p></div>'+
+      '</div>'+
+      '<div class="nexoCreatorIngredientOr"><span>'+esc(tr('o','or'))+'</span></div>'+
+      '<div class="nexoCreatorNewIngredient">'+
+        '<button type="button" class="nexoWorkspaceBtn wide" data-creator-new-ingredient-toggle>'+icon('nuevo')+'<span>'+esc(tr('Crear ingrediente nuevo','Create new ingredient'))+'</span></button>'+
+        '<div class="nexoCreatorNewIngredientForm" data-creator-new-ingredient-form hidden>'+
+          '<div class="nexoCreatorTwoCols">'+
+            '<label class="nexoCreatorField"><span>'+esc(tr('Nombre en español','Name in Spanish'))+'</span><input data-new-ingredient-es maxlength="160" autocomplete="off"></label>'+
+            '<label class="nexoCreatorField"><span>'+esc(tr('Nombre en inglés','Name in English'))+'</span><input data-new-ingredient-en maxlength="160" autocomplete="off"></label>'+
+          '</div>'+
+          '<div class="nexoCreatorTwoCols">'+
+            '<label class="nexoCreatorField"><span>'+esc(tr('Descripción en español · opcional','Description in Spanish · optional'))+'</span><textarea data-new-ingredient-description-es maxlength="1000" rows="2"></textarea></label>'+
+            '<label class="nexoCreatorField"><span>'+esc(tr('Descripción en inglés · opcional','Description in English · optional'))+'</span><textarea data-new-ingredient-description-en maxlength="1000" rows="2"></textarea></label>'+
+          '</div>'+
+          '<button type="button" class="nexoWorkspaceBtn primary" data-creator-add-new-ingredient>'+esc(tr('Añadir ingrediente nuevo','Add new ingredient'))+'</button>'+
+        '</div>'+
+      '</div>'+
+    '</section>'+
+    '<section class="nexoCreatorIngredientListWrap">'+
+      '<div class="nexoCreatorIngredientListHead"><strong>'+esc(tr('Ingredientes de la ficha','Sheet ingredients'))+'</strong><span>'+esc(tr('Cantidad, unidad y nota pueden editarse aquí.','Quantity, unit and note can be edited here.'))+'</span></div>'+
+      '<div class="nexoCreatorIngredientList" data-creator-ingredient-list></div>'+
+    '</section>'+
+    '<div class="nexoCreatorStatus" data-creator-status aria-live="polite"></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-back-two>'+esc(tr('← Etapa 2','← Stage 2'))+'</button><button type="button" class="nexoWorkspaceBtn" data-creator-save-close>'+esc(tr('Guardar y cerrar','Save & close'))+'</button><button type="submit" class="nexoWorkspaceBtn primary">'+esc(tr('Guardar y continuar','Save & continue'))+'</button></div>'+
+  '</form>'
+}
+function creatorStageThreeRow(row,index,total){
+  const name=creatorComponentDisplay(row);
+  const image=creatorIngredientImage(row);
+  const source=row.ingredientSource==='new'?tr('Nuevo','New'):tr('Existente','Existing');
+  const qty=row.quantity===null||row.quantity===undefined?'':String(row.quantity);
+  const unit=String(row.unitEs||row.unitEn||'');
+  return '<article class="nexoCreatorIngredientRow" data-creator-component-id="'+esc(row.draftId)+'">'+
+    '<div class="nexoCreatorIngredientIdentity">'+
+      '<div class="nexoCreatorIngredientThumb">'+(image?'<img src="'+esc(image)+'" alt="">':icon(row.ingredientSource==='new'?'nuevo':'producto'))+'</div>'+
+      '<div><span class="nexoCreatorIngredientSource">'+esc(source)+'</span><strong>'+esc(name)+'</strong></div>'+
+      '<div class="nexoCreatorIngredientOrder">'+
+        '<button type="button" data-ingredient-up title="'+esc(tr('Subir','Move up'))+'" '+(index===0?'disabled':'')+'>↑</button>'+
+        '<button type="button" data-ingredient-down title="'+esc(tr('Bajar','Move down'))+'" '+(index===total-1?'disabled':'')+'>↓</button>'+
+        '<button type="button" data-ingredient-remove title="'+esc(tr('Eliminar','Remove'))+'">×</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="nexoCreatorIngredientFields">'+
+      '<label class="nexoCreatorField"><span>'+esc(tr('Cantidad','Quantity'))+'</span><input data-ingredient-quantity type="number" min="0" step="any" inputmode="decimal" value="'+esc(qty)+'" placeholder="0"></label>'+
+      '<label class="nexoCreatorField"><span>'+esc(tr('Unidad','Unit'))+'</span><input data-ingredient-unit maxlength="40" value="'+esc(unit)+'" placeholder="g, ml, oz…"></label>'+
+      '<label class="nexoCreatorField nexoCreatorIngredientNote"><span>'+esc(tr('Nota ES','Note ES'))+'</span><input data-ingredient-note-es maxlength="500" value="'+esc(row.noteEs||'')+'" placeholder="'+esc(tr('Ej. picado fino','E.g. finely chopped'))+'"></label>'+
+      '<label class="nexoCreatorField nexoCreatorIngredientNote"><span>'+esc(tr('Nota EN','Note EN'))+'</span><input data-ingredient-note-en maxlength="500" value="'+esc(row.noteEn||'')+'" placeholder="E.g. finely chopped"></label>'+
+    '</div>'+
+  '</article>'
+}
+function creatorCurrentComponents(){
+  const draft=readCreatorDraft()||{};
+  return Array.isArray(draft.components)?draft.components:[]
+}
+function saveCreatorComponents(ingredients,{complete=false}={}){
+  const draft=readCreatorDraft()||{};
+  const others=(Array.isArray(draft.components)?draft.components:[]).filter(row=>String(row?.componentType||'').toUpperCase()!=='INGREDIENT');
+  const ordered=ingredients.map((row,index)=>({...row,componentType:'INGREDIENT',sortOrder:index+1}));
+  const next={...draft,components:[...ordered,...others],stage:complete?Math.max(3,Number(draft.stage||0)):Math.max(3,Number(draft.stage||0)),schemaVersion:3,updatedAt:new Date().toISOString()};
+  saveCreatorDraft(next);
+  return next
+}
+function readStageThreeRows(form){
+  const draft=readCreatorDraft()||{};
+  const previous=new Map(creatorIngredientComponents(draft).map(row=>[String(row.draftId),row]));
+  const rows=[];
+  form.querySelectorAll('[data-creator-component-id]').forEach((el,index)=>{
+    const id=String(el.dataset.creatorComponentId||'');
+    const base=previous.get(id);
+    if(!base)return;
+    const qtyRaw=String(el.querySelector('[data-ingredient-quantity]')?.value||'').trim();
+    const quantity=qtyRaw===''?null:Number(qtyRaw);
+    const unit=creatorNormalizeComponentUnit(el.querySelector('[data-ingredient-unit]')?.value||'');
+    rows.push({
+      ...base,
+      componentType:'INGREDIENT',
+      quantity:Number.isFinite(quantity)?quantity:null,
+      unitEs:unit.es,
+      unitEn:unit.en,
+      noteEs:String(el.querySelector('[data-ingredient-note-es]')?.value||'').trim(),
+      noteEn:String(el.querySelector('[data-ingredient-note-en]')?.value||'').trim(),
+      sortOrder:index+1
+    })
+  });
+  return rows
+}
+function renderStageThreeRows(form){
+  const list=form.querySelector('[data-creator-ingredient-list]');
+  const countEl=form.querySelector('[data-creator-ingredient-count]');
+  const rows=creatorIngredientComponents(readCreatorDraft()||{});
+  if(countEl)countEl.textContent=rows.length+' '+tr(rows.length===1?'ingrediente':'ingredientes',rows.length===1?'ingredient':'ingredients');
+  if(!list)return;
+  if(!rows.length){
+    list.innerHTML='<div class="nexoCreatorIngredientEmpty">'+icon('ingrediente')+'<p>'+esc(tr('Todavía no has añadido ingredientes.','No ingredients added yet.'))+'</p></div>';
+    return
+  }
+  list.innerHTML=rows.map((row,index)=>creatorStageThreeRow(row,index,rows.length)).join('');
+  list.querySelectorAll('[data-creator-component-id]').forEach(el=>{
+    ['input','change'].forEach(type=>el.addEventListener(type,()=>{
+      const updated=readStageThreeRows(form);
+      saveCreatorComponents(updated)
+    }));
+    el.querySelector('[data-ingredient-remove]').onclick=()=>{
+      const id=String(el.dataset.creatorComponentId||'');
+      const updated=creatorIngredientComponents(readCreatorDraft()||{}).filter(row=>String(row.draftId)!==id);
+      saveCreatorComponents(updated);
+      renderStageThreeRows(form)
+    };
+    el.querySelector('[data-ingredient-up]').onclick=()=>{
+      const id=String(el.dataset.creatorComponentId||'');
+      const rows=creatorIngredientComponents(readCreatorDraft()||{});
+      const index=rows.findIndex(row=>String(row.draftId)===id);
+      if(index>0){[rows[index-1],rows[index]]=[rows[index],rows[index-1]];saveCreatorComponents(rows);renderStageThreeRows(form)}
+    };
+    el.querySelector('[data-ingredient-down]').onclick=()=>{
+      const id=String(el.dataset.creatorComponentId||'');
+      const rows=creatorIngredientComponents(readCreatorDraft()||{});
+      const index=rows.findIndex(row=>String(row.draftId)===id);
+      if(index>=0&&index<rows.length-1){[rows[index],rows[index+1]]=[rows[index+1],rows[index]];saveCreatorComponents(rows);renderStageThreeRows(form)}
+    }
+  })
+}
+function addExistingCreatorIngredient(form,ingredient){
+  const id=String(ingredient?._id||ingredient?.id||'');
+  if(!id)return;
+  const nameEs=String(ingredient.nameEs||'');
+  const nameEn=String(ingredient.nameEn||'');
+  const rows=creatorIngredientComponents(readCreatorDraft()||{});
+  rows.push({
+    draftId:creatorDraftId('component'),
+    componentType:'INGREDIENT',
+    ingredientSource:'existing',
+    targetIngredientId:id,
+    targetPreparationId:'',
+    targetRecipeId:'',
+    quantity:null,
+    unitEs:'',
+    unitEn:'',
+    displayEs:nameEs||nameEn,
+    displayEn:nameEn||nameEs,
+    noteEs:'',
+    noteEn:'',
+    sortOrder:rows.length+1
+  });
+  saveCreatorComponents(rows);
+  renderStageThreeRows(form);
+  const search=form.querySelector('[data-creator-ingredient-search]');
+  if(search){search.value='';renderIngredientSearchResults(form,'')}
+}
+function renderIngredientSearchResults(form,query){
+  const box=form.querySelector('[data-creator-ingredient-results]');
+  if(!box)return;
+  const q=String(query||'').trim();
+  if(!q){
+    box.innerHTML='<p>'+esc(tr('Escribe para buscar entre los ingredientes disponibles en este Workspace.','Type to search ingredients available in this Workspace.'))+'</p>';
+    return
+  }
+  const matches=creatorExistingIngredients().filter(row=>creatorIngredientMatches(row,q)).slice(0,12);
+  if(!matches.length){
+    box.innerHTML='<p>'+esc(tr('No hay coincidencias. Puedes crear este ingrediente como nuevo.','No matches. You can create this as a new ingredient.'))+'</p>';
+    return
+  }
+  box.innerHTML=matches.map(row=>{
+    const id=String(row._id||row.id||'');
+    const name=creatorIngredientName(row);
+    const sub=lang()==='en'?(row.nameEs||''):(row.nameEn||'');
+    const image=img((Array.isArray(row.images)?row.images[0]:null)||row.baseImage||'');
+    return '<button type="button" data-existing-ingredient="'+esc(id)+'">'+
+      '<span class="nexoCreatorIngredientSearchThumb">'+(image?'<img src="'+esc(image)+'" alt="">':icon('producto'))+'</span>'+
+      '<span><strong>'+esc(name)+'</strong>'+(sub&&sub!==name?'<small>'+esc(sub)+'</small>':'')+'</span>'+
+      '<b>'+esc(tr('Añadir','Add'))+'</b>'+
+    '</button>'
+  }).join('');
+  box.querySelectorAll('[data-existing-ingredient]').forEach(btn=>btn.onclick=()=>{
+    const ingredient=creatorExistingIngredients().find(row=>String(row._id||row.id||'')===String(btn.dataset.existingIngredient||''));
+    if(ingredient)addExistingCreatorIngredient(form,ingredient)
+  })
+}
+function addNewCreatorIngredient(form){
+  const status=form.querySelector('[data-creator-status]');
+  const nameEs=String(form.querySelector('[data-new-ingredient-es]')?.value||'').trim();
+  const nameEn=String(form.querySelector('[data-new-ingredient-en]')?.value||'').trim();
+  if(!nameEs&&!nameEn){
+    status.textContent=tr('Escribe al menos un nombre para el ingrediente nuevo.','Enter at least one name for the new ingredient.');
+    return
+  }
+  const names=[nameEs,nameEn].filter(Boolean).map(searchNorm);
+  const existing=creatorExistingIngredients().find(row=>{
+    const rowNames=[row.nameEs,row.nameEn].filter(Boolean).map(searchNorm);
+    return names.some(name=>rowNames.includes(name))
+  });
+  if(existing){
+    status.textContent=tr('Ese ingrediente ya existe. Añádelo desde la búsqueda para evitar duplicados.','That ingredient already exists. Add it from search to avoid duplicates.');
+    return
+  }
+  const draft=readCreatorDraft()||{};
+  const duplicateNew=creatorIngredientComponents(draft).some(row=>{
+    if(row.ingredientSource!=='new')return false;
+    const ing=row.newIngredient||{};
+    const rowNames=[ing.nameEs,ing.nameEn].filter(Boolean).map(searchNorm);
+    return names.some(name=>rowNames.includes(name))
+  });
+  if(duplicateNew){
+    status.textContent=tr('Ese ingrediente nuevo ya está en esta ficha.','That new ingredient is already in this sheet.');
+    return
+  }
+  const localIngredientId=creatorDraftId('ingredient');
+  const newIngredient={
+    draftId:localIngredientId,
+    nameEs:nameEs||nameEn,
+    nameEn:nameEn||nameEs,
+    descriptionEs:String(form.querySelector('[data-new-ingredient-description-es]')?.value||'').trim(),
+    descriptionEn:String(form.querySelector('[data-new-ingredient-description-en]')?.value||'').trim()
+  };
+  const rows=creatorIngredientComponents(draft);
+  rows.push({
+    draftId:creatorDraftId('component'),
+    componentType:'INGREDIENT',
+    ingredientSource:'new',
+    targetIngredientId:'',
+    targetPreparationId:'',
+    targetRecipeId:'',
+    newIngredient,
+    quantity:null,
+    unitEs:'',
+    unitEn:'',
+    displayEs:newIngredient.nameEs,
+    displayEn:newIngredient.nameEn,
+    noteEs:'',
+    noteEn:'',
+    sortOrder:rows.length+1
+  });
+  saveCreatorComponents(rows);
+  ['[data-new-ingredient-es]','[data-new-ingredient-en]','[data-new-ingredient-description-es]','[data-new-ingredient-description-en]'].forEach(sel=>{const el=form.querySelector(sel);if(el)el.value=''});
+  form.querySelector('[data-creator-new-ingredient-form]').hidden=true;
+  status.textContent=tr('Ingrediente nuevo añadido al borrador.','New ingredient added to draft.');
+  renderStageThreeRows(form)
+}
+function validateStageThree(form){
+  const status=form.querySelector('[data-creator-status]');
+  const rows=readStageThreeRows(form);
+  for(const row of rows){
+    if(row.quantity!==null&&(!Number.isFinite(row.quantity)||row.quantity<0)){
+      status.textContent=tr('Revisa las cantidades de los ingredientes.','Check ingredient quantities.');
+      return null
+    }
+  }
+  if(!rows.length){
+    status.textContent=tr('Añade al menos un ingrediente antes de continuar.','Add at least one ingredient before continuing.');
+    return null
+  }
+  return rows
+}
+function showStageThreeComplete(layerEl,draft){
+  const body=layerEl.querySelector('.nexoWorkspaceModalBody');
+  if(!body)return;
+  const rows=creatorIngredientComponents(draft);
+  body.innerHTML='<div class="nexoCreatorComplete">'+
+    '<div class="nexoWorkspaceEmptyIcon">'+icon('ingrediente')+'</div>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 3 de 8','Stage 3 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div>'+
+    '<h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3>'+
+    '<div class="nexoCreatorSummary"><div><span>'+esc(tr('Ingredientes','Ingredients'))+'</span><strong>'+rows.length+'</strong></div><div><span>'+esc(tr('Nuevos','New'))+'</span><strong>'+rows.filter(row=>row.ingredientSource==='new').length+'</strong></div></div>'+
+    '<p>'+esc(tr('Los insumos base quedaron guardados. En la Etapa 4 podrás convertir o añadir líneas como preparaciones reutilizables.','Base ingredients are saved. In Stage 4 you will be able to convert or add lines as reusable preparations.'))+'</p>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-edit-three>'+esc(tr('Editar etapa 3','Edit stage 3'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-creator-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+  '</div>';
+  body.querySelector('[data-creator-edit-three]').onclick=()=>openCreateStageThree();
+  body.querySelector('[data-creator-close]').onclick=closeLayer
+}
+function bindCreatorStageThree(layerEl,draft){
+  const form=layerEl.querySelector('[data-nexo-creator-stage-three]');
+  if(!form)return;
+  const search=form.querySelector('[data-creator-ingredient-search]');
+  ['input','keyup','search','change'].forEach(type=>search?.addEventListener(type,()=>renderIngredientSearchResults(form,search.value)));
+  const toggle=form.querySelector('[data-creator-new-ingredient-toggle]');
+  const newForm=form.querySelector('[data-creator-new-ingredient-form]');
+  toggle.onclick=()=>{newForm.hidden=!newForm.hidden;if(!newForm.hidden)form.querySelector('[data-new-ingredient-es]')?.focus()};
+  form.querySelector('[data-creator-add-new-ingredient]').onclick=()=>addNewCreatorIngredient(form);
+  form.querySelector('[data-creator-back-two]').onclick=()=>{
+    const rows=readStageThreeRows(form);
+    saveCreatorComponents(rows);
+    openCreateStageTwo()
+  };
+  form.querySelector('[data-creator-save-close]').onclick=()=>{
+    const rows=readStageThreeRows(form);
+    saveCreatorComponents(rows);
+    closeLayer()
+  };
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const rows=validateStageThree(form);
+    if(!rows)return;
+    const next=saveCreatorComponents(rows,{complete:true});
+    showStageThreeComplete(layerEl,next)
+  });
+  renderStageThreeRows(form)
+}
+function openCreateStageThree(){
+  if(!canCreate())return;
+  const draft=readCreatorDraft()||{};
+  if(Number(draft.stage||0)<2){openCreateStageTwo();return}
+  const next={...draft,stage:Math.max(3,Number(draft.stage||0)),schemaVersion:3,updatedAt:new Date().toISOString()};
+  saveCreatorDraft(next);
+  const el=layer(tr('Crear ficha técnica','Create technical sheet'),creatorStageThreeMarkup(next));
+  el.querySelector('.nexoWorkspaceModal')?.classList.add('nexoCreatorModalWide','nexoCreatorModalIngredients');
+  bindCreatorStageThree(el,next)
+}
+
 function openCreateFlow(){
   if(!canCreate())return;
   const draft=readCreatorDraft();
+  if(draft&&Number(draft.stage||0)>=3&&draft.title&&draft.collectionId){openCreateStageThree();return}
   if(draft&&Number(draft.stage||0)>=2&&draft.title&&draft.collectionId){openCreateStageTwo();return}
   openCreateStageOne()
 }
