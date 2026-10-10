@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-48';
+const VERSION='20261009-49';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1405,10 +1405,27 @@ function detailPlanPrice(plan){
   if(!names[interval])return money;
   return money+' / '+(count>1?count+' '+names[interval]+'s':names[interval])
 }
+function detailPackagePrice(pkg){
+  const model=String(pkg?.pricingModel||'').toUpperCase();
+  if(model==='FREE')return'Gratis';
+  const currency=String(pkg?.currency||'USD').toUpperCase();
+  const amount=Number(pkg?.amountMinor);
+  if(!Number.isInteger(amount)||amount<0)return'';
+  let money='';
+  try{money=new Intl.NumberFormat('es-US',{style:'currency',currency}).format(amount/100)}
+  catch(_){money=(amount/100).toFixed(2)+' '+currency}
+  if(model!=='SUBSCRIPTION')return money;
+  const interval=String(pkg?.billingInterval||'').toUpperCase();
+  const count=Number(pkg?.billingIntervalCount||1);
+  const names={DAY:'día',WEEK:'semana',MONTH:'mes',YEAR:'año'};
+  if(!names[interval])return money;
+  return money+' / '+(count>1?count+' '+names[interval]+'s':names[interval])
+}
 function detailCommercial(commercial){
   const offers=Array.isArray(commercial?.offers)?commercial.offers:[];
   const plans=Array.isArray(commercial?.plans)?commercial.plans:[];
-  if(!offers.length&&!plans.length)return'';
+  const packages=Array.isArray(commercial?.packages)?commercial.packages:[];
+  if(!offers.length&&!plans.length&&!packages.length)return'';
 
   const offersHtml=offers.length
     ? '<section class="nxo-dev-detail-card">'+
@@ -1449,7 +1466,31 @@ function detailCommercial(commercial){
       '</section>'
     : '';
 
-  return offersHtml+plansHtml
+  const packagesHtml=packages.length
+    ? '<section class="nxo-dev-detail-card">'+
+        '<h3>Disponible en paquetes</h3>'+
+        '<div style="display:grid;gap:9px">'+
+          packages.map(pkg=>{
+            const price=detailPackagePrice(pkg);
+            const type=String(pkg?.packageType||'').toUpperCase();
+            const typeLabel=type==='FLEXIBLE'?'Flexible':type==='CURATED'?'Curado':'Fijo';
+            const capacity=type==='FLEXIBLE'&&Number(pkg?.capacityUnits)>0
+              ? ' · '+String(pkg.capacityUnits)+' '+escapeHtml(pkg?.allocationUnit||'unidades')
+              : '';
+            return '<div style="padding:10px 0;border-bottom:1px solid var(--nxo-border)">'+
+              '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'+
+                '<strong style="font-size:12px">'+escapeHtml(pkg?.nameEs||pkg?.packageKey||'Paquete Nexo')+'</strong>'+
+                (price?'<strong style="font-size:12px;color:var(--nxo-accent)">'+escapeHtml(price)+'</strong>':'')+
+              '</div>'+
+              '<p style="margin:6px 0 0;color:var(--nxo-text-muted);font-size:10px">'+escapeHtml(typeLabel+capacity)+'</p>'+
+              (pkg?.descriptionEs?'<p style="margin:6px 0 0;color:var(--nxo-text-secondary);font-size:11px;line-height:1.45">'+escapeHtml(pkg.descriptionEs)+'</p>':'')+
+            '</div>'
+          }).join('')+
+        '</div>'+
+      '</section>'
+    : '';
+
+  return offersHtml+plansHtml+packagesHtml
 }
 
 function detailRelated(items){
