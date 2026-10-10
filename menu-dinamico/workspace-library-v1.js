@@ -7,6 +7,7 @@ const modalRoot=document.getElementById('modal');
 if(!view||!modalRoot)return;
 
 let activeTab='collections';
+const pendingCollectionRequests=new Map();
 
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],collections:[],context:{},capabilities:{}};
 const lang=()=>document.documentElement.lang==='en'?'en':'es';
@@ -124,7 +125,7 @@ function renderBody(root){
 }
 
 function bindActions(scope){
-  scope.querySelectorAll('[data-nexo-create]').forEach(btn=>btn.onclick=openCreatePreview);
+  scope.querySelectorAll('[data-nexo-create]').forEach(btn=>btn.onclick=openCreateStageOne);
   scope.querySelectorAll('[data-nexo-import]').forEach(btn=>btn.onclick=openImport);
 }
 
@@ -172,8 +173,167 @@ function layer(title,body){
   return el;
 }
 
-function openCreatePreview(){
-  layer(tr('Crear ficha técnica','Create technical sheet'),'<div class="nexoWorkspacePreview"><div class="nexoWorkspaceEmptyIcon">'+icon('nuevo')+'</div><h3>'+esc(tr('Creador de fichas en preparación','Technical sheet creator is being prepared'))+'</h3><p>'+esc(tr('Este botón utilizará el mismo motor dinámico para crear platos, preparaciones, productos, componentes, MOP, batches, traducciones y demás estructura. Por ahora queda como prevista.','This button will use the same dynamic engine to create dishes, preparations, products, components, MOP, batches, translations and the rest of the structure. For now it is a preview.'))+'</p></div>');
+function creatorDraftKey(){
+  return 'nexo:fichas:create-draft:v1:'+(context().workspaceId||context().id||'workspace');
+}
+function readCreatorDraft(){
+  try{
+    const raw=localStorage.getItem(creatorDraftKey());
+    const value=raw?JSON.parse(raw):null;
+    return value&&typeof value==='object'?value:null
+  }catch(_){return null}
+}
+function saveCreatorDraft(value){
+  try{localStorage.setItem(creatorDraftKey(),JSON.stringify(value))}catch(_){}
+}
+function collectionsForCreator(){
+  return (data().collections||[])
+    .filter(row=>row&&row.active!==false)
+    .sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)||String(a.name||'').localeCompare(String(b.name||''),'es'))
+}
+function requestCollectionCreate(input){
+  const requestId='collection_create_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  return new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{
+      pendingCollectionRequests.delete(requestId);
+      reject(new Error(tr('La creación de la colección tardó demasiado.','Collection creation timed out.')))
+    },30000);
+    pendingCollectionRequests.set(requestId,{resolve,reject,timer});
+    parent.postMessage({
+      type:'NEXO_DM_CREATE_COLLECTION',
+      payload:{requestId,input}
+    },'*')
+  })
+}
+function creatorCollectionOptions(selectedId){
+  const rows=collectionsForCreator();
+  return rows.map(row=>
+    '<option value="'+esc(row.id)+'" '+(String(row.id)===String(selectedId)?'selected':'')+'>'+esc(row.name||tr('Colección','Collection'))+'</option>'
+  ).join('')
+}
+function creatorStageOneMarkup(draft={}){
+  const rows=collectionsForCreator();
+  const requested=String(draft.collectionId||'');
+  const hasRequested=rows.some(row=>String(row.id)===requested);
+  const selected=hasRequested?requested:(rows[0]?.id||'__new__');
+  const newMode=selected==='__new__'||!rows.length;
+  const recipeType=String(draft.recipeType||'DISH').toUpperCase()==='SUBRECIPE'?'SUBRECIPE':'DISH';
+  return '<form class="nexoCreatorStage" data-nexo-creator-stage-one novalidate>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 1 de 8','Stage 1 of 8'))+'</span><strong>'+esc(tr('Nueva ficha + colección','New sheet + collection'))+'</strong></div>'+
+    '<p class="nexoCreatorIntro">'+esc(tr('Define la identidad básica de la ficha. La receta completa no se escribirá en Wix hasta la etapa final.','Define the basic sheet identity. The complete recipe will not be written to Wix until the final stage.'))+'</p>'+
+    '<label class="nexoCreatorField"><span>'+esc(tr('Nombre de la ficha','Sheet name'))+'</span><input data-creator-title maxlength="160" autocomplete="off" required value="'+esc(draft.title||'')+'" placeholder="'+esc(tr('Ej. Aderezo César','E.g. Caesar Dressing'))+'"></label>'+
+    '<fieldset class="nexoCreatorField nexoCreatorType"><legend>'+esc(tr('Tipo de ficha','Sheet type'))+'</legend>'+
+      '<button type="button" data-creator-type="DISH" class="'+(recipeType==='DISH'?'active':'')+'"><strong>'+esc(tr('Plato / producto final','Dish / final product'))+'</strong><small>'+esc(tr('Ficha final que puede usar ingredientes y preparaciones.','Final sheet that can use ingredients and preparations.'))+'</small></button>'+
+      '<button type="button" data-creator-type="SUBRECIPE" class="'+(recipeType==='SUBRECIPE'?'active':'')+'"><strong>'+esc(tr('Preparación / subproducto','Preparation / subproduct'))+'</strong><small>'+esc(tr('Preparación reutilizable que después puede vincularse a otros platos.','Reusable preparation that can later be linked to other dishes.'))+'</small></button>'+
+      '<input type="hidden" data-creator-recipe-type value="'+esc(recipeType)+'">'+
+    '</fieldset>'+
+    '<label class="nexoCreatorField"><span>'+esc(tr('Colección','Collection'))+'</span><select data-creator-collection>'+
+      creatorCollectionOptions(selected)+
+      '<option value="__new__" '+(newMode?'selected':'')+'>'+esc(tr('+ Crear una nueva colección','+ Create a new collection'))+'</option>'+
+    '</select></label>'+
+    '<div class="nexoCreatorNewCollection" data-creator-new-collection '+(newMode?'':'hidden')+'>'+
+      '<label class="nexoCreatorField"><span>'+esc(tr('Nombre de la nueva colección','New collection name'))+'</span><input data-creator-collection-name maxlength="120" autocomplete="off" value="'+esc(draft.pendingCollectionName||'')+'" placeholder="'+esc(tr('Ej. Menú de temporada','E.g. Seasonal menu'))+'"></label>'+
+      '<label class="nexoCreatorField"><span>'+esc(tr('Descripción opcional','Optional description'))+'</span><textarea data-creator-collection-description maxlength="1000" rows="3" placeholder="'+esc(tr('Describe qué fichas agrupará esta colección.','Describe what this collection will contain.'))+'">'+esc(draft.pendingCollectionDescription||'')+'</textarea></label>'+
+    '</div>'+
+    '<div class="nexoCreatorStatus" data-creator-status aria-live="polite"></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-cancel>'+esc(tr('Cancelar','Cancel'))+'</button><button type="submit" class="nexoWorkspaceBtn primary" data-creator-continue>'+esc(tr('Continuar','Continue'))+'</button></div>'+
+  '</form>'
+}
+function showStageOneComplete(layerEl,draft){
+  const body=layerEl.querySelector('.nexoWorkspaceModalBody');
+  if(!body)return;
+  body.innerHTML='<div class="nexoCreatorComplete">'+
+    '<div class="nexoWorkspaceEmptyIcon">'+icon('ficha-tecnica')+'</div>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 1 de 8','Stage 1 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div>'+
+    '<h3>'+esc(draft.title)+'</h3>'+
+    '<div class="nexoCreatorSummary">'+
+      '<div><span>'+esc(tr('Tipo','Type'))+'</span><strong>'+esc(draft.recipeType==='DISH'?tr('Plato / producto final','Dish / final product'):tr('Preparación / subproducto','Preparation / subproduct'))+'</strong></div>'+
+      '<div><span>'+esc(tr('Colección','Collection'))+'</span><strong>'+esc(draft.collectionName||draft.collectionId)+'</strong></div>'+
+    '</div>'+
+    '<p>'+esc(tr('El borrador quedó preparado para la Etapa 2: Editor principal. Todavía no se creó una receta incompleta en Wix.','The draft is ready for Stage 2: Main editor. No incomplete recipe has been created in Wix yet.'))+'</p>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-edit>'+esc(tr('Editar etapa 1','Edit stage 1'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-creator-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+  '</div>';
+  body.querySelector('[data-creator-edit]').onclick=()=>openCreateStageOne();
+  body.querySelector('[data-creator-close]').onclick=closeLayer
+}
+function bindCreatorStageOne(layerEl,draft={}){
+  const form=layerEl.querySelector('[data-nexo-creator-stage-one]');
+  if(!form)return;
+  const typeInput=form.querySelector('[data-creator-recipe-type]');
+  form.querySelectorAll('[data-creator-type]').forEach(btn=>btn.onclick=()=>{
+    form.querySelectorAll('[data-creator-type]').forEach(x=>x.classList.toggle('active',x===btn));
+    typeInput.value=btn.dataset.creatorType||'DISH'
+  });
+  const collectionSelect=form.querySelector('[data-creator-collection]');
+  const newCollection=form.querySelector('[data-creator-new-collection]');
+  const syncCollectionMode=()=>{newCollection.hidden=collectionSelect.value!=='__new__'};
+  collectionSelect.addEventListener('change',syncCollectionMode);
+  syncCollectionMode();
+  form.querySelector('[data-creator-cancel]').onclick=closeLayer;
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const title=String(form.querySelector('[data-creator-title]')?.value||'').trim();
+    const recipeType=String(typeInput.value||'DISH').toUpperCase()==='SUBRECIPE'?'SUBRECIPE':'DISH';
+    const status=form.querySelector('[data-creator-status]');
+    const submit=form.querySelector('[data-creator-continue]');
+    if(!title){
+      status.textContent=tr('Escribe el nombre de la ficha.','Enter the sheet name.');
+      form.querySelector('[data-creator-title]')?.focus();
+      return
+    }
+    let collectionId=String(collectionSelect.value||'');
+    let collectionName='';
+    if(collectionId==='__new__'){
+      const name=String(form.querySelector('[data-creator-collection-name]')?.value||'').trim();
+      const description=String(form.querySelector('[data-creator-collection-description]')?.value||'').trim();
+      if(!name){
+        status.textContent=tr('Escribe el nombre de la nueva colección.','Enter the new collection name.');
+        form.querySelector('[data-creator-collection-name]')?.focus();
+        return
+      }
+      submit.disabled=true;
+      status.textContent=tr('Creando colección…','Creating collection…');
+      try{
+        const result=await requestCollectionCreate({name,description});
+        const created=result?.collection||result;
+        if(!created?.id)throw new Error(tr('Wix no devolvió la colección creada.','Wix did not return the created collection.'));
+        const rows=data().collections||(data().collections=[]);
+        if(!rows.some(row=>String(row?.id)===String(created.id)))rows.push({...created,active:created.active!==false});
+        collectionId=String(created.id);
+        collectionName=String(created.name||name)
+      }catch(error){
+        submit.disabled=false;
+        status.textContent=String(error?.message||error||tr('No se pudo crear la colección.','Could not create collection.'));
+        return
+      }
+    }else{
+      const selected=collectionsForCreator().find(row=>String(row.id)===collectionId);
+      if(!selected){
+        status.textContent=tr('Selecciona una colección válida.','Select a valid collection.');
+        return
+      }
+      collectionName=String(selected.name||collectionId)
+    }
+    const nextDraft={
+      schemaVersion:1,
+      stage:1,
+      title,
+      recipeType,
+      collectionId,
+      collectionName,
+      workspaceId:String(context().workspaceId||''),
+      workspaceName:String(context().workspaceName||''),
+      updatedAt:new Date().toISOString()
+    };
+    saveCreatorDraft(nextDraft);
+    showStageOneComplete(layerEl,nextDraft)
+  })
+}
+function openCreateStageOne(){
+  if(!canCreate())return;
+  const draft=readCreatorDraft()||{};
+  const el=layer(tr('Crear ficha técnica','Create technical sheet'),creatorStageOneMarkup(draft));
+  bindCreatorStageOne(el,draft)
 }
 
 function openImport(){
@@ -193,6 +353,17 @@ window.addEventListener('message',e=>{
   let m=e.data;
   if(typeof m==='string')try{m=JSON.parse(m)}catch{return}
   if(!m?.type)return;
+  if(m.type==='NEXO_DM_COLLECTION_CREATED'||m.type==='NEXO_DM_COLLECTION_ERROR'){
+    const p=m.payload||{};
+    const wait=pendingCollectionRequests.get(String(p.requestId||''));
+    if(wait){
+      clearTimeout(wait.timer);
+      pendingCollectionRequests.delete(String(p.requestId||''));
+      if(m.type==='NEXO_DM_COLLECTION_CREATED'&&p.ok!==false)wait.resolve(p.collection||p.data||p);
+      else wait.reject(new Error(String(p.error||tr('No se pudo crear la colección.','Could not create collection.'))))
+    }
+    return
+  }
   if(m.type==='MENU_DATA_LOADED')setTimeout(enhanceRoot,0);
 });
 
