@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-43';
+const VERSION='20261009-44';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -465,18 +465,23 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
 .nxo-dev-detail-scroll::-webkit-scrollbar{display:none;width:0;height:0}
 .nxo-dev-detail-back{
   appearance:none;
-  border:1px solid var(--nxo-border);
-  border-radius:12px;
+  width:38px;height:38px;padding:0;
+  display:grid;place-items:center;
+  border:1px solid color-mix(in srgb,var(--nxo-text-primary) 12%,var(--nxo-border));
+  border-radius:11px;
   background:var(--nxo-surface-glass);
   color:var(--nxo-text-primary);
-  padding:9px 12px;
-  font:760 11px/1 Inter,system-ui,sans-serif;
   cursor:pointer;
   box-shadow:0 7px 18px var(--nxo-shadow)
 }
+.nxo-dev-detail-back img{
+  display:block;width:18px;height:18px;object-fit:contain
+}
 .nxo-dev-detail-back:hover,.nxo-dev-detail-back:focus-visible{
   outline:none;
-  border-color:var(--nxo-border-strong);
+  background:var(--nxo-interaction);
+  border-color:var(--nxo-interaction);
+  color:var(--nxo-interaction-contrast);
   transform:translateY(-1px)
 }
 .nxo-dev-detail-hero{
@@ -1077,7 +1082,10 @@ function ensureHeader(){
     quickButton.setAttribute('aria-expanded','false');
     syncQuickTheme()
   });
-  header.querySelector('#nxo-dev-back').addEventListener('click',goBack);
+  header.querySelector('#nxo-dev-back').addEventListener('click',()=>{
+    if(toolDetailIsOpen()){closeToolDetail();return}
+    goBack()
+  });
   header.querySelector('#nxo-dev-brand-home').addEventListener('click',goMySpace);
   quickMenuOutsideHandler=event=>{
     if(!header.contains(event.target)){
@@ -1227,6 +1235,9 @@ function bindFeatureInterception(){
   if(window.__nexoDevFeatureKeyHandler){
     document.removeEventListener('keydown',window.__nexoDevFeatureKeyHandler)
   }
+  if(window.__nexoDevDetailPopstateHandler){
+    window.removeEventListener('popstate',window.__nexoDevDetailPopstateHandler)
+  }
 
   window.__nexoDevFeatureClickHandler=function(event){
     const card=event.target?.closest?.('[data-nxo-dev-card="1"]');
@@ -1260,14 +1271,29 @@ function bindFeatureInterception(){
     }
   };
 
+  window.__nexoDevDetailPopstateHandler=function(){
+    if(toolDetailIsOpen()){
+      closeToolDetail({fromHistory:true})
+    }
+  };
+
   document.addEventListener('click',window.__nexoDevFeatureClickHandler,true);
-  document.addEventListener('keydown',window.__nexoDevFeatureKeyHandler)
+  document.addEventListener('keydown',window.__nexoDevFeatureKeyHandler);
+  window.addEventListener('popstate',window.__nexoDevDetailPopstateHandler)
 }
 
 let detailRequestId=0;
 let lastDetailTrigger=null;
 let installState=null;
 let installBusy=false;
+let detailHistoryArmed=false;
+
+function armToolDetailHistory(){
+  if(detailHistoryArmed)return;
+  const current=history.state&&typeof history.state==='object'?history.state:{};
+  history.pushState({...current,nxoDevDetail:true},'',location.href);
+  detailHistoryArmed=true
+}
 
 function ensureToolDetailView(){
   const app=ensureDevelopmentApp();
@@ -1279,7 +1305,9 @@ function ensureToolDetailView(){
   view.hidden=true;
   view.innerHTML=
     '<div class="nxo-dev-detail-scroll">'+
-      '<button type="button" class="nxo-dev-detail-back" id="nxo-dev-detail-back">← Volver al catálogo</button>'+
+      '<button type="button" class="nxo-dev-detail-back" id="nxo-dev-detail-back" aria-label="Volver al catálogo" title="Volver">'+
+        '<img src="'+iconUrl('volver')+'" alt="">'+
+      '</button>'+
       '<div id="nxo-dev-detail-content"></div>'+
     '</div>';
   app.appendChild(view);
@@ -1610,6 +1638,7 @@ async function openToolDetail(tool,trigger){
   const view=ensureToolDetailView();
   const content=view.querySelector('#nxo-dev-detail-content');
 
+  armToolDetailHistory();
   if(shell)shell.hidden=true;
   view.hidden=false;
   content.innerHTML='<div class="nxo-dev-detail-loading">Cargando ficha de herramienta…</div>';
@@ -1626,7 +1655,13 @@ async function openToolDetail(tool,trigger){
   }
 }
 
-function closeToolDetail(){
+function closeToolDetail({fromHistory=false}={}){
+  if(!fromHistory&&detailHistoryArmed&&history.state?.nxoDevDetail===true){
+    history.back();
+    return
+  }
+
+  detailHistoryArmed=false;
   installState=null;
   installBusy=false;
   const app=document.getElementById('nxo-dev-app');
