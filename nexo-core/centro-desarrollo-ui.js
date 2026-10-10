@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-46';
+const VERSION='20261009-47';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1574,32 +1574,60 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
   if(!selected)selected=destinations[0];
   installState={tool,options,selectedKey:destinationKey(selected)};
 
+  const accessLabel=destination=>{
+    if(destination?.entitled)return 'Acceso activo';
+    if(destination?.freeAvailable)return 'Gratis disponible';
+    if(destination?.reason==='NO_TOOLS_CONFIGURE_PERMISSION')return 'Sin permiso';
+    if(destination?.reason==='ENTITLEMENT_REQUIRED')return 'Acceso requerido';
+    return ''
+  };
   const destinationHtml=destinations.map(destination=>{
     const key=destinationKey(destination);
     const isSelected=key===installState.selectedKey;
-    const unavailable=!destination.installed&&!destination.canInstall;
+    const unavailable=!destination.canOpen&&!destination.canInstall;
+    const access=accessLabel(destination);
     const subtitle=destination.installed
-      ? 'Ya instalada'
-      : unavailable
-        ? 'Sin permiso para instalar'
-        : destination.type==='workspace'?'Workspace':'Espacio personal';
+      ? (destination.entitled?'Instalada · acceso activo':'Instalada · '+(access||'acceso pendiente'))
+      : destination.entitled
+        ? 'Acceso disponible'
+        : destination.freeAvailable
+          ? 'Oferta gratuita disponible'
+          : destination.reason==='NO_TOOLS_CONFIGURE_PERMISSION'
+            ? 'Sin permiso para configurar herramientas'
+            : destination.reason==='ENTITLEMENT_REQUIRED'
+              ? 'Necesitas una forma de acceso'
+              : destination.type==='workspace'?'Workspace':'Espacio personal';
     return '<button type="button" class="nxo-dev-install-destination'+(isSelected?' selected':'')+'" data-install-destination="'+escapeHtml(key)+'" '+(unavailable?'disabled':'')+'>'+
       '<span><strong>'+escapeHtml(destination.name)+'</strong><small>'+escapeHtml(subtitle)+'</small></span>'+
-      (destination.installed?'<span class="nxo-dev-install-badge">Instalada</span>':'')+
+      (destination.installed?'<span class="nxo-dev-install-badge">Instalada</span>':(destination.entitled?'<span class="nxo-dev-install-badge">Con acceso</span>':''))+
     '</button>'
   }).join('');
 
-  const action=selected.installed
-    ? '<button type="button" class="nxo-dev-install-open" id="nxo-dev-install-open">Abrir herramienta</button>'
-    : selected.canInstall
-      ? '<button type="button" class="nxo-dev-install-primary" id="nxo-dev-install-primary" '+(installBusy?'disabled':'')+'>'+(installBusy?'Instalando…':'Instalar aquí')+'</button>'
-      : '';
+  let action='';
+  if(selected.canOpen){
+    action='<button type="button" class="nxo-dev-install-open" id="nxo-dev-install-open">Abrir herramienta</button>'
+  }else if(selected.canInstall){
+    const freeActivation=selected.installed&&selected.freeAvailable&&!selected.entitled;
+    action='<button type="button" class="nxo-dev-install-primary" id="nxo-dev-install-primary" '+(installBusy?'disabled':'')+'>'+
+      (installBusy?'Activando…':(freeActivation?'Activar acceso gratis':'Instalar aquí'))+
+    '</button>'
+  }
+
+  const stateLabel=selected.canOpen
+    ? 'Acceso activo'
+    : selected.freeAvailable
+      ? 'Gratis disponible'
+      : selected.entitled
+        ? 'Acceso activo'
+        : selected.reason==='ENTITLEMENT_REQUIRED'
+          ? 'Acceso requerido'
+          : selected.installed?'Instalada':'Pendiente';
 
   zone.innerHTML=
     '<section class="nxo-dev-install-card">'+
       '<div class="nxo-dev-install-head">'+
-        '<div><h3>Instalación</h3><p>Elige dónde quieres agregar esta herramienta.</p></div>'+
-        '<span class="nxo-dev-install-state">'+escapeHtml(selected.installed?'Instalada':'Lista para instalar')+'</span>'+
+        '<div><h3>Instalación y acceso</h3><p>Elige el destino. El derecho de acceso y la instalación se validan por separado.</p></div>'+
+        '<span class="nxo-dev-install-state">'+escapeHtml(stateLabel)+'</span>'+
       '</div>'+
       '<div class="nxo-dev-install-destinations">'+destinationHtml+'</div>'+
       '<div class="nxo-dev-install-actions">'+
@@ -1618,7 +1646,7 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
   zone.querySelector('#nxo-dev-install-primary')?.addEventListener('click',async()=>{
     if(installBusy||!installState)return;
     const destination=destinations.find(x=>destinationKey(x)===installState.selectedKey);
-    if(!destination||destination.installed||!destination.canInstall)return;
+    if(!destination||!destination.canInstall||destination.canOpen)return;
 
     installBusy=true;
     renderInstallZone(tool,options,installState.selectedKey,'','');
@@ -1636,7 +1664,12 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
       renderInstallZone(tool,refreshed,destinationKey(destination),'Herramienta instalada correctamente.','success')
     }catch(error){
       installBusy=false;
-      renderInstallZone(tool,options,destinationKey(destination),error?.code==='AUTH_REQUIRED'?'Inicia sesión para instalar esta herramienta.':(error?.message||'No se pudo instalar.'),'error')
+      const errorMessage=error?.code==='AUTH_REQUIRED'
+        ? 'Inicia sesión para instalar esta herramienta.'
+        : error?.code==='ENTITLEMENT_REQUIRED'
+          ? 'Necesitas una forma de acceso válida antes de instalar esta herramienta.'
+          : (error?.message||'No se pudo instalar.');
+      renderInstallZone(tool,options,destinationKey(destination),errorMessage,'error')
     }
   },{signal:runtimeAbort.signal});
 
