@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261010-51';
+const VERSION='20261010-52';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1307,9 +1307,45 @@ let lastDetailTrigger=null;
 let installState=null;
 let installBusy=false;
 let detailHistoryArmed=false;
+let detailCatalogScrollTop=0;
+let detailPreviousScrollRestoration=null;
+
+function resetDevelopmentDocumentScroll(){
+  try{window.scrollTo({left:0,top:0,behavior:'auto'})}
+  catch(_){try{window.scrollTo(0,0)}catch(__){}}
+  try{document.documentElement.scrollTop=0}catch(_){}
+  try{document.body.scrollTop=0}catch(_){}
+}
+
+function captureDevelopmentCatalogScroll(){
+  const scroller=document.getElementById('nxo-dev-owned-catalog-scroll');
+  detailCatalogScrollTop=Number(scroller?.scrollTop||0)
+}
+
+function restoreDevelopmentCatalogScroll(){
+  const scroller=document.getElementById('nxo-dev-owned-catalog-scroll');
+  if(scroller)scroller.scrollTop=detailCatalogScrollTop
+}
+
+function beginDetailScrollIsolation(){
+  captureDevelopmentCatalogScroll();
+  if('scrollRestoration' in history){
+    detailPreviousScrollRestoration=history.scrollRestoration;
+    history.scrollRestoration='manual'
+  }
+  resetDevelopmentDocumentScroll()
+}
+
+function endDetailScrollIsolation(){
+  if('scrollRestoration' in history&&detailPreviousScrollRestoration){
+    history.scrollRestoration=detailPreviousScrollRestoration
+  }
+  detailPreviousScrollRestoration=null
+}
 
 function armToolDetailHistory(){
   if(detailHistoryArmed)return;
+  beginDetailScrollIsolation();
   const current=history.state&&typeof history.state==='object'?history.state:{};
   history.pushState({...current,nxoDevDetail:true},'',location.href);
   detailHistoryArmed=true
@@ -2105,8 +2141,15 @@ function closeToolDetail({fromHistory=false}={}){
   if(view)view.hidden=true;
   if(shell)shell.hidden=false;
   requestAnimationFrame(()=>{
+    restoreDevelopmentCatalogScroll();
+    resetDevelopmentDocumentScroll();
     syncCatalogScrollControls();
-    try{lastDetailTrigger?.focus?.()}catch(_){}
+    try{lastDetailTrigger?.focus?.({preventScroll:true})}catch(_){}
+    requestAnimationFrame(()=>{
+      restoreDevelopmentCatalogScroll();
+      resetDevelopmentDocumentScroll();
+      endDetailScrollIsolation()
+    })
   })
 }
 
@@ -2226,6 +2269,7 @@ function destroy(){
   lastDetailTrigger=null;
   installState=null;
   installBusy=false;
+  endDetailScrollIsolation();
 
   try{runtimeAbort.abort()}catch(_){}
 
