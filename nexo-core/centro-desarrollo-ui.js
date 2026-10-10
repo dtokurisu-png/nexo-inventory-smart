@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-44';
+const VERSION='20261009-45';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -553,6 +553,24 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
   box-shadow:0 0 8px color-mix(in srgb,var(--nxo-accent) 46%,transparent)
 }
 .nxo-dev-detail-empty{color:var(--nxo-text-muted);font-size:12px;line-height:1.5}
+.nxo-dev-reviews{margin-top:14px}
+.nxo-dev-reviews-summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.nxo-dev-reviews-score{font-size:24px;font-weight:900;color:var(--nxo-text-primary)}
+.nxo-dev-stars{letter-spacing:2px;color:var(--nxo-accent);font-size:16px}
+.nxo-dev-review-list{display:grid;gap:9px}
+.nxo-dev-review-item{padding:12px;border:1px solid var(--nxo-border);border-radius:14px;background:var(--nxo-surface-glass)}
+.nxo-dev-review-item-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}
+.nxo-dev-review-item strong{font-size:11px;color:var(--nxo-text-primary)}
+.nxo-dev-review-item p{margin:0;color:var(--nxo-text-secondary);font-size:12px;line-height:1.5;white-space:pre-wrap}
+.nxo-dev-review-form{display:grid;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--nxo-border)}
+.nxo-dev-review-picker{display:flex;gap:5px}
+.nxo-dev-review-star{appearance:none;border:0;background:transparent;color:var(--nxo-text-muted);font-size:25px;line-height:1;cursor:pointer;padding:2px}
+.nxo-dev-review-star.selected{color:var(--nxo-accent)}
+.nxo-dev-review-text{width:100%;min-height:88px;resize:vertical;box-sizing:border-box;border:1px solid var(--nxo-border);border-radius:12px;background:var(--nxo-surface-glass);color:var(--nxo-text-primary);padding:10px;font:500 12px/1.5 Inter,system-ui,sans-serif}
+.nxo-dev-review-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nxo-dev-review-save,.nxo-dev-review-remove{appearance:none;border:1px solid var(--nxo-border);border-radius:11px;padding:9px 12px;background:var(--nxo-surface-glass);color:var(--nxo-text-primary);font:760 11px/1 Inter,system-ui,sans-serif;cursor:pointer}
+.nxo-dev-review-save{background:var(--nxo-accent);color:var(--nxo-accent-contrast);border-color:var(--nxo-accent)}
+.nxo-dev-review-note{font-size:10px;color:var(--nxo-text-muted)}
 .nxo-dev-detail-loading,.nxo-dev-detail-error{
   margin-top:28px;padding:18px;border:1px solid var(--nxo-border);
   border-radius:16px;background:var(--nxo-surface-glass);
@@ -1415,6 +1433,22 @@ function requestedWorkspaceId(){
     return q.get('nxoTargetWorkspace')||q.get('nxoWorkspace')||''
   }catch(_){return''}
 }
+async function developmentReviewsApi(action,toolKey,input={}){
+  const response=await fetch(developmentFunctionUrl('nexoDevelopmentReviews'),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'same-origin',
+    body:JSON.stringify({action,toolKey,input})
+  });
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||!data?.ok){
+    const error=new Error(data?.error||'No se pudo completar la reseña.');
+    error.code=data?.error||'REVIEW_FAILED';
+    throw error
+  }
+  return data.data
+}
+
 async function developmentInstallApi(action,payload={}){
   const response=await fetch(developmentFunctionUrl('nexoDevelopmentInstall'),{
     method:'POST',
@@ -1587,6 +1621,96 @@ async function loadInstallOptions(tool,requestId){
   }
 }
 
+function reviewStars(value){
+  const rating=Math.max(0,Math.min(5,Number(value)||0));
+  return '★★★★★'.split('').map((star,index)=>index<Math.round(rating)?star:'☆').join('')
+}
+function renderReviewsZone(tool,data){
+  const zone=document.getElementById('nxo-dev-reviews-zone');
+  if(!zone)return;
+  const summary=data?.summary||{average:0,count:0};
+  const reviews=Array.isArray(data?.reviews)?data.reviews:[];
+  const mine=data?.myReview||null;
+  const currentRating=Number(mine?.rating||0);
+  const listHtml=reviews.length?reviews.map(review=>
+    '<article class="nxo-dev-review-item">'+
+      '<div class="nxo-dev-review-item-head"><strong>'+escapeHtml(review.authorName||'Usuario Nexo')+'</strong><span class="nxo-dev-stars">'+escapeHtml(reviewStars(review.rating))+'</span></div>'+
+      (review.body?'<p>'+escapeHtml(review.body)+'</p>':'')+
+    '</article>'
+  ).join(''):'<div class="nxo-dev-detail-empty">Todavía no hay reseñas publicadas.</div>';
+  const form=data?.canReview
+    ? '<div class="nxo-dev-review-form">'+
+        '<strong style="font-size:12px">'+(mine?'Tu valoración':'Valora este producto')+'</strong>'+
+        '<div class="nxo-dev-review-picker" data-review-rating="'+currentRating+'">'+
+          [1,2,3,4,5].map(value=>'<button type="button" class="nxo-dev-review-star'+(value<=currentRating?' selected':'')+'" data-review-star="'+value+'" aria-label="'+value+' estrellas">★</button>').join('')+
+        '</div>'+
+        '<textarea class="nxo-dev-review-text" id="nxo-dev-review-text" maxlength="1200" placeholder="Escribe una reseña opcional…">'+escapeHtml(mine?.body||'')+'</textarea>'+
+        '<div class="nxo-dev-review-actions">'+
+          '<button type="button" class="nxo-dev-review-save" id="nxo-dev-review-save">'+(mine?'Actualizar reseña':'Publicar reseña')+'</button>'+
+          (mine?'<button type="button" class="nxo-dev-review-remove" id="nxo-dev-review-remove">Eliminar mi reseña</button>':'')+
+          '<span class="nxo-dev-review-note" id="nxo-dev-review-note"></span>'+
+        '</div>'+
+      '</div>'
+    : '<div class="nxo-dev-review-note" style="margin-top:12px">'+(data?.authenticated?'Este producto todavía no admite reseñas.':'Inicia sesión para valorar este producto.')+'</div>';
+
+  zone.innerHTML=
+    '<section class="nxo-dev-detail-card nxo-dev-reviews">'+
+      '<h3>Reseñas y valoración</h3>'+
+      '<div class="nxo-dev-reviews-summary">'+
+        '<span class="nxo-dev-reviews-score">'+(summary.count?escapeHtml(Number(summary.average).toFixed(1)):'—')+'</span>'+
+        '<span class="nxo-dev-stars">'+escapeHtml(reviewStars(summary.average))+'</span>'+
+        '<span class="nxo-dev-review-note">'+escapeHtml(summary.count+' reseña'+(summary.count===1?'':'s'))+'</span>'+
+      '</div>'+
+      '<div class="nxo-dev-review-list">'+listHtml+'</div>'+
+      form+
+    '</section>';
+
+  let selectedRating=currentRating;
+  zone.querySelectorAll('[data-review-star]').forEach(button=>{
+    button.addEventListener('click',()=>{
+      selectedRating=Number(button.dataset.reviewStar||0);
+      zone.querySelectorAll('[data-review-star]').forEach(star=>star.classList.toggle('selected',Number(star.dataset.reviewStar)<=selectedRating))
+    },{signal:runtimeAbort.signal})
+  });
+  zone.querySelector('#nxo-dev-review-save')?.addEventListener('click',async()=>{
+    const note=zone.querySelector('#nxo-dev-review-note');
+    if(!selectedRating){if(note)note.textContent='Selecciona de 1 a 5 estrellas.';return}
+    try{
+      if(note)note.textContent='Guardando…';
+      const refreshed=await developmentReviewsApi('save',tool.cmsKey||tool.key,{
+        rating:selectedRating,
+        body:zone.querySelector('#nxo-dev-review-text')?.value||''
+      });
+      renderReviewsZone(tool,refreshed)
+    }catch(error){
+      if(note)note.textContent=error?.code==='REVIEW_TOO_LONG'?'La reseña supera 1200 caracteres.':(error?.message||'No se pudo guardar.')
+    }
+  },{signal:runtimeAbort.signal});
+  zone.querySelector('#nxo-dev-review-remove')?.addEventListener('click',async()=>{
+    const note=zone.querySelector('#nxo-dev-review-note');
+    try{
+      if(note)note.textContent='Eliminando…';
+      const refreshed=await developmentReviewsApi('remove',tool.cmsKey||tool.key);
+      renderReviewsZone(tool,refreshed)
+    }catch(error){
+      if(note)note.textContent=error?.message||'No se pudo eliminar.'
+    }
+  },{signal:runtimeAbort.signal})
+}
+async function loadReviewsZone(tool,requestId){
+  const zone=document.getElementById('nxo-dev-reviews-zone');
+  if(!zone)return;
+  zone.innerHTML='<section class="nxo-dev-detail-card nxo-dev-reviews"><h3>Reseñas y valoración</h3><div class="nxo-dev-detail-empty">Cargando reseñas…</div></section>';
+  try{
+    const data=await developmentReviewsApi('bootstrap',tool.cmsKey||tool.key);
+    if(requestId!==detailRequestId||!toolDetailIsOpen())return;
+    renderReviewsZone(tool,data)
+  }catch(error){
+    if(requestId!==detailRequestId||!toolDetailIsOpen())return;
+    zone.innerHTML='<section class="nxo-dev-detail-card nxo-dev-reviews"><h3>Reseñas y valoración</h3><div class="nxo-dev-detail-error">'+escapeHtml(error?.message||'No se pudieron cargar las reseñas.')+'</div></section>'
+  }
+}
+
 function renderToolDetail(tool,data){
   const content=document.getElementById('nxo-dev-detail-content');
   if(!content)return;
@@ -1622,7 +1746,8 @@ function renderToolDetail(tool,data){
     '<div class="nxo-dev-detail-grid">'+
       '<div>'+leftHtml+'</div>'+
       '<aside>'+rightHtml+'</aside>'+
-    '</div>'
+    '</div>'+
+    '<div id="nxo-dev-reviews-zone"></div>'
 }
 
 async function openToolDetail(tool,trigger){
@@ -1648,7 +1773,8 @@ async function openToolDetail(tool,trigger){
     const data=await fetchToolDetail(tool);
     if(requestId!==detailRequestId||view.hidden)return;
     renderToolDetail(tool,data);
-    loadInstallOptions(tool,requestId)
+    loadInstallOptions(tool,requestId);
+    loadReviewsZone(tool,requestId)
   }catch(error){
     if(requestId!==detailRequestId||view.hidden)return;
     content.innerHTML='<div class="nxo-dev-detail-error">'+escapeHtml(error?.message||'No se pudo cargar la ficha.')+'</div>'
