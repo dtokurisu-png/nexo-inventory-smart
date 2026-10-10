@@ -2,7 +2,7 @@
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
 const ACCESS_REVISION='fichas-workspace-context-20261007-40';
-const ENGINE_REVISION='numa-search-relevance-20261009-45';
+const ENGINE_REVISION='creator-stage1-20261009-46';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
@@ -936,6 +936,23 @@ function handleEngineMessage(event){
   }
   if(message.type==='NEXO_DM_OPEN_IMPORT'){
     renderImportCodeStage();
+    return;
+  }
+  if(message.type==='NEXO_DM_CREATE_COLLECTION'){
+    const requestId=String(payload.requestId||'');
+    api('collection.create',{input:payload.input||{}}).then(collection=>{
+      postToEngine('NEXO_DM_COLLECTION_CREATED',{
+        ok:true,
+        requestId,
+        collection
+      });
+    }).catch(error=>{
+      postToEngine('NEXO_DM_COLLECTION_ERROR',{
+        ok:false,
+        requestId,
+        error:String(error?.message||error||'COLLECTION_CREATE_FAILED')
+      });
+    });
     return;
   }
   if(message.type==='NEXO_DM_RECIPE_COMMENT'){
