@@ -68,3 +68,15 @@
 .nexoCreatorIngredientFields{display:grid;grid-template-columns:120px 120px minmax(180px,1fr) minmax(180px,1fr);gap:8px;align-items:end}
 @media(max-width:880px){.nexoCreatorIngredientAdd{grid-template-columns:1fr}.nexoCreatorIngredientOr{min-height:0}.nexoCreatorIngredientFields{grid-template-columns:1fr 1fr}.nexoCreatorIngredientNote{grid-column:span 1}}
 @media(max-width:560px){.nexoCreatorModalIngredients{width:calc(100vw - 18px)}.nexoCreatorIngredientFields{grid-template-columns:1fr}.nexoCreatorIngredientIdentity{grid-template-columns:42px minmax(0,1fr)}.nexoCreatorIngredientOrder{grid-column:1/-1;justify-content:flex-end}.nexoCreatorIngredientListHead{align-items:flex-start;flex-direction:column}}
+
+.nexoCreatorModalPreparations{width:min(1080px,calc(100vw - 28px))}
+.nexoCreatorPreparationAdd{grid-template-columns:minmax(0,1fr) auto minmax(280px,.9fr)}
+.nexoCreatorCompositionList{gap:10px}
+.nexoCreatorCompositionRow.pending{border-style:dashed;border-color:var(--nxo-accent)}
+.nexoCreatorIngredientThumb.preparation{background:var(--nxo-accent-soft)}
+.nexoCreatorCompositionActions{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.nexoCreatorInlineAction{border:0;background:transparent;color:var(--nxo-accent);font:inherit;font-size:10px;font-weight:850;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.nexoCreatorInlineAction:hover,.nexoCreatorInlineAction:focus-visible{color:var(--nxo-interaction);outline:none}
+.nexoCreatorCompositionRow .nexoCreatorIngredientIdentity small{color:var(--nxo-text-muted);font-size:10px;line-height:1.3}
+@media(max-width:880px){.nexoCreatorPreparationAdd{grid-template-columns:1fr}}
+@media(max-width:560px){.nexoCreatorModalPreparations{width:calc(100vw - 18px)}}
