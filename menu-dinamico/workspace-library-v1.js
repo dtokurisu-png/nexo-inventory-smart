@@ -8,6 +8,7 @@ if(!view||!modalRoot)return;
 
 let activeTab='collections';
 const pendingCollectionRequests=new Map();
+let creatorPhotoObjectUrl='';
 
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],collections:[],context:{},capabilities:{}};
 const lang=()=>document.documentElement.lang==='en'?'en':'es';
@@ -125,7 +126,7 @@ function renderBody(root){
 }
 
 function bindActions(scope){
-  scope.querySelectorAll('[data-nexo-create]').forEach(btn=>btn.onclick=openCreateStageOne);
+  scope.querySelectorAll('[data-nexo-create]').forEach(btn=>btn.onclick=openCreateFlow);
   scope.querySelectorAll('[data-nexo-import]').forEach(btn=>btn.onclick=openImport);
 }
 
@@ -158,7 +159,14 @@ function enhanceRoot(){
   renderBody(root);
 }
 
+function revokeCreatorPhotoUrl(){
+  if(creatorPhotoObjectUrl){
+    try{URL.revokeObjectURL(creatorPhotoObjectUrl)}catch(_){}
+    creatorPhotoObjectUrl=''
+  }
+}
 function closeLayer(){
+  revokeCreatorPhotoUrl();
   document.getElementById('nexoWorkspaceLibraryLayer')?.remove();
 }
 
@@ -251,10 +259,10 @@ function showStageOneComplete(layerEl,draft){
       '<div><span>'+esc(tr('Colección','Collection'))+'</span><strong>'+esc(draft.collectionName||draft.collectionId)+'</strong></div>'+
     '</div>'+
     '<p>'+esc(tr('El borrador quedó preparado para la Etapa 2: Editor principal. Todavía no se creó una receta incompleta en Wix.','The draft is ready for Stage 2: Main editor. No incomplete recipe has been created in Wix yet.'))+'</p>'+
-    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-edit>'+esc(tr('Editar etapa 1','Edit stage 1'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-creator-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-edit>'+esc(tr('Editar etapa 1','Edit stage 1'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-creator-stage-two>'+esc(tr('Continuar a etapa 2','Continue to stage 2'))+'</button></div>'+
   '</div>';
   body.querySelector('[data-creator-edit]').onclick=()=>openCreateStageOne();
-  body.querySelector('[data-creator-close]').onclick=closeLayer
+  body.querySelector('[data-creator-stage-two]').onclick=()=>openCreateStageTwo()
 }
 function bindCreatorStageOne(layerEl,draft={}){
   const form=layerEl.querySelector('[data-nexo-creator-stage-one]');
@@ -315,8 +323,9 @@ function bindCreatorStageOne(layerEl,draft={}){
       collectionName=String(selected.name||collectionId)
     }
     const nextDraft={
-      schemaVersion:1,
-      stage:1,
+      ...draft,
+      schemaVersion:2,
+      stage:Math.max(1,Number(draft.stage||1)),
       title,
       recipeType,
       collectionId,
@@ -334,6 +343,249 @@ function openCreateStageOne(){
   const draft=readCreatorDraft()||{};
   const el=layer(tr('Crear ficha técnica','Create technical sheet'),creatorStageOneMarkup(draft));
   bindCreatorStageOne(el,draft)
+}
+
+
+function creatorPhotoDb(){
+  return new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){reject(new Error('INDEXED_DB_UNAVAILABLE'));return}
+    const request=indexedDB.open('nexo-fichas-creator-drafts',1);
+    request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains('photos'))db.createObjectStore('photos',{keyPath:'key'})};
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||new Error('INDEXED_DB_FAILED'))
+  })
+}
+function creatorPhotoKey(){return creatorDraftKey()+':hero'}
+async function readCreatorPhoto(){
+  const db=await creatorPhotoDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('photos','readonly');
+    const req=tx.objectStore('photos').get(creatorPhotoKey());
+    req.onsuccess=()=>resolve(req.result||null);
+    req.onerror=()=>reject(req.error||new Error('PHOTO_DRAFT_READ_FAILED'));
+    tx.oncomplete=()=>db.close()
+  })
+}
+async function saveCreatorPhoto(file){
+  const db=await creatorPhotoDb();
+  const row={key:creatorPhotoKey(),blob:file,name:String(file?.name||'photo'),type:String(file?.type||'image/jpeg'),size:Number(file?.size||0),updatedAt:new Date().toISOString()};
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction('photos','readwrite');
+    tx.objectStore('photos').put(row);
+    tx.oncomplete=resolve;
+    tx.onerror=()=>reject(tx.error||new Error('PHOTO_DRAFT_SAVE_FAILED'));
+    tx.onabort=()=>reject(tx.error||new Error('PHOTO_DRAFT_SAVE_FAILED'))
+  });
+  db.close();
+  return row
+}
+async function deleteCreatorPhoto(){
+  try{
+    const db=await creatorPhotoDb();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction('photos','readwrite');
+      tx.objectStore('photos').delete(creatorPhotoKey());
+      tx.oncomplete=resolve;
+      tx.onerror=()=>reject(tx.error||new Error('PHOTO_DRAFT_DELETE_FAILED'))
+    });
+    db.close()
+  }catch(_){}
+}
+function creatorUnitPair(value){
+  const raw=String(value||'').trim();
+  const key=searchNorm(raw);
+  const pairs={
+    'u':{es:'u',en:'ea'},'unidad':{es:'u',en:'ea'},'unidades':{es:'u',en:'ea'},'ea':{es:'u',en:'ea'},'each':{es:'u',en:'ea'},
+    'porcion':{es:'porciones',en:'servings'},'porciones':{es:'porciones',en:'servings'},'serving':{es:'porciones',en:'servings'},'servings':{es:'porciones',en:'servings'}
+  };
+  return pairs[key]||{es:raw,en:raw}
+}
+function creatorCategorySuggestions(){
+  return [...new Set((data().recipes||[]).map(row=>String(row?.category||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))
+}
+function creatorUnitSuggestions(){
+  return ['g','kg','ml','l','qt','gal','lb','oz','u','ea','porciones','servings']
+}
+function stageTwoDefaults(draft){
+  const originalLanguage=String(draft.originalLanguage||lang()).toLowerCase()==='en'?'en':'es';
+  let titleEs=String(draft.titleEs||'');
+  let titleEn=String(draft.titleEn||'');
+  if(!titleEs&&!titleEn&&draft.title){
+    if(originalLanguage==='en')titleEn=String(draft.title);
+    else titleEs=String(draft.title)
+  }
+  return {...draft,originalLanguage,titleEs,titleEn}
+}
+function creatorStageTwoMarkup(rawDraft={}){
+  const draft=stageTwoDefaults(rawDraft);
+  const yieldQty=draft.yieldQty===null||draft.yieldQty===undefined?'':String(draft.yieldQty);
+  const yieldUnit=String(draft.yieldUnitEs||draft.yieldUnitEn||'');
+  const categories=creatorCategorySuggestions().map(value=>'<option value="'+esc(value)+'"></option>').join('');
+  const units=creatorUnitSuggestions().map(value=>'<option value="'+esc(value)+'"></option>').join('');
+  return '<form class="nexoCreatorStage nexoCreatorStageTwo" data-nexo-creator-stage-two novalidate>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 2 de 8','Stage 2 of 8'))+'</span><strong>'+esc(tr('Editor principal','Main editor'))+'</strong></div>'+
+    '<div class="nexoCreatorStageSummary"><span>'+esc(rawDraft.recipeType==='SUBRECIPE'?tr('Preparación / subproducto','Preparation / subproduct'):tr('Plato / producto final','Dish / final product'))+'</span><strong>'+esc(rawDraft.collectionName||rawDraft.collectionId||'')+'</strong></div>'+
+    '<div class="nexoCreatorEditorGrid">'+
+      '<section class="nexoCreatorPhotoPanel">'+
+        '<div class="nexoCreatorPhotoPreview" data-creator-photo-preview><div class="nexoCreatorPhotoEmpty">'+icon('foto')+'<span>'+esc(tr('Sin foto de portada','No cover photo'))+'</span></div></div>'+
+        '<input type="file" accept="image/*" data-creator-photo-input hidden>'+
+        '<div class="nexoCreatorPhotoActions"><button type="button" class="nexoWorkspaceBtn" data-creator-photo-pick>'+esc(tr('Elegir foto','Choose photo'))+'</button><button type="button" class="nexoWorkspaceBtn" data-creator-photo-remove hidden>'+esc(tr('Quitar','Remove'))+'</button></div>'+
+        '<small>'+esc(tr('La imagen queda en este borrador local y se subirá a Wix al publicar la ficha en la Etapa 8.','The image stays in this local draft and will upload to Wix when the sheet is published in Stage 8.'))+'</small>'+
+      '</section>'+
+      '<section class="nexoCreatorMainFields">'+
+        '<label class="nexoCreatorField"><span>'+esc(tr('Nombre en español','Name in Spanish'))+'</span><input data-creator-title-es maxlength="160" autocomplete="off" value="'+esc(draft.titleEs)+'" placeholder="'+esc(tr('Ej. Aderezo César','E.g. Aderezo César'))+'"></label>'+
+        '<label class="nexoCreatorField"><span>'+esc(tr('Nombre en inglés','Name in English'))+'</span><input data-creator-title-en maxlength="160" autocomplete="off" value="'+esc(draft.titleEn)+'" placeholder="E.g. Caesar Dressing"></label>'+
+        '<div class="nexoCreatorTwoCols">'+
+          '<label class="nexoCreatorField"><span>'+esc(tr('Idioma original','Original language'))+'</span><select data-creator-original-language><option value="es" '+(draft.originalLanguage==='es'?'selected':'')+'>Español</option><option value="en" '+(draft.originalLanguage==='en'?'selected':'')+'>English</option></select></label>'+
+          '<label class="nexoCreatorField"><span>'+esc(tr('Categoría','Category'))+'</span><input data-creator-category list="nexoCreatorCategories" maxlength="100" value="'+esc(draft.category||'')+'" placeholder="'+esc(rawDraft.recipeType==='SUBRECIPE'?tr('Preparación','Preparation'):tr('Plato principal, guarnición…','Entrée, side…'))+'"><datalist id="nexoCreatorCategories">'+categories+'</datalist></label>'+
+        '</div>'+
+        '<div class="nexoCreatorTwoCols">'+
+          '<label class="nexoCreatorField"><span>'+esc(tr('Rendimiento / cantidad final','Yield / final quantity'))+'</span><input data-creator-yield-qty type="number" min="0" step="any" inputmode="decimal" value="'+esc(yieldQty)+'" placeholder="0"></label>'+
+          '<label class="nexoCreatorField"><span>'+esc(tr('Unidad del rendimiento','Yield unit'))+'</span><input data-creator-yield-unit list="nexoCreatorUnits" maxlength="40" value="'+esc(yieldUnit)+'" placeholder="g, qt, u…"><datalist id="nexoCreatorUnits">'+units+'</datalist></label>'+
+        '</div>'+
+        '<label class="nexoCreatorField"><span>'+esc(tr('Notas generales en español','General notes in Spanish'))+'</span><textarea data-creator-notes-es maxlength="4000" rows="4" placeholder="'+esc(tr('Notas generales de la ficha. El MOP se construirá en la Etapa 7.','General sheet notes. The MOP will be built in Stage 7.'))+'">'+esc(draft.notesEs||'')+'</textarea></label>'+
+        '<label class="nexoCreatorField"><span>'+esc(tr('Notas generales en inglés','General notes in English'))+'</span><textarea data-creator-notes-en maxlength="4000" rows="4" placeholder="General sheet notes. The MOP will be built in Stage 7.">'+esc(draft.notesEn||'')+'</textarea></label>'+
+      '</section>'+
+    '</div>'+
+    '<div class="nexoCreatorStatus" data-creator-status aria-live="polite"></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-back-one>'+esc(tr('← Etapa 1','← Stage 1'))+'</button><button type="button" class="nexoWorkspaceBtn" data-creator-close>'+esc(tr('Guardar y cerrar','Save & close'))+'</button><button type="submit" class="nexoWorkspaceBtn primary">'+esc(tr('Guardar y continuar','Save & continue'))+'</button></div>'+
+  '</form>'
+}
+function applyCreatorPhotoPreview(preview,row){
+  revokeCreatorPhotoUrl();
+  const remove=preview?.closest('.nexoCreatorPhotoPanel')?.querySelector('[data-creator-photo-remove]');
+  if(!preview)return;
+  if(row?.blob){
+    creatorPhotoObjectUrl=URL.createObjectURL(row.blob);
+    preview.innerHTML='<img src="'+esc(creatorPhotoObjectUrl)+'" alt="">';
+    if(remove)remove.hidden=false
+  }else{
+    preview.innerHTML='<div class="nexoCreatorPhotoEmpty">'+icon('foto')+'<span>'+esc(tr('Sin foto de portada','No cover photo'))+'</span></div>';
+    if(remove)remove.hidden=true
+  }
+}
+async function hydrateCreatorPhoto(layerEl){
+  const preview=layerEl.querySelector('[data-creator-photo-preview]');
+  try{applyCreatorPhotoPreview(preview,await readCreatorPhoto())}catch(_){applyCreatorPhotoPreview(preview,null)}
+}
+function saveStageTwoFromForm(form,draft){
+  const originalLanguage=String(form.querySelector('[data-creator-original-language]')?.value||'es')==='en'?'en':'es';
+  const titleEs=String(form.querySelector('[data-creator-title-es]')?.value||'').trim();
+  const titleEn=String(form.querySelector('[data-creator-title-en]')?.value||'').trim();
+  const status=form.querySelector('[data-creator-status]');
+  if(!titleEs&&!titleEn){
+    status.textContent=tr('Escribe al menos un nombre para la ficha.','Enter at least one sheet name.');
+    (originalLanguage==='en'?form.querySelector('[data-creator-title-en]'):form.querySelector('[data-creator-title-es]'))?.focus();
+    return null
+  }
+  const qtyRaw=String(form.querySelector('[data-creator-yield-qty]')?.value||'').trim();
+  const quantity=qtyRaw===''?null:Number(qtyRaw);
+  if(qtyRaw!==''&&(!Number.isFinite(quantity)||quantity<0)){
+    status.textContent=tr('El rendimiento debe ser un número válido.','Yield must be a valid number.');
+    form.querySelector('[data-creator-yield-qty]')?.focus();
+    return null
+  }
+  const unitPair=creatorUnitPair(form.querySelector('[data-creator-yield-unit]')?.value||'');
+  const primaryTitle=originalLanguage==='en'?(titleEn||titleEs):(titleEs||titleEn);
+  const next={
+    ...draft,
+    schemaVersion:2,
+    stage:2,
+    title:primaryTitle,
+    titleEs,
+    titleEn,
+    originalLanguage,
+    category:String(form.querySelector('[data-creator-category]')?.value||'').trim(),
+    yieldQty:quantity,
+    yieldUnitEs:unitPair.es,
+    yieldUnitEn:unitPair.en,
+    notesEs:String(form.querySelector('[data-creator-notes-es]')?.value||'').trim(),
+    notesEn:String(form.querySelector('[data-creator-notes-en]')?.value||'').trim(),
+    updatedAt:new Date().toISOString()
+  };
+  saveCreatorDraft(next);
+  return next
+}
+function showStageTwoComplete(layerEl,draft){
+  const body=layerEl.querySelector('.nexoWorkspaceModalBody');
+  if(!body)return;
+  const title=draft.originalLanguage==='en'?(draft.titleEn||draft.titleEs):(draft.titleEs||draft.titleEn);
+  const yieldText=draft.yieldQty===null||draft.yieldQty===undefined||draft.yieldQty===''?tr('Sin definir','Not set'):[draft.yieldQty,draft.yieldUnitEs||draft.yieldUnitEn].filter(Boolean).join(' ');
+  body.innerHTML='<div class="nexoCreatorComplete">'+
+    '<div class="nexoWorkspaceEmptyIcon">'+icon('ficha-tecnica')+'</div>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 2 de 8','Stage 2 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div>'+
+    '<h3>'+esc(title||draft.title)+'</h3>'+
+    '<div class="nexoCreatorSummary"><div><span>'+esc(tr('Categoría','Category'))+'</span><strong>'+esc(draft.category||tr('Sin definir','Not set'))+'</strong></div><div><span>'+esc(tr('Rendimiento','Yield'))+'</span><strong>'+esc(yieldText)+'</strong></div></div>'+
+    '<p>'+esc(tr('La cabecera de la ficha quedó guardada en el borrador. La Etapa 3 añadirá los ingredientes existentes o nuevos.','The sheet header is saved in the draft. Stage 3 will add existing or new ingredients.'))+'</p>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-creator-edit-two>'+esc(tr('Editar etapa 2','Edit stage 2'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-creator-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+  '</div>';
+  body.querySelector('[data-creator-edit-two]').onclick=()=>openCreateStageTwo();
+  body.querySelector('[data-creator-close]').onclick=closeLayer
+}
+function bindCreatorStageTwo(layerEl,draft){
+  const form=layerEl.querySelector('[data-nexo-creator-stage-two]');
+  if(!form)return;
+  const fileInput=form.querySelector('[data-creator-photo-input]');
+  const preview=form.querySelector('[data-creator-photo-preview]');
+  const remove=form.querySelector('[data-creator-photo-remove]');
+  form.querySelector('[data-creator-photo-pick]').onclick=()=>fileInput.click();
+  fileInput.addEventListener('change',async()=>{
+    const file=fileInput.files?.[0];
+    const status=form.querySelector('[data-creator-status]');
+    if(!file)return;
+    if(!String(file.type||'').startsWith('image/')){
+      status.textContent=tr('Selecciona un archivo de imagen válido.','Select a valid image file.');
+      fileInput.value='';
+      return
+    }
+    if(Number(file.size||0)>15*1024*1024){
+      status.textContent=tr('La foto no puede superar 15 MB.','Photo cannot exceed 15 MB.');
+      fileInput.value='';
+      return
+    }
+    status.textContent=tr('Guardando foto en el borrador…','Saving photo to draft…');
+    try{
+      const row=await saveCreatorPhoto(file);
+      const next={...readCreatorDraft(),heroDraft:{name:row.name,type:row.type,size:row.size,updatedAt:row.updatedAt},updatedAt:new Date().toISOString()};
+      saveCreatorDraft(next);
+      applyCreatorPhotoPreview(preview,row);
+      status.textContent=tr('Foto guardada en el borrador.','Photo saved in draft.')
+    }catch(error){
+      status.textContent=String(error?.message||error||tr('No se pudo guardar la foto.','Could not save photo.'))
+    }finally{fileInput.value=''}
+  });
+  remove.onclick=async()=>{
+    await deleteCreatorPhoto();
+    const current=readCreatorDraft()||draft;
+    delete current.heroDraft;
+    current.updatedAt=new Date().toISOString();
+    saveCreatorDraft(current);
+    applyCreatorPhotoPreview(preview,null)
+  };
+  form.querySelector('[data-creator-back-one]').onclick=()=>openCreateStageOne();
+  form.querySelector('[data-creator-close]').onclick=()=>{
+    const next=saveStageTwoFromForm(form,readCreatorDraft()||draft);
+    if(next)closeLayer()
+  };
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const next=saveStageTwoFromForm(form,readCreatorDraft()||draft);
+    if(next)showStageTwoComplete(layerEl,next)
+  });
+  hydrateCreatorPhoto(layerEl)
+}
+function openCreateStageTwo(){
+  if(!canCreate())return;
+  const draft=readCreatorDraft()||{};
+  if(!draft.title||!draft.collectionId){openCreateStageOne();return}
+  const el=layer(tr('Crear ficha técnica','Create technical sheet'),creatorStageTwoMarkup(draft));
+  bindCreatorStageTwo(el,draft)
+}
+function openCreateFlow(){
+  if(!canCreate())return;
+  const draft=readCreatorDraft();
+  if(draft&&Number(draft.stage||0)>=2&&draft.title&&draft.collectionId){openCreateStageTwo();return}
+  openCreateStageOne()
 }
 
 function openImport(){
