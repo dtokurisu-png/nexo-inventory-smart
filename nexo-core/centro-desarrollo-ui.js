@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261010-52';
+const VERSION='20261010-53';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1067,7 +1067,6 @@ function ensureHeader(){
       '<span class="nxo-dev-brand-copy"><strong>Nexo Group</strong><small>Centro de desarrollo</small></span>'+
     '</button>'+
     '<nav class="nxo-dev-nav" aria-label="Navegación principal">'+
-      '<button type="button" class="nxo-dev-nav-button" id="nxo-dev-back">← Volver</button>'+
       '<button type="button" class="nxo-dev-nav-button active" aria-current="page">Centro de desarrollo</button>'+
     '</nav>'+
     '<div class="nxo-dev-utils">'+
@@ -1101,10 +1100,6 @@ function ensureHeader(){
     menu.classList.remove('open');
     quickButton.setAttribute('aria-expanded','false');
     syncQuickTheme()
-  });
-  header.querySelector('#nxo-dev-back').addEventListener('click',()=>{
-    if(toolDetailIsOpen()){closeToolDetail();return}
-    goBack()
   });
   header.querySelector('#nxo-dev-brand-home').addEventListener('click',goMySpace);
   quickMenuOutsideHandler=event=>{
