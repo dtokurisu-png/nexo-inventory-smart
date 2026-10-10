@@ -1350,10 +1350,10 @@ function showStageFourComplete(layerEl,draft){
     '<h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3>'+
     '<div class="nexoCreatorSummary"><div><span>'+esc(tr('Preparaciones','Preparations'))+'</span><strong>'+preps.length+'</strong></div><div><span>'+esc(tr('Pendientes','Pending'))+'</span><strong>'+pending.length+'</strong></div></div>'+
     '<p>'+esc(pending.length?tr('Los huecos pendientes quedaron identificados para desarrollarlos en la Etapa 5.','Pending slots are identified and ready to be built in Stage 5.'):tr('No quedan preparaciones pendientes. La Etapa 5 podrá confirmarlo y continuar.','There are no pending preparations. Stage 5 can confirm this and continue.'))+'</p>'+
-    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-four-edit>'+esc(tr('Editar etapa 4','Edit stage 4'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-four-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-four-edit>'+esc(tr('Editar etapa 4','Edit stage 4'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-five-open>'+esc(tr('Continuar a etapa 5','Continue to stage 5'))+'</button></div>'+
   '</div>';
   body.querySelector('[data-stage-four-edit]').onclick=()=>openCreateStageFour();
-  body.querySelector('[data-stage-four-close]').onclick=closeLayer
+  body.querySelector('[data-stage-five-open]').onclick=()=>openCreateStageFive()
 }
 function bindCreatorStageFour(layerEl,draft){
   const form=layerEl.querySelector('[data-nexo-creator-stage-four]');
@@ -1392,9 +1392,319 @@ function openCreateStageFour(){
   bindCreatorStageFour(el,next)
 }
 
+
+function creatorPendingPreparations(draft){
+  return creatorSubrecipeComponents(draft).filter(row=>row?.preparationSource==='pending'&&row?.pendingPreparation?.draftId)
+}
+function creatorPendingPreparationEntry(draft,draftId){
+  return creatorPendingPreparations(draft).find(row=>String(row.pendingPreparation?.draftId||'')===String(draftId||''))
+}
+function creatorPreparationPhotoKey(draftId){
+  return creatorDraftKey()+':subrecipe:'+String(draftId||'pending')+':hero'
+}
+async function readCreatorPreparationPhoto(draftId){
+  const db=await creatorPhotoDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('photos','readonly');
+    const req=tx.objectStore('photos').get(creatorPreparationPhotoKey(draftId));
+    req.onsuccess=()=>resolve(req.result||null);
+    req.onerror=()=>reject(req.error||new Error('PREPARATION_PHOTO_DRAFT_READ_FAILED'));
+    tx.oncomplete=()=>db.close()
+  })
+}
+async function saveCreatorPreparationPhoto(draftId,file){
+  const db=await creatorPhotoDb();
+  const row={key:creatorPreparationPhotoKey(draftId),blob:file,name:String(file?.name||'photo'),type:String(file?.type||'image/jpeg'),size:Number(file?.size||0),updatedAt:new Date().toISOString()};
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction('photos','readwrite');
+    tx.objectStore('photos').put(row);
+    tx.oncomplete=resolve;
+    tx.onerror=()=>reject(tx.error||new Error('PREPARATION_PHOTO_DRAFT_SAVE_FAILED'));
+    tx.onabort=()=>reject(tx.error||new Error('PREPARATION_PHOTO_DRAFT_SAVE_FAILED'))
+  });
+  db.close();
+  return row
+}
+async function deleteCreatorPreparationPhoto(draftId){
+  try{
+    const db=await creatorPhotoDb();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction('photos','readwrite');
+      tx.objectStore('photos').delete(creatorPreparationPhotoKey(draftId));
+      tx.oncomplete=resolve;
+      tx.onerror=()=>reject(tx.error||new Error('PREPARATION_PHOTO_DRAFT_DELETE_FAILED'))
+    });
+    db.close()
+  }catch(_){}
+}
+function creatorStageFiveIngredients(preparation){
+  return (Array.isArray(preparation?.components)?preparation.components:[])
+    .filter(row=>row&&String(row.componentType||'').toUpperCase()==='INGREDIENT')
+    .slice()
+    .sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0))
+}
+function creatorStageFiveSavePreparation(draftId,preparation){
+  const draft=readCreatorDraft()||{};
+  const rows=creatorAllComponents(draft).map(row=>{
+    if(row?.preparationSource!=='pending'||String(row?.pendingPreparation?.draftId||'')!==String(draftId||''))return row;
+    const nextPreparation={...row.pendingPreparation,...preparation,recipeType:'SUBRECIPE',draftId:String(draftId||row.pendingPreparation?.draftId||''),updatedAt:new Date().toISOString()};
+    return {...row,pendingPreparation:nextPreparation,displayEs:String(nextPreparation.titleEs||nextPreparation.titleEn||row.displayEs||''),displayEn:String(nextPreparation.titleEn||nextPreparation.titleEs||row.displayEn||'')}
+  });
+  const next={...draft,components:rows,stage:Math.max(5,Number(draft.stage||0)),stage5Complete:false,schemaVersion:Math.max(5,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
+  saveCreatorDraft(next);
+  return next
+}
+function creatorStageFiveValidation(preparation){
+  if(!preparation)return tr('No se encontró la preparación pendiente.','Pending preparation was not found.');
+  if(!String(preparation.titleEs||'').trim()&&!String(preparation.titleEn||'').trim())return tr('Escribe al menos un nombre para la preparación.','Enter at least one preparation name.');
+  const qty=preparation.yieldQty;
+  if(qty!==null&&qty!==undefined&&qty!==''&&(!Number.isFinite(Number(qty))||Number(qty)<0))return tr('El rendimiento debe ser un número válido.','Yield must be a valid number.');
+  const ingredients=creatorStageFiveIngredients(preparation);
+  if(!ingredients.length)return tr('Añade al menos un ingrediente propio a esta preparación.','Add at least one ingredient to this preparation.');
+  for(const row of ingredients){
+    if(row.quantity!==null&&row.quantity!==undefined&&row.quantity!==''&&(!Number.isFinite(Number(row.quantity))||Number(row.quantity)<0))return tr('Revisa las cantidades de los ingredientes de la preparación.','Check the preparation ingredient quantities.');
+  }
+  return ''
+}
+function creatorStageFivePreparationName(row){
+  const p=row?.pendingPreparation||{};
+  return String(lang()==='en'?(p.titleEn||p.titleEs||row?.displayEn||row?.displayEs||''):(p.titleEs||p.titleEn||row?.displayEs||row?.displayEn||''))||tr('Preparación pendiente','Pending preparation')
+}
+function creatorStageFiveMarkup(draft={}){
+  const pending=creatorPendingPreparations(draft);
+  const complete=pending.filter(row=>row.pendingPreparation?.stage5Complete===true&&!creatorStageFiveValidation(row.pendingPreparation)).length;
+  const options=pending.map(row=>{
+    const p=row.pendingPreparation||{};
+    const ready=p.stage5Complete===true&&!creatorStageFiveValidation(p);
+    return '<option value="'+esc(p.draftId)+'">'+(ready?'✓ ':'')+esc(creatorStageFivePreparationName(row))+'</option>'
+  }).join('');
+  return '<form class="nexoCreatorStage nexoCreatorStageFive" data-nexo-creator-stage-five novalidate>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 5 de 8','Stage 5 of 8'))+'</span><strong>'+esc(tr('Desarrollar preparaciones pendientes','Build pending preparations'))+'</strong></div>'+
+    '<div class="nexoCreatorStageSummary"><span>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</span><strong data-stage-five-count>'+complete+' / '+pending.length+' '+esc(tr('listas','ready'))+'</strong></div>'+
+    '<p class="nexoCreatorIntro">'+esc(tr('Completa cada subproducto pendiente dentro del mismo borrador: identidad, rendimiento, portada opcional e ingredientes propios. Nada se escribirá todavía en DMRecipes.','Complete each pending subproduct inside the same draft: identity, yield, optional cover and its own ingredients. Nothing is written to DMRecipes yet.'))+'</p>'+
+    (pending.length?'<label class="nexoCreatorField nexoCreatorStageFiveSelector"><span>'+esc(tr('Preparación pendiente','Pending preparation'))+'</span><select data-stage-five-select>'+options+'</select></label><div data-stage-five-editor></div>':'<div class="nexoCreatorIngredientEmpty nexoCreatorStageFiveEmpty">'+icon('preparaciones')+'<p>'+esc(tr('Esta ficha no tiene preparaciones pendientes. Puedes completar la etapa y continuar.','This sheet has no pending preparations. You can complete the stage and continue.'))+'</p></div>')+
+    '<div class="nexoCreatorStatus" data-creator-status aria-live="polite"></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-five-back>'+esc(tr('← Etapa 4','← Stage 4'))+'</button><button type="button" class="nexoWorkspaceBtn" data-stage-five-save-close>'+esc(tr('Guardar y cerrar','Save & close'))+'</button><button type="submit" class="nexoWorkspaceBtn primary">'+esc(tr('Completar etapa 5','Complete stage 5'))+'</button></div>'+
+  '</form>'
+}
+function creatorStageFiveEditorMarkup(row){
+  const p=row?.pendingPreparation||{};
+  const yieldQty=p.yieldQty===null||p.yieldQty===undefined?'':String(p.yieldQty);
+  const yieldUnit=String(p.yieldUnitEs||p.yieldUnitEn||'');
+  const categories=creatorCategorySuggestions().map(value=>'<option value="'+esc(value)+'"></option>').join('');
+  const units=creatorUnitSuggestions().map(value=>'<option value="'+esc(value)+'"></option>').join('');
+  const ingredients=creatorStageFiveIngredients(p);
+  const ready=p.stage5Complete===true&&!creatorStageFiveValidation(p);
+  return '<section class="nexoCreatorStageFiveEditor" data-stage-five-active="'+esc(p.draftId)+'">'+
+    '<div class="nexoCreatorStageFiveEditorHead"><div><span>'+esc(tr('SUBRECIPE local','Local SUBRECIPE'))+'</span><strong>'+esc(creatorStageFivePreparationName(row))+'</strong></div><b class="'+(ready?'ready':'')+'">'+esc(ready?tr('Lista','Ready'):tr('En edición','Editing'))+'</b></div>'+
+    '<div class="nexoCreatorEditorGrid">'+
+      '<div class="nexoCreatorPhotoPanel"><div class="nexoCreatorPhotoPreview" data-creator-photo-preview><div class="nexoCreatorPhotoEmpty">'+icon('foto')+'<span>'+esc(tr('Sin foto de portada','No cover photo'))+'</span></div></div><input type="file" accept="image/*" data-stage-five-photo-input hidden><div class="nexoCreatorPhotoActions"><button type="button" class="nexoWorkspaceBtn" data-stage-five-photo-pick>'+esc(tr('Elegir foto','Choose photo'))+'</button><button type="button" class="nexoWorkspaceBtn" data-creator-photo-remove hidden>'+esc(tr('Quitar','Remove'))+'</button></div><small>'+esc(tr('La foto queda local en IndexedDB hasta la publicación final.','The photo stays local in IndexedDB until final publication.'))+'</small></div>'+
+      '<div class="nexoCreatorMainFields">'+
+        '<div class="nexoCreatorTwoCols"><label class="nexoCreatorField"><span>'+esc(tr('Nombre ES','Name ES'))+'</span><input data-stage-five-title-es maxlength="160" value="'+esc(p.titleEs||'')+'"></label><label class="nexoCreatorField"><span>'+esc(tr('Nombre EN','Name EN'))+'</span><input data-stage-five-title-en maxlength="160" value="'+esc(p.titleEn||'')+'"></label></div>'+
+        '<div class="nexoCreatorTwoCols"><label class="nexoCreatorField"><span>'+esc(tr('Idioma original','Original language'))+'</span><select data-stage-five-original-language><option value="es" '+(String(p.originalLanguage||'es')==='es'?'selected':'')+'>ES</option><option value="en" '+(String(p.originalLanguage||'')==='en'?'selected':'')+'>EN</option></select></label><label class="nexoCreatorField"><span>'+esc(tr('Categoría','Category'))+'</span><input data-stage-five-category maxlength="120" list="nexoCreatorStageFiveCategories" value="'+esc(p.category||'')+'"><datalist id="nexoCreatorStageFiveCategories">'+categories+'</datalist></label></div>'+
+        '<div class="nexoCreatorTwoCols"><label class="nexoCreatorField"><span>'+esc(tr('Rendimiento','Yield'))+'</span><input data-stage-five-yield-qty type="number" min="0" step="any" inputmode="decimal" value="'+esc(yieldQty)+'"></label><label class="nexoCreatorField"><span>'+esc(tr('Unidad de rendimiento','Yield unit'))+'</span><input data-stage-five-yield-unit maxlength="40" list="nexoCreatorStageFiveUnits" value="'+esc(yieldUnit)+'"><datalist id="nexoCreatorStageFiveUnits">'+units+'</datalist></label></div>'+
+        '<div class="nexoCreatorTwoCols"><label class="nexoCreatorField"><span>'+esc(tr('Descripción ES','Description ES'))+'</span><textarea data-stage-five-description-es maxlength="1000" rows="3">'+esc(p.descriptionEs||'')+'</textarea></label><label class="nexoCreatorField"><span>'+esc(tr('Descripción EN','Description EN'))+'</span><textarea data-stage-five-description-en maxlength="1000" rows="3">'+esc(p.descriptionEn||'')+'</textarea></label></div>'+
+        '<div class="nexoCreatorTwoCols"><label class="nexoCreatorField"><span>'+esc(tr('Notas ES','Notes ES'))+'</span><textarea data-stage-five-notes-es maxlength="2000" rows="3">'+esc(p.notesEs||'')+'</textarea></label><label class="nexoCreatorField"><span>'+esc(tr('Notas EN','Notes EN'))+'</span><textarea data-stage-five-notes-en maxlength="2000" rows="3">'+esc(p.notesEn||'')+'</textarea></label></div>'+
+      '</div>'+
+    '</div>'+
+    '<section class="nexoCreatorIngredientAdd nexoCreatorStageFiveIngredientAdd"><div class="nexoCreatorIngredientSearchBox"><label class="nexoCreatorField"><span>'+esc(tr('Añadir ingrediente existente','Add existing ingredient'))+'</span><input data-stage-five-ingredient-search autocomplete="off" placeholder="'+esc(tr('Buscar ingrediente…','Search ingredient…'))+'"></label><div class="nexoCreatorIngredientResults" data-stage-five-ingredient-results><p>'+esc(tr('Busca entre los ingredientes autorizados del Workspace.','Search the Workspace authorized ingredients.'))+'</p></div></div><div class="nexoCreatorIngredientOr"><span>'+esc(tr('o','or'))+'</span></div><div class="nexoCreatorNewIngredient"><button type="button" class="nexoWorkspaceBtn wide" data-stage-five-new-ingredient-toggle>'+icon('nuevo')+'<span>'+esc(tr('Crear ingrediente nuevo','Create new ingredient'))+'</span></button><div class="nexoCreatorNewIngredientForm" data-stage-five-new-ingredient-form hidden><div class="nexoCreatorTwoCols"><label class="nexoCreatorField"><span>'+esc(tr('Nombre ES','Name ES'))+'</span><input data-stage-five-new-ingredient-es maxlength="160"></label><label class="nexoCreatorField"><span>'+esc(tr('Nombre EN','Name EN'))+'</span><input data-stage-five-new-ingredient-en maxlength="160"></label></div><div class="nexoCreatorTwoCols"><label class="nexoCreatorField"><span>'+esc(tr('Descripción ES · opcional','Description ES · optional'))+'</span><textarea data-stage-five-new-ingredient-description-es maxlength="1000" rows="2"></textarea></label><label class="nexoCreatorField"><span>'+esc(tr('Descripción EN · opcional','Description EN · optional'))+'</span><textarea data-stage-five-new-ingredient-description-en maxlength="1000" rows="2"></textarea></label></div><button type="button" class="nexoWorkspaceBtn primary" data-stage-five-add-new-ingredient>'+esc(tr('Añadir ingrediente','Add ingredient'))+'</button></div></div></section>'+
+    '<section class="nexoCreatorIngredientListWrap"><div class="nexoCreatorIngredientListHead"><strong>'+esc(tr('Ingredientes propios','Own ingredients'))+'</strong><span data-stage-five-ingredient-count>'+ingredients.length+' '+esc(tr(ingredients.length===1?'ingrediente':'ingredientes',ingredients.length===1?'ingredient':'ingredients'))+'</span></div><div class="nexoCreatorIngredientList" data-stage-five-ingredient-list></div></section>'+
+    '<div class="nexoCreatorStageFiveLocalActions"><button type="button" class="nexoWorkspaceBtn primary" data-stage-five-complete-preparation>'+esc(tr('Guardar preparación como lista','Save preparation as ready'))+'</button></div>'+
+  '</section>'
+}
+function creatorStageFiveIngredientRowsFromForm(form,preparation){
+  const previous=new Map(creatorStageFiveIngredients(preparation).map(row=>[String(row.draftId),row]));
+  const rows=[];
+  form.querySelectorAll('[data-stage-five-ingredient-list] [data-creator-component-id]').forEach((el,index)=>{
+    const id=String(el.dataset.creatorComponentId||''),base=previous.get(id);
+    if(!base)return;
+    const qtyRaw=String(el.querySelector('[data-ingredient-quantity]')?.value||'').trim();
+    const quantity=qtyRaw===''?null:Number(qtyRaw);
+    const unit=creatorNormalizeComponentUnit(el.querySelector('[data-ingredient-unit]')?.value||'');
+    rows.push({...base,componentType:'INGREDIENT',quantity:Number.isFinite(quantity)?quantity:null,unitEs:unit.es,unitEn:unit.en,noteEs:String(el.querySelector('[data-ingredient-note-es]')?.value||'').trim(),noteEn:String(el.querySelector('[data-ingredient-note-en]')?.value||'').trim(),sortOrder:index+1})
+  });
+  return rows
+}
+function saveStageFivePreparationFromForm(form,{complete=false,silent=false}={}){
+  const activeId=String(form.dataset.stageFiveActive||'');
+  if(!activeId)return readCreatorDraft()||{};
+  const entry=creatorPendingPreparationEntry(readCreatorDraft()||{},activeId);
+  if(!entry)return null;
+  const current=entry.pendingPreparation||{},status=form.querySelector('[data-creator-status]');
+  const titleEs=String(form.querySelector('[data-stage-five-title-es]')?.value||'').trim();
+  const titleEn=String(form.querySelector('[data-stage-five-title-en]')?.value||'').trim();
+  const qtyRaw=String(form.querySelector('[data-stage-five-yield-qty]')?.value||'').trim();
+  const yieldQty=qtyRaw===''?null:Number(qtyRaw);
+  if(qtyRaw!==''&&(!Number.isFinite(yieldQty)||yieldQty<0)){if(!silent)status.textContent=tr('El rendimiento debe ser un número válido.','Yield must be a valid number.');return null}
+  const yieldUnit=creatorUnitPair(form.querySelector('[data-stage-five-yield-unit]')?.value||'');
+  const preparation={...current,recipeType:'SUBRECIPE',titleEs,titleEn,originalLanguage:String(form.querySelector('[data-stage-five-original-language]')?.value||'es')==='en'?'en':'es',category:String(form.querySelector('[data-stage-five-category]')?.value||'').trim(),yieldQty,yieldUnitEs:yieldUnit.es,yieldUnitEn:yieldUnit.en,descriptionEs:String(form.querySelector('[data-stage-five-description-es]')?.value||'').trim(),descriptionEn:String(form.querySelector('[data-stage-five-description-en]')?.value||'').trim(),notesEs:String(form.querySelector('[data-stage-five-notes-es]')?.value||'').trim(),notesEn:String(form.querySelector('[data-stage-five-notes-en]')?.value||'').trim(),components:creatorStageFiveIngredientRowsFromForm(form,current)};
+  const validation=complete?creatorStageFiveValidation(preparation):'';
+  if(validation){if(!silent)status.textContent=validation;return null}
+  preparation.stage5Complete=complete===true?true:current.stage5Complete===true;
+  return creatorStageFiveSavePreparation(activeId,preparation)
+}
+function renderStageFiveIngredientRows(form){
+  const preparation=creatorPendingPreparationEntry(readCreatorDraft()||{},form.dataset.stageFiveActive)?.pendingPreparation||{};
+  const rows=creatorStageFiveIngredients(preparation),list=form.querySelector('[data-stage-five-ingredient-list]'),count=form.querySelector('[data-stage-five-ingredient-count]');
+  if(count)count.textContent=rows.length+' '+tr(rows.length===1?'ingrediente':'ingredientes',rows.length===1?'ingredient':'ingredients');
+  if(!list)return;
+  if(!rows.length){list.innerHTML='<div class="nexoCreatorIngredientEmpty">'+icon('productos')+'<p>'+esc(tr('Añade los ingredientes que componen esta preparación.','Add the ingredients used by this preparation.'))+'</p></div>';return}
+  list.innerHTML=rows.map((row,index)=>creatorStageThreeRow(row,index,rows.length)).join('');
+  list.querySelectorAll('[data-creator-component-id]').forEach(el=>{
+    ['input','change'].forEach(type=>el.addEventListener(type,()=>saveStageFivePreparationFromForm(form,{silent:true})));
+    el.querySelector('[data-ingredient-remove]').onclick=()=>{saveStageFivePreparationFromForm(form,{silent:true});const p=creatorPendingPreparationEntry(readCreatorDraft()||{},form.dataset.stageFiveActive)?.pendingPreparation||{};creatorStageFiveSavePreparation(form.dataset.stageFiveActive,{...p,components:creatorStageFiveIngredients(p).filter(row=>String(row.draftId)!==String(el.dataset.creatorComponentId||'')),stage5Complete:false});renderStageFiveIngredientRows(form)};
+    el.querySelector('[data-ingredient-up]').onclick=()=>{saveStageFivePreparationFromForm(form,{silent:true});const p=creatorPendingPreparationEntry(readCreatorDraft()||{},form.dataset.stageFiveActive)?.pendingPreparation||{},next=creatorStageFiveIngredients(p),index=next.findIndex(row=>String(row.draftId)===String(el.dataset.creatorComponentId||''));if(index>0){[next[index-1],next[index]]=[next[index],next[index-1]];creatorStageFiveSavePreparation(form.dataset.stageFiveActive,{...p,components:next.map((row,i)=>({...row,sortOrder:i+1})),stage5Complete:false});renderStageFiveIngredientRows(form)}};
+    el.querySelector('[data-ingredient-down]').onclick=()=>{saveStageFivePreparationFromForm(form,{silent:true});const p=creatorPendingPreparationEntry(readCreatorDraft()||{},form.dataset.stageFiveActive)?.pendingPreparation||{},next=creatorStageFiveIngredients(p),index=next.findIndex(row=>String(row.draftId)===String(el.dataset.creatorComponentId||''));if(index>=0&&index<next.length-1){[next[index],next[index+1]]=[next[index+1],next[index]];creatorStageFiveSavePreparation(form.dataset.stageFiveActive,{...p,components:next.map((row,i)=>({...row,sortOrder:i+1})),stage5Complete:false});renderStageFiveIngredientRows(form)}}
+  })
+}
+function renderStageFiveIngredientSearchResults(form,query){
+  const box=form.querySelector('[data-stage-five-ingredient-results]');
+  if(!box)return;
+  const q=String(query||'').trim();
+  if(!q){box.innerHTML='<p>'+esc(tr('Busca entre los ingredientes autorizados del Workspace.','Search the Workspace authorized ingredients.'))+'</p>';return}
+  const matches=creatorExistingIngredients().filter(row=>creatorIngredientMatches(row,q)).slice(0,12);
+  if(!matches.length){box.innerHTML='<p>'+esc(tr('No hay coincidencias. Puedes crear este ingrediente como nuevo.','No matches. You can create this ingredient as new.'))+'</p>';return}
+  box.innerHTML=matches.map(row=>{const id=String(row._id||row.id||''),name=creatorIngredientName(row),sub=lang()==='en'?(row.nameEs||''):(row.nameEn||''),image=img((Array.isArray(row.images)?row.images[0]:null)||row.baseImage||'');return '<button type="button" data-stage-five-existing-ingredient="'+esc(id)+'"><span class="nexoCreatorIngredientSearchThumb">'+(image?'<img src="'+esc(image)+'" alt="">':icon('productos'))+'</span><span><strong>'+esc(name)+'</strong>'+(sub&&sub!==name?'<small>'+esc(sub)+'</small>':'')+'</span><b>'+esc(tr('Añadir','Add'))+'</b></button>'}).join('');
+  box.querySelectorAll('[data-stage-five-existing-ingredient]').forEach(btn=>btn.onclick=()=>{const ingredient=creatorExistingIngredients().find(row=>String(row._id||row.id||'')===String(btn.dataset.stageFiveExistingIngredient||''));if(ingredient)addExistingStageFiveIngredient(form,ingredient)})
+}
+function addExistingStageFiveIngredient(form,ingredient){
+  saveStageFivePreparationFromForm(form,{silent:true});
+  const entry=creatorPendingPreparationEntry(readCreatorDraft()||{},form.dataset.stageFiveActive);
+  if(!entry)return;
+  const p=entry.pendingPreparation||{},id=String(ingredient?._id||ingredient?.id||'');
+  if(!id)return;
+  const rows=creatorStageFiveIngredients(p);
+  rows.push({draftId:creatorDraftId('component'),componentType:'INGREDIENT',ingredientSource:'existing',targetIngredientId:id,targetPreparationId:'',targetRecipeId:'',quantity:null,unitEs:'',unitEn:'',displayEs:String(ingredient.nameEs||ingredient.nameEn||''),displayEn:String(ingredient.nameEn||ingredient.nameEs||''),noteEs:'',noteEn:'',sortOrder:rows.length+1});
+  creatorStageFiveSavePreparation(form.dataset.stageFiveActive,{...p,components:rows,stage5Complete:false});
+  renderStageFiveIngredientRows(form);
+  const search=form.querySelector('[data-stage-five-ingredient-search]');if(search){search.value='';renderStageFiveIngredientSearchResults(form,'')}
+}
+function addNewStageFiveIngredient(form){
+  const status=form.querySelector('[data-creator-status]'),nameEs=String(form.querySelector('[data-stage-five-new-ingredient-es]')?.value||'').trim(),nameEn=String(form.querySelector('[data-stage-five-new-ingredient-en]')?.value||'').trim();
+  if(!nameEs&&!nameEn){status.textContent=tr('Escribe al menos un nombre para el ingrediente nuevo.','Enter at least one name for the new ingredient.');return}
+  const names=[nameEs,nameEn].filter(Boolean).map(searchNorm);
+  const existing=creatorExistingIngredients().find(row=>[row.nameEs,row.nameEn].filter(Boolean).map(searchNorm).some(name=>names.includes(name)));
+  if(existing){status.textContent=tr('Ese ingrediente ya existe. Añádelo desde la búsqueda para evitar duplicados.','That ingredient already exists. Add it from search to avoid duplicates.');return}
+  saveStageFivePreparationFromForm(form,{silent:true});
+  const entry=creatorPendingPreparationEntry(readCreatorDraft()||{},form.dataset.stageFiveActive);if(!entry)return;
+  const p=entry.pendingPreparation||{},rows=creatorStageFiveIngredients(p);
+  if(rows.some(row=>row.ingredientSource==='new'&&[row.newIngredient?.nameEs,row.newIngredient?.nameEn].filter(Boolean).map(searchNorm).some(name=>names.includes(name)))){status.textContent=tr('Ese ingrediente nuevo ya está en esta preparación.','That new ingredient is already in this preparation.');return}
+  const newIngredient={draftId:creatorDraftId('ingredient'),nameEs:nameEs||nameEn,nameEn:nameEn||nameEs,descriptionEs:String(form.querySelector('[data-stage-five-new-ingredient-description-es]')?.value||'').trim(),descriptionEn:String(form.querySelector('[data-stage-five-new-ingredient-description-en]')?.value||'').trim()};
+  rows.push({draftId:creatorDraftId('component'),componentType:'INGREDIENT',ingredientSource:'new',targetIngredientId:'',targetPreparationId:'',targetRecipeId:'',newIngredient,quantity:null,unitEs:'',unitEn:'',displayEs:newIngredient.nameEs,displayEn:newIngredient.nameEn,noteEs:'',noteEn:'',sortOrder:rows.length+1});
+  creatorStageFiveSavePreparation(form.dataset.stageFiveActive,{...p,components:rows,stage5Complete:false});
+  ['[data-stage-five-new-ingredient-es]','[data-stage-five-new-ingredient-en]','[data-stage-five-new-ingredient-description-es]','[data-stage-five-new-ingredient-description-en]'].forEach(sel=>{const el=form.querySelector(sel);if(el)el.value=''});
+  const newForm=form.querySelector('[data-stage-five-new-ingredient-form]');if(newForm)newForm.hidden=true;
+  status.textContent=tr('Ingrediente nuevo añadido a la preparación local.','New ingredient added to the local preparation.');
+  renderStageFiveIngredientRows(form)
+}
+function renderStageFiveSelector(form){
+  const pending=creatorPendingPreparations(readCreatorDraft()||{}),select=form.querySelector('[data-stage-five-select]');
+  const current=String(form.dataset.stageFiveActive||select?.value||pending[0]?.pendingPreparation?.draftId||'');
+  if(select)select.innerHTML=pending.map(row=>{const p=row.pendingPreparation||{},ready=p.stage5Complete===true&&!creatorStageFiveValidation(p);return '<option value="'+esc(p.draftId)+'" '+(String(p.draftId)===current?'selected':'')+'>'+(ready?'✓ ':'')+esc(creatorStageFivePreparationName(row))+'</option>'}).join('');
+  const complete=pending.filter(row=>row.pendingPreparation?.stage5Complete===true&&!creatorStageFiveValidation(row.pendingPreparation)).length,count=form.querySelector('[data-stage-five-count]');
+  if(count)count.textContent=complete+' / '+pending.length+' '+tr('listas','ready')
+}
+async function hydrateStageFivePhoto(form,draftId){
+  const preview=form.querySelector('[data-creator-photo-preview]');
+  try{applyCreatorPhotoPreview(preview,await readCreatorPreparationPhoto(draftId))}catch(_){applyCreatorPhotoPreview(preview,null)}
+}
+function bindStageFiveEditor(form){
+  const activeId=String(form.dataset.stageFiveActive||''),editor=form.querySelector('[data-stage-five-editor]');
+  if(!editor||!activeId)return;
+  const fileInput=editor.querySelector('[data-stage-five-photo-input]');
+  editor.querySelector('[data-stage-five-photo-pick]').onclick=()=>fileInput.click();
+  fileInput.addEventListener('change',async()=>{
+    const file=fileInput.files?.[0],status=form.querySelector('[data-creator-status]');
+    if(!file)return;
+    if(!String(file.type||'').startsWith('image/')){status.textContent=tr('Selecciona un archivo de imagen válido.','Select a valid image file.');fileInput.value='';return}
+    if(Number(file.size||0)>15*1024*1024){status.textContent=tr('La foto no puede superar 15 MB.','Photo cannot exceed 15 MB.');fileInput.value='';return}
+    try{
+      const row=await saveCreatorPreparationPhoto(activeId,file);
+      saveStageFivePreparationFromForm(form,{silent:true});
+      const p=creatorPendingPreparationEntry(readCreatorDraft()||{},activeId)?.pendingPreparation||{};
+      creatorStageFiveSavePreparation(activeId,{...p,heroDraft:{name:row.name,type:row.type,size:row.size,updatedAt:row.updatedAt},stage5Complete:false});
+      applyCreatorPhotoPreview(editor.querySelector('[data-creator-photo-preview]'),row);
+      status.textContent=tr('Foto de la preparación guardada en el borrador.','Preparation photo saved in the draft.')
+    }catch(error){status.textContent=String(error?.message||error||tr('No se pudo guardar la foto.','Could not save photo.'))}
+    finally{fileInput.value=''}
+  });
+  editor.querySelector('[data-creator-photo-remove]').onclick=async()=>{
+    await deleteCreatorPreparationPhoto(activeId);
+    saveStageFivePreparationFromForm(form,{silent:true});
+    const p={...(creatorPendingPreparationEntry(readCreatorDraft()||{},activeId)?.pendingPreparation||{}),stage5Complete:false};
+    delete p.heroDraft;creatorStageFiveSavePreparation(activeId,p);applyCreatorPhotoPreview(editor.querySelector('[data-creator-photo-preview]'),null)
+  };
+  const search=editor.querySelector('[data-stage-five-ingredient-search]');
+  ['input','keyup','search','change'].forEach(type=>search?.addEventListener(type,()=>renderStageFiveIngredientSearchResults(form,search.value)));
+  const toggle=editor.querySelector('[data-stage-five-new-ingredient-toggle]'),newForm=editor.querySelector('[data-stage-five-new-ingredient-form]');
+  toggle.onclick=()=>{newForm.hidden=!newForm.hidden;if(!newForm.hidden)editor.querySelector('[data-stage-five-new-ingredient-es]')?.focus()};
+  editor.querySelector('[data-stage-five-add-new-ingredient]').onclick=()=>addNewStageFiveIngredient(form);
+  editor.querySelector('[data-stage-five-complete-preparation]').onclick=()=>{
+    const next=saveStageFivePreparationFromForm(form,{complete:true});
+    if(!next)return;
+    form.querySelector('[data-creator-status]').textContent=tr('Preparación guardada como lista.','Preparation saved as ready.');
+    renderStageFiveSelector(form);
+    const remaining=creatorPendingPreparations(next).find(row=>row.pendingPreparation?.stage5Complete!==true||creatorStageFiveValidation(row.pendingPreparation));
+    if(remaining&&String(remaining.pendingPreparation?.draftId)!==activeId){form.dataset.stageFiveActive=String(remaining.pendingPreparation.draftId);const select=form.querySelector('[data-stage-five-select]');if(select)select.value=form.dataset.stageFiveActive}
+    renderStageFiveEditor(form)
+  };
+  renderStageFiveIngredientRows(form);
+  hydrateStageFivePhoto(form,activeId)
+}
+function renderStageFiveEditor(form){
+  const editor=form.querySelector('[data-stage-five-editor]');
+  if(!editor)return;
+  const entry=creatorPendingPreparationEntry(readCreatorDraft()||{},form.dataset.stageFiveActive);
+  if(!entry){editor.innerHTML='';return}
+  editor.innerHTML=creatorStageFiveEditorMarkup(entry);
+  bindStageFiveEditor(form)
+}
+function showStageFiveComplete(layerEl,draft){
+  const body=layerEl.querySelector('.nexoWorkspaceModalBody');
+  if(!body)return;
+  const pending=creatorPendingPreparations(draft);
+  body.innerHTML='<div class="nexoCreatorComplete"><div class="nexoWorkspaceEmptyIcon">'+icon('preparaciones')+'</div><div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 5 de 8','Stage 5 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div><h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3><div class="nexoCreatorSummary"><div><span>'+esc(tr('Preparaciones desarrolladas','Built preparations'))+'</span><strong>'+pending.length+'</strong></div><div><span>'+esc(tr('Persistencia Wix','Wix persistence'))+'</span><strong>'+esc(tr('Aún no','Not yet'))+'</strong></div></div><p>'+esc(pending.length?tr('Las subrecetas pendientes ya tienen su estructura local. La Etapa 6 resolverá sus vínculos sin crear registros incompletos.','Pending subrecipes now have their local structure. Stage 6 will resolve their links without creating incomplete records.'):tr('No había subrecetas pendientes. El borrador queda listo para la Etapa 6.','There were no pending subrecipes. The draft is ready for Stage 6.'))+'</p><div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-five-edit>'+esc(tr('Editar etapa 5','Edit stage 5'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-five-close>'+esc(tr('Listo','Done'))+'</button></div></div>';
+  body.querySelector('[data-stage-five-edit]').onclick=()=>openCreateStageFive();
+  body.querySelector('[data-stage-five-close]').onclick=closeLayer
+}
+function bindCreatorStageFive(layerEl,draft){
+  const form=layerEl.querySelector('[data-nexo-creator-stage-five]');
+  if(!form)return;
+  const pending=creatorPendingPreparations(draft),select=form.querySelector('[data-stage-five-select]');
+  form.dataset.stageFiveActive=String(select?.value||pending[0]?.pendingPreparation?.draftId||'');
+  if(select)select.addEventListener('change',()=>{saveStageFivePreparationFromForm(form,{silent:true});form.dataset.stageFiveActive=String(select.value||'');renderStageFiveEditor(form)});
+  form.querySelector('[data-stage-five-back]').onclick=()=>{saveStageFivePreparationFromForm(form,{silent:true});openCreateStageFour()};
+  form.querySelector('[data-stage-five-save-close]').onclick=()=>{saveStageFivePreparationFromForm(form,{silent:true});closeLayer()};
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    if(form.dataset.stageFiveActive&&!saveStageFivePreparationFromForm(form,{silent:true}))return;
+    const current=readCreatorDraft()||{},rows=creatorPendingPreparations(current);
+    const invalid=rows.find(row=>row.pendingPreparation?.stage5Complete!==true||creatorStageFiveValidation(row.pendingPreparation));
+    if(invalid){
+      const id=String(invalid.pendingPreparation?.draftId||'');form.dataset.stageFiveActive=id;if(select)select.value=id;renderStageFiveEditor(form);
+      form.querySelector('[data-creator-status]').textContent=creatorStageFiveValidation(invalid.pendingPreparation)||tr('Guarda esta preparación como lista antes de completar la etapa.','Save this preparation as ready before completing the stage.');
+      return
+    }
+    const next={...current,stage:Math.max(5,Number(current.stage||0)),stage5Complete:true,schemaVersion:Math.max(5,Number(current.schemaVersion||0)),updatedAt:new Date().toISOString()};
+    saveCreatorDraft(next);showStageFiveComplete(layerEl,next)
+  });
+  renderStageFiveSelector(form);renderStageFiveEditor(form)
+}
+function openCreateStageFive(){
+  if(!canCreate())return;
+  const draft=readCreatorDraft()||{};
+  if(Number(draft.stage||0)<4||draft.stage4Complete!==true){openCreateStageFour();return}
+  const next={...draft,stage:Math.max(5,Number(draft.stage||0)),schemaVersion:Math.max(5,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
+  saveCreatorDraft(next);
+  const el=layer(tr('Crear ficha técnica','Create technical sheet'),creatorStageFiveMarkup(next));
+  el.querySelector('.nexoWorkspaceModal')?.classList.add('nexoCreatorModalWide','nexoCreatorModalIngredients','nexoCreatorModalStageFive');
+  bindCreatorStageFive(el,next)
+}
+
 function openCreateFlow(){
   if(!canCreate())return;
   const draft=readCreatorDraft();
+  if(draft&&Number(draft.stage||0)>=5&&draft.stage4Complete===true&&draft.title&&draft.collectionId){openCreateStageFive();return}
   if(draft&&Number(draft.stage||0)>=4&&draft.title&&draft.collectionId){openCreateStageFour();return}
   if(draft&&Number(draft.stage||0)>=3&&draft.title&&draft.collectionId){openCreateStageThree();return}
   if(draft&&Number(draft.stage||0)>=2&&draft.title&&draft.collectionId){openCreateStageTwo();return}
