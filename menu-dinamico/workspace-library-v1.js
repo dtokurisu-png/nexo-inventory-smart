@@ -674,7 +674,7 @@ function creatorStageThreeRow(row,index,total){
   const unit=String(row.unitEs||row.unitEn||'');
   return '<article class="nexoCreatorIngredientRow" data-creator-component-id="'+esc(row.draftId)+'">'+
     '<div class="nexoCreatorIngredientIdentity">'+
-      '<div class="nexoCreatorIngredientThumb">'+(image?'<img src="'+esc(image)+'" alt="">':icon(row.ingredientSource==='new'?'nuevo':'producto'))+'</div>'+
+      '<div class="nexoCreatorIngredientThumb">'+(image?'<img src="'+esc(image)+'" alt="">':icon(row.ingredientSource==='new'?'nuevo':'productos'))+'</div>'+
       '<div><span class="nexoCreatorIngredientSource">'+esc(source)+'</span><strong>'+esc(name)+'</strong></div>'+
       '<div class="nexoCreatorIngredientOrder">'+
         '<button type="button" data-ingredient-up title="'+esc(tr('Subir','Move up'))+'" '+(index===0?'disabled':'')+'>↑</button>'+
@@ -698,7 +698,7 @@ function saveCreatorComponents(ingredients,{complete=false}={}){
   const draft=readCreatorDraft()||{};
   const others=(Array.isArray(draft.components)?draft.components:[]).filter(row=>String(row?.componentType||'').toUpperCase()!=='INGREDIENT');
   const ordered=ingredients.map((row,index)=>({...row,componentType:'INGREDIENT',sortOrder:index+1}));
-  const next={...draft,components:[...ordered,...others],stage:complete?Math.max(3,Number(draft.stage||0)):Math.max(3,Number(draft.stage||0)),schemaVersion:3,updatedAt:new Date().toISOString()};
+  const next={...draft,components:[...ordered,...others],stage:Math.max(3,Number(draft.stage||0)),stage3Complete:complete===true?true:draft.stage3Complete===true,schemaVersion:3,updatedAt:new Date().toISOString()};
   saveCreatorDraft(next);
   return next
 }
@@ -733,7 +733,7 @@ function renderStageThreeRows(form){
   if(countEl)countEl.textContent=rows.length+' '+tr(rows.length===1?'ingrediente':'ingredientes',rows.length===1?'ingredient':'ingredients');
   if(!list)return;
   if(!rows.length){
-    list.innerHTML='<div class="nexoCreatorIngredientEmpty">'+icon('ingrediente')+'<p>'+esc(tr('Todavía no has añadido ingredientes.','No ingredients added yet.'))+'</p></div>';
+    list.innerHTML='<div class="nexoCreatorIngredientEmpty">'+icon('productos')+'<p>'+esc(tr('Todavía no has añadido ingredientes.','No ingredients added yet.'))+'</p></div>';
     return
   }
   list.innerHTML=rows.map((row,index)=>creatorStageThreeRow(row,index,rows.length)).join('');
@@ -898,7 +898,7 @@ function showStageThreeComplete(layerEl,draft){
   if(!body)return;
   const rows=creatorIngredientComponents(draft);
   body.innerHTML='<div class="nexoCreatorComplete">'+
-    '<div class="nexoWorkspaceEmptyIcon">'+icon('ingrediente')+'</div>'+
+    '<div class="nexoWorkspaceEmptyIcon">'+icon('productos')+'</div>'+
     '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 3 de 8','Stage 3 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div>'+
     '<h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3>'+
     '<div class="nexoCreatorSummary"><div><span>'+esc(tr('Ingredientes','Ingredients'))+'</span><strong>'+rows.length+'</strong></div><div><span>'+esc(tr('Nuevos','New'))+'</span><strong>'+rows.filter(row=>row.ingredientSource==='new').length+'</strong></div></div>'+
