@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-50';
+const VERSION='20261009-51';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -29,6 +29,8 @@ const TOOL_DEFS=[
   {key:'recipes',cmsKey:'dynamic-specs',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas dentro del motor canónico de Fichas Técnicas Dinámicas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']},
   {key:'tasks',cmsKey:'task-lists',icon:'checklist',title:'Listas de tareas',summary:'Proyecto próximo para crear y reutilizar listas de tareas, checklists y prep lists en uso personal o Workspace.',status:'planned',names:['listas de tareas','checklist','prep list','prep lists']},
   {key:'multichannel-notifications',cmsKey:'multichannel-notifications',icon:'notificaciones',title:'Notificaciones multicanal',summary:'Proyecto próximo para centralizar avisos y entregarlos por varios canales desde una sola lógica de notificación.',status:'planned',names:['notificaciones multicanal','multichannel notifications']},
+  {key:'evaluation',cmsKey:'nexo-evaluation',icon:'ficha-tecnica',title:'Nexo Evaluación',summary:'Evaluación asistida por IA con revisión humana para exámenes, pruebas y otras evidencias.',status:'planned',names:['nexo evaluacion','evaluacion','asistente de calificaciones','motor de evaluacion']},
+  {key:'group-insights',cmsKey:'group-insights',icon:'panel',title:'Análisis de Grupos',summary:'Patrones de desempeño individual y grupal, evolución y recomendaciones a partir de resultados evaluados.',status:'planned',names:['analisis de grupos','analizador de cohortes','group insights','cohortes']},
   {key:'numa',cmsKey:'numa-assistant',icon:'ayuda',title:'Numa',summary:'Asistente opcional de Mi Espacio y Workspace, preparado para capacidades locales y servicios de IA medidos por uso.',status:'planned',names:['numa','asistente numa']},
   {key:'maria',cmsKey:'maria-editorial',icon:'guia',title:'María',summary:'Asistente futuro de lectura, transcripción y apoyo editorial para Camino Editorial.',status:'planned',names:['maria','maría','asistente maria','asistente maría']},
   {key:'camino-agents',cmsKey:'camino-editorial-agents',icon:'comentarios',title:'Agentes de Camino Editorial',summary:'Contenedor futuro para agentes editoriales que se definirán y comercializarán uno por uno.',status:'planned',names:['agentes de camino editorial','agentes editoriales','camino editorial agents']}
