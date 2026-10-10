@@ -816,7 +816,7 @@ function renderIngredientSearchResults(form,query){
     const sub=lang()==='en'?(row.nameEs||''):(row.nameEn||'');
     const image=img((Array.isArray(row.images)?row.images[0]:null)||row.baseImage||'');
     return '<button type="button" data-existing-ingredient="'+esc(id)+'">'+
-      '<span class="nexoCreatorIngredientSearchThumb">'+(image?'<img src="'+esc(image)+'" alt="">':icon('producto'))+'</span>'+
+      '<span class="nexoCreatorIngredientSearchThumb">'+(image?'<img src="'+esc(image)+'" alt="">':icon('productos'))+'</span>'+
       '<span><strong>'+esc(name)+'</strong>'+(sub&&sub!==name?'<small>'+esc(sub)+'</small>':'')+'</span>'+
       '<b>'+esc(tr('Añadir','Add'))+'</b>'+
     '</button>'
