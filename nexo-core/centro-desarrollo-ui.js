@@ -1653,6 +1653,21 @@ async function developmentInstallApi(action,payload={}){
   }
   return data.data
 }
+async function developmentAcquisitionApi(action,input={}){
+  const response=await fetch(developmentFunctionUrl('nexoDevelopmentAcquisition'),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'same-origin',
+    body:JSON.stringify({action,input})
+  });
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||!data?.ok){
+    const error=new Error(data?.error||'No se pudo completar el acceso.');
+    error.code=data?.error||'ACQUISITION_FAILED';
+    throw error
+  }
+  return data.data
+}
 function destinationKey(destination){
   return String(destination?.type||'')+':'+String(destination?.id||'')
 }
@@ -1714,14 +1729,18 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
   const accessLabel=destination=>{
     if(destination?.entitled)return 'Acceso activo';
     if(destination?.freeAvailable)return 'Gratis disponible';
+    if(destination?.accessStatus==='TRIAL_AVAILABLE')return 'Prueba disponible';
+    if(destination?.accessStatus==='PROMOTION_AVAILABLE')return 'Promoción disponible';
+    if(destination?.accessStatus==='CHECKOUT_REQUIRED')return 'Compra requerida';
+    if(destination?.accessStatus==='ACQUISITION_OPTION_AVAILABLE')return 'Opción de acceso disponible';
     if(destination?.reason==='NO_TOOLS_CONFIGURE_PERMISSION')return 'Sin permiso';
-    if(destination?.reason==='ENTITLEMENT_REQUIRED')return 'Acceso requerido';
+    if(destination?.reason==='ACQUISITION_REQUIRED')return 'Acceso requerido';
     return ''
   };
   const destinationHtml=destinations.map(destination=>{
     const key=destinationKey(destination);
     const isSelected=key===installState.selectedKey;
-    const unavailable=!destination.canOpen&&!destination.canInstall;
+    const unavailable=!destination.canOpen&&!destination.canInstall&&!destination.canAcquire;
     const access=accessLabel(destination);
     const subtitle=destination.installed
       ? (destination.entitled?'Instalada · acceso activo':'Instalada · '+(access||'acceso pendiente'))
@@ -1731,8 +1750,8 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
           ? 'Oferta gratuita disponible'
           : destination.reason==='NO_TOOLS_CONFIGURE_PERMISSION'
             ? 'Sin permiso para configurar herramientas'
-            : destination.reason==='ENTITLEMENT_REQUIRED'
-              ? 'Necesitas una forma de acceso'
+            : destination.reason==='ACQUISITION_REQUIRED'
+              ? (access||'Necesitas una forma de acceso')
               : destination.type==='workspace'?'Workspace':'Espacio personal';
     return '<button type="button" class="nxo-dev-install-destination'+(isSelected?' selected':'')+'" data-install-destination="'+escapeHtml(key)+'" '+(unavailable?'disabled':'')+'>'+
       '<span><strong>'+escapeHtml(destination.name)+'</strong><small>'+escapeHtml(subtitle)+'</small></span>'+
@@ -1750,15 +1769,43 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
     '</button>'
   }
 
+  const acquisitionOptions=Array.isArray(selected?.acquisitionOptions)?selected.acquisitionOptions:[];
+  const explicitOptions=acquisitionOptions.filter(option=>
+    option?.actionable===true&&['TRIAL','PROMOTION'].includes(String(option?.sourceType||'').toUpperCase())
+  );
+  const acquisitionActions=(!selected.entitled&&explicitOptions.length)
+    ? explicitOptions.map(option=>{
+        const type=String(option.sourceType||'').toUpperCase();
+        const label=type==='TRIAL'
+          ? ('Iniciar prueba'+(Number(option.durationDays)>0?' · '+String(option.durationDays)+' días':''))
+          : 'Activar promoción';
+        return '<button type="button" class="nxo-dev-install-primary" data-nxo-acquire-source="'+escapeHtml(type)+'" data-nxo-acquire-id="'+escapeHtml(option.sourceId||'')+'" '+(installBusy?'disabled':'')+'>'+escapeHtml(label)+'</button>'
+      }).join('')
+    : '';
+
+  const unavailableNote=(!selected.entitled&&!selected.canInstall&&!explicitOptions.length)
+    ? selected.accessStatus==='CHECKOUT_REQUIRED'
+      ? '<span class="nxo-dev-install-message">Esta forma de acceso requiere checkout.</span>'
+      : selected.accessStatus==='ACQUISITION_OPTION_AVAILABLE'
+        ? '<span class="nxo-dev-install-message">Hay una forma de acceso disponible, pero todavía requiere aprovisionamiento comercial.</span>'
+        : ''
+    : '';
+
   const stateLabel=selected.canOpen
     ? 'Acceso activo'
     : selected.freeAvailable
       ? 'Gratis disponible'
       : selected.entitled
         ? 'Acceso activo'
-        : selected.reason==='ENTITLEMENT_REQUIRED'
-          ? 'Acceso requerido'
-          : selected.installed?'Instalada':'Pendiente';
+        : selected.accessStatus==='TRIAL_AVAILABLE'
+          ? 'Prueba disponible'
+          : selected.accessStatus==='PROMOTION_AVAILABLE'
+            ? 'Promoción disponible'
+            : selected.accessStatus==='CHECKOUT_REQUIRED'
+              ? 'Compra requerida'
+              : selected.reason==='ACQUISITION_REQUIRED'
+                ? 'Acceso requerido'
+                : selected.installed?'Instalada':'Pendiente';
 
   zone.innerHTML=
     '<section class="nxo-dev-install-card">'+
@@ -1769,6 +1816,8 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
       '<div class="nxo-dev-install-destinations">'+destinationHtml+'</div>'+
       '<div class="nxo-dev-install-actions">'+
         action+
+        acquisitionActions+
+        unavailableNote+
         (message?'<span class="nxo-dev-install-message '+escapeHtml(messageType)+'">'+escapeHtml(message)+'</span>':'')+
       '</div>'+
     '</section>';
@@ -1803,12 +1852,47 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
       installBusy=false;
       const errorMessage=error?.code==='AUTH_REQUIRED'
         ? 'Inicia sesión para instalar esta herramienta.'
-        : error?.code==='ENTITLEMENT_REQUIRED'
-          ? 'Necesitas una forma de acceso válida antes de instalar esta herramienta.'
+        : error?.code==='ACQUISITION_REQUIRED'
+          ? 'Elige y activa una forma de acceso válida antes de instalar esta herramienta.'
           : (error?.message||'No se pudo instalar.');
       renderInstallZone(tool,options,destinationKey(destination),errorMessage,'error')
     }
   },{signal:runtimeAbort.signal});
+
+  zone.querySelectorAll('[data-nxo-acquire-source]').forEach(button=>{
+    button.addEventListener('click',async()=>{
+      if(installBusy||!installState)return;
+      const destination=destinations.find(x=>destinationKey(x)===installState.selectedKey);
+      if(!destination)return;
+      const sourceType=String(button.dataset.nxoAcquireSource||'').toUpperCase();
+      const sourceId=String(button.dataset.nxoAcquireId||'');
+      installBusy=true;
+      renderInstallZone(tool,options,installState.selectedKey,'','');
+      try{
+        await developmentAcquisitionApi('acquire',{
+          productKey:tool.cmsKey||tool.key,
+          targetType:destination.type,
+          targetId:destination.id,
+          workspaceId:destination.type==='workspace'?destination.id:'',
+          sourceType,
+          sourceId
+        });
+        const refreshed=await developmentInstallApi('options',{toolKey:tool.cmsKey||tool.key});
+        installBusy=false;
+        renderInstallZone(tool,refreshed,destinationKey(destination),'Acceso activado. Ya puedes instalar la herramienta.','success')
+      }catch(error){
+        installBusy=false;
+        const messages={
+          TRIAL_LIMIT_REACHED:'Ya utilizaste el máximo de pruebas permitido para esta opción.',
+          PAYMENT_METHOD_REQUIRED:'Esta prueba requiere un método de pago y se habilitará con checkout.',
+          PROMOTION_LIMIT_REACHED:'Esta promoción alcanzó su límite de usos.',
+          PROMOTION_OWNER_LIMIT_REACHED:'Ya utilizaste el máximo permitido de esta promoción.',
+          ACQUISITION_NOT_ALLOWED:'No tienes permiso para adquirir acceso en este destino.'
+        };
+        renderInstallZone(tool,options,destinationKey(destination),messages[error?.code]||(error?.message||'No se pudo activar el acceso.'),'error')
+      }
+    },{signal:runtimeAbort.signal})
+  });
 
   zone.querySelector('#nxo-dev-install-open')?.addEventListener('click',()=>{
     const destination=destinations.find(x=>destinationKey(x)===installState?.selectedKey);
