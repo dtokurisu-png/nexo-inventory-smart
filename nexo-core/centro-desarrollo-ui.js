@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-45';
+const VERSION='20261009-46';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1363,6 +1363,58 @@ function detailLinks(title,items){
     ).join('')+'</ul>'+
   '</section>'
 }
+function detailOfferPrice(offer){
+  const type=String(offer?.offerType||'').toUpperCase();
+  const currency=String(offer?.currency||'USD').toUpperCase();
+  const money=minor=>{
+    const value=Number(minor);
+    if(!Number.isInteger(value)||value<0)return'';
+    try{return new Intl.NumberFormat('es-US',{style:'currency',currency}).format(value/100)}
+    catch(_){return (value/100).toFixed(2)+' '+currency}
+  };
+  if(type==='FREE')return'Gratis';
+  if(type==='FIXED_PRICE'){
+    const amount=money(offer?.baseAmountMinor);
+    return amount?amount+' · pago único':''
+  }
+  if(type==='SUBSCRIPTION'){
+    const amount=money(offer?.baseAmountMinor);
+    const interval=String(offer?.billingInterval||'').toUpperCase();
+    const count=Number(offer?.billingIntervalCount||1);
+    const names={DAY:'día',WEEK:'semana',MONTH:'mes',YEAR:'año'};
+    if(!amount||!names[interval])return'';
+    return amount+' / '+(count>1?count+' '+names[interval]+'s':names[interval])
+  }
+  if(type==='USAGE'){
+    const amount=money(offer?.unitAmountMinor);
+    const unit=String(offer?.usageUnit||'').trim();
+    return amount&&unit?amount+' / '+unit:''
+  }
+  return''
+}
+function detailCommercial(commercial){
+  const offers=Array.isArray(commercial?.offers)?commercial.offers:[];
+  if(!offers.length)return'';
+  return '<section class="nxo-dev-detail-card">'+
+    '<h3>Formas de acceso</h3>'+
+    '<div style="display:grid;gap:9px">'+
+      offers.map(offer=>{
+        const price=detailOfferPrice(offer);
+        const label=String(offer?.publicLabelEs||'').trim()||({
+          FREE:'Gratis',FIXED_PRICE:'Compra única',SUBSCRIPTION:'Suscripción',USAGE:'Uso medido'
+        }[String(offer?.offerType||'').toUpperCase()]||'Oferta');
+        return '<div style="padding:10px 0;border-bottom:1px solid var(--nxo-border)">'+
+          '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'+
+            '<strong style="font-size:12px">'+escapeHtml(label)+'</strong>'+
+            (price?'<strong style="font-size:12px;color:var(--nxo-accent)">'+escapeHtml(price)+'</strong>':'')+
+          '</div>'+
+          (offer?.publicDescriptionEs?'<p style="margin:6px 0 0;color:var(--nxo-text-secondary);font-size:11px;line-height:1.45">'+escapeHtml(offer.publicDescriptionEs)+'</p>':'')+
+        '</div>'
+      }).join('')+
+    '</div>'+
+  '</section>'
+}
+
 function detailRelated(items){
   const values=(Array.isArray(items)?items:[]).filter(item=>item?.nameEs);
   if(!values.length)return'';
@@ -1726,6 +1778,7 @@ function renderToolDetail(tool,data){
     detailList('Compatibilidad',data?.compatibilityEs)+
     detailList('Público recomendado',data?.audienceEs);
   const rightHtml=
+    detailCommercial(data?.commercial)+
     detailList('Requisitos',data?.requirementsEs)+
     detailList('Integraciones',data?.integrationsEs)+
     detailLinks('Documentación',data?.documentation)+
