@@ -2,7 +2,7 @@
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
 const ACCESS_REVISION='fichas-workspace-context-20261007-40';
-const ENGINE_REVISION='workspace-single-render-20261009-44';
+const ENGINE_REVISION='numa-search-relevance-20261009-45';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261001-presence-4';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
@@ -174,16 +174,6 @@ function numaContextInput(){
     currentToolLabel:workspaceToolName
   };
 }
-function numaSearchNorm(value){
-  try{
-    return String(value??'')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g,'')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g,' ')
-      .trim();
-  }catch(_){return String(value??'').toLowerCase().trim()}
-}
 function numaExtractSheetQuery(message){
   let q=String(message||'').trim();
   q=q.replace(/^[¿?¡!.,;:\s]+/g,'').replace(/^numa\s*[,;:\-]?\s*/i,'');
@@ -201,109 +191,12 @@ function numaExtractSheetQuery(message){
   q=q.replace(/^[¿?¡!.,;:\s]+|[¿?¡!.,;:\s]+$/g,'');
   return q.slice(0,300);
 }
-function numaEditSimilarity(a,b){
-  const x=numaSearchNorm(a),y=numaSearchNorm(b);
-  if(!x||!y)return 0;
-  if(x===y)return 1;
-  const row=new Array(y.length+1);
-  for(let j=0;j<=y.length;j++)row[j]=j;
-  for(let i=1;i<=x.length;i++){
-    let diagonal=row[0];row[0]=i;
-    for(let j=1;j<=y.length;j++){
-      const saved=row[j],cost=x[i-1]===y[j-1]?0:1;
-      row[j]=Math.min(row[j]+1,row[j-1]+1,diagonal+cost);
-      diagonal=saved;
-    }
-  }
-  return Math.max(0,1-row[y.length]/Math.max(x.length,y.length));
-}
-function numaTokenMatches(token,candidates){
-  if(!token)return false;
-  return candidates.some(candidate=>{
-    if(!candidate)return false;
-    if(candidate.includes(token)||token.includes(candidate))return true;
-    if(token.length<4||candidate.length<4)return false;
-    return numaEditSimilarity(token,candidate)>=.76;
-  });
-}
 function numaLocalSheetContext(message){
   const data=engineDataCache;
   const recipes=Array.isArray(data?.recipes)?data.recipes:[];
   const query=numaExtractSheetQuery(message);
   const sample=recipes.slice(0,10).map(row=>row?.titleEs||row?.titleEn||row?._id).filter(Boolean);
-  if(!query)return {query:'',matches:[],total:recipes.length,sample};
-
-  const sectionsByRecipe=new Map();
-  for(const section of Array.isArray(data?.sections)?data.sections:[]){
-    const recipeId=String(section?.recipeId||'');
-    if(!recipeId)continue;
-    if(!sectionsByRecipe.has(recipeId))sectionsByRecipe.set(recipeId,[]);
-    sectionsByRecipe.get(recipeId).push(section);
-  }
-  const ingredients=new Map((Array.isArray(data?.ingredients)?data.ingredients:[]).map(row=>[String(row?._id||''),row]));
-  const preparations=new Map((Array.isArray(data?.preparations)?data.preparations:[]).map(row=>[String(row?._id||''),row]));
-  const recipesById=new Map(recipes.map(row=>[String(row?._id||''),row]));
-  const q=numaSearchNorm(query);
-  const tokens=q.split(' ').filter(Boolean);
-  const matches=[];
-
-  for(const recipe of recipes){
-    const id=String(recipe?._id||'');
-    if(!id)continue;
-    const titleEs=numaSearchNorm(recipe?.titleEs);
-    const titleEn=numaSearchNorm(recipe?.titleEn);
-    const sections=sectionsByRecipe.get(id)||[];
-    const sectionIds=new Set(sections.map(section=>String(section?._id||'')).filter(Boolean));
-    const corpus=[
-      recipe?.titleEs,recipe?.titleEn,recipe?.category,recipe?.recipeType,
-      recipe?.notesEs,recipe?.notesEn,recipe?.methodEs,recipe?.methodEn
-    ];
-    for(const section of sections)corpus.push(section?.titleEs,section?.titleEn,section?.sectionType);
-    for(const component of Array.isArray(data?.components)?data.components:[]){
-      if(String(component?.recipeId||'')!==id&&!sectionIds.has(String(component?.sectionId||'')))continue;
-      corpus.push(component?.displayEs,component?.displayEn,component?.noteEs,component?.noteEn);
-      const ingredient=ingredients.get(String(component?.targetIngredientId||''));
-      if(ingredient)corpus.push(ingredient?.nameEs,ingredient?.nameEn,ingredient?.descriptionEs,ingredient?.descriptionEn);
-      const preparation=preparations.get(String(component?.targetPreparationId||''));
-      if(preparation)corpus.push(preparation?.nameEs,preparation?.nameEn,preparation?.descriptionEs,preparation?.descriptionEn);
-      const subRecipe=recipesById.get(String(component?.targetRecipeId||''));
-      if(subRecipe)corpus.push(subRecipe?.titleEs,subRecipe?.titleEn);
-    }
-
-    let score=0;
-    if(titleEs===q||titleEn===q)score+=120;
-    else if(titleEs.startsWith(q)||titleEn.startsWith(q))score+=90;
-    else if(titleEs.includes(q)||titleEn.includes(q))score+=75;
-
-    const hay=numaSearchNorm(corpus.filter(Boolean).join(' '));
-    const hayTokens=hay.split(' ').filter(Boolean);
-    const matched=tokens.filter(token=>numaTokenMatches(token,hayTokens)).length;
-    if(tokens.length&&matched===tokens.length)score+=45;
-    else score+=matched*8;
-    const titleSimilarity=Math.max(numaEditSimilarity(q,titleEs),numaEditSimilarity(q,titleEn));
-    if(q.length>=4&&titleSimilarity>=.72)score+=Math.round(titleSimilarity*48);
-    if(numaSearchNorm(recipe?.category).includes(q))score+=12;
-    if(score<=0)continue;
-
-    matches.push({
-      id,
-      title:recipe?.titleEs||recipe?.titleEn||id,
-      titleEs:recipe?.titleEs||'',
-      titleEn:recipe?.titleEn||'',
-      recipeType:recipe?.recipeType||'',
-      category:recipe?.category||'',
-      sourceTemplateId:recipe?.sourceTemplateId||'',
-      score,
-      exact:titleEs===q||titleEn===q
-    });
-  }
-
-  matches.sort((a,b)=>
-    Number(b.exact)-Number(a.exact)||
-    Number(b.score)-Number(a.score)||
-    String(a.title).localeCompare(String(b.title),'es')
-  );
-  return {query,matches:matches.slice(0,8),total:recipes.length,sample};
+  return {query,matches:[],total:recipes.length,sample};
 }
 function numaTime(value){
   try{return new Date(value||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}catch(_){return''}
