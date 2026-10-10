@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-47';
+const VERSION='20261009-48';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1392,27 +1392,64 @@ function detailOfferPrice(offer){
   }
   return''
 }
+function detailPlanPrice(plan){
+  const currency=String(plan?.currency||'USD').toUpperCase();
+  const amount=Number(plan?.amountMinor);
+  if(!Number.isInteger(amount)||amount<0)return'';
+  let money='';
+  try{money=new Intl.NumberFormat('es-US',{style:'currency',currency}).format(amount/100)}
+  catch(_){money=(amount/100).toFixed(2)+' '+currency}
+  const interval=String(plan?.billingInterval||'').toUpperCase();
+  const count=Number(plan?.billingIntervalCount||1);
+  const names={DAY:'día',WEEK:'semana',MONTH:'mes',YEAR:'año'};
+  if(!names[interval])return money;
+  return money+' / '+(count>1?count+' '+names[interval]+'s':names[interval])
+}
 function detailCommercial(commercial){
   const offers=Array.isArray(commercial?.offers)?commercial.offers:[];
-  if(!offers.length)return'';
-  return '<section class="nxo-dev-detail-card">'+
-    '<h3>Formas de acceso</h3>'+
-    '<div style="display:grid;gap:9px">'+
-      offers.map(offer=>{
-        const price=detailOfferPrice(offer);
-        const label=String(offer?.publicLabelEs||'').trim()||({
-          FREE:'Gratis',FIXED_PRICE:'Compra única',SUBSCRIPTION:'Suscripción',USAGE:'Uso medido'
-        }[String(offer?.offerType||'').toUpperCase()]||'Oferta');
-        return '<div style="padding:10px 0;border-bottom:1px solid var(--nxo-border)">'+
-          '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'+
-            '<strong style="font-size:12px">'+escapeHtml(label)+'</strong>'+
-            (price?'<strong style="font-size:12px;color:var(--nxo-accent)">'+escapeHtml(price)+'</strong>':'')+
-          '</div>'+
-          (offer?.publicDescriptionEs?'<p style="margin:6px 0 0;color:var(--nxo-text-secondary);font-size:11px;line-height:1.45">'+escapeHtml(offer.publicDescriptionEs)+'</p>':'')+
-        '</div>'
-      }).join('')+
-    '</div>'+
-  '</section>'
+  const plans=Array.isArray(commercial?.plans)?commercial.plans:[];
+  if(!offers.length&&!plans.length)return'';
+
+  const offersHtml=offers.length
+    ? '<section class="nxo-dev-detail-card">'+
+        '<h3>Formas de acceso</h3>'+
+        '<div style="display:grid;gap:9px">'+
+          offers.map(offer=>{
+            const price=detailOfferPrice(offer);
+            const label=String(offer?.publicLabelEs||'').trim()||({
+              FREE:'Gratis',FIXED_PRICE:'Compra única',SUBSCRIPTION:'Suscripción',USAGE:'Uso medido'
+            }[String(offer?.offerType||'').toUpperCase()]||'Oferta');
+            return '<div style="padding:10px 0;border-bottom:1px solid var(--nxo-border)">'+
+              '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'+
+                '<strong style="font-size:12px">'+escapeHtml(label)+'</strong>'+
+                (price?'<strong style="font-size:12px;color:var(--nxo-accent)">'+escapeHtml(price)+'</strong>':'')+
+              '</div>'+
+              (offer?.publicDescriptionEs?'<p style="margin:6px 0 0;color:var(--nxo-text-secondary);font-size:11px;line-height:1.45">'+escapeHtml(offer.publicDescriptionEs)+'</p>':'')+
+            '</div>'
+          }).join('')+
+        '</div>'+
+      '</section>'
+    : '';
+
+  const plansHtml=plans.length
+    ? '<section class="nxo-dev-detail-card">'+
+        '<h3>Incluido en planes</h3>'+
+        '<div style="display:grid;gap:9px">'+
+          plans.map(plan=>{
+            const price=detailPlanPrice(plan);
+            return '<div style="padding:10px 0;border-bottom:1px solid var(--nxo-border)">'+
+              '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'+
+                '<strong style="font-size:12px">'+escapeHtml(plan?.nameEs||plan?.planKey||'Plan Nexo')+'</strong>'+
+                (price?'<strong style="font-size:12px;color:var(--nxo-accent)">'+escapeHtml(price)+'</strong>':'')+
+              '</div>'+
+              (plan?.descriptionEs?'<p style="margin:6px 0 0;color:var(--nxo-text-secondary);font-size:11px;line-height:1.45">'+escapeHtml(plan.descriptionEs)+'</p>':'')+
+            '</div>'
+          }).join('')+
+        '</div>'+
+      '</section>'
+    : '';
+
+  return offersHtml+plansHtml
 }
 
 function detailRelated(items){
