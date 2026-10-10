@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261009-49';
+const VERSION='20261009-50';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1421,11 +1421,30 @@ function detailPackagePrice(pkg){
   if(!names[interval])return money;
   return money+' / '+(count>1?count+' '+names[interval]+'s':names[interval])
 }
+function detailPromotionBenefit(promo){
+  const type=String(promo?.benefitType||'').toUpperCase();
+  if(type==='TEMP_ACCESS')return 'Acceso temporal · '+String(Number(promo?.accessDurationDays||0))+' días';
+  if(type==='TRIAL')return 'Prueba · '+String(Number(promo?.accessDurationDays||0))+' días';
+  if(type==='PERCENT_DISCOUNT'){
+    const bps=Number(promo?.discountBasisPoints||0);
+    return Number.isInteger(bps)&&bps>0?(bps/100).toFixed(bps%100===0?0:2)+'% de descuento':''
+  }
+  if(type==='FIXED_DISCOUNT'){
+    const amount=Number(promo?.discountAmountMinor||0);
+    const currency=String(promo?.currency||'USD').toUpperCase();
+    if(!Number.isInteger(amount)||amount<1)return'';
+    try{return new Intl.NumberFormat('es-US',{style:'currency',currency}).format(amount/100)+' de descuento'}
+    catch(_){return (amount/100).toFixed(2)+' '+currency+' de descuento'}
+  }
+  return''
+}
 function detailCommercial(commercial){
   const offers=Array.isArray(commercial?.offers)?commercial.offers:[];
   const plans=Array.isArray(commercial?.plans)?commercial.plans:[];
   const packages=Array.isArray(commercial?.packages)?commercial.packages:[];
-  if(!offers.length&&!plans.length&&!packages.length)return'';
+  const trials=Array.isArray(commercial?.trials)?commercial.trials:[];
+  const promotions=Array.isArray(commercial?.promotions)?commercial.promotions:[];
+  if(!offers.length&&!plans.length&&!packages.length&&!trials.length&&!promotions.length)return'';
 
   const offersHtml=offers.length
     ? '<section class="nxo-dev-detail-card">'+
@@ -1490,7 +1509,45 @@ function detailCommercial(commercial){
       '</section>'
     : '';
 
-  return offersHtml+plansHtml+packagesHtml
+  const trialsHtml=trials.length
+    ? '<section class="nxo-dev-detail-card">'+
+        '<h3>Pruebas disponibles</h3>'+
+        '<div style="display:grid;gap:9px">'+
+          trials.map(trial=>{
+            const days=Number(trial?.durationDays||0);
+            const payment=trial?.requiresPaymentMethod===true?' · requiere método de pago':'';
+            return '<div style="padding:10px 0;border-bottom:1px solid var(--nxo-border)">'+
+              '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'+
+                '<strong style="font-size:12px">'+escapeHtml(trial?.nameEs||trial?.trialKey||'Prueba')+'</strong>'+
+                (days>0?'<strong style="font-size:12px;color:var(--nxo-accent)">'+escapeHtml(String(days)+' días')+'</strong>':'')+
+              '</div>'+
+              (trial?.descriptionEs?'<p style="margin:6px 0 0;color:var(--nxo-text-secondary);font-size:11px;line-height:1.45">'+escapeHtml(trial.descriptionEs)+'</p>':'')+
+              (payment?'<p style="margin:6px 0 0;color:var(--nxo-text-muted);font-size:10px">'+escapeHtml(payment.replace(/^ · /,''))+'</p>':'')+
+            '</div>'
+          }).join('')+
+        '</div>'+
+      '</section>'
+    : '';
+
+  const promotionsHtml=promotions.length
+    ? '<section class="nxo-dev-detail-card">'+
+        '<h3>Promociones disponibles</h3>'+
+        '<div style="display:grid;gap:9px">'+
+          promotions.map(promo=>{
+            const benefit=detailPromotionBenefit(promo);
+            return '<div style="padding:10px 0;border-bottom:1px solid var(--nxo-border)">'+
+              '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'+
+                '<strong style="font-size:12px">'+escapeHtml(promo?.nameEs||promo?.promotionKey||'Promoción')+'</strong>'+
+                (benefit?'<strong style="font-size:12px;color:var(--nxo-accent)">'+escapeHtml(benefit)+'</strong>':'')+
+              '</div>'+
+              (promo?.descriptionEs?'<p style="margin:6px 0 0;color:var(--nxo-text-secondary);font-size:11px;line-height:1.45">'+escapeHtml(promo.descriptionEs)+'</p>':'')+
+            '</div>'
+          }).join('')+
+        '</div>'+
+      '</section>'
+    : '';
+
+  return offersHtml+plansHtml+packagesHtml+trialsHtml+promotionsHtml
 }
 
 function detailRelated(items){
