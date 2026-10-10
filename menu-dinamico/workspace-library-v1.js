@@ -334,6 +334,8 @@ function bindCreatorStageOne(layerEl,draft={}){
       workspaceName:String(context().workspaceName||''),
       updatedAt:new Date().toISOString()
     };
+    if(lang()==='en')nextDraft.titleEn=title;else nextDraft.titleEs=title;
+    if(!nextDraft.originalLanguage)nextDraft.originalLanguage=lang();
     saveCreatorDraft(nextDraft);
     showStageOneComplete(layerEl,nextDraft)
   })
@@ -579,6 +581,7 @@ function openCreateStageTwo(){
   const draft=readCreatorDraft()||{};
   if(!draft.title||!draft.collectionId){openCreateStageOne();return}
   const el=layer(tr('Crear ficha técnica','Create technical sheet'),creatorStageTwoMarkup(draft));
+  el.querySelector('.nexoWorkspaceModal')?.classList.add('nexoCreatorModalWide');
   bindCreatorStageTwo(el,draft)
 }
 function openCreateFlow(){
