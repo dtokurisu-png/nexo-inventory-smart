@@ -1,7 +1,7 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=blue-icon-halo-20261007-94';
-const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-bubble-compact-6';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261011-nma-legacy-cleanup-95';
+const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -71,7 +71,25 @@ function iconLabel(name,label){return '<span class="nxo-icon-label">'+iconTag(na
 function toolIconKey(t){const key=[t?.toolKey,t?.nameEs,t?.nameEn,t?.workspaceName].filter(Boolean).join(' ').toLowerCase();if(/horar|schedule/.test(key))return'recordatorio';if(/fich|technical/.test(key))return'ficha-tecnica';if(/invent|product/.test(key))return'productos';if(/bibli|engranaje|guide/.test(key))return'guia';if(/learning|desarrollo|development/.test(key))return'desarrollo';if(/work.?center|panel/.test(key))return'panel';return'herramientas'}
 const initials=v=>String(v||'N').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'N';
 const mediaUrl=v=>typeof v==='string'?v:(v&&(v.url||v.image?.url||v.src)||'');
-function addCss(){if(!document.getElementById('nxo-css')){const l=document.createElement('link');l.id='nxo-css';l.rel='stylesheet';l.href=CSS;document.head.appendChild(l)}if(!document.getElementById('nma-overlay-css')){const n=document.createElement('link');n.id='nma-overlay-css';n.rel='stylesheet';n.href=NUMA_CSS;document.head.appendChild(n)}}
+function ensureCurrentCssLink(id,url){
+  let link=document.getElementById(id);
+  if(!link){
+    link=document.createElement('link');
+    link.id=id;
+    link.rel='stylesheet';
+    link.href=url;
+    document.head.appendChild(link);
+  }else if(link.href!==url){
+    // Wix navigation preserves the Numa CSS link between Workspace and Fichas.
+    // Replace the stale href rather than silently retaining obsolete styles.
+    link.href=url;
+  }
+  return link;
+}
+function addCss(){
+  ensureCurrentCssLink('nxo-css',CSS);
+  ensureCurrentCssLink('nma-overlay-css',NUMA_CSS);
+}
 function root(){addCss();document.body.classList.add('nxo-lock');let r=document.getElementById('nxo-app');if(!r){r=document.createElement('div');r.id='nxo-app';r.className='nxo-app';r.dataset.theme=storedTheme();document.body.appendChild(r)}else if(!r.dataset.theme){r.dataset.theme=storedTheme()}return r}
 let nxoOrganicRaf=0,nxoOrganicResize=null,nxoOrganicStarted=false;
 function ensureOrganicLayers(){
