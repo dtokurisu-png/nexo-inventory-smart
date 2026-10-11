@@ -154,6 +154,7 @@
   position:relative;
   width:252px;
   height:336px;
+  left:-24px;
   display:grid;
   place-items:center;
   isolation:isolate;
@@ -232,25 +233,26 @@
   opacity:.44;
   mix-blend-mode:normal;
 }
-/* Shared Numa reaction bubble. The existing expression layer remains the single renderer. */
+/* Shared Numa reaction bubble: compact and beside the character, not over the face.
+   25% transparency means 75% surface opacity; glyphs stay fully opaque. */
 .nma-expression-layer{
   position:absolute;
   z-index:6;
-  top:34px;
-  right:12px;
-  width:94px;
-  height:70px;
-  padding:9px 10px;
+  top:101px;
+  right:-42px;
+  width:62px;
+  height:52px;
+  padding:5px 6px;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:4px;
-  border:1.5px solid #b5c9df;
-  border-radius:20px 20px 20px 9px;
-  background:#fbfdff;
+  gap:2px;
+  border:1.5px solid rgba(131,155,182,.75);
+  border-radius:14px 14px 14px 6px;
+  background:rgba(251,253,255,.75);
   color:#183656;
   text-shadow:none;
-  box-shadow:0 10px 24px rgba(13,34,58,.25),inset 0 1px 0 rgba(255,255,255,.9);
+  box-shadow:0 7px 15px rgba(13,34,58,.17);
   pointer-events:none;
   isolation:isolate;
   opacity:1;
@@ -261,76 +263,76 @@
 .nma-expression-layer::after{
   content:"";
   position:absolute;
-  left:17px;
-  bottom:-8px;
-  width:13px;
-  height:13px;
+  left:-7px;
+  top:21px;
+  width:11px;
+  height:11px;
   transform:rotate(45deg);
-  background:#fbfdff;
-  border-right:1.5px solid #b5c9df;
-  border-bottom:1.5px solid #b5c9df;
+  background:rgba(251,253,255,.75);
+  border-left:1.5px solid rgba(131,155,182,.75);
+  border-bottom:1.5px solid rgba(131,155,182,.75);
   z-index:-1;
 }
 .nma-panel[data-theme="night"] .nma-expression-layer{
-  background:#172536;
+  background:rgba(23,37,54,.75);
   color:#fff0bd;
-  border-color:#b19a6b;
-  box-shadow:0 10px 25px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.07);
+  border-color:rgba(177,154,107,.75);
+  box-shadow:0 7px 16px rgba(0,0,0,.32);
 }
 .nma-panel[data-theme="night"] .nma-expression-layer::after{
-  background:#172536;
-  border-color:#b19a6b;
+  background:rgba(23,37,54,.75);
+  border-color:rgba(177,154,107,.75);
 }
 .nma-expression-layer:empty,.nma-expression-layer[data-expression="none"]{
   opacity:0;visibility:hidden;transform:translateY(6px) scale(.94);
 }
-/* Keep the original state animations, scaled and centered inside the bubble. */
+/* The seven existing reactions retain their state logic and stay inside the small bubble. */
 .nma-symbol{
   position:relative;right:auto;top:auto;display:grid;place-items:center;
-  width:44px;height:46px;font:900 36px/1 Inter,system-ui,sans-serif;
+  width:32px;height:36px;font:900 29px/1 Inter,system-ui,sans-serif;
   animation:nmaSymbolPulse 1.35s ease-in-out infinite;
 }
-.nma-symbol-question{font-size:36px}
+.nma-symbol-question{font-size:29px}
 .nma-ellipsis{
-  position:relative;right:auto;top:auto;width:58px;height:34px;
-  display:flex;align-items:center;justify-content:center;gap:5px;
+  position:relative;right:auto;top:auto;width:44px;height:26px;
+  display:flex;align-items:center;justify-content:center;gap:4px;
 }
 .nma-ellipsis i{
-  width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:none;
+  width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:none;
   opacity:.3;animation:nmaDotListen 1.25s ease-in-out infinite;
 }
 .nma-ellipsis i:nth-child(2){animation-delay:.18s}
 .nma-ellipsis i:nth-child(3){animation-delay:.36s}
 .nma-think-mark{
-  position:relative;right:auto;top:auto;font:900 30px/1 Inter,system-ui,sans-serif;
+  position:relative;right:auto;top:auto;font:900 23px/1 Inter,system-ui,sans-serif;
   animation:nmaQuestionFloat 1.8s ease-in-out infinite;
 }
-.nma-ellipsis-think{right:auto;top:auto;width:38px;transform:scale(.82)}
-.nma-confused{position:relative;right:auto;top:auto;width:75px;height:48px}
+.nma-ellipsis-think{right:auto;top:auto;width:28px;transform:scale(.8)}
+.nma-confused{position:relative;right:auto;top:auto;width:47px;height:34px}
 .nma-confused i{
   position:absolute;font-style:normal;font-weight:900;
   animation:nmaConfusedPulse 1.45s ease-in-out infinite;
 }
-.nma-confused i:nth-child(1){left:6px;top:19px;font-size:18px;animation-delay:-.2s}
-.nma-confused i:nth-child(2){left:30px;top:1px;font-size:31px}
-.nma-confused i:nth-child(3){right:5px;top:21px;font-size:19px;animation-delay:-.45s}
-.nma-sparkles{position:relative;inset:auto;width:76px;height:44px}
+.nma-confused i:nth-child(1){left:2px;top:14px;font-size:13px;animation-delay:-.2s}
+.nma-confused i:nth-child(2){left:18px;top:0;font-size:22px}
+.nma-confused i:nth-child(3){right:2px;top:15px;font-size:13px;animation-delay:-.45s}
+.nma-sparkles{position:relative;inset:auto;width:48px;height:34px}
 .nma-sparkles i{
   --x:50%;position:absolute;left:var(--x);bottom:17%;font-style:normal;
-  font-size:14px;opacity:0;animation:nmaBubbleSparkle 1.65s ease-out infinite;
+  font-size:12px;opacity:0;animation:nmaBubbleSparkle 1.65s ease-out infinite;
   animation-delay:calc(var(--i) * -.19s);
 }
 .nma-sparkles i:nth-child(1){--x:18%}.nma-sparkles i:nth-child(2){--x:34%}.nma-sparkles i:nth-child(3){--x:49%}
 .nma-sparkles i:nth-child(4){--x:64%}.nma-sparkles i:nth-child(5){--x:78%}.nma-sparkles i:nth-child(6){--x:27%}.nma-sparkles i:nth-child(7){--x:70%}
 .nma-error-orbit{
-  position:absolute;left:50%;top:50%;width:68px;height:48px;
+  position:absolute;left:50%;top:50%;width:48px;height:34px;
   transform:translate(-50%,-50%);color:#b93b50;
   animation:nmaOrbit 2.35s linear infinite;
 }
 .nma-panel[data-theme="night"] .nma-error-orbit{color:#ff8d96}
 .nma-error-orbit i{
-  position:absolute;left:50%;top:50%;font-style:normal;font-size:15px;
-  transform:rotate(calc(var(--i)*72deg)) translateX(22px);transform-origin:0 0;
+  position:absolute;left:50%;top:50%;font-style:normal;font-size:13px;
+  transform:rotate(calc(var(--i)*72deg)) translateX(17px);transform-origin:0 0;
 }
 
 /* Response bubble. Only the current response is visible. */
@@ -452,11 +454,11 @@
   .nma-panel{right:10px!important;bottom:12px!important;width:min(292px,calc(100vw - 20px))!important}
   .nma-character-stage{width:222px;height:296px}
   .nma-presence-close{right:1px;top:42px}
-  .nma-expression-layer{top:27px;right:10px;width:85px;height:62px}
+  .nma-expression-layer{top:91px;right:-36px;width:62px;height:52px}
 }
 @media(max-height:650px){
   .nma-character-stage{width:190px;height:254px}
-  .nma-expression-layer{top:17px;right:5px;width:81px;height:57px}
+  .nma-expression-layer{top:74px;right:-36px;width:58px;height:49px;padding:4px 5px}
   .nma-panel{gap:5px!important}
   .nma-speech{font-size:11.5px;padding:8px 11px;max-height:100px}
   .nma-compose textarea{min-height:36px!important;padding:8px 10px!important}
