@@ -3,7 +3,7 @@ if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
 const ACCESS_REVISION='fichas-workspace-context-20261007-40';
 const ENGINE_REVISION='creator-stage5-20261010-50';
-const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-bubble-compact-6';
+const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
@@ -107,27 +107,29 @@ const requestedSheetTitle=launchQuery.get('numaSheetTitle')||'';
 
 let numaCssLoadPromise=null;
 function ensureNumaCss(){
+  let link=document.getElementById('nma-overlay-css');
+  if(link?.href===NUMA_CSS&&link.sheet)return Promise.resolve(link);
   if(numaCssLoadPromise)return numaCssLoadPromise;
   numaCssLoadPromise=new Promise((resolve,reject)=>{
-    let link=document.getElementById('nma-overlay-css');
-    const ready=()=>resolve(link);
+    const ready=()=>{cleanup();resolve(link)};
     const fail=()=>{
+      cleanup();
       numaCssLoadPromise=null;
-      reject(new Error('NUMA_CSS_LOAD_FAILED'))
+      reject(new Error('NUMA_CSS_LOAD_FAILED'));
     };
-    if(link){
-      if(link.sheet){resolve(link);return}
-      link.addEventListener('load',ready,{once:true});
-      link.addEventListener('error',fail,{once:true});
-      return
+    const cleanup=()=>{
+      link.removeEventListener('load',ready);
+      link.removeEventListener('error',fail);
+    };
+    if(!link){
+      link=document.createElement('link');
+      link.id='nma-overlay-css';
+      link.rel='stylesheet';
     }
-    link=document.createElement('link');
-    link.id='nma-overlay-css';
-    link.rel='stylesheet';
-    link.href=NUMA_CSS;
     link.addEventListener('load',ready,{once:true});
     link.addEventListener('error',fail,{once:true});
-    document.head.appendChild(link);
+    if(link.href!==NUMA_CSS)link.href=NUMA_CSS;
+    if(!link.isConnected)document.head.appendChild(link);
   });
   return numaCssLoadPromise;
 }
