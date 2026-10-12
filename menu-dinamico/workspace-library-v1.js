@@ -158,6 +158,21 @@ function enhanceRoot(){
 }
 
 let activeSheetEditor=null;
+const SHEET_UNIT_CATALOG=[
+  ['G','Gramo','Gram'],['KG','Kilogramo','Kilogram'],['MG','Miligramo','Milligram'],
+  ['OZ','Onza','Ounce'],['LB','Libra','Pound'],
+  ['ML','Mililitro','Milliliter'],['L','Litro','Liter'],['CL','Centilitro','Centiliter'],
+  ['EA','Each / pieza','Each'],['U','Unidad','Unit'],['PC','Pieza','Piece'],['BU','Manojo','Bunch'],
+  ['TSP','Cucharadita','Teaspoon'],['TBSP','Cucharada sopera','Tablespoon'],
+  ['CC','Cucharadita','Teaspoon'],['CP','Cucharada de postre','Dessert spoon'],['CS','Cucharada sopera','Tablespoon'],
+  ['CUP','Taza','Cup'],['QT','Cuarto de galón','Quart'],['GAL','Galón','Gallon'],
+  ['TT','Al gusto','To taste'],['AN','Según necesidad','As needed'],['CN','Cantidad necesaria','Quantity as needed']
+];
+const sheetUnitLabel=code=>{
+  const row=SHEET_UNIT_CATALOG.find(item=>item[0]===String(code||'').toUpperCase());
+  if(!row)return String(code||'');
+  return row[0]+' — '+(lang()==='en'?row[2]:row[1])
+};
 
 function sheetEditorId(prefix='draft'){
   return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8)
@@ -231,7 +246,8 @@ function sheetEditorTemplate(){
     photoUrl:'',
     components:[],
     savedMopRange:null,
-    mopChoice:null
+    mopChoice:null,
+    openUnitComponentId:''
   };
   activeSheetEditor=state;
 
@@ -247,6 +263,12 @@ function sheetEditorTemplate(){
   const mopWrap=layer.querySelector('[data-mop-wrap]');
   const caretPlus=layer.querySelector('[data-mop-caret-plus]');
   const mopPicker=layer.querySelector('[data-mop-picker]');
+  layer.appendChild(mopPicker);
+  const unitPicker=document.createElement('div');
+  unitPicker.className='nexoSheetUnitPicker';
+  unitPicker.hidden=true;
+  layer.appendChild(unitPicker);
+  const editorCanvas=layer.querySelector('.nexoSheetEditorCanvas');
 
   const componentById=id=>state.components.find(row=>row.id===id);
 
@@ -279,7 +301,10 @@ function sheetEditorTemplate(){
         '<div class="nexoSheetIngredientIndex">'+(index+1)+'</div>'+
         '<label class="nexoSheetIngredientName"><span>'+esc(tr('Ingrediente','Ingredient'))+'</span><input data-component-name maxlength="160" value="'+esc(row.name)+'" '+(row.source==='existing'?'readonly':'')+'></label>'+
         '<label><span>'+esc(tr('Cantidad','Quantity'))+'</span><input data-component-quantity inputmode="decimal" value="'+esc(row.quantity)+'" placeholder="1000"></label>'+
-        '<label><span>'+esc(tr('Unidad','Unit'))+'</span><input data-component-unit maxlength="40" value="'+esc(row.unit)+'" placeholder="'+esc(tr('g, ml, u…','g, ml, ea…'))+'"></label>'+
+        '<label class="nexoSheetUnitField"><span>'+esc(tr('Unidad','Unit'))+'</span><button type="button" class="nexoSheetUnitTrigger" data-component-unit-trigger aria-haspopup="listbox">'+
+          '<strong>'+esc(row.unit||tr('Elegir unidad','Choose unit'))+'</strong>'+
+          '<small>'+esc(row.unit?sheetUnitLabel(row.unit):tr('Usar una unidad existente','Use an existing unit'))+'</small>'+
+        '</button></label>'+
         '<button type="button" class="nexoSheetIngredientRemove" data-component-remove aria-label="'+esc(tr('Eliminar ingrediente','Remove ingredient'))+'">×</button>'+
       '</article>'
     ).join('');
@@ -288,16 +313,15 @@ function sheetEditorTemplate(){
       if(!component)return;
       const nameInput=rowEl.querySelector('[data-component-name]');
       const qtyInput=rowEl.querySelector('[data-component-quantity]');
-      const unitInput=rowEl.querySelector('[data-component-unit]');
+      const unitTrigger=rowEl.querySelector('[data-component-unit-trigger]');
       const sync=()=>{
         if(component.source!=='existing')component.name=String(nameInput.value||'');
         component.quantity=String(qtyInput.value||'');
-        component.unit=String(unitInput.value||'');
         refreshMopTokens()
       };
       nameInput.addEventListener('input',sync);
       qtyInput.addEventListener('input',sync);
-      unitInput.addEventListener('input',sync);
+      unitTrigger.onclick=()=>openUnitPicker(component,unitTrigger);
       rowEl.querySelector('[data-component-remove]').onclick=()=>{
         state.components=state.components.filter(item=>item.id!==component.id);
         removeComponentTokens(component.id);
@@ -306,6 +330,53 @@ function sheetEditorTemplate(){
       }
     })
   }
+  function hideUnitPicker(){
+    unitPicker.hidden=true;
+    state.openUnitComponentId=''
+  }
+  function positionUnitPicker(trigger){
+    if(unitPicker.hidden||!trigger)return;
+    const rect=trigger.getBoundingClientRect();
+    const margin=10;
+    const width=Math.min(360,Math.max(270,window.innerWidth-margin*2));
+    const left=Math.max(margin,Math.min(rect.left,window.innerWidth-width-margin));
+    unitPicker.style.width=width+'px';
+    const desiredHeight=Math.min(420,Math.max(250,window.innerHeight*0.52));
+    unitPicker.style.maxHeight=desiredHeight+'px';
+    const spaceBelow=window.innerHeight-rect.bottom-margin;
+    const spaceAbove=rect.top-margin;
+    if(spaceBelow>=Math.min(300,desiredHeight)||spaceBelow>=spaceAbove){
+      unitPicker.style.top=Math.max(margin,rect.bottom+7)+'px';
+      unitPicker.style.bottom='auto'
+    }else{
+      unitPicker.style.top='auto';
+      unitPicker.style.bottom=Math.max(margin,window.innerHeight-rect.top+7)+'px'
+    }
+    unitPicker.style.left=left+'px'
+  }
+  function openUnitPicker(component,trigger){
+    hideMopPicker();
+    state.openUnitComponentId=component.id;
+    unitPicker.innerHTML=
+      '<div class="nexoSheetUnitPickerHead"><div><span>'+esc(tr('Unidad de medida','Unit of measure'))+'</span><strong>'+esc(tr('Selecciona una unidad existente','Choose an existing unit'))+'</strong></div><button type="button" data-unit-close>×</button></div>'+
+      '<div class="nexoSheetUnitPickerList" role="listbox">'+
+        SHEET_UNIT_CATALOG.map(row=>{
+          const code=row[0],label=lang()==='en'?row[2]:row[1];
+          return '<button type="button" role="option" data-unit-code="'+esc(code)+'" class="'+(component.unit===code?'active':'')+'"><strong>'+esc(code)+'</strong><span>'+esc(label)+'</span></button>'
+        }).join('')+
+      '</div>'+
+      '<div class="nexoSheetUnitPickerOther"><button type="button" data-unit-other disabled>'+esc(tr('Otra','Other'))+'</button><small>'+esc(tr('La creación de nuevas unidades se añadirá en otra etapa.','Creating new units will be added in a later stage.'))+'</small></div>';
+    unitPicker.querySelector('[data-unit-close]').onclick=hideUnitPicker;
+    unitPicker.querySelectorAll('[data-unit-code]').forEach(btn=>btn.onclick=()=>{
+      component.unit=String(btn.dataset.unitCode||'');
+      hideUnitPicker();
+      renderIngredientList();
+      refreshMopTokens()
+    });
+    unitPicker.hidden=false;
+    positionUnitPicker(trigger)
+  }
+
   function renderExistingPicker(query=''){
     const q=searchNorm(query);
     const selectedIds=new Set(state.components.filter(row=>row.source==='existing').map(row=>row.targetIngredientId));
@@ -423,12 +494,24 @@ function sheetEditorTemplate(){
     positionMopPicker()
   }
   function positionMopPicker(){
-    const plusLeft=parseFloat(caretPlus.style.left)||12;
-    const plusTop=parseFloat(caretPlus.style.top)||12;
-    const width=Math.min(340,Math.max(250,mopWrap.clientWidth-24));
+    if(mopPicker.hidden)return;
+    const rect=caretPlus.getBoundingClientRect();
+    const margin=10;
+    const width=Math.min(360,Math.max(270,window.innerWidth-margin*2));
+    const left=Math.max(margin,Math.min(rect.left,window.innerWidth-width-margin));
+    const maxHeight=Math.min(420,Math.max(240,window.innerHeight*0.52));
     mopPicker.style.width=width+'px';
-    mopPicker.style.left=Math.max(8,Math.min(plusLeft,mopWrap.clientWidth-width-8))+'px';
-    mopPicker.style.top=(plusTop+38)+'px'
+    mopPicker.style.maxHeight=maxHeight+'px';
+    mopPicker.style.left=left+'px';
+    const spaceBelow=window.innerHeight-rect.bottom-margin;
+    const spaceAbove=rect.top-margin;
+    if(spaceBelow>=Math.min(300,maxHeight)||spaceBelow>=spaceAbove){
+      mopPicker.style.top=Math.max(margin,rect.bottom+7)+'px';
+      mopPicker.style.bottom='auto'
+    }else{
+      mopPicker.style.top='auto';
+      mopPicker.style.bottom=Math.max(margin,window.innerHeight-rect.top+7)+'px'
+    }
   }
   function insertMopToken(component,mode){
     const range=restoreMopRange();
@@ -492,9 +575,21 @@ function sheetEditorTemplate(){
   },80));
   caretPlus.addEventListener('mousedown',e=>e.preventDefault());
   caretPlus.onclick=()=>{
+    hideUnitPicker();
     restoreMopRange();
     renderMopPicker()
   };
+  mopPicker.addEventListener('wheel',e=>e.stopPropagation(),{passive:true});
+  unitPicker.addEventListener('wheel',e=>e.stopPropagation(),{passive:true});
+  const repositionFloatingPickers=()=>{
+    if(!mopPicker.hidden)positionMopPicker();
+    if(!unitPicker.hidden){
+      const trigger=list.querySelector('[data-component-id="'+CSS.escape(state.openUnitComponentId)+'"] [data-component-unit-trigger]');
+      if(trigger)positionUnitPicker(trigger);else hideUnitPicker()
+    }
+  };
+  editorCanvas?.addEventListener('scroll',repositionFloatingPickers,{passive:true});
+  window.addEventListener('resize',repositionFloatingPickers,{passive:true});
   document.addEventListener('selectionchange',()=>{
     if(activeSheetEditor!==state)return;
     const selection=window.getSelection();
@@ -507,7 +602,11 @@ function sheetEditorTemplate(){
   });
 
   layer.querySelector('[data-sheet-editor-close]').onclick=sheetEditorClose;
-  layer.addEventListener('mousedown',e=>{if(e.target===layer)sheetEditorClose()});
+  layer.addEventListener('mousedown',e=>{
+    if(e.target===layer){sheetEditorClose();return}
+    if(!mopPicker.hidden&&!e.target.closest('[data-mop-picker]')&&!e.target.closest('[data-mop-caret-plus]'))hideMopPicker();
+    if(!unitPicker.hidden&&!e.target.closest('.nexoSheetUnitPicker')&&!e.target.closest('[data-component-unit-trigger]'))hideUnitPicker()
+  });
   renderIngredientList();
   queueMicrotask(()=>title.focus())
 }
