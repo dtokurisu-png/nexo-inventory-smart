@@ -128,3 +128,18 @@
 .nexoCreatorMopAdd{justify-content:center}.nexoCreatorStageSevenLocalActions{display:flex;justify-content:flex-end}
 @media(max-width:760px){.nexoCreatorMopRefGrid{grid-template-columns:1fr}.nexoCreatorStageSevenEditorHead{align-items:flex-start;flex-direction:column}}
 @media(max-width:560px){.nexoCreatorModalStageSeven{width:calc(100vw - 18px)}.nexoCreatorMopStepHead{align-items:flex-start}.nexoCreatorMopStepHead>div:first-child{max-width:calc(100% - 106px)}.nexoCreatorStageSevenLocalActions .nexoWorkspaceBtn{width:100%}}
+
+
+.nexoCreatorModalStageEight{width:min(1060px,calc(100vw - 28px))}
+.nexoCreatorStageEightGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.nexoCreatorStageEightGrid>div{display:grid;gap:3px;padding:12px;border:1px solid var(--nxo-border);border-radius:13px;background:var(--nxo-surface)}
+.nexoCreatorStageEightGrid span{font-size:9px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--nxo-text-muted)}
+.nexoCreatorStageEightGrid strong{font-size:22px;color:var(--nxo-text-primary)}
+.nexoCreatorStageEightGrid small{font-size:10px;line-height:1.35;color:var(--nxo-text-muted);overflow-wrap:anywhere}
+.nexoCreatorStageEightSafety{padding:12px 14px;border:1px solid var(--nxo-positive);border-radius:13px;background:var(--nxo-positive-soft)}
+.nexoCreatorStageEightSafety strong{font-size:11px;color:var(--nxo-positive)}.nexoCreatorStageEightSafety p{margin:5px 0 0;font-size:10px;line-height:1.5;color:var(--nxo-text-secondary)}
+.nexoCreatorStageEightProgress{display:grid;gap:6px}.nexoCreatorStageEightProgress span{font-size:10px;font-weight:800;color:var(--nxo-text-secondary)}.nexoCreatorStageEightProgress>div{height:7px;border-radius:999px;background:var(--nxo-accent-soft);overflow:hidden}.nexoCreatorStageEightProgress i{display:block;width:0;height:100%;border-radius:inherit;background:var(--nxo-positive);transition:width .2s ease}
+.nexoCreatorStageEightReceipt{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}.nexoCreatorStageEightReceipt span{font-size:10px;font-weight:800;padding:5px 8px;border:1px solid var(--nxo-border);border-radius:999px;color:var(--nxo-text-secondary)}
+.nexoCreatorStageEightComplete .nexoCreatorSummary strong{font-size:11px;overflow-wrap:anywhere}
+@media(max-width:760px){.nexoCreatorStageEightGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.nexoCreatorModalStageEight{width:calc(100vw - 18px)}.nexoCreatorStageEightGrid{grid-template-columns:1fr}}
