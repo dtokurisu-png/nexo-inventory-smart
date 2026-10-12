@@ -898,6 +898,89 @@ async function deletePhotoFromEngine(payload={}){
   return saved;
 }
 
+
+function creatorPublishedMediaFileId(mediaFileIds={},file={}){
+  if(file.kind==='main')return String(mediaFileIds.main||'');
+  const localId=String(file.draftId||'');
+  return String(mediaFileIds.subrecipes?.[localId]||'')
+}
+function setCreatorPublishedMediaFileId(mediaFileIds,file,fileId){
+  if(file.kind==='main'){
+    mediaFileIds.main=String(fileId||'');
+    return
+  }
+  const localId=String(file.draftId||'');
+  mediaFileIds.subrecipes=mediaFileIds.subrecipes&&typeof mediaFileIds.subrecipes==='object'?mediaFileIds.subrecipes:{};
+  mediaFileIds.subrecipes[localId]=String(fileId||'')
+}
+async function uploadCreatorDraftMediaFile(file){
+  const blob=file?.file;
+  if(!blob||typeof blob.arrayBuffer!=='function')throw new Error('CREATOR_MEDIA_FILE_MISSING');
+  const fileName=String(file.fileName||blob.name||'foto.jpg');
+  const mimeType=String(file.mimeType||blob.type||'image/jpeg');
+  const sizeInBytes=Number(file.sizeInBytes||blob.size||0);
+  const ticket=await api('creator.media.upload-url',{
+    input:{fileName,mimeType,sizeInBytes}
+  });
+  const uploadUrl=String(ticket?.uploadUrl||'');
+  if(!uploadUrl)throw new Error('CREATOR_MEDIA_UPLOAD_URL_MISSING');
+  const response=await fetch(uploadUrl,{
+    method:'PUT',
+    headers:{'Content-Type':mimeType},
+    body:blob
+  });
+  let body={};
+  try{body=await response.json()}catch(_){}
+  if(!response.ok){
+    throw new Error(String(body?.message||body?.error||('CREATOR_MEDIA_UPLOAD_HTTP_'+response.status)))
+  }
+  const fileId=String(body?.file?.id||body?.file?._id||body?.id||body?._id||'');
+  if(!fileId)throw new Error('CREATOR_MEDIA_FILE_ID_MISSING');
+  return fileId
+}
+async function publishCreatorDraftFromEngine(payload={}){
+  const requestId=String(payload.requestId||'');
+  const draft=payload.draft&&typeof payload.draft==='object'?payload.draft:{};
+  const publishKey=String(payload.publishKey||draft.creatorPublishKey||'');
+  const mediaFileIds=payload.mediaFileIds&&typeof payload.mediaFileIds==='object'
+    ? JSON.parse(JSON.stringify(payload.mediaFileIds))
+    : {main:'',subrecipes:{}};
+  if(!mediaFileIds.subrecipes||typeof mediaFileIds.subrecipes!=='object')mediaFileIds.subrecipes={};
+  const files=Array.isArray(payload.files)?payload.files:[];
+  const progress=(phase,message,current=0,total=files.length)=>postToEngine('NEXO_DM_CREATOR_PUBLISH_PROGRESS',{
+    requestId,phase,message,current,total,mediaFileIds
+  });
+  try{
+    let uploaded=0;
+    for(const file of files){
+      if(creatorPublishedMediaFileId(mediaFileIds,file)){uploaded+=1;continue}
+      progress('media',String(file.label||'Subiendo imagen…'),uploaded,files.length);
+      const fileId=await uploadCreatorDraftMediaFile(file);
+      setCreatorPublishedMediaFileId(mediaFileIds,file,fileId);
+      uploaded+=1;
+      progress('media-ready',String(file.label||'Imagen preparada'),uploaded,files.length)
+    }
+    progress('publish','Publicando y verificando el grafo en Wix…',files.length,files.length);
+    const result=await api('creator.publish',{
+      input:{draft,publishKey,mediaFileIds}
+    });
+    postToEngine('NEXO_DM_CREATOR_PUBLISH_RESULT',{
+      ok:true,
+      requestId,
+      result,
+      mediaFileIds
+    });
+    pushEngineData().catch(()=>{})
+  }catch(error){
+    postToEngine('NEXO_DM_CREATOR_PUBLISH_RESULT',{
+      ok:false,
+      requestId,
+      error:String(error?.message||error||'CREATOR_PUBLISH_FAILED'),
+      mediaFileIds
+    })
+  }
+}
+
 function handleEngineMessage(event){
   if(!frame||event.source!==frame.contentWindow)return;
   let message=event.data;
@@ -990,6 +1073,10 @@ function handleEngineMessage(event){
   }
   if(message.type==='NEXO_APP_OPEN_DEVELOPMENT'){
     openDevelopmentCenter();
+    return;
+  }
+  if(message.type==='NEXO_DM_CREATOR_PUBLISH'){
+    publishCreatorDraftFromEngine(payload);
     return;
   }
   if(message.type==='DM_SAVE_PHOTO_FILE'){
