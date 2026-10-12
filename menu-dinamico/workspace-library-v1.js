@@ -1010,6 +1010,9 @@ function saveStageFourComponents(rows,{complete=false}={}){
     components:ordered,
     stage:Math.max(4,Number(draft.stage||0)),
     stage4Complete:complete===true?true:draft.stage4Complete===true,
+    stage5Complete:false,
+    stage6Complete:false,
+    stage6Links:[],
     schemaVersion:Math.max(4,Number(draft.schemaVersion||0)),
     updatedAt:new Date().toISOString()
   };
@@ -1450,7 +1453,7 @@ function creatorStageFiveSavePreparation(draftId,preparation){
     const nextPreparation={...row.pendingPreparation,...preparation,recipeType:'SUBRECIPE',draftId:String(draftId||row.pendingPreparation?.draftId||''),updatedAt:new Date().toISOString()};
     return {...row,pendingPreparation:nextPreparation,displayEs:String(nextPreparation.titleEs||nextPreparation.titleEn||row.displayEs||''),displayEn:String(nextPreparation.titleEn||nextPreparation.titleEs||row.displayEn||'')}
   });
-  const next={...draft,components:rows,stage:Math.max(5,Number(draft.stage||0)),stage5Complete:false,schemaVersion:Math.max(5,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
+  const next={...draft,components:rows,stage:Math.max(5,Number(draft.stage||0)),stage5Complete:false,stage6Complete:false,stage6Links:[],schemaVersion:Math.max(5,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
   saveCreatorDraft(next);
   return next
 }
@@ -1663,9 +1666,9 @@ function showStageFiveComplete(layerEl,draft){
   const body=layerEl.querySelector('.nexoWorkspaceModalBody');
   if(!body)return;
   const pending=creatorPendingPreparations(draft);
-  body.innerHTML='<div class="nexoCreatorComplete"><div class="nexoWorkspaceEmptyIcon">'+icon('preparaciones')+'</div><div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 5 de 8','Stage 5 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div><h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3><div class="nexoCreatorSummary"><div><span>'+esc(tr('Preparaciones desarrolladas','Built preparations'))+'</span><strong>'+pending.length+'</strong></div><div><span>'+esc(tr('Persistencia Wix','Wix persistence'))+'</span><strong>'+esc(tr('Aún no','Not yet'))+'</strong></div></div><p>'+esc(pending.length?tr('Las subrecetas pendientes ya tienen su estructura local. La Etapa 6 resolverá sus vínculos sin crear registros incompletos.','Pending subrecipes now have their local structure. Stage 6 will resolve their links without creating incomplete records.'):tr('No había subrecetas pendientes. El borrador queda listo para la Etapa 6.','There were no pending subrecipes. The draft is ready for Stage 6.'))+'</p><div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-five-edit>'+esc(tr('Editar etapa 5','Edit stage 5'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-five-close>'+esc(tr('Listo','Done'))+'</button></div></div>';
+  body.innerHTML='<div class="nexoCreatorComplete"><div class="nexoWorkspaceEmptyIcon">'+icon('preparaciones')+'</div><div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 5 de 8','Stage 5 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div><h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3><div class="nexoCreatorSummary"><div><span>'+esc(tr('Preparaciones desarrolladas','Built preparations'))+'</span><strong>'+pending.length+'</strong></div><div><span>'+esc(tr('Persistencia Wix','Wix persistence'))+'</span><strong>'+esc(tr('Aún no','Not yet'))+'</strong></div></div><p>'+esc(pending.length?tr('Las subrecetas pendientes ya tienen su estructura local. La Etapa 6 resolverá sus vínculos sin crear registros incompletos.','Pending subrecipes now have their local structure. Stage 6 will resolve their links without creating incomplete records.'):tr('No había subrecetas pendientes. El borrador queda listo para la Etapa 6.','There were no pending subrecipes. The draft is ready for Stage 6.'))+'</p><div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-five-edit>'+esc(tr('Editar etapa 5','Edit stage 5'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-six-open>'+esc(tr('Continuar a etapa 6','Continue to stage 6'))+'</button></div></div>';
   body.querySelector('[data-stage-five-edit]').onclick=()=>openCreateStageFive();
-  body.querySelector('[data-stage-five-close]').onclick=closeLayer
+  body.querySelector('[data-stage-six-open]').onclick=()=>openCreateStageSix()
 }
 function bindCreatorStageFive(layerEl,draft){
   const form=layerEl.querySelector('[data-nexo-creator-stage-five]');
@@ -1701,9 +1704,184 @@ function openCreateStageFive(){
   bindCreatorStageFive(el,next)
 }
 
+
+function creatorStageSixLocalTarget(draftId){
+  return 'local:'+String(draftId||'').trim()
+}
+function creatorStageSixExistingTarget(row){
+  const id=String(row?.targetRecipeId||'').trim();
+  if(!id||id.startsWith('local:'))return null;
+  return creatorReusablePreparations().find(recipe=>String(recipe._id||recipe.id||'')===id)||null
+}
+function creatorStageSixAudit(draft){
+  const rows=creatorSubrecipeComponents(draft);
+  const pendingCounts=new Map();
+  rows.forEach(row=>{
+    if(row?.preparationSource!=='pending')return;
+    const id=String(row?.pendingPreparation?.draftId||'').trim();
+    if(id)pendingCounts.set(id,(pendingCounts.get(id)||0)+1)
+  });
+  return rows.map(row=>{
+    const source=String(row?.preparationSource||'');
+    const componentDraftId=String(row?.draftId||'');
+    const name=creatorStageFourComponentName(row);
+    if(source==='existing'){
+      const target=String(row?.targetRecipeId||'').trim();
+      if(!target)return {ok:false,componentDraftId,name,source,targetRecipeId:'',code:'EXISTING_TARGET_MISSING',message:tr('La preparación existente no tiene targetRecipeId.','The existing preparation has no targetRecipeId.')};
+      const found=creatorStageSixExistingTarget(row);
+      if(!found)return {ok:false,componentDraftId,name,source,targetRecipeId:target,code:'EXISTING_TARGET_UNAVAILABLE',message:tr('La preparación existente ya no está disponible en el dataset autorizado.','The existing preparation is no longer available in the authorized dataset.')};
+      return {ok:true,componentDraftId,name,source,targetRecipeId:target,code:'EXISTING_RESOLVED',message:tr('Vínculo real verificado.','Real link verified.')}
+    }
+    if(source==='pending'){
+      const preparation=row.pendingPreparation||{};
+      const localId=String(preparation.draftId||'').trim();
+      if(!localId)return {ok:false,componentDraftId,name,source,targetRecipeId:'',code:'LOCAL_DRAFT_ID_MISSING',message:tr('La preparación local no tiene draftId.','The local preparation has no draftId.')};
+      if((pendingCounts.get(localId)||0)!==1)return {ok:false,componentDraftId,name,source,targetRecipeId:creatorStageSixLocalTarget(localId),code:'LOCAL_DRAFT_ID_DUPLICATED',message:tr('El draftId local está repetido y el vínculo sería ambiguo.','The local draftId is duplicated and the link would be ambiguous.')};
+      if(preparation.stage5Complete!==true)return {ok:false,componentDraftId,name,source,targetRecipeId:creatorStageSixLocalTarget(localId),code:'LOCAL_STAGE5_INCOMPLETE',message:tr('La preparación debe completarse en la Etapa 5.','The preparation must be completed in Stage 5.')};
+      const validation=creatorStageFiveValidation(preparation);
+      if(validation)return {ok:false,componentDraftId,name,source,targetRecipeId:creatorStageSixLocalTarget(localId),code:'LOCAL_PREPARATION_INVALID',message:validation};
+      const expected=creatorStageSixLocalTarget(localId);
+      if(String(row.targetRecipeId||'')!==expected)return {ok:false,componentDraftId,name,source,targetRecipeId:expected,code:'LOCAL_TARGET_UNRESOLVED',message:tr('La referencia local todavía no fue normalizada.','The local reference has not been normalized yet.')};
+      return {ok:true,componentDraftId,name,source,targetRecipeId:expected,localRecipeDraftId:localId,code:'LOCAL_RESOLVED',message:tr('Vínculo local resuelto.','Local link resolved.')}
+    }
+    return {ok:false,componentDraftId,name,source,targetRecipeId:String(row?.targetRecipeId||''),code:'SOURCE_UNKNOWN',message:tr('La preparación no tiene un origen de vínculo válido.','The preparation has no valid link source.')}
+  })
+}
+function creatorStageSixResolve(draft){
+  const sourceDraft=draft||readCreatorDraft()||{};
+  const rows=creatorAllComponents(sourceDraft);
+  const pendingCounts=new Map();
+  rows.forEach(row=>{
+    if(String(row?.componentType||'').toUpperCase()!=='SUBRECIPE'||row?.preparationSource!=='pending')return;
+    const id=String(row?.pendingPreparation?.draftId||'').trim();
+    if(id)pendingCounts.set(id,(pendingCounts.get(id)||0)+1)
+  });
+  const normalized=rows.map(row=>{
+    if(String(row?.componentType||'').toUpperCase()!=='SUBRECIPE')return row;
+    if(row?.preparationSource!=='pending')return row;
+    const preparation=row.pendingPreparation||{};
+    const localId=String(preparation.draftId||'').trim();
+    if(!localId||(pendingCounts.get(localId)||0)!==1||preparation.stage5Complete!==true||creatorStageFiveValidation(preparation))return row;
+    return {...row,targetRecipeId:creatorStageSixLocalTarget(localId)}
+  });
+  let next={
+    ...sourceDraft,
+    components:normalized,
+    stage:Math.max(6,Number(sourceDraft.stage||0)),
+    stage6Complete:false,
+    schemaVersion:Math.max(6,Number(sourceDraft.schemaVersion||0)),
+    updatedAt:new Date().toISOString()
+  };
+  const audit=creatorStageSixAudit(next);
+  next={
+    ...next,
+    stage6Links:audit.map(item=>({
+      componentDraftId:item.componentDraftId,
+      source:item.source,
+      targetRecipeId:item.targetRecipeId,
+      localRecipeDraftId:item.localRecipeDraftId||'',
+      status:item.ok?'RESOLVED':'BROKEN',
+      code:item.code
+    })),
+    stage6ResolvedAt:new Date().toISOString()
+  };
+  saveCreatorDraft(next);
+  return {draft:next,audit}
+}
+function creatorStageSixRow(item,index){
+  const local=item.source==='pending';
+  const source=local?tr('Preparación local','Local preparation'):tr('Preparación existente','Existing preparation');
+  const state=item.ok?tr('Resuelto','Resolved'):tr('Requiere corrección','Needs correction');
+  return '<article class="nexoCreatorStageSixRow '+(item.ok?'resolved':'broken')+'">'+
+    '<div class="nexoCreatorStageSixOrder">'+(index+1)+'</div>'+
+    '<div class="nexoCreatorStageSixInfo"><span>'+esc(source)+'</span><strong>'+esc(item.name||tr('Preparación','Preparation'))+'</strong><small>'+esc(item.message||'')+'</small></div>'+
+    '<div class="nexoCreatorStageSixTarget"><span>targetRecipeId</span><code>'+esc(item.targetRecipeId||tr('Sin resolver','Unresolved'))+'</code></div>'+
+    '<b>'+esc(state)+'</b>'+
+  '</article>'
+}
+function creatorStageSixMarkup(draft={}){
+  const resolved=creatorStageSixResolve(draft);
+  const audit=resolved.audit;
+  const ok=audit.filter(item=>item.ok).length;
+  const broken=audit.length-ok;
+  return '<form class="nexoCreatorStage nexoCreatorStageSix" data-nexo-creator-stage-six novalidate>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 6 de 8','Stage 6 of 8'))+'</span><strong>'+esc(tr('Resolver vínculos de subrecetas','Resolve subrecipe links'))+'</strong></div>'+
+    '<div class="nexoCreatorStageSummary"><span>'+esc(resolved.draft.title||resolved.draft.titleEs||resolved.draft.titleEn||'')+'</span><strong data-stage-six-count>'+ok+' / '+audit.length+' '+esc(tr('resueltos','resolved'))+(broken?' · '+broken+' '+esc(tr('con problema','broken')):'')+'</strong></div>'+
+    '<p class="nexoCreatorIntro">'+esc(tr('Las preparaciones existentes conservan su ID real. Las preparaciones creadas en este borrador reciben un targetRecipeId temporal con formato local:<draftId>; la Etapa 8 lo sustituirá por el ID real de Wix antes de publicar.','Existing preparations keep their real ID. Preparations created in this draft receive a temporary targetRecipeId in local:<draftId> format; Stage 8 will replace it with the real Wix ID before publishing.'))+'</p>'+
+    (audit.length?'<div class="nexoCreatorStageSixList" data-stage-six-list>'+audit.map((item,index)=>creatorStageSixRow(item,index)).join('')+'</div>':'<div class="nexoCreatorIngredientEmpty nexoCreatorStageSixEmpty">'+icon('preparaciones')+'<p>'+esc(tr('Esta ficha no usa subrecetas. No hay vínculos que resolver.','This sheet uses no subrecipes. There are no links to resolve.'))+'</p></div>')+
+    '<div class="nexoCreatorStageSixLegend"><span>'+esc(tr('Existente','Existing'))+': <code>ID Wix</code></span><span>'+esc(tr('Local','Local'))+': <code>local:draftId</code></span></div>'+
+    '<div class="nexoCreatorStatus" data-creator-status aria-live="polite">'+(broken?esc(tr('Corrige los vínculos marcados antes de completar la etapa.','Fix the marked links before completing this stage.')):'')+'</div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-six-back>'+esc(tr('← Etapa 5','← Stage 5'))+'</button><button type="button" class="nexoWorkspaceBtn" data-stage-six-refresh>'+esc(tr('Revalidar vínculos','Revalidate links'))+'</button><button type="button" class="nexoWorkspaceBtn" data-stage-six-save-close>'+esc(tr('Guardar y cerrar','Save & close'))+'</button><button type="submit" class="nexoWorkspaceBtn primary">'+esc(tr('Completar etapa 6','Complete stage 6'))+'</button></div>'+
+  '</form>'
+}
+function renderStageSixAudit(form){
+  const result=creatorStageSixResolve(readCreatorDraft()||{});
+  const list=form.querySelector('[data-stage-six-list]');
+  const count=form.querySelector('[data-stage-six-count]');
+  const status=form.querySelector('[data-creator-status]');
+  const audit=result.audit,ok=audit.filter(item=>item.ok).length,broken=audit.length-ok;
+  if(count)count.textContent=ok+' / '+audit.length+' '+tr('resueltos','resolved')+(broken?' · '+broken+' '+tr('con problema','broken'):'');
+  if(list)list.innerHTML=audit.map((item,index)=>creatorStageSixRow(item,index)).join('');
+  if(status)status.textContent=broken?tr('Corrige los vínculos marcados antes de completar la etapa.','Fix the marked links before completing this stage.'):tr('Todos los vínculos están resueltos.','All links are resolved.');
+  return result
+}
+function showStageSixComplete(layerEl,draft){
+  const body=layerEl.querySelector('.nexoWorkspaceModalBody');
+  if(!body)return;
+  const audit=creatorStageSixAudit(draft);
+  const local=audit.filter(item=>item.source==='pending').length;
+  const existing=audit.filter(item=>item.source==='existing').length;
+  body.innerHTML='<div class="nexoCreatorComplete">'+
+    '<div class="nexoWorkspaceEmptyIcon">'+icon('preparaciones')+'</div>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 6 de 8','Stage 6 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div>'+
+    '<h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3>'+
+    '<div class="nexoCreatorSummary"><div><span>'+esc(tr('Vínculos existentes','Existing links'))+'</span><strong>'+existing+'</strong></div><div><span>'+esc(tr('Vínculos locales','Local links'))+'</span><strong>'+local+'</strong></div></div>'+
+    '<p>'+esc(tr('La composición ya tiene referencias inequívocas. Los tokens local:<draftId> permanecen locales y se traducirán a IDs reales únicamente durante la publicación final.','The composition now has unambiguous references. local:<draftId> tokens remain local and will be translated to real IDs only during final publication.'))+'</p>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-six-edit>'+esc(tr('Revisar etapa 6','Review stage 6'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-six-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+  '</div>';
+  body.querySelector('[data-stage-six-edit]').onclick=()=>openCreateStageSix();
+  body.querySelector('[data-stage-six-close]').onclick=closeLayer
+}
+function bindCreatorStageSix(layerEl){
+  const form=layerEl.querySelector('[data-nexo-creator-stage-six]');
+  if(!form)return;
+  form.querySelector('[data-stage-six-back]').onclick=()=>openCreateStageFive();
+  form.querySelector('[data-stage-six-refresh]').onclick=()=>renderStageSixAudit(form);
+  form.querySelector('[data-stage-six-save-close]').onclick=()=>{creatorStageSixResolve(readCreatorDraft()||{});closeLayer()};
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const result=renderStageSixAudit(form);
+    const broken=result.audit.filter(item=>!item.ok);
+    if(broken.length){
+      form.querySelector('[data-creator-status]').textContent=tr('No se puede completar: todavía hay vínculos rotos o ambiguos.','Cannot complete: broken or ambiguous links remain.');
+      return
+    }
+    const next={
+      ...result.draft,
+      stage:Math.max(6,Number(result.draft.stage||0)),
+      stage6Complete:true,
+      schemaVersion:Math.max(6,Number(result.draft.schemaVersion||0)),
+      updatedAt:new Date().toISOString()
+    };
+    saveCreatorDraft(next);
+    showStageSixComplete(layerEl,next)
+  })
+}
+function openCreateStageSix(){
+  if(!canCreate())return;
+  const draft=readCreatorDraft()||{};
+  if(Number(draft.stage||0)<5||draft.stage5Complete!==true){openCreateStageFive();return}
+  const next={...draft,stage:Math.max(6,Number(draft.stage||0)),schemaVersion:Math.max(6,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
+  saveCreatorDraft(next);
+  const el=layer(tr('Crear ficha técnica','Create technical sheet'),creatorStageSixMarkup(next));
+  el.querySelector('.nexoWorkspaceModal')?.classList.add('nexoCreatorModalWide','nexoCreatorModalStageSix');
+  bindCreatorStageSix(el)
+}
+
 function openCreateFlow(){
   if(!canCreate())return;
   const draft=readCreatorDraft();
+  if(draft&&Number(draft.stage||0)>=6&&draft.stage5Complete===true&&draft.title&&draft.collectionId){openCreateStageSix();return}
   if(draft&&Number(draft.stage||0)>=5&&draft.stage4Complete===true&&draft.title&&draft.collectionId){openCreateStageFive();return}
   if(draft&&Number(draft.stage||0)>=4&&draft.title&&draft.collectionId){openCreateStageFour();return}
   if(draft&&Number(draft.stage||0)>=3&&draft.title&&draft.collectionId){openCreateStageThree();return}
