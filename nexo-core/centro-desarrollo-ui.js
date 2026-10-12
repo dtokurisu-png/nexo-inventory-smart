@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261012-60';
+const VERSION='20261012-61';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -17,7 +17,7 @@ window.__nexoDevelopmentCenterStage0Version=VERSION;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
-const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261012-2';
+const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261012-3';
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
@@ -35,7 +35,7 @@ const TOOL_DEFS=[
     integrationsEs:['Agentes de Camino Editorial','María','Numa como asistente transversal'],
     documentation:[],relatedProducts:[]
   }},
-  {key:'r96',kind:'environment',localOnly:true,icon:'juegos',title:'R96',summary:'Entorno independiente para publicación, desarrollo y comunidad de juegos.',names:['r96','risin96ames','rising 96 games'],localDetail:{
+  {key:'r96',kind:'environment',localOnly:true,icon:'catalogo',title:'R96',summary:'Entorno independiente para publicación, desarrollo y comunidad de juegos.',names:['r96','risin96ames','rising 96 games'],localDetail:{
     nameEs:'R96',status:'ACTIVE',scopeModes:['personal'],category:'Gaming',integrationMode:'independent-environment',
     detailDescriptionEs:'Entorno independiente de Nexo para catálogo de juegos, espacio de desarrolladores, versiones y comunidad.',
     capabilitiesEs:['Catálogo de juegos','Espacio de desarrolladores','Versionado y publicación','Comunidad y reseñas'],
