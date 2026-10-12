@@ -2,7 +2,7 @@
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
 const ACCESS_REVISION='fichas-workspace-context-20261007-40';
-const ENGINE_REVISION='preparaciones-search-mobile-20261011-51';
+const ENGINE_REVISION='creator-stage6-20261011-52';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
