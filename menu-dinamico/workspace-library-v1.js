@@ -1768,13 +1768,14 @@ function creatorStageSixResolve(draft){
     ...sourceDraft,
     components:normalized,
     stage:Math.max(6,Number(sourceDraft.stage||0)),
-    stage6Complete:false,
+    stage6Complete:sourceDraft.stage6Complete===true,
     schemaVersion:Math.max(6,Number(sourceDraft.schemaVersion||0)),
     updatedAt:new Date().toISOString()
   };
   const audit=creatorStageSixAudit(next);
   next={
     ...next,
+    stage6Complete:sourceDraft.stage6Complete===true&&audit.every(item=>item.ok),
     stage6Links:audit.map(item=>({
       componentDraftId:item.componentDraftId,
       source:item.source,
