@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261012-2';
+const VERSION='20261012-3';
 if(window.NEXO_SHARED_HEADER?.version===VERSION)return;
 
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
@@ -267,7 +267,7 @@ function markup(options={}){
     '</div>';
 
   const nav=[
-    showPersonal?'<button type="button" class="nxo-nav-link '+(active==='personal'?'active':'')+'" id="nxo-personal">'+iconLabel('mi-espacio',t.personal)+'</button>':'',
+    showPersonal?'<button type="button" class="nxo-nav-link '+(active==='personal'?'active':'')+'" id="nxo-personal">'+iconLabel('home',t.personal)+'</button>':'',
     showWorkspace?'<button type="button" class="nxo-nav-link '+(active==='workspace'?'active':'')+'" id="nxo-workspace-current">'+iconLabel('workspace',options.workspaceName)+'</button>':'',
     showDevelopment?'<button type="button" class="nxo-nav-link '+(active==='development'?'active':'')+'" id="nxo-nav-development">'+iconLabel('desarrollo',t.development)+'</button>':'',
     currentTool?'<button type="button" class="nxo-nav-link '+(active==='tool'?'active':'')+'" id="nxo-nav-current-tool" aria-current="'+(active==='tool'?'page':'false')+'">'+iconLabel(options.currentToolIcon||'herramientas',currentTool)+'</button>':'',
