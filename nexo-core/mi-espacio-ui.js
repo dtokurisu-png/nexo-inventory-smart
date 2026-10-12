@@ -2,6 +2,7 @@
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261011-nma-legacy-cleanup-95';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
+const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261012-2';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -85,6 +86,24 @@ function ensureCurrentCssLink(id,url){
     link.href=url;
   }
   return link;
+}
+function ensureSharedHeaderRuntime(){
+  if(window.NEXO_SHARED_HEADER)return Promise.resolve(window.NEXO_SHARED_HEADER);
+  return new Promise((resolve,reject)=>{
+    let script=document.getElementById('nxo-shared-header-runtime');
+    if(!script){
+      script=document.createElement('script');
+      script.id='nxo-shared-header-runtime';
+      script.src=SHARED_HEADER_RUNTIME;
+      script.defer=true;
+      script.onload=()=>resolve(window.NEXO_SHARED_HEADER);
+      script.onerror=reject;
+      document.head.appendChild(script)
+    }else{
+      script.addEventListener('load',()=>resolve(window.NEXO_SHARED_HEADER),{once:true});
+      script.addEventListener('error',reject,{once:true})
+    }
+  })
 }
 function addCss(){
   ensureCurrentCssLink('nxo-css',CSS);
@@ -1312,7 +1331,6 @@ function topbar(mode){
   const isWorkspace=mode==='workspace';
   const name=personal?.profile?.displayName||ui('Usuario Nexo','Nexo user');
   const email=String(personal?.profile?.email||'').trim();
-  const profilePhoto=String(personal?.profile?.photoImage?.url||'').trim();
   const wsName=workspace?.workspace?.name||ui('Espacio de trabajo','Workspace');
   const role=isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):ui('Cuenta personal','Personal account');
   const roleKey=isWorkspace?String(workspace?.membership?.roleKey||'viewer').toLowerCase():'personal';
@@ -1320,8 +1338,6 @@ function topbar(mode){
   const canTools=isWorkspace&&perms.includes('tools.configure');
   const canAdmin=isWorkspace&&(workspace?.membership?.roleKey==='owner'||perms.some(x=>['workspace.manage','members.manage','tools.configure'].includes(x)));
   const contextLabel=isWorkspace?wsName:ui('Mi espacio','My space');
-  const lang=currentLanguage();
-  const theme=document.getElementById('nxo-app')?.dataset?.theme||storedTheme();
 
   const notification=canAdmin
     ?'<div class="nxo-notification-wrap">'+
@@ -1335,49 +1351,31 @@ function topbar(mode){
      '</div>'
     :'';
 
-  const quickSettings=
-    '<div class="nxo-quick-settings-wrap">'+
-      '<button type="button" class="nxo-quick-settings-button" id="nxo-quick-settings-button" aria-label="'+esc(ui('Ajustes rápidos','Quick settings'))+'" aria-expanded="false">'+iconTag('ajustes-rapidos')+'</button>'+
-      '<div class="nxo-quick-settings-menu" id="nxo-quick-settings-menu">'+
-        '<div class="nxo-quick-settings-title">'+esc(ui('Ajustes rápidos','Quick settings'))+'</div>'+
-        '<button type="button" id="nxo-language-toggle" class="nxo-quick-setting-row">'+iconLabel('idioma',ui('Idioma','Language'))+'<strong>'+esc(lang==='en'?'EN':'ES')+'</strong></button>'+
-        '<button type="button" id="nxo-theme-toggle" class="nxo-quick-setting-row"><span class="nxo-icon-label">'+iconTag(theme==='night'?'modo-oscuro':'modo-claro','', 'nxo-theme-icon').replace('class="nxo-icon-img nxo-theme-icon"','class="nxo-icon-img nxo-theme-icon" data-nxo-theme-icon')+'<span>'+esc(ui('Apariencia','Appearance'))+'</span></span><strong>'+esc(theme==='night'?ui('Oscuro','Dark'):ui('Claro','Light'))+'</strong></button>'+
-      '</div>'+
-    '</div>';
+  const extraNavHtml=canTools
+    ? '<button type="button" class="nxo-nav-link nxo-mobile-settings-link" id="nxo-mobile-workspace-settings">'+iconLabel('ajustes-rapidos',ui('Configuración','Settings'))+'</button>'
+    : '';
 
-  return '<header class="nxo-topbar nxo-workspace-nav">'+
-    '<div class="nxo-nav-brand" id="nxo-nav-home"><span class="nxo-nav-mark"><img src="'+esc(NEXO_LOGO)+'" alt="Nexo Group"></span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div>'+
-    '<div class="nxo-nav-collapse" id="nxo-nav-collapse">'+
-      '<nav class="nxo-nav-links" aria-label="'+esc(ui('Navegación principal','Main navigation'))+'">'+
-        '<button type="button" class="nxo-nav-link '+(!isWorkspace?'active':'')+'" id="nxo-personal" '+(!isWorkspace?'aria-current="page"':'')+'>'+iconLabel('home',ui('Mi espacio','My space'))+'</button>'+
-        (isWorkspace?'<button type="button" class="nxo-nav-link active" aria-current="page">'+esc(wsName)+'</button>':'')+
-        '<button type="button" class="nxo-nav-link" id="nxo-nav-development">'+iconLabel('desarrollo',ui('Centro de desarrollo','Development Center'))+'</button>'+
-        (canTools?'<button type="button" class="nxo-nav-link nxo-mobile-settings-link" id="nxo-mobile-workspace-settings">'+iconLabel('ajustes-rapidos',ui('Configuración','Settings'))+'</button>':'')+
-      '</nav>'+
-    '</div>'+
-    '<div class="nxo-nav-primary-utils">'+
-      quickSettings+
-      notification+
-      '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
-        '<span class="nxo-avatar">'+(profilePhoto?'<img src="'+esc(profilePhoto)+'" alt="'+esc(name+' '+ui('foto de perfil','profile photo'))+'">':esc(initials(name)))+'</span>'+
-        '<span class="nxo-nav-account-copy">'+
-          '<span class="nxo-nav-account-name-row"><strong>'+esc(name)+'</strong></span>'+
-          (email?'<small class="nxo-nav-account-email">'+esc(email)+'</small>':'')+
-          '<small class="nxo-nav-account-role" data-role="'+esc(roleKey)+'">'+esc(role)+'</small>'+
-        '</span>'+
-        '<span class="nxo-nav-caret">⌄</span>'+
-      '</button>'+
-      '<div class="nxo-nav-account-menu" id="nxo-nav-account-menu">'+
-        '<button type="button" data-account-action="settings">'+iconLabel('perfil',ui('Ajustes de perfil','Profile settings'))+'</button>'+
-        '<button type="button" data-account-action="switch">'+iconLabel('cuenta-correo',ui('Cambiar cuenta','Switch account'))+'</button>'+
-        '<button type="button" class="danger" data-account-action="logout">'+iconLabel('cerrar',ui('Cerrar sesión','Sign out'))+'</button>'+
-      '</div>'+
-      '<input type="file" id="nxo-profile-photo-input" class="nxo-profile-photo-input" accept="image/png,image/jpeg,image/webp" hidden>'+
-    '</div>'+
-    '<button type="button" class="nxo-mobile-menu-button" id="nxo-mobile-menu-button" aria-label="'+esc(ui('Abrir menú','Open menu'))+'" aria-expanded="false" aria-controls="nxo-nav-collapse"><span></span><span></span><span></span></button>'+
-  '</header>'
+  if(!window.NEXO_SHARED_HEADER){
+    return '<header class="nxo-topbar nxo-workspace-nav"><div class="nxo-nav-brand"><span class="nxo-nav-mark"><img src="'+esc(NEXO_LOGO)+'" alt="Nexo Group"></span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div></header>'
+  }
+
+  return window.NEXO_SHARED_HEADER.markup({
+    active:isWorkspace?'workspace':'personal',
+    theme:document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),
+    language:currentLanguage(),
+    contextLabel,
+    workspaceName:isWorkspace?wsName:'',
+    profile:{
+      displayName:name,
+      email,
+      photoImage:personal?.profile?.photoImage||null
+    },
+    roleKey,
+    roleLabel:role,
+    notificationHtml:notification,
+    extraNavHtml
+  })
 }
-
 function bindTopbar(mode){
   const isWorkspace=mode==='workspace';
   const account=document.getElementById('nxo-nav-account');
@@ -1636,6 +1634,7 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='BOOTSTRAP';
   personal=await api('bootstrap');
+  await ensureSharedHeaderRuntime();
   applyLanguage(personal?.profile?.locale||new URLSearchParams(location.search).get('nxoLang')||storedLanguage(),true);
   if(!String(personal?.profile?.workName||'').trim()){
     await requireWorkNameOnboarding();
