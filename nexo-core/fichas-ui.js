@@ -488,11 +488,11 @@ function retryAccess(){
   ['nxb','nxbe','nxbs','nxav'].forEach(k=>u.searchParams.delete(k));
   location.replace(u.href);
 }
-async function api(action,payload={}){
+async function api(action,payload={},timeoutMs=30000){
   const headers={'Content-Type':'application/json','Accept':'application/json'};
   if(sessionToken)headers.Authorization='Bearer '+sessionToken;
   const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),30000);
+  const timer=setTimeout(()=>controller.abort(),Math.max(1000,Number(timeoutMs)||30000));
   try{
     const response=await fetch(API,{
       method:'POST',
@@ -963,7 +963,7 @@ async function publishCreatorDraftFromEngine(payload={}){
     progress('publish','Publicando y verificando el grafo en Wix…',files.length,files.length);
     const result=await api('creator.publish',{
       input:{draft,publishKey,mediaFileIds}
-    });
+    },180000);
     postToEngine('NEXO_DM_CREATOR_PUBLISH_RESULT',{
       ok:true,
       requestId,
