@@ -5,6 +5,7 @@ const ACCESS_REVISION='fichas-workspace-context-20261007-40';
 const ENGINE_REVISION='creator-stage8-20261012-54';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
+const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261012-2';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -23,6 +24,9 @@ let numaLoading=false;
 let numaSending=false;
 let requestedSheetOpened=false;
 let engineDataCache=null;
+let sharedHeaderState=null;
+const sharedHeaderAbort=new AbortController();
+window.__nexoFichasHeaderAbort=sharedHeaderAbort;
 const launchQuery=new URLSearchParams(location.search);
 function workspaceIdFromLaunch(){
   const direct=String(launchQuery.get('nxoWorkspace')||'').trim();
@@ -67,6 +71,91 @@ function ensureThemeRuntime(){
     document.head.appendChild(script);
   });
 }
+function ensureSharedHeaderRuntime(){
+  if(window.NEXO_SHARED_HEADER)return Promise.resolve(window.NEXO_SHARED_HEADER);
+  return new Promise((resolve,reject)=>{
+    let script=document.getElementById('nxo-shared-header-runtime');
+    if(!script){
+      script=document.createElement('script');
+      script.id='nxo-shared-header-runtime';
+      script.src=SHARED_HEADER_RUNTIME;
+      script.async=false;
+      script.onload=()=>resolve(window.NEXO_SHARED_HEADER);
+      script.onerror=()=>reject(new Error('NEXO_SHARED_HEADER_LOAD_FAILED'));
+      document.head.appendChild(script)
+    }else{
+      script.addEventListener('load',()=>resolve(window.NEXO_SHARED_HEADER),{once:true});
+      script.addEventListener('error',()=>reject(new Error('NEXO_SHARED_HEADER_LOAD_FAILED')),{once:true})
+    }
+  })
+}
+
+function syncFichasFrameGeometry(){
+  const root=document.getElementById('nx-fichas-app');
+  if(!root)return;
+  const header=document.getElementById('nxo-shared-header');
+  const height=header?Math.ceil(header.getBoundingClientRect().height):(window.innerWidth<=760?58:64);
+  root.style.top=height+'px';
+  root.style.right='0';
+  root.style.bottom='0';
+  root.style.left='0'
+}
+
+function fichasAccountAction(action){
+  const u=new URL(siteBase()+'/blank-8',location.href);
+  if(action==='settings')u.searchParams.set('nxoProfile','settings');
+  else u.searchParams.set('nxoAccountAction',action);
+  u.searchParams.set('nxoLang',workspaceLanguage);
+  u.searchParams.set('nxoTheme',workspaceTheme);
+  location.assign(u.href)
+}
+
+function setWorkspaceLanguage(value){
+  workspaceLanguage=value==='en'?'en':'es';
+  try{localStorage.setItem('nexoLanguage:v1',workspaceLanguage)}catch(_){}
+  try{
+    const u=new URL(location.href);
+    u.searchParams.set('nxoLang',workspaceLanguage);
+    history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)
+  }catch(_){}
+  postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,toolName:workspaceToolName,toolDescription:workspaceToolDescription,theme:workspaceTheme,language:workspaceLanguage});
+  mountFichasHeader()
+}
+
+function mountFichasHeader(){
+  if(!window.NEXO_SHARED_HEADER)return;
+  const state=sharedHeaderState||{};
+  const context=state.context||{};
+  window.NEXO_SHARED_HEADER.mount(document.body,{
+    active:'tool',
+    theme:workspaceTheme,
+    language:workspaceLanguage,
+    contextLabel:context.name||workspaceLabel||'Mi espacio',
+    workspaceName:context.type==='workspace'?(context.name||workspaceLabel):'',
+    currentToolLabel:'Fichas Técnicas Dinámicas',
+    currentToolIcon:'ficha-tecnica',
+    profile:state.profile||{displayName:'Usuario Nexo'},
+    roleKey:state.roleKey||'member',
+    roleLabel:state.roleLabel||'Miembro',
+    signal:sharedHeaderAbort.signal,
+    onHome:openPersonalSpace,
+    onPersonal:openPersonalSpace,
+    onDevelopment:openDevelopmentCenter,
+    onWorkspace:exitToWorkspace,
+    onCurrentTool:()=>{},
+    onTheme:()=>{
+      applyWorkspaceTheme(workspaceTheme==='night'?'day':'night',{persist:true,notifyEngine:true});
+      mountFichasHeader();
+      requestAnimationFrame(syncFichasFrameGeometry)
+    },
+    onLanguage:()=>setWorkspaceLanguage(workspaceLanguage==='es'?'en':'es'),
+    onProfileSettings:()=>fichasAccountAction('settings'),
+    onSwitchAccount:()=>fichasAccountAction('switch'),
+    onLogout:()=>fichasAccountAction('logout')
+  });
+  requestAnimationFrame(syncFichasFrameGeometry)
+}
+
 function applyImportThemeVars(host=document.getElementById('nx-import-host')){
   if(!host||!UI_THEME)return;
   const vars={
@@ -466,11 +555,12 @@ function mountRoot(){
   if(!root){
     root=document.createElement('div');
     root.id='nx-fichas-app';
-    root.style.cssText='position:fixed;inset:0;z-index:2147483500;background:'+UI_THEME.background+';color:'+UI_THEME.textPrimary+';display:block;';
+    root.style.cssText='position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483000;background:'+UI_THEME.background+';color:'+UI_THEME.textPrimary+';display:block;';
     document.body.appendChild(root);
   }
   return root;
 }
+window.addEventListener('resize',syncFichasFrameGeometry,{passive:true});
 function loading(text='Preparando '+workspaceToolName+'…'){
   mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:'+UI_THEME.background+';color:'+UI_THEME.textPrimary+';font:600 14px Inter,Arial,sans-serif"><div style="text-align:center"><div style="width:34px;height:34px;border:3px solid '+UI_THEME.border+';border-top-color:'+UI_THEME.accent+';border-radius:50%;margin:0 auto 14px;animation:nxspin .8s linear infinite"></div><strong>'+esc(text)+'</strong><style>@keyframes nxspin{to{transform:rotate(360deg)}}</style></div></div>';
 }
@@ -1115,7 +1205,7 @@ function mountEngine(){
   window.addEventListener('message',handleEngineMessage);
 }
 async function start(){
-  await ensureThemeRuntime();
+  await Promise.all([ensureThemeRuntime(),ensureSharedHeaderRuntime()]);
   applyWorkspaceTheme(workspaceTheme,{persist:false,notifyEngine:false});
   loading();
   if(!requestedWorkspaceId){
@@ -1127,8 +1217,12 @@ async function start(){
   const exchange=await api('exchange',{bootToken});
   sessionToken=exchange?.sessionToken||'';
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
+  accessStage='HEADER';
+  sharedHeaderState=await api('header.bootstrap',{workspaceId:requestedWorkspaceId});
+  mountFichasHeader();
   accessStage='ENGINE';
   mountEngine();
+  syncFichasFrameGeometry();
   void mountNuma();
 }
 start().catch(showError);
