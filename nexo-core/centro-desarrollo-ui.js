@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261010-53';
+const VERSION='20261012-60';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -17,26 +17,48 @@ window.__nexoDevelopmentCenterStage0Version=VERSION;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
+const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261012-1';
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
-  {key:'learning',cmsKey:'learning-core',icon:'desarrollo',title:'Nexo Learning Core',summary:'Aprendizaje, rutas, práctica y progreso personal.',names:['nexo learning core','learning core']},
-  {key:'library',cmsKey:'gear-library',icon:'guia',title:'Biblioteca de engranaje',summary:'Recursos, conocimiento y materiales reutilizables de Nexo.',names:['biblioteca de engranaje']},
-  {key:'inventory',cmsKey:'inventory-smart',icon:'productos',title:'Inventario Smart',summary:'Productos, materiales e inventario operativo del espacio de trabajo.',names:['inventario smart']},
-  {key:'technical',cmsKey:'dynamic-specs',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Biblioteca y colecciones de fichas técnicas conectadas con Inventario Smart.',names:['fichas tecnicas dinamicas','dynamic technical sheets']},
-  {key:'schedules',cmsKey:'schedules',icon:'recordatorio',title:'Horarios',summary:'Jornadas y horarios semanales con carga desde imagen, análisis GPT y publicación.',names:['horarios','schedule','schedules']},
-  {key:'work',cmsKey:'work-center',icon:'panel',title:'Centro de Trabajo',summary:'Tareas, horarios, personal y operación colaborativa del espacio de trabajo.',status:'planned',names:['centro de trabajo','work center']},
-  {key:'recipes',cmsKey:'dynamic-specs',icon:'platos',title:'Recetarios Dinámicos',summary:'Organización y consulta de recetas y preparaciones operativas dentro del motor canónico de Fichas Técnicas Dinámicas.',names:['recetarios dinamicos','menus dinamicos','menu dinamico','dynamic recipe books']},
-  {key:'tasks',cmsKey:'task-lists',icon:'checklist',title:'Listas de tareas',summary:'Proyecto próximo para crear y reutilizar listas de tareas, checklists y prep lists en uso personal o Workspace.',status:'planned',names:['listas de tareas','checklist','prep list','prep lists']},
-  {key:'multichannel-notifications',cmsKey:'multichannel-notifications',icon:'notificaciones',title:'Notificaciones multicanal',summary:'Proyecto próximo para centralizar avisos y entregarlos por varios canales desde una sola lógica de notificación.',status:'planned',names:['notificaciones multicanal','multichannel notifications']},
-  {key:'evaluation',cmsKey:'nexo-evaluation',icon:'ficha-tecnica',title:'Nexo Evaluación',summary:'Evaluación asistida por IA con revisión humana para exámenes, pruebas y otras evidencias.',status:'planned',names:['nexo evaluacion','evaluacion','asistente de calificaciones','motor de evaluacion']},
-  {key:'group-insights',cmsKey:'group-insights',icon:'panel',title:'Análisis de Grupos',summary:'Patrones de desempeño individual y grupal, evolución y recomendaciones a partir de resultados evaluados.',status:'planned',names:['analisis de grupos','analizador de cohortes','group insights','cohortes']},
-  {key:'numa',cmsKey:'numa-assistant',icon:'ayuda',title:'Numa',summary:'Asistente opcional de Mi Espacio y Workspace, preparado para capacidades locales y servicios de IA medidos por uso.',status:'planned',names:['numa','asistente numa']},
-  {key:'maria',cmsKey:'maria-editorial',icon:'guia',title:'María',summary:'Asistente futuro de lectura, transcripción y apoyo editorial para Camino Editorial.',status:'planned',names:['maria','maría','asistente maria','asistente maría']},
-  {key:'camino-agents',cmsKey:'camino-editorial-agents',icon:'comentarios',title:'Agentes de Camino Editorial',summary:'Contenedor futuro para agentes editoriales que se definirán y comercializarán uno por uno.',status:'planned',names:['agentes de camino editorial','agentes editoriales','camino editorial agents']}
-];
+  {key:'learning',cmsKey:'learning-core',kind:'environment',icon:'desarrollo',title:'Nexo Learning Core',summary:'Aprendizaje, rutas, práctica y progreso personal.',names:['nexo learning core','learning core']},
+  {key:'library',cmsKey:'gear-library',kind:'environment',icon:'guia',title:'Biblioteca de engranaje',summary:'Recursos, conocimiento y materiales reutilizables de Nexo.',names:['biblioteca de engranaje']},
+  {key:'inventory',cmsKey:'inventory-smart',kind:'environment',icon:'productos',title:'Inventario Smart',summary:'Entorno operativo de inventario, productos y materiales.',names:['inventario smart']},
+  {key:'technical',cmsKey:'dynamic-specs',kind:'environment',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Entorno canónico de fichas, recetas y preparaciones. Recetarios Dinámicos forma parte de este mismo producto.',names:['fichas tecnicas dinamicas','dynamic technical sheets','recetarios dinamicos','menus dinamicos','menu dinamico']},
+  {key:'camino-editorial',kind:'environment',localOnly:true,icon:'guia',title:'Camino Editorial',summary:'Entorno editorial completo para manuscritos, canon, análisis y producción.',names:['camino editorial'],localDetail:{
+    nameEs:'Camino Editorial',status:'ACTIVE',scopeModes:['personal'],category:'Editorial',integrationMode:'independent-environment',
+    detailDescriptionEs:'Entorno editorial independiente de Nexo para manuscritos, canon, análisis, dictado y flujos de producción.',
+    capabilitiesEs:['Manuscritos y capítulos','Canon editorial','Análisis y asistencia editorial','Flujos propios de publicación'],
+    compatibilityEs:['Arquitectura independiente dentro del ecosistema Nexo'],
+    audienceEs:['Autores','Editores','Equipos editoriales'],
+    requirementsEs:['Sesión Nexo para funciones privadas'],
+    integrationsEs:['Agentes de Camino Editorial','María','Numa como asistente transversal'],
+    documentation:[],relatedProducts:[]
+  }},
+  {key:'r96',kind:'environment',localOnly:true,icon:'juegos',title:'R96',summary:'Entorno independiente para publicación, desarrollo y comunidad de juegos.',names:['r96','risin96ames','rising 96 games'],localDetail:{
+    nameEs:'R96',status:'ACTIVE',scopeModes:['personal'],category:'Gaming',integrationMode:'independent-environment',
+    detailDescriptionEs:'Entorno independiente de Nexo para catálogo de juegos, espacio de desarrolladores, versiones y comunidad.',
+    capabilitiesEs:['Catálogo de juegos','Espacio de desarrolladores','Versionado y publicación','Comunidad y reseñas'],
+    compatibilityEs:['Arquitectura de sesión y autorización propia sobre identidad Nexo'],
+    audienceEs:['Jugadores','Desarrolladores','Equipo Rising'],
+    requirementsEs:['Sesión Nexo para funciones privadas'],
+    integrationsEs:['Identidad Nexo compartida, autorización R96 separada'],
+    documentation:[],relatedProducts:[]
+  }},
+  {key:'work',cmsKey:'work-center',kind:'environment',icon:'panel',title:'Centro de Trabajo',summary:'Entorno futuro para tareas, horarios, personal y operación colaborativa.',status:'planned',names:['centro de trabajo','work center']},
+
+  {key:'schedules',cmsKey:'schedules',kind:'addon',parent:'Centro de Trabajo',icon:'recordatorio',title:'Horarios',summary:'Add-on operativo para jornadas y horarios semanales con carga desde imagen, análisis y publicación.',names:['horarios','schedule','schedules']},
+  {key:'tasks',cmsKey:'task-lists',kind:'addon',parent:'Centro de Trabajo',icon:'checklist',title:'Listas de tareas',summary:'Add-on para listas de tareas, checklists y prep lists en uso personal o Workspace.',status:'planned',names:['listas de tareas','checklist','prep list','prep lists']},
+  {key:'multichannel-notifications',cmsKey:'multichannel-notifications',kind:'addon',parent:'Ecosistema Nexo',icon:'notificaciones',title:'Notificaciones multicanal',summary:'Add-on transversal para centralizar avisos y entregarlos por varios canales.',status:'planned',names:['notificaciones multicanal','multichannel notifications']},
+  {key:'numa',cmsKey:'numa-assistant',kind:'addon',parent:'Ecosistema Nexo',icon:'ayuda',title:'Numa',summary:'Asistente transversal que amplía Mi Espacio, Workspaces y entornos compatibles.',status:'planned',names:['numa','asistente numa']},
+  {key:'maria',cmsKey:'maria-editorial',kind:'addon',parent:'Camino Editorial',icon:'guia',title:'María',summary:'Add-on editorial de lectura, transcripción y apoyo para Camino Editorial.',status:'planned',names:['maria','maría','asistente maria','asistente maría']},
+  {key:'camino-agents',cmsKey:'camino-editorial-agents',kind:'addon',parent:'Camino Editorial',icon:'comentarios',title:'Agentes de Camino Editorial',summary:'Add-ons editoriales especializados que se definirán y comercializarán individualmente.',status:'planned',names:['agentes de camino editorial','agentes editoriales','camino editorial agents']}
+]
 let scheduled=false,observer=null;
 let quickMenuOutsideHandler=null;
+let developmentSessionToken='';
+let developmentSession=null;
+let developmentView='catalog';
 
 function norm(v){
   return String(v||'')
@@ -81,6 +103,125 @@ function goBack(){
   location.assign('/my-site-1/blank-8')
 }
 function goMySpace(){location.assign('/my-site-1/blank-8')}
+
+function ensureSharedHeaderRuntime(){
+  if(window.NEXO_SHARED_HEADER)return Promise.resolve(window.NEXO_SHARED_HEADER);
+  return new Promise((resolve,reject)=>{
+    let script=document.getElementById('nxo-shared-header-runtime');
+    if(!script){
+      script=document.createElement('script');
+      script.id='nxo-shared-header-runtime';
+      script.src=SHARED_HEADER_RUNTIME;
+      script.defer=true;
+      script.onload=()=>resolve(window.NEXO_SHARED_HEADER);
+      script.onerror=reject;
+      document.head.appendChild(script)
+    }else{
+      script.addEventListener('load',()=>resolve(window.NEXO_SHARED_HEADER),{once:true});
+      script.addEventListener('error',reject,{once:true})
+    }
+  })
+}
+
+function developmentLanguage(){
+  try{
+    const stored=localStorage.getItem('nexoLanguage:v1');
+    if(String(stored||'').toLowerCase().startsWith('en'))return'en'
+  }catch(_){}
+  return String(developmentSession?.profile?.locale||'es').toLowerCase().startsWith('en')?'en':'es'
+}
+
+function stripDevelopmentBoot(){
+  try{
+    const u=new URL(location.href);
+    ['nxd','nxds'].forEach(key=>u.searchParams.delete(key));
+    history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)
+  }catch(_){}
+}
+
+async function waitDevelopmentBoot(){
+  const deadline=Date.now()+15000;
+  while(Date.now()<deadline){
+    const q=new URLSearchParams(location.search);
+    const token=String(q.get('nxd')||'').trim();
+    const state=String(q.get('nxds')||'').trim().toUpperCase();
+    if(token)return token;
+    if(state==='FAILED')throw new Error('AUTH_REQUIRED');
+    await new Promise(resolve=>setTimeout(resolve,120))
+  }
+  throw new Error('DEVELOPMENT_BOOT_TIMEOUT')
+}
+
+async function developmentUiApi(action,payload={}){
+  const headers={'Content-Type':'application/json','Accept':'application/json'};
+  if(developmentSessionToken)headers.Authorization='Bearer '+developmentSessionToken;
+  const response=await fetch(developmentFunctionUrl('nexoDevelopmentUi'),{
+    method:'POST',
+    cache:'no-store',
+    headers,
+    body:JSON.stringify({action,...payload})
+  });
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||!data?.ok){
+    const error=new Error(data?.error||'No se pudo cargar la sesión del Centro.');
+    error.code=data?.error||'DEVELOPMENT_UI_FAILED';
+    throw error
+  }
+  return data?.data??data
+}
+
+async function loadDevelopmentSession(){
+  const bootToken=await waitDevelopmentBoot();
+  const exchange=await developmentUiApi('exchange',{bootToken});
+  developmentSessionToken=String(exchange?.sessionToken||'');
+  stripDevelopmentBoot();
+  if(!developmentSessionToken)throw new Error('NO_SESSION_TOKEN');
+  developmentSession=await developmentUiApi('bootstrap');
+  return developmentSession
+}
+
+function developmentAccountAction(action){
+  const base=developmentBaseUrl();
+  const u=new URL(base+'/blank-8');
+  if(action==='settings')u.searchParams.set('nxoProfile','settings');
+  else u.searchParams.set('nxoAccountAction',action);
+  u.searchParams.set('nxoTheme',theme());
+  u.searchParams.set('nxoLang',developmentLanguage());
+  location.assign(u.href)
+}
+
+function mountDevelopmentHeader(){
+  if(!window.NEXO_SHARED_HEADER)return;
+  const profile=developmentSession?.profile||{displayName:'Usuario Nexo',email:'',photoImage:null};
+  const roleKey=developmentSession?.roleKey||(developmentSession?.isWonder?'wonder':'member');
+  const roleLabel=developmentSession?.roleLabel||(developmentSession?.isWonder?'Wonder':'Miembro');
+  window.NEXO_SHARED_HEADER.mount(document.body,{
+    active:'development',
+    theme:theme(),
+    language:developmentLanguage(),
+    contextLabel:'Centro de desarrollo',
+    profile,
+    roleKey,
+    roleLabel,
+    signal:runtimeAbort.signal,
+    onHome:goMySpace,
+    onPersonal:goMySpace,
+    onDevelopment:()=>{},
+    onTheme:()=>{
+      window.NEXO_THEME_RUNTIME?.toggleTheme?.({persist:true,notify:true});
+      requestAnimationFrame(mountDevelopmentHeader)
+    },
+    onLanguage:()=>{
+      const next=developmentLanguage()==='en'?'es':'en';
+      try{localStorage.setItem('nexoLanguage:v1',next)}catch(_){}
+      if(developmentSession?.profile)developmentSession.profile.locale=next;
+      mountDevelopmentHeader()
+    },
+    onProfileSettings:()=>developmentAccountAction('settings'),
+    onSwitchAccount:()=>developmentAccountAction('switch'),
+    onLogout:()=>developmentAccountAction('logout')
+  })
+}
 
 function ensureThemeRuntime(){
   if(window.NEXO_THEME_RUNTIME)return Promise.resolve(window.NEXO_THEME_RUNTIME.ready);
@@ -359,6 +500,35 @@ html[data-nxo-theme="night"] #nxo-dev-app{
   min-width:0;
   background:transparent
 }
+
+.nxo-dev-catalog-group{margin-bottom:28px}
+.nxo-dev-catalog-group:last-child{margin-bottom:0}
+.nxo-dev-group-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:0 0 12px}
+.nxo-dev-group-head h2{margin:0;color:var(--nxo-text-primary);font-size:15px}
+.nxo-dev-group-head p{margin:4px 0 0;color:var(--nxo-text-muted);font-size:10px;line-height:1.45}
+.nxo-dev-kind-badge{
+  width:max-content;margin:0 0 8px;padding:4px 7px;border:1px solid var(--nxo-border);
+  border-radius:999px;background:var(--nxo-accent-soft);color:var(--nxo-text-secondary);
+  font-size:8px;font-weight:900;letter-spacing:.055em;text-transform:uppercase
+}
+.nxo-dev-kind-badge.environment{color:var(--nxo-accent)}
+.nxo-dev-kind-badge.addon{color:var(--nxo-positive)}
+.nxo-dev-tree-button{
+  margin-top:15px;padding:9px 12px;border:1px solid var(--nxo-border-strong);border-radius:11px;
+  background:var(--nxo-accent-soft);color:var(--nxo-text-primary);font:800 11px/1 Inter,system-ui,sans-serif;cursor:pointer
+}
+.nxo-dev-tree-button:hover,.nxo-dev-tree-button:focus-visible{outline:none;background:var(--nxo-interaction);color:var(--nxo-interaction-contrast)}
+.nxo-dev-tree-view[hidden],.nxo-dev-catalog-view[hidden]{display:none!important}
+.nxo-dev-tree-view{height:100%;overflow:auto;padding:2px 4px 30px}
+.nxo-dev-tree-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.nxo-dev-tree-toolbar h2{margin:0;color:var(--nxo-text-primary);font-size:18px}
+.nxo-dev-tree-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.nxo-dev-tree-branch{border:1px solid var(--nxo-border);border-radius:15px;background:var(--nxo-surface-glass);padding:14px}
+.nxo-dev-tree-branch h3{margin:0 0 8px;color:var(--nxo-text-primary);font-size:13px}
+.nxo-dev-tree-branch p{margin:0 0 9px;color:var(--nxo-text-muted);font-size:10px;line-height:1.45}
+.nxo-dev-tree-branch ul{margin:0;padding-left:17px;color:var(--nxo-text-secondary);font-size:10px;line-height:1.65}
+.nxo-dev-tree-branch strong{color:var(--nxo-text-primary)}
+@media(max-width:760px){.nxo-dev-tree-grid{grid-template-columns:1fr}.nxo-dev-group-head{align-items:start;flex-direction:column}}
 
 /* Exact compact marketplace geometry restored from the approved runtime. */
 html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"]{
@@ -1257,7 +1427,7 @@ function bindFeatureInterception(){
   window.__nexoDevFeatureClickHandler=function(event){
     const card=event.target?.closest?.('[data-nxo-dev-card="1"]');
     if(!card)return;
-    if(event.target?.closest?.('#nxo-dev-header,#nxo-dev-preview'))return;
+    if(event.target?.closest?.('#nxo-shared-header,#nxo-dev-preview'))return;
 
     const tool=toolForCard(card);
     if(!tool)return;
@@ -1630,6 +1800,7 @@ function developmentFunctionUrl(functionName){
 }
 
 async function fetchToolDetail(tool){
+  if(tool?.localOnly&&tool?.localDetail)return tool.localDetail;
   const response=await fetch(developmentFunctionUrl('nexoDevelopmentToolDetail'),{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -2111,8 +2282,15 @@ async function openToolDetail(tool,trigger){
     const data=await fetchToolDetail(tool);
     if(requestId!==detailRequestId||view.hidden)return;
     renderToolDetail(tool,data);
-    loadInstallOptions(tool,requestId);
-    loadReviewsZone(tool,requestId)
+    if(tool.localOnly){
+      const installZone=document.getElementById('nxo-dev-install-zone');
+      if(installZone)installZone.innerHTML='<section class="nxo-dev-install-card"><div class="nxo-dev-install-head"><div><h3>Entorno independiente</h3><p>Este environment ya forma parte del ecosistema Nexo. Su empaquetado comercial e instalación final se conectarán después, sin duplicar su arquitectura propia.</p></div><span class="nxo-dev-install-state">Environment</span></div></section>';
+      const reviewsZone=document.getElementById('nxo-dev-reviews-zone');
+      if(reviewsZone)reviewsZone.innerHTML=''
+    }else{
+      loadInstallOptions(tool,requestId);
+      loadReviewsZone(tool,requestId)
+    }
   }catch(error){
     if(requestId!==detailRequestId||view.hidden)return;
     content.innerHTML='<div class="nxo-dev-detail-error">'+escapeHtml(error?.message||'No se pudo cargar la ficha.')+'</div>'
@@ -2153,43 +2331,83 @@ function toolDetailIsOpen(){
   return !!view&&!view.hidden
 }
 
+function developmentTreeHtml(){
+  return '<div class="nxo-dev-tree-toolbar"><div><div class="nxo-dev-owned-eyebrow">Vista Wonder</div><h2>Árbol de desarrollo</h2></div><button type="button" class="nxo-dev-tree-button" id="nxo-dev-tree-close">Volver al catálogo</button></div>'+
+    '<div class="nxo-dev-tree-grid">'+
+      '<section class="nxo-dev-tree-branch"><h3>Núcleo Nexo</h3><p>Shell y navegación compartida.</p><ul><li><strong>Mi Espacio</strong> · identidad, Workspaces y herramientas</li><li><strong>Centro de desarrollo</strong> · catálogo, comercial y acceso</li><li><strong>Header Nexo compartido</strong> · Mi Espacio + Centro + Fichas</li></ul></section>'+
+      '<section class="nxo-dev-tree-branch"><h3>Entornos completos</h3><p>Productos con environment propio.</p><ul><li>Fichas Técnicas Dinámicas</li><li>Inventario Smart</li><li>Biblioteca de engranaje</li><li>Nexo Learning Core</li><li>Camino Editorial</li><li>R96</li><li>Centro de Trabajo · planificado</li></ul></section>'+
+      '<section class="nxo-dev-tree-branch"><h3>Add-ons</h3><p>Extienden un entorno existente; no son environments duplicados.</p><ul><li>Horarios → Centro de Trabajo</li><li>Listas de tareas / Prep Lists → Centro de Trabajo</li><li>María → Camino Editorial</li><li>Agentes editoriales → Camino Editorial</li><li>Numa → transversal</li><li>Notificaciones multicanal → transversal</li><li>Nexo Evaluación → reservado, clave canónica pendiente</li></ul></section>'+
+      '<section class="nxo-dev-tree-branch"><h3>Comercial</h3><p>Wix procesa dinero; Nexo gobierna acceso.</p><ul><li>Etapa 9 · resolver unificado</li><li>Etapa 10 · instalación final <strong>diferida</strong> hasta empaquetado</li><li>Etapa 11 · Wix Pricing Plans + checkout + órdenes</li><li>Etapa 12 · lifecycle e historial</li><li>NexoEntitlements · autoridad efectiva de acceso</li></ul></section>'+
+      '<section class="nxo-dev-tree-branch"><h3>Empaquetado</h3><p>Cada environment debe tener launcher/acceso canónico antes de cerrar instalación.</p><ul><li>Fichas · referencia funcional actual</li><li>Inventario / Learning / Biblioteca / Camino / R96 · revisar empaquetado individual</li><li>No crear instalaciones falsas mientras el launcher no esté listo</li></ul></section>'+
+      '<section class="nxo-dev-tree-branch"><h3>Nexo App Lab</h3><p>Rama futura para productos exportables al Wix App Market.</p><ul><li>Wix Blocks / App Market</li><li>Candidatos: Fichas, Prep Lists, analizador de horarios, componentes de Inventario</li><li>Separar producto universal de funciones internas de Nexo</li></ul></section>'+
+    '</div>'
+}
+
+function setDevelopmentView(view){
+  developmentView=view==='tree'&&developmentSession?.isWonder===true?'tree':'catalog';
+  const catalog=document.getElementById('nxo-dev-catalog-view');
+  const tree=document.getElementById('nxo-dev-tree-view');
+  if(catalog)catalog.hidden=developmentView!=='catalog';
+  if(tree)tree.hidden=developmentView!=='tree';
+  if(developmentView==='catalog')requestAnimationFrame(syncCatalogScrollControls)
+}
+
+function bindDevelopmentTree(){
+  document.getElementById('nxo-dev-tree-open')?.addEventListener('click',()=>setDevelopmentView('tree'),{signal:runtimeAbort.signal});
+  document.getElementById('nxo-dev-tree-close')?.addEventListener('click',()=>setDevelopmentView('catalog'),{signal:runtimeAbort.signal})
+}
+
 function ensureDevelopmentApp(){
   let app=document.getElementById('nxo-dev-app');
   if(app)return app;
 
   app=document.createElement('main');
   app.id='nxo-dev-app';
+  const wonderTree=developmentSession?.isWonder===true
+    ? '<button type="button" class="nxo-dev-tree-button" id="nxo-dev-tree-open">Árbol de desarrollo</button>'
+    : '';
+
   app.innerHTML=
     '<div class="nxo-dev-owned-shell">'+
       '<section class="nxo-dev-owned-hero">'+
         '<div class="nxo-dev-owned-eyebrow">Herramientas de desarrollo</div>'+
         '<h1>Centro de desarrollo</h1>'+
-        '<p>Herramientas operativas, de aprendizaje y desarrollo conectadas al ecosistema Nexo.</p>'+
+        '<p>Entornos completos y add-ons conectados al ecosistema Nexo. Cada tarjeta indica si abre un environment propio o amplía otro entorno.</p>'+
+        wonderTree+
       '</section>'+
       '<div class="nxo-dev-owned-catalog-frame">'+
         '<div class="nxo-dev-owned-catalog-scroll" id="nxo-dev-owned-catalog-scroll">'+
-          '<section class="nxo-dev-owned-grid" id="nxo-dev-owned-grid"></section>'+
+          '<div class="nxo-dev-catalog-view" id="nxo-dev-catalog-view">'+
+            '<section class="nxo-dev-catalog-group"><div class="nxo-dev-group-head"><div><h2>Entornos completos</h2><p>Aplicaciones con página, navegación y contexto propios.</p></div></div><section class="nxo-dev-owned-grid" id="nxo-dev-environments-grid"></section></section>'+
+            '<section class="nxo-dev-catalog-group"><div class="nxo-dev-group-head"><div><h2>Add-ons</h2><p>Funciones que amplían un entorno existente o trabajan de forma transversal.</p></div></div><section class="nxo-dev-owned-grid" id="nxo-dev-addons-grid"></section></section>'+
+          '</div>'+
+          '<section class="nxo-dev-tree-view" id="nxo-dev-tree-view" hidden>'+developmentTreeHtml()+'</section>'+
         '</div>'+
         '<button type="button" class="nxo-dev-scroll-arrow up" id="nxo-dev-scroll-up" aria-label="Desplazar hacia arriba">▲</button>'+
         '<button type="button" class="nxo-dev-scroll-arrow down" id="nxo-dev-scroll-down" aria-label="Desplazar hacia abajo">▼</button>'+
       '</div>'+
     '</div>';
 
-  const grid=app.querySelector('#nxo-dev-owned-grid');
+  const environmentGrid=app.querySelector('#nxo-dev-environments-grid');
+  const addonGrid=app.querySelector('#nxo-dev-addons-grid');
 
   TOOL_DEFS.forEach(tool=>{
+    const grid=tool.kind==='addon'?addonGrid:environmentGrid;
+    if(!grid)return;
     const slot=document.createElement('div');
     slot.className='nxo-dev-owned-slot';
 
     const card=document.createElement('article');
     card.dataset.nxoDevCard='1';
     card.dataset.nxoDevTool=tool.key;
+    const kindLabel=tool.kind==='addon'?'Add-on'+(tool.parent?' · '+tool.parent:''):'Entorno completo';
     card.innerHTML=
+      '<div class="nxo-dev-kind-badge '+escapeHtml(tool.kind||'environment')+'">'+escapeHtml(kindLabel)+'</div>'+
       '<div class="nxo-dev-title-row">'+
         '<span data-nxo-dev-icon-slot="1"><img class="nxo-dev-product-icon" src="'+iconUrl(tool.icon)+'" alt="" aria-hidden="true"></span>'+
-        '<h2 data-nxo-dev-tool-title="'+tool.key+'">'+tool.title+'</h2>'+
+        '<h2 data-nxo-dev-tool-title="'+tool.key+'">'+escapeHtml(tool.title)+'</h2>'+
       '</div>'+
-      '<p data-nxo-dev-description="1">'+tool.summary+'</p>'+
+      '<p data-nxo-dev-description="1">'+escapeHtml(tool.summary)+'</p>'+
       (tool.status==='planned'
         ? '<button type="button" class="nxo-dev-action nxo-dev-action-surface" disabled aria-disabled="true">Próximamente</button>'
         : '<button type="button" class="nxo-dev-action nxo-dev-action-surface">Ver características</button>');
@@ -2198,16 +2416,16 @@ function ensureDevelopmentApp(){
     grid.appendChild(slot)
   });
 
-  const header=document.getElementById('nxo-dev-header');
+  const header=document.getElementById('nxo-shared-header');
   if(header&&header.parentElement){
     header.insertAdjacentElement('afterend',app)
   }else{
     document.body.prepend(app)
   }
 
+  bindDevelopmentTree();
   return app
 }
-
 function syncCatalogScrollControls(){
   const scroller=document.getElementById('nxo-dev-owned-catalog-scroll');
   const up=document.getElementById('nxo-dev-scroll-up');
@@ -2288,6 +2506,7 @@ function destroy(){
   [
     'nxo-dev-center-css',
     'nxo-dev-header',
+    'nxo-shared-header',
     'nxo-dev-preview',
     'nxo-dev-preview-handle',
     'nxo-dev-app'
@@ -2306,19 +2525,21 @@ runtime.destroy=destroy;
 async function start(){
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
   ensureStyle();
-  await ensureThemeRuntime();
+  await Promise.all([ensureThemeRuntime(),ensureSharedHeaderRuntime()]);
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
   await window.NEXO_THEME_RUNTIME?.ready;
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
 
-  ensureHeader();
+  try{await loadDevelopmentSession()}catch(_){developmentSession=null}
+  if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
+  mountDevelopmentHeader();
   ensureDevelopmentApp();
   ensurePreviewPanel();
   bindPreviewDelegation();
   bindFeatureInterception();
   refresh();
 
-  window.addEventListener('nexo-theme-change',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
+  window.addEventListener('nexo-theme-change',()=>{mountDevelopmentHeader();syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
   window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
 
   observer=new MutationObserver(schedule);
