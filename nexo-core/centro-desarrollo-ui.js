@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261012-61';
+const VERSION='20261012-62';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -25,7 +25,7 @@ const TOOL_DEFS=[
   {key:'library',cmsKey:'gear-library',kind:'environment',icon:'guia',title:'Biblioteca de engranaje',summary:'Recursos, conocimiento y materiales reutilizables de Nexo.',names:['biblioteca de engranaje']},
   {key:'inventory',cmsKey:'inventory-smart',kind:'environment',icon:'productos',title:'Inventario Smart',summary:'Entorno operativo de inventario, productos y materiales.',names:['inventario smart']},
   {key:'technical',cmsKey:'dynamic-specs',kind:'environment',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Entorno canónico de fichas, recetas y preparaciones. Recetarios Dinámicos forma parte de este mismo producto.',names:['fichas tecnicas dinamicas','dynamic technical sheets','recetarios dinamicos','menus dinamicos','menu dinamico']},
-  {key:'camino-editorial',kind:'environment',localOnly:true,icon:'guia',title:'Camino Editorial',summary:'Entorno editorial completo para manuscritos, canon, análisis y producción.',names:['camino editorial'],localDetail:{
+  {key:'camino-editorial',kind:'environment',localOnly:true,routePath:'/blank-6',icon:'guia',title:'Camino Editorial',summary:'Entorno editorial completo para manuscritos, canon, análisis y producción.',names:['camino editorial'],localDetail:{
     nameEs:'Camino Editorial',status:'ACTIVE',scopeModes:['personal'],category:'Editorial',integrationMode:'independent-environment',
     detailDescriptionEs:'Entorno editorial independiente de Nexo para manuscritos, canon, análisis, dictado y flujos de producción.',
     capabilitiesEs:['Manuscritos y capítulos','Canon editorial','Análisis y asistencia editorial','Flujos propios de publicación'],
@@ -35,7 +35,7 @@ const TOOL_DEFS=[
     integrationsEs:['Agentes de Camino Editorial','María','Numa como asistente transversal'],
     documentation:[],relatedProducts:[]
   }},
-  {key:'r96',kind:'environment',localOnly:true,icon:'catalogo',title:'R96',summary:'Entorno independiente para publicación, desarrollo y comunidad de juegos.',names:['r96','risin96ames','rising 96 games'],localDetail:{
+  {key:'r96',kind:'environment',localOnly:true,routePath:'/blank-9',icon:'catalogo',title:'R96',summary:'Entorno independiente para publicación, desarrollo y comunidad de juegos.',names:['r96','risin96ames','rising 96 games'],localDetail:{
     nameEs:'R96',status:'ACTIVE',scopeModes:['personal'],category:'Gaming',integrationMode:'independent-environment',
     detailDescriptionEs:'Entorno independiente de Nexo para catálogo de juegos, espacio de desarrolladores, versiones y comunidad.',
     capabilitiesEs:['Catálogo de juegos','Espacio de desarrolladores','Versionado y publicación','Comunidad y reseñas'],
@@ -1881,6 +1881,20 @@ function developmentToolOpenUrl(routePath,destination){
     return target.href
   }catch(_){return path}
 }
+function localEnvironmentUrl(tool){
+  const path=String(tool?.routePath||'').trim();
+  if(!path)return'';
+  try{
+    const base=developmentBaseUrl();
+    const target=new URL(base+(path.startsWith('/')?path:'/'+path));
+    target.searchParams.set('nxoTheme',theme());
+    target.searchParams.set('nxoLang',developmentLanguage());
+    target.searchParams.set('nxoBack',location.href);
+    target.searchParams.set('nxoBackLabel','Centro de desarrollo');
+    return target.href
+  }catch(_){return path}
+}
+
 function renderInstallZone(tool,options,selectedKey='',message='',messageType=''){
   const zone=document.getElementById('nxo-dev-install-zone');
   if(!zone)return;
@@ -2263,7 +2277,11 @@ async function openToolDetail(tool,trigger){
     renderToolDetail(tool,data);
     if(tool.localOnly){
       const installZone=document.getElementById('nxo-dev-install-zone');
-      if(installZone)installZone.innerHTML='<section class="nxo-dev-install-card"><div class="nxo-dev-install-head"><div><h3>Entorno independiente</h3><p>Este environment ya forma parte del ecosistema Nexo. Su empaquetado comercial e instalación final se conectarán después, sin duplicar su arquitectura propia.</p></div><span class="nxo-dev-install-state">Environment</span></div></section>';
+      if(installZone){
+        const openUrl=localEnvironmentUrl(tool);
+        installZone.innerHTML='<section class="nxo-dev-install-card"><div class="nxo-dev-install-head"><div><h3>Entorno independiente</h3><p>Este environment ya forma parte del ecosistema Nexo. Su empaquetado comercial e instalación final se conectarán después, sin duplicar su arquitectura propia.</p></div><span class="nxo-dev-install-state">Environment</span></div>'+(openUrl?'<div class="nxo-dev-install-actions"><button type="button" class="nxo-dev-install-open" id="nxo-dev-environment-open">Abrir entorno</button></div>':'')+'</section>';
+        installZone.querySelector('#nxo-dev-environment-open')?.addEventListener('click',()=>location.assign(openUrl),{signal:runtimeAbort.signal})
+      }
       const reviewsZone=document.getElementById('nxo-dev-reviews-zone');
       if(reviewsZone)reviewsZone.innerHTML=''
     }else{
