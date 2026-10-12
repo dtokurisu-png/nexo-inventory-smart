@@ -157,8 +157,363 @@ function enhanceRoot(){
   renderBody(root);
 }
 
+let activeSheetEditor=null;
+
+function sheetEditorId(prefix='draft'){
+  return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8)
+}
+function ingredientName(row){
+  return text(row,'nameEn','nameEs')||row?.name||tr('Ingrediente','Ingredient')
+}
+function sheetEditorClose(){
+  const current=activeSheetEditor;
+  if(current?.photoUrl){
+    try{URL.revokeObjectURL(current.photoUrl)}catch(_){}
+  }
+  document.getElementById('nexoSingleSheetEditorLayer')?.remove();
+  activeSheetEditor=null
+}
+function sheetEditorShell(){
+  const el=document.createElement('div');
+  el.id='nexoSingleSheetEditorLayer';
+  el.innerHTML=
+    '<div class="nexoSheetEditorFrame" role="dialog" aria-modal="true" aria-label="'+esc(tr('Crear ficha técnica','Create technical sheet'))+'">'+
+      '<header class="nexoSheetEditorHead">'+
+        '<div><span>'+esc(tr('Nueva ficha técnica','New technical sheet'))+'</span><strong>'+esc(tr('Crear ficha','Create sheet'))+'</strong></div>'+
+        '<button type="button" data-sheet-editor-close aria-label="'+esc(tr('Cerrar','Close'))+'">'+icon('cerrar')+'</button>'+
+      '</header>'+
+      '<main class="nexoSheetEditorCanvas">'+
+        '<section class="nexoSheetEditorHero">'+
+          '<div class="nexoSheetEditorPhoto" data-sheet-photo-preview>'+
+            '<div>'+icon('ficha-tecnica')+'<span>'+esc(tr('Foto del producto','Product photo'))+'</span></div>'+
+          '</div>'+
+          '<div class="nexoSheetEditorIdentity">'+
+            '<label><span>'+esc(tr('Nombre','Name'))+'</span><input data-sheet-title maxlength="160" autocomplete="off" placeholder="'+esc(tr('Nombre del producto o preparación','Product or preparation name'))+'"></label>'+
+            '<label><span>'+esc(tr('Descripción breve','Short description'))+'</span><textarea data-sheet-description maxlength="800" rows="3" placeholder="'+esc(tr('Describe brevemente esta ficha.','Briefly describe this sheet.'))+'"></textarea></label>'+
+            '<div class="nexoSheetEditorPhotoActions">'+
+              '<button type="button" class="nexoWorkspaceBtn" data-sheet-photo-choose>'+icon('nuevo')+'<span>'+esc(tr('Agregar foto','Add photo'))+'</span></button>'+
+              '<button type="button" class="nexoWorkspaceBtn" data-sheet-photo-remove hidden>'+esc(tr('Quitar foto','Remove photo'))+'</button>'+
+              '<input type="file" accept="image/jpeg,image/png,image/webp" data-sheet-photo-input hidden>'+
+            '</div>'+
+          '</div>'+
+        '</section>'+
+        '<section class="nexoSheetEditorSection" data-sheet-ingredients-section>'+
+          '<div class="nexoSheetEditorSectionHead">'+
+            '<div><span>'+esc(tr('Composición','Composition'))+'</span><h2>'+esc(tr('Ingredientes','Ingredients'))+'</h2></div>'+
+            '<div class="nexoSheetEditorSectionActions">'+
+              '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-existing>'+icon('nuevo')+'<span>'+esc(tr('Agregar existente','Add existing'))+'</span></button>'+
+              '<button type="button" class="nexoWorkspaceBtn" data-sheet-create-ingredient>'+esc(tr('Crear ingrediente','Create ingredient'))+'</button>'+
+            '</div>'+
+          '</div>'+
+          '<div class="nexoSheetIngredientPicker" data-sheet-existing-picker hidden></div>'+
+          '<div class="nexoSheetIngredientList" data-sheet-ingredient-list></div>'+
+        '</section>'+
+        '<section class="nexoSheetEditorSection">'+
+          '<div class="nexoSheetEditorSectionHead"><div><span>'+esc(tr('Método','Method'))+'</span><h2>MOP</h2></div></div>'+
+          '<p class="nexoSheetEditorHelp">'+esc(tr('Escribe el método como texto normal. Usa el + junto al cursor para insertar un ingrediente de la composición como dato dinámico.','Write the method as normal text. Use the + beside the cursor to insert a composition ingredient as dynamic data.'))+'</p>'+
+          '<div class="nexoMopEditorWrap" data-mop-wrap>'+
+            '<div class="nexoMopEditor" data-sheet-mop-editor contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="'+esc(tr('Escribe aquí el MOP…','Write the MOP here…'))+'"></div>'+
+            '<button type="button" class="nexoMopCaretPlus" data-mop-caret-plus aria-label="'+esc(tr('Insertar ingrediente dinámico','Insert dynamic ingredient'))+'" hidden>+</button>'+
+            '<div class="nexoMopPicker" data-mop-picker hidden></div>'+
+          '</div>'+
+        '</section>'+
+      '</main>'+
+    '</div>';
+  document.body.appendChild(el);
+  return el
+}
+function sheetEditorTemplate(){
+  const layer=sheetEditorShell();
+  const state={
+    title:'',
+    description:'',
+    photoFile:null,
+    photoUrl:'',
+    components:[],
+    savedMopRange:null,
+    mopChoice:null
+  };
+  activeSheetEditor=state;
+
+  const title=layer.querySelector('[data-sheet-title]');
+  const description=layer.querySelector('[data-sheet-description]');
+  const photoInput=layer.querySelector('[data-sheet-photo-input]');
+  const photoChoose=layer.querySelector('[data-sheet-photo-choose]');
+  const photoRemove=layer.querySelector('[data-sheet-photo-remove]');
+  const photoPreview=layer.querySelector('[data-sheet-photo-preview]');
+  const list=layer.querySelector('[data-sheet-ingredient-list]');
+  const existingPicker=layer.querySelector('[data-sheet-existing-picker]');
+  const editor=layer.querySelector('[data-sheet-mop-editor]');
+  const mopWrap=layer.querySelector('[data-mop-wrap]');
+  const caretPlus=layer.querySelector('[data-mop-caret-plus]');
+  const mopPicker=layer.querySelector('[data-mop-picker]');
+
+  const componentById=id=>state.components.find(row=>row.id===id);
+
+  function componentTokenText(component,mode='full'){
+    const quantity=String(component?.quantity??'').trim();
+    const unit=String(component?.unit??'').trim();
+    const name=String(component?.name||tr('Ingrediente','Ingredient')).trim();
+    const amount=[quantity||tr('cantidad','amount'),unit].filter(Boolean).join(' ');
+    if(mode==='name')return name;
+    if(mode==='quantity')return amount;
+    return [amount,name].filter(Boolean).join(' ')
+  }
+  function refreshMopTokens(){
+    editor.querySelectorAll('[data-mop-component-id]').forEach(token=>{
+      const component=componentById(String(token.dataset.mopComponentId||''));
+      if(!component){token.remove();return}
+      token.textContent=componentTokenText(component,String(token.dataset.mopMode||'full'))
+    })
+  }
+  function removeComponentTokens(id){
+    editor.querySelectorAll('[data-mop-component-id="'+CSS.escape(id)+'"]').forEach(node=>node.remove())
+  }
+  function renderIngredientList(){
+    if(!state.components.length){
+      list.innerHTML='<div class="nexoSheetIngredientEmpty">'+icon('ficha-tecnica')+'<strong>'+esc(tr('Todavía no hay ingredientes','No ingredients yet'))+'</strong><span>'+esc(tr('Agrega uno existente o crea uno nuevo.','Add an existing one or create a new one.'))+'</span></div>';
+      return
+    }
+    list.innerHTML=state.components.map((row,index)=>
+      '<article class="nexoSheetIngredientRow" data-component-id="'+esc(row.id)+'">'+
+        '<div class="nexoSheetIngredientIndex">'+(index+1)+'</div>'+
+        '<label class="nexoSheetIngredientName"><span>'+esc(tr('Ingrediente','Ingredient'))+'</span><input data-component-name maxlength="160" value="'+esc(row.name)+'" '+(row.source==='existing'?'readonly':'')+'></label>'+
+        '<label><span>'+esc(tr('Cantidad','Quantity'))+'</span><input data-component-quantity inputmode="decimal" value="'+esc(row.quantity)+'" placeholder="1000"></label>'+
+        '<label><span>'+esc(tr('Unidad','Unit'))+'</span><input data-component-unit maxlength="40" value="'+esc(row.unit)+'" placeholder="'+esc(tr('g, ml, u…','g, ml, ea…'))+'"></label>'+
+        '<button type="button" class="nexoSheetIngredientRemove" data-component-remove aria-label="'+esc(tr('Eliminar ingrediente','Remove ingredient'))+'">×</button>'+
+      '</article>'
+    ).join('');
+    list.querySelectorAll('[data-component-id]').forEach(rowEl=>{
+      const component=componentById(rowEl.dataset.componentId);
+      if(!component)return;
+      const nameInput=rowEl.querySelector('[data-component-name]');
+      const qtyInput=rowEl.querySelector('[data-component-quantity]');
+      const unitInput=rowEl.querySelector('[data-component-unit]');
+      const sync=()=>{
+        if(component.source!=='existing')component.name=String(nameInput.value||'');
+        component.quantity=String(qtyInput.value||'');
+        component.unit=String(unitInput.value||'');
+        refreshMopTokens()
+      };
+      nameInput.addEventListener('input',sync);
+      qtyInput.addEventListener('input',sync);
+      unitInput.addEventListener('input',sync);
+      rowEl.querySelector('[data-component-remove]').onclick=()=>{
+        state.components=state.components.filter(item=>item.id!==component.id);
+        removeComponentTokens(component.id);
+        renderIngredientList();
+        hideMopPicker()
+      }
+    })
+  }
+  function renderExistingPicker(query=''){
+    const q=searchNorm(query);
+    const selectedIds=new Set(state.components.filter(row=>row.source==='existing').map(row=>row.targetIngredientId));
+    const rows=activeProducts().filter(row=>{
+      if(selectedIds.has(String(row._id||'')))return false;
+      if(!q)return true;
+      return searchNorm([row.nameEs,row.nameEn].filter(Boolean).join(' ')).includes(q)
+    }).slice(0,40);
+    existingPicker.innerHTML=
+      '<div class="nexoSheetIngredientPickerHead"><label>'+icon('busqueda')+'<input data-existing-search autocomplete="off" placeholder="'+esc(tr('Buscar ingrediente…','Search ingredient…'))+'" value="'+esc(query)+'"></label><button type="button" data-existing-close>×</button></div>'+
+      '<div class="nexoSheetIngredientPickerResults">'+
+        (rows.length?rows.map(row=>'<button type="button" data-existing-id="'+esc(row._id)+'"><strong>'+esc(ingredientName(row))+'</strong><span>'+esc(text(row,'descriptionEn','descriptionEs')||'')+'</span></button>').join(''):'<p>'+esc(tr('No hay ingredientes disponibles con esa búsqueda.','No ingredients match that search.'))+'</p>')+
+      '</div>';
+    const search=existingPicker.querySelector('[data-existing-search]');
+    search?.addEventListener('input',()=>renderExistingPicker(search.value));
+    existingPicker.querySelector('[data-existing-close]').onclick=()=>{existingPicker.hidden=true};
+    existingPicker.querySelectorAll('[data-existing-id]').forEach(btn=>btn.onclick=()=>{
+      const source=activeProducts().find(row=>String(row._id)===String(btn.dataset.existingId));
+      if(!source)return;
+      state.components.push({
+        id:sheetEditorId('component'),
+        source:'existing',
+        targetIngredientId:String(source._id),
+        name:ingredientName(source),
+        quantity:'',
+        unit:''
+      });
+      existingPicker.hidden=true;
+      renderIngredientList()
+    });
+    queueMicrotask(()=>search?.focus())
+  }
+
+  function rememberMopRange(){
+    const selection=window.getSelection();
+    if(!selection||!selection.rangeCount)return;
+    const range=selection.getRangeAt(0);
+    if(!editor.contains(range.startContainer))return;
+    state.savedMopRange=range.cloneRange();
+    positionCaretPlus(range)
+  }
+  function positionCaretPlus(range=state.savedMopRange){
+    if(!range){caretPlus.hidden=true;return}
+    let rect=null;
+    try{rect=range.getBoundingClientRect()}catch(_){}
+    const wrapRect=mopWrap.getBoundingClientRect();
+    const editorRect=editor.getBoundingClientRect();
+    const x=(rect&&Number.isFinite(rect.left)&&rect.left>0?rect.right:editorRect.left)-wrapRect.left+mopWrap.scrollLeft+7;
+    const y=(rect&&Number.isFinite(rect.top)&&rect.top>0?rect.top:editorRect.top)-wrapRect.top+mopWrap.scrollTop-2;
+    caretPlus.style.left=Math.max(8,Math.min(x,mopWrap.clientWidth-38))+'px';
+    caretPlus.style.top=Math.max(8,y)+'px';
+    caretPlus.hidden=false
+  }
+  function restoreMopRange(){
+    editor.focus();
+    const selection=window.getSelection();
+    if(!selection)return null;
+    let range=state.savedMopRange;
+    if(!range||!editor.contains(range.startContainer)){
+      range=document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false)
+    }
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return range
+  }
+  function hideMopPicker(){
+    mopPicker.hidden=true;
+    state.mopChoice=null
+  }
+  function renderMopPicker(){
+    if(!state.components.length){
+      mopPicker.innerHTML='<div class="nexoMopPickerEmpty">'+esc(tr('Primero agrega ingredientes en la sección superior.','Add ingredients in the section above first.'))+'</div>';
+      mopPicker.hidden=false;
+      positionMopPicker();
+      return
+    }
+    if(!state.mopChoice){
+      mopPicker.innerHTML=
+        '<div class="nexoMopPickerTitle">'+esc(tr('Insertar ingrediente','Insert ingredient'))+'</div>'+
+        '<div class="nexoMopPickerList">'+state.components.map(row=>
+          '<button type="button" data-mop-choose="'+esc(row.id)+'"><strong>'+esc(row.name||tr('Ingrediente','Ingredient'))+'</strong><span>'+esc(componentTokenText(row,'quantity'))+'</span></button>'
+        ).join('')+'</div>';
+      mopPicker.querySelectorAll('[data-mop-choose]').forEach(btn=>btn.onclick=()=>{
+        state.mopChoice={componentId:String(btn.dataset.mopChoose),mode:'full'};
+        renderMopPicker()
+      })
+    }else{
+      const component=componentById(state.mopChoice.componentId);
+      if(!component){state.mopChoice=null;renderMopPicker();return}
+      const modes=[
+        ['full',tr('Cantidad + ingrediente','Quantity + ingredient')],
+        ['quantity',tr('Solo cantidad','Quantity only')],
+        ['name',tr('Solo ingrediente','Ingredient only')]
+      ];
+      mopPicker.innerHTML=
+        '<button type="button" class="nexoMopPickerBack" data-mop-back>← '+esc(tr('Ingredientes','Ingredients'))+'</button>'+
+        '<div class="nexoMopPickerSelected"><strong>'+esc(component.name||tr('Ingrediente','Ingredient'))+'</strong><span>'+esc(componentTokenText(component,'full'))+'</span></div>'+
+        '<div class="nexoMopModeList">'+modes.map(([mode,label])=>
+          '<button type="button" class="'+(state.mopChoice.mode===mode?'active':'')+'" data-mop-mode="'+mode+'"><span>'+esc(label)+'</span><strong>'+esc(componentTokenText(component,mode))+'</strong></button>'
+        ).join('')+'</div>'+
+        '<button type="button" class="nexoWorkspaceBtn primary wide" data-mop-done>'+esc(tr('Listo','Done'))+'</button>';
+      mopPicker.querySelector('[data-mop-back]').onclick=()=>{state.mopChoice=null;renderMopPicker()};
+      mopPicker.querySelectorAll('[data-mop-mode]').forEach(btn=>btn.onclick=()=>{
+        state.mopChoice.mode=String(btn.dataset.mopMode||'full');
+        renderMopPicker()
+      });
+      mopPicker.querySelector('[data-mop-done]').onclick=()=>{
+        insertMopToken(component,state.mopChoice.mode);
+        hideMopPicker()
+      }
+    }
+    mopPicker.hidden=false;
+    positionMopPicker()
+  }
+  function positionMopPicker(){
+    const plusLeft=parseFloat(caretPlus.style.left)||12;
+    const plusTop=parseFloat(caretPlus.style.top)||12;
+    const width=Math.min(340,Math.max(250,mopWrap.clientWidth-24));
+    mopPicker.style.width=width+'px';
+    mopPicker.style.left=Math.max(8,Math.min(plusLeft,mopWrap.clientWidth-width-8))+'px';
+    mopPicker.style.top=(plusTop+38)+'px'
+  }
+  function insertMopToken(component,mode){
+    const range=restoreMopRange();
+    if(!range)return;
+    const token=document.createElement('span');
+    token.className='nexoMopDynamicToken';
+    token.contentEditable='false';
+    token.dataset.mopComponentId=component.id;
+    token.dataset.mopMode=mode;
+    token.textContent=componentTokenText(component,mode);
+    range.deleteContents();
+    range.insertNode(token);
+    const spacer=document.createTextNode(' ');
+    token.after(spacer);
+    const next=document.createRange();
+    next.setStartAfter(spacer);
+    next.collapse(true);
+    const selection=window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(next);
+    state.savedMopRange=next.cloneRange();
+    positionCaretPlus(next)
+  }
+
+  title.addEventListener('input',()=>{state.title=title.value});
+  description.addEventListener('input',()=>{state.description=description.value});
+  photoChoose.onclick=()=>photoInput.click();
+  photoInput.onchange=()=>{
+    const file=photoInput.files?.[0];
+    if(!file)return;
+    if(!/^image\/(jpeg|png|webp)$/i.test(String(file.type||'')))return;
+    if(state.photoUrl)try{URL.revokeObjectURL(state.photoUrl)}catch(_){}
+    state.photoFile=file;
+    state.photoUrl=URL.createObjectURL(file);
+    photoPreview.innerHTML='<img src="'+esc(state.photoUrl)+'" alt="">';
+    photoRemove.hidden=false
+  };
+  photoRemove.onclick=()=>{
+    if(state.photoUrl)try{URL.revokeObjectURL(state.photoUrl)}catch(_){}
+    state.photoFile=null;
+    state.photoUrl='';
+    photoInput.value='';
+    photoPreview.innerHTML='<div>'+icon('ficha-tecnica')+'<span>'+esc(tr('Foto del producto','Product photo'))+'</span></div>';
+    photoRemove.hidden=true
+  };
+
+  layer.querySelector('[data-sheet-add-existing]').onclick=()=>{
+    existingPicker.hidden=false;
+    renderExistingPicker('')
+  };
+  layer.querySelector('[data-sheet-create-ingredient]').onclick=()=>{
+    const id=sheetEditorId('component');
+    state.components.push({id,source:'new',targetIngredientId:'',name:'',quantity:'',unit:''});
+    renderIngredientList();
+    queueMicrotask(()=>list.querySelector('[data-component-id="'+CSS.escape(id)+'"] [data-component-name]')?.focus())
+  };
+
+  ['keyup','mouseup','input','focus'].forEach(type=>editor.addEventListener(type,rememberMopRange));
+  editor.addEventListener('blur',()=>setTimeout(()=>{
+    if(!mopPicker.matches(':hover')&&!caretPlus.matches(':hover'))caretPlus.hidden=true
+  },80));
+  caretPlus.addEventListener('mousedown',e=>e.preventDefault());
+  caretPlus.onclick=()=>{
+    restoreMopRange();
+    renderMopPicker()
+  };
+  document.addEventListener('selectionchange',()=>{
+    if(activeSheetEditor!==state)return;
+    const selection=window.getSelection();
+    if(!selection||!selection.rangeCount)return;
+    const range=selection.getRangeAt(0);
+    if(editor.contains(range.startContainer)){
+      state.savedMopRange=range.cloneRange();
+      positionCaretPlus(range)
+    }
+  });
+
+  layer.querySelector('[data-sheet-editor-close]').onclick=sheetEditorClose;
+  layer.addEventListener('mousedown',e=>{if(e.target===layer)sheetEditorClose()});
+  renderIngredientList();
+  queueMicrotask(()=>title.focus())
+}
 function openCreateFlow(){
   if(!canCreate())return;
+  sheetEditorTemplate()
 }
 
 function openImport(){
