@@ -549,7 +549,8 @@ function bindCreatorStageTwo(layerEl,draft){
     status.textContent=tr('Guardando foto en el borrador…','Saving photo to draft…');
     try{
       const row=await saveCreatorPhoto(file);
-      const next={...readCreatorDraft(),heroDraft:{name:row.name,type:row.type,size:row.size,updatedAt:row.updatedAt},updatedAt:new Date().toISOString()};
+      const current=creatorStageEightForgetMedia(readCreatorDraft()||draft,'main');
+      const next={...current,heroDraft:{name:row.name,type:row.type,size:row.size,updatedAt:row.updatedAt},updatedAt:new Date().toISOString()};
       saveCreatorDraft(next);
       applyCreatorPhotoPreview(preview,row);
       status.textContent=tr('Foto guardada en el borrador.','Photo saved in draft.')
@@ -559,7 +560,7 @@ function bindCreatorStageTwo(layerEl,draft){
   });
   remove.onclick=async()=>{
     await deleteCreatorPhoto();
-    const current=readCreatorDraft()||draft;
+    let current=creatorStageEightForgetMedia(readCreatorDraft()||draft,'main');
     delete current.heroDraft;
     current.updatedAt=new Date().toISOString();
     saveCreatorDraft(current);
@@ -1628,7 +1629,8 @@ function bindStageFiveEditor(form){
       const row=await saveCreatorPreparationPhoto(activeId,file);
       saveStageFivePreparationFromForm(form,{silent:true});
       const p=creatorPendingPreparationEntry(readCreatorDraft()||{},activeId)?.pendingPreparation||{};
-      creatorStageFiveSavePreparation(activeId,{...p,heroDraft:{name:row.name,type:row.type,size:row.size,updatedAt:row.updatedAt},stage5Complete:false});
+      const saved=creatorStageFiveSavePreparation(activeId,{...p,heroDraft:{name:row.name,type:row.type,size:row.size,updatedAt:row.updatedAt},stage5Complete:false});
+      saveCreatorDraft(creatorStageEightForgetMedia(saved,'subrecipe',activeId));
       applyCreatorPhotoPreview(editor.querySelector('[data-creator-photo-preview]'),row);
       status.textContent=tr('Foto de la preparación guardada en el borrador.','Preparation photo saved in the draft.')
     }catch(error){status.textContent=String(error?.message||error||tr('No se pudo guardar la foto.','Could not save photo.'))}
@@ -1638,7 +1640,7 @@ function bindStageFiveEditor(form){
     await deleteCreatorPreparationPhoto(activeId);
     saveStageFivePreparationFromForm(form,{silent:true});
     const p={...(creatorPendingPreparationEntry(readCreatorDraft()||{},activeId)?.pendingPreparation||{}),stage5Complete:false};
-    delete p.heroDraft;creatorStageFiveSavePreparation(activeId,p);applyCreatorPhotoPreview(editor.querySelector('[data-creator-photo-preview]'),null)
+    delete p.heroDraft;const saved=creatorStageFiveSavePreparation(activeId,p);saveCreatorDraft(creatorStageEightForgetMedia(saved,'subrecipe',activeId));applyCreatorPhotoPreview(editor.querySelector('[data-creator-photo-preview]'),null)
   };
   const search=editor.querySelector('[data-stage-five-ingredient-search]');
   ['input','keyup','search','change'].forEach(type=>search?.addEventListener(type,()=>renderStageFiveIngredientSearchResults(form,search.value)));
@@ -2250,6 +2252,14 @@ function openCreateStageSeven(){
 }
 
 
+function creatorStageEightForgetMedia(draft,kind,localId=''){
+  const source=draft||{};
+  const current=source.stage8MediaFileIds&&typeof source.stage8MediaFileIds==='object'?source.stage8MediaFileIds:{};
+  const media={...current,subrecipes:{...(current.subrecipes||{})}};
+  if(kind==='main')media.main='';
+  else if(localId)delete media.subrecipes[String(localId)];
+  return {...source,stage8MediaFileIds:media}
+}
 function creatorStageEightPublishKey(draft){
   const current=String(draft?.creatorPublishKey||'').trim();
   if(current)return current;
