@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261012-1';
+const VERSION='20261012-2';
 if(window.NEXO_SHARED_HEADER?.version===VERSION)return;
 
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
@@ -270,7 +270,8 @@ function markup(options={}){
     showPersonal?'<button type="button" class="nxo-nav-link '+(active==='personal'?'active':'')+'" id="nxo-personal">'+iconLabel('mi-espacio',t.personal)+'</button>':'',
     showWorkspace?'<button type="button" class="nxo-nav-link '+(active==='workspace'?'active':'')+'" id="nxo-workspace-current">'+iconLabel('workspace',options.workspaceName)+'</button>':'',
     showDevelopment?'<button type="button" class="nxo-nav-link '+(active==='development'?'active':'')+'" id="nxo-nav-development">'+iconLabel('desarrollo',t.development)+'</button>':'',
-    currentTool?'<button type="button" class="nxo-nav-link '+(active==='tool'?'active':'')+'" id="nxo-nav-current-tool" aria-current="'+(active==='tool'?'page':'false')+'">'+iconLabel(options.currentToolIcon||'herramientas',currentTool)+'</button>':''
+    currentTool?'<button type="button" class="nxo-nav-link '+(active==='tool'?'active':'')+'" id="nxo-nav-current-tool" aria-current="'+(active==='tool'?'page':'false')+'">'+iconLabel(options.currentToolIcon||'herramientas',currentTool)+'</button>':'',
+    String(options.extraNavHtml||'')
   ].filter(Boolean).join('');
 
   return '<header class="nxo-shared-header nxo-topbar nxo-workspace-nav" id="nxo-shared-header" data-theme="'+theme+'" data-language="'+language+'">'+
@@ -280,11 +281,10 @@ function markup(options={}){
     '</button>'+
     '<div class="nxo-nav-collapse" id="nxo-nav-collapse">'+
       '<nav class="nxo-nav-links" aria-label="Navegación principal">'+nav+'</nav>'+
-      '<div class="nxo-nav-menu-utilities">'+quickSettings+'</div>'+
     '</div>'+
     (currentTool?'<span class="nxo-shared-current">'+esc(currentTool)+'</span>':'')+
     '<div class="nxo-nav-primary-utils">'+
-      quickSettings.replace('nxo-quick-settings-wrap','nxo-quick-settings-wrap nxo-quick-settings-primary').replace(/id="nxo-quick-settings-button"/,'id="nxo-quick-settings-button-primary"').replace(/id="nxo-quick-settings-menu"/,'id="nxo-quick-settings-menu-primary"').replace(/id="nxo-language-toggle"/,'id="nxo-language-toggle-primary"').replace(/id="nxo-theme-toggle"/,'id="nxo-theme-toggle-primary"')+
+      quickSettings+
       String(options.notificationHtml||'')+
       '<button type="button" class="nxo-nav-account" id="nxo-nav-account" aria-expanded="false">'+
         '<span class="nxo-avatar">'+avatar+'</span>'+
@@ -299,6 +299,7 @@ function markup(options={}){
         '<button type="button" data-account-action="switch">'+iconLabel('cuenta-correo',t.switch)+'</button>'+
         '<button type="button" class="danger" data-account-action="logout">'+iconLabel('cerrar',t.logout)+'</button>'+
       '</div>'+
+      '<input type="file" id="nxo-profile-photo-input" class="nxo-profile-photo-input" accept="image/png,image/jpeg,image/webp" hidden>'+
     '</div>'+
     '<button type="button" class="nxo-mobile-menu-button" id="nxo-mobile-menu-button" aria-label="'+esc(t.openMenu)+'" aria-expanded="false" aria-controls="nxo-nav-collapse"><span></span><span></span><span></span></button>'+
   '</header>'
@@ -312,8 +313,7 @@ function bind(options={}){
   const mobileButton=header.querySelector('#nxo-mobile-menu-button');
   const mobileMenu=header.querySelector('#nxo-nav-collapse');
   const quickPairs=[
-    [header.querySelector('#nxo-quick-settings-button'),header.querySelector('#nxo-quick-settings-menu')],
-    [header.querySelector('#nxo-quick-settings-button-primary'),header.querySelector('#nxo-quick-settings-menu-primary')]
+    [header.querySelector('#nxo-quick-settings-button'),header.querySelector('#nxo-quick-settings-menu')]
   ];
   const closeMenus=except=>{
     if(except!=='account'){accountMenu?.classList.remove('open');account?.setAttribute('aria-expanded','false')}
@@ -354,7 +354,7 @@ function bind(options={}){
   header.querySelector('#nxo-workspace-current')?.addEventListener('click',event=>call('onWorkspace',event),{signal:options.signal});
   header.querySelector('#nxo-nav-current-tool')?.addEventListener('click',event=>call('onCurrentTool',event),{signal:options.signal});
 
-  const bindQuick=(id,key)=>header.querySelectorAll('#'+id+',#'+id+'-primary').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();call(key,event)},{signal:options.signal}));
+  const bindQuick=(id,key)=>header.querySelectorAll('#'+id).forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();call(key,event)},{signal:options.signal}));
   bindQuick('nxo-theme-toggle','onTheme');
   bindQuick('nxo-language-toggle','onLanguage');
 
