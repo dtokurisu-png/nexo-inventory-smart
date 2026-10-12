@@ -8,6 +8,7 @@ if(!view||!modalRoot)return;
 
 let activeTab='collections';
 const pendingCollectionRequests=new Map();
+const pendingCreatorPublishRequests=new Map();
 let creatorPhotoObjectUrl='';
 
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],collections:[],context:{},capabilities:{}};
@@ -2196,11 +2197,11 @@ function showStageSevenComplete(layerEl,draft){
     '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 7 de 8','Stage 7 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div>'+
     '<h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3>'+
     '<div class="nexoCreatorSummary"><div><span>'+esc(tr('MOP documentados','Documented MOPs'))+'</span><strong>'+targets.length+'</strong></div><div><span>'+esc(tr('Pasos / referencias','Steps / references'))+'</span><strong>'+steps+' / '+refs+'</strong></div></div>'+
-    '<p>'+esc(tr('Cada receta nueva del borrador ya tiene un MOP numerado compatible con el motor actual y conserva referencias estructuradas a sus componentes. La Etapa 8 podrá publicar el grafo completo.','Every new recipe in the draft now has a numbered MOP compatible with the current engine and preserves structured component references. Stage 8 can publish the complete graph.'))+'</p>'+
-    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-seven-edit>'+esc(tr('Editar etapa 7','Edit stage 7'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-seven-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+    '<p>'+esc(tr('Cada receta nueva del borrador ya tiene un MOP numerado compatible con el motor actual y conserva referencias estructuradas a sus componentes. La Etapa 8 publicará el grafo completo.','Every new recipe in the draft now has a numbered MOP compatible with the current engine and preserves structured component references. Stage 8 will publish the complete graph.'))+'</p>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-seven-edit>'+esc(tr('Editar etapa 7','Edit stage 7'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-eight-open>'+esc(tr('Continuar a etapa 8','Continue to stage 8'))+'</button></div>'+
   '</div>';
   body.querySelector('[data-stage-seven-edit]').onclick=()=>openCreateStageSeven();
-  body.querySelector('[data-stage-seven-close]').onclick=closeLayer
+  body.querySelector('[data-stage-eight-open]').onclick=()=>openCreateStageEight()
 }
 function bindCreatorStageSeven(layerEl,draft){
   const form=layerEl.querySelector('[data-nexo-creator-stage-seven]');
@@ -2248,9 +2249,218 @@ function openCreateStageSeven(){
   bindCreatorStageSeven(el,next)
 }
 
+
+function creatorStageEightPublishKey(draft){
+  const current=String(draft?.creatorPublishKey||'').trim();
+  if(current)return current;
+  return creatorDraftId('publish')
+}
+function creatorStageEightStats(draft){
+  const pending=creatorPendingPreparations(draft);
+  const recipes=1+pending.length;
+  const mainComponents=creatorAllComponents(draft);
+  const localComponents=pending.reduce((sum,row)=>sum+creatorStageFiveIngredients(row.pendingPreparation||{}).length,0);
+  const newIngredientIds=new Set();
+  const collect=row=>{
+    if(row?.ingredientSource==='new'){
+      const id=String(row?.newIngredient?.draftId||'').trim();
+      if(id)newIngredientIds.add(id)
+    }
+  };
+  mainComponents.forEach(collect);
+  pending.forEach(row=>creatorStageFiveIngredients(row.pendingPreparation||{}).forEach(collect));
+  const targets=creatorStageSevenTargets(draft);
+  const steps=targets.reduce((sum,target)=>sum+creatorStageSevenSteps(target.recipe).length,0);
+  const references=targets.reduce((sum,target)=>sum+creatorStageSevenSteps(target.recipe).reduce((n,step)=>n+(Array.isArray(step.references)?step.references.length:0),0),0);
+  const images=Number(Boolean(draft.heroDraft))+pending.filter(row=>Boolean(row.pendingPreparation?.heroDraft)).length;
+  return {recipes,components:mainComponents.length+localComponents,newIngredients:newIngredientIds.size,steps,references,images,localRecipes:pending.length}
+}
+function creatorStageEightValidation(draft){
+  if(!draft||draft.stage7Complete!==true)return tr('Completa la Etapa 7 antes de publicar.','Complete Stage 7 before publishing.');
+  const audit=creatorStageSixAudit(draft);
+  if(audit.some(item=>!item.ok))return tr('La Etapa 6 contiene vínculos sin resolver.','Stage 6 contains unresolved links.');
+  const invalid=creatorStageSevenTargets(draft).find(target=>!creatorStageSevenTargetComplete(target)||creatorStageSevenValidation(target));
+  if(invalid)return creatorStageSevenValidation(invalid)||tr('Hay un MOP que todavía no está listo.','A MOP is not ready yet.');
+  if(!String(draft.collectionId||'').trim())return tr('La ficha no tiene una colección válida.','The sheet has no valid collection.');
+  return ''
+}
+function creatorStageEightMarkup(draft={}){
+  const stats=creatorStageEightStats(draft);
+  const media=draft.stage8MediaFileIds||{};
+  const uploaded=Number(Boolean(media.main))+Object.values(media.subrecipes||{}).filter(Boolean).length;
+  return '<form class="nexoCreatorStage nexoCreatorStageEight" data-nexo-creator-stage-eight novalidate>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 8 de 8','Stage 8 of 8'))+'</span><strong>'+esc(tr('Publicación final en Wix','Final Wix publication'))+'</strong></div>'+
+    '<div class="nexoCreatorStageSummary"><span>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</span><strong>'+esc(draft.collectionName||draft.collectionId||'')+'</strong></div>'+
+    '<p class="nexoCreatorIntro">'+esc(tr('Esta etapa crea el grafo definitivo en Wix. Los registros se preparan de forma inactiva, se verifica el read-back y solo entonces se activan. El borrador local se elimina únicamente después de la confirmación final.','This stage creates the definitive graph in Wix. Records are staged inactive, read back for verification, and only then activated. The local draft is deleted only after final confirmation.'))+'</p>'+
+    '<div class="nexoCreatorStageEightGrid">'+
+      '<div><span>'+esc(tr('Fichas nuevas','New sheets'))+'</span><strong>'+stats.recipes+'</strong><small>'+esc(tr('1 principal + '+stats.localRecipes+' subreceta(s) local(es)','1 main + '+stats.localRecipes+' local subrecipe(s)'))+'</small></div>'+
+      '<div><span>'+esc(tr('Componentes','Components'))+'</span><strong>'+stats.components+'</strong><small>'+esc(tr('Ingredientes y subrecetas','Ingredients and subrecipes'))+'</small></div>'+
+      '<div><span>'+esc(tr('Ingredientes nuevos','New ingredients'))+'</span><strong>'+stats.newIngredients+'</strong><small>'+esc(tr('IDs deterministas','Deterministic IDs'))+'</small></div>'+
+      '<div><span>'+esc(tr('Pasos MOP','MOP steps'))+'</span><strong>'+stats.steps+'</strong><small>'+stats.references+' '+esc(tr('referencias','references'))+'</small></div>'+
+      '<div><span>'+esc(tr('Imágenes','Images'))+'</span><strong>'+stats.images+'</strong><small>'+uploaded+' '+esc(tr('ya preparadas para reintento','already staged for retry'))+'</small></div>'+
+      '<div><span>'+esc(tr('Colección','Collection'))+'</span><strong>1</strong><small>'+esc(draft.collectionName||draft.collectionId||'')+'</small></div>'+
+    '</div>'+
+    '<div class="nexoCreatorStageEightSafety">'+
+      '<strong>'+esc(tr('Publicación idempotente','Idempotent publication'))+'</strong>'+
+      '<p>'+esc(tr('Si la conexión se corta, el mismo publishKey reutiliza los mismos IDs. No se generan copias duplicadas y un intento incompleto permanece oculto hasta poder completarse.','If the connection drops, the same publishKey reuses the same IDs. Duplicate copies are not created, and an incomplete attempt remains hidden until it can complete.'))+'</p>'+
+    '</div>'+
+    '<div class="nexoCreatorStatus" data-creator-status aria-live="polite"></div>'+
+    '<div class="nexoCreatorStageEightProgress" data-stage-eight-progress hidden><span></span><div><i></i></div></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-eight-back>'+esc(tr('← Etapa 7','← Stage 7'))+'</button><button type="button" class="nexoWorkspaceBtn" data-stage-eight-save-close>'+esc(tr('Guardar y cerrar','Save & close'))+'</button><button type="submit" class="nexoWorkspaceBtn primary" data-stage-eight-publish>'+esc(tr('Publicar en Wix','Publish to Wix'))+'</button></div>'+
+  '</form>'
+}
+async function creatorStageEightMediaFiles(draft){
+  const media=draft.stage8MediaFileIds&&typeof draft.stage8MediaFileIds==='object'?draft.stage8MediaFileIds:{main:'',subrecipes:{}};
+  const files=[];
+  if(!media.main){
+    try{
+      const row=await readCreatorPhoto();
+      if(row?.blob)files.push({kind:'main',draftId:'main',label:tr('Portada de la ficha principal','Main sheet cover'),fileName:row.name,mimeType:row.type,sizeInBytes:row.size,file:row.blob})
+    }catch(_){}
+  }
+  const sub=media.subrecipes&&typeof media.subrecipes==='object'?media.subrecipes:{};
+  for(const entry of creatorPendingPreparations(draft)){
+    const id=String(entry?.pendingPreparation?.draftId||'');
+    if(!id||sub[id])continue;
+    try{
+      const row=await readCreatorPreparationPhoto(id);
+      if(row?.blob)files.push({kind:'subrecipe',draftId:id,label:creatorStageFivePreparationName(entry),fileName:row.name,mimeType:row.type,sizeInBytes:row.size,file:row.blob})
+    }catch(_){}
+  }
+  return files
+}
+function requestCreatorPublish(draft,files,onProgress){
+  const requestId='creator_publish_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
+  return new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{
+      pendingCreatorPublishRequests.delete(requestId);
+      reject(new Error(tr('La publicación no respondió. Puedes reintentar con el mismo borrador.','Publication did not respond. You can retry with the same draft.')))
+    },240000);
+    pendingCreatorPublishRequests.set(requestId,{resolve,reject,timer,onProgress});
+    parent.postMessage({
+      type:'NEXO_DM_CREATOR_PUBLISH',
+      payload:{
+        requestId,
+        publishKey:draft.creatorPublishKey,
+        draft,
+        mediaFileIds:draft.stage8MediaFileIds||{main:'',subrecipes:{}},
+        files
+      }
+    },'*')
+  })
+}
+async function clearCreatorDraftPhotos(){
+  try{
+    const db=await creatorPhotoDb();
+    const prefix=creatorDraftKey();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction('photos','readwrite');
+      const store=tx.objectStore('photos');
+      const req=store.openCursor();
+      req.onsuccess=()=>{
+        const cursor=req.result;
+        if(!cursor)return;
+        if(String(cursor.key||'').startsWith(prefix))cursor.delete();
+        cursor.continue()
+      };
+      req.onerror=()=>reject(req.error||new Error('CREATOR_PHOTO_CLEANUP_FAILED'));
+      tx.oncomplete=resolve;
+      tx.onerror=()=>reject(tx.error||new Error('CREATOR_PHOTO_CLEANUP_FAILED'))
+    });
+    db.close()
+  }catch(_){}
+}
+async function clearCreatorPublishedDraft(){
+  await clearCreatorDraftPhotos();
+  try{localStorage.removeItem(creatorDraftKey())}catch(_){}
+}
+function showStageEightComplete(layerEl,draft,result){
+  const body=layerEl.querySelector('.nexoWorkspaceModalBody');
+  if(!body)return;
+  const counts=result?.counts||{};
+  body.innerHTML='<div class="nexoCreatorComplete nexoCreatorStageEightComplete">'+
+    '<div class="nexoWorkspaceEmptyIcon">'+icon('ficha-tecnica')+'</div>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 8 de 8','Stage 8 of 8'))+'</span><strong>'+esc(tr('Publicada','Published'))+'</strong></div>'+
+    '<h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3>'+
+    '<div class="nexoCreatorSummary"><div><span>'+esc(tr('Ficha principal','Main sheet'))+'</span><strong>'+esc(result?.mainRecipeId||'✓')+'</strong></div><div><span>'+esc(tr('Estado','Status'))+'</span><strong>'+esc(result?.alreadyPublished?tr('Ya estaba publicada','Already published'):tr('Confirmada por Wix','Confirmed by Wix'))+'</strong></div></div>'+
+    '<p>'+esc(tr('Wix confirmó el grafo final y el vínculo con la colección. El borrador local y sus imágenes temporales fueron limpiados.','Wix confirmed the final graph and collection link. The local draft and its temporary images were cleaned up.'))+'</p>'+
+    (counts.recipes?'<div class="nexoCreatorStageEightReceipt"><span>'+counts.recipes+' '+esc(tr('fichas','sheets'))+'</span><span>'+counts.components+' '+esc(tr('componentes','components'))+'</span><span>'+counts.newIngredients+' '+esc(tr('ingredientes nuevos','new ingredients'))+'</span><span>'+counts.images+' '+esc(tr('imágenes','images'))+'</span></div>':'')+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn primary" data-stage-eight-close>'+esc(tr('Cerrar','Close'))+'</button></div>'+
+  '</div>';
+  body.querySelector('[data-stage-eight-close]').onclick=closeLayer
+}
+function bindCreatorStageEight(layerEl,draft){
+  const form=layerEl.querySelector('[data-nexo-creator-stage-eight]');
+  if(!form)return;
+  const status=form.querySelector('[data-creator-status]');
+  const progress=form.querySelector('[data-stage-eight-progress]');
+  const publish=form.querySelector('[data-stage-eight-publish]');
+  form.querySelector('[data-stage-eight-back]').onclick=()=>openCreateStageSeven();
+  form.querySelector('[data-stage-eight-save-close]').onclick=closeLayer;
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    let current=readCreatorDraft()||draft;
+    const error=creatorStageEightValidation(current);
+    if(error){status.textContent=error;return}
+    if(!current.creatorPublishKey){
+      current={...current,creatorPublishKey:creatorStageEightPublishKey(current),stage:8,schemaVersion:Math.max(8,Number(current.schemaVersion||0)),updatedAt:new Date().toISOString()};
+      saveCreatorDraft(current)
+    }
+    publish.disabled=true;
+    form.querySelector('[data-stage-eight-back]').disabled=true;
+    form.querySelector('[data-stage-eight-save-close]').disabled=true;
+    progress.hidden=false;
+    const progressText=progress.querySelector('span');
+    const progressBar=progress.querySelector('i');
+    try{
+      const files=await creatorStageEightMediaFiles(current);
+      progressText.textContent=files.length?tr('Preparando imágenes…','Preparing images…'):tr('Preparando publicación…','Preparing publication…');
+      progressBar.style.width='5%';
+      const result=await requestCreatorPublish(current,files,p=>{
+        if(p?.mediaFileIds){
+          const latest=readCreatorDraft()||current;
+          saveCreatorDraft({...latest,stage8MediaFileIds:p.mediaFileIds,updatedAt:new Date().toISOString()})
+        }
+        const total=Math.max(1,Number(p?.total||files.length||1));
+        const done=Math.max(0,Number(p?.current||0));
+        const percent=p?.phase==='publish'?92:Math.min(85,Math.round((done/total)*80)+5);
+        progressBar.style.width=percent+'%';
+        progressText.textContent=String(p?.message||tr('Publicando…','Publishing…'))
+      });
+      progressBar.style.width='100%';
+      progressText.textContent=tr('Publicación confirmada.','Publication confirmed.');
+      await clearCreatorPublishedDraft();
+      showStageEightComplete(layerEl,current,result)
+    }catch(err){
+      if(err?.mediaFileIds){
+        const latest=readCreatorDraft()||current;
+        saveCreatorDraft({...latest,stage8MediaFileIds:err.mediaFileIds,updatedAt:new Date().toISOString()})
+      }
+      status.textContent=String(err?.message||err||tr('No se pudo publicar. El borrador se conserva para reintentar.','Could not publish. The draft is preserved for retry.'));
+      progressBar.style.width='0%';
+      progress.hidden=true;
+      publish.disabled=false;
+      form.querySelector('[data-stage-eight-back]').disabled=false;
+      form.querySelector('[data-stage-eight-save-close]').disabled=false
+    }
+  })
+}
+function openCreateStageEight(){
+  if(!canCreate())return;
+  const draft=readCreatorDraft()||{};
+  const validation=creatorStageEightValidation(draft);
+  if(validation){openCreateStageSeven();return}
+  const next={...draft,stage:8,schemaVersion:Math.max(8,Number(draft.schemaVersion||0)),creatorPublishKey:creatorStageEightPublishKey(draft),updatedAt:new Date().toISOString()};
+  saveCreatorDraft(next);
+  const el=layer(tr('Crear ficha técnica','Create technical sheet'),creatorStageEightMarkup(next));
+  el.querySelector('.nexoWorkspaceModal')?.classList.add('nexoCreatorModalWide','nexoCreatorModalStageEight');
+  bindCreatorStageEight(el,next)
+}
+
 function openCreateFlow(){
   if(!canCreate())return;
   const draft=readCreatorDraft();
+  if(draft&&draft.stage7Complete===true&&draft.title&&draft.collectionId){openCreateStageEight();return}
   if(draft&&Number(draft.stage||0)>=7&&draft.stage6Complete===true&&draft.title&&draft.collectionId){openCreateStageSeven();return}
   if(draft&&Number(draft.stage||0)>=6&&draft.stage5Complete===true&&draft.title&&draft.collectionId){openCreateStageSix();return}
   if(draft&&Number(draft.stage||0)>=5&&draft.stage4Complete===true&&draft.title&&draft.collectionId){openCreateStageFive();return}
@@ -2285,6 +2495,38 @@ window.addEventListener('message',e=>{
       pendingCollectionRequests.delete(String(p.requestId||''));
       if(m.type==='NEXO_DM_COLLECTION_CREATED'&&p.ok!==false)wait.resolve(p.collection||p.data||p);
       else wait.reject(new Error(String(p.error||tr('No se pudo crear la colección.','Could not create collection.'))))
+    }
+    return
+  }
+  if(m.type==='NEXO_DM_CREATOR_PUBLISH_PROGRESS'){
+    const p=m.payload||{};
+    const wait=pendingCreatorPublishRequests.get(String(p.requestId||''));
+    if(wait){
+      if(p.mediaFileIds){
+        const latest=readCreatorDraft();
+        if(latest)saveCreatorDraft({...latest,stage8MediaFileIds:p.mediaFileIds,updatedAt:new Date().toISOString()})
+      }
+      try{wait.onProgress?.(p)}catch(_){}
+    }
+    return
+  }
+  if(m.type==='NEXO_DM_CREATOR_PUBLISH_RESULT'){
+    const p=m.payload||{};
+    const requestId=String(p.requestId||'');
+    const wait=pendingCreatorPublishRequests.get(requestId);
+    if(wait){
+      clearTimeout(wait.timer);
+      pendingCreatorPublishRequests.delete(requestId);
+      if(p.mediaFileIds){
+        const latest=readCreatorDraft();
+        if(latest)saveCreatorDraft({...latest,stage8MediaFileIds:p.mediaFileIds,updatedAt:new Date().toISOString()})
+      }
+      if(p.ok!==false)wait.resolve(p.result||p.data||p);
+      else{
+        const error=new Error(String(p.error||tr('No se pudo publicar la ficha.','Could not publish the sheet.')));
+        error.mediaFileIds=p.mediaFileIds||null;
+        wait.reject(error)
+      }
     }
     return
   }
