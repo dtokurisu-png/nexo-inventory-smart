@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261012-62';
+const VERSION='20261012-63';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -2349,6 +2349,20 @@ function setDevelopmentView(view){
   if(developmentView==='catalog')requestAnimationFrame(syncCatalogScrollControls)
 }
 
+function applyRequestedDevelopmentView(){
+  let requested='';
+  try{requested=new URLSearchParams(location.search).get('nxoView')||''}catch(_){}
+  if(requested==='tree'&&developmentSession?.isWonder===true)setDevelopmentView('tree');
+  else setDevelopmentView('catalog');
+  if(requested){
+    try{
+      const u=new URL(location.href);
+      u.searchParams.delete('nxoView');
+      history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)
+    }catch(_){}
+  }
+}
+
 function bindDevelopmentTree(){
   document.getElementById('nxo-dev-tree-open')?.addEventListener('click',()=>setDevelopmentView('tree'),{signal:runtimeAbort.signal});
   document.getElementById('nxo-dev-tree-close')?.addEventListener('click',()=>setDevelopmentView('catalog'),{signal:runtimeAbort.signal})
@@ -2533,6 +2547,7 @@ async function start(){
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
   mountDevelopmentHeader();
   ensureDevelopmentApp();
+  applyRequestedDevelopmentView();
   ensurePreviewPanel();
   bindPreviewDelegation();
   bindFeatureInterception();
