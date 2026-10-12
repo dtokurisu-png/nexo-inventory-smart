@@ -706,7 +706,7 @@ function saveCreatorComponents(ingredients,{complete=false}={}){
   });
   merged.push(...remaining);
   const ordered=merged.map((row,index)=>({...row,sortOrder:index+1}));
-  const next={...draft,components:ordered,stage:Math.max(3,Number(draft.stage||0)),stage3Complete:complete===true?true:draft.stage3Complete===true,schemaVersion:Math.max(3,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
+  const next={...draft,components:ordered,stage:Math.max(3,Number(draft.stage||0)),stage3Complete:complete===true?true:draft.stage3Complete===true,stage4Complete:false,stage5Complete:false,stage6Complete:false,stage7Complete:false,stage6Links:[],mainMopComplete:false,schemaVersion:Math.max(3,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
   saveCreatorDraft(next);
   return next
 }
@@ -1012,7 +1012,9 @@ function saveStageFourComponents(rows,{complete=false}={}){
     stage4Complete:complete===true?true:draft.stage4Complete===true,
     stage5Complete:false,
     stage6Complete:false,
+    stage7Complete:false,
     stage6Links:[],
+    mainMopComplete:false,
     schemaVersion:Math.max(4,Number(draft.schemaVersion||0)),
     updatedAt:new Date().toISOString()
   };
@@ -1450,10 +1452,10 @@ function creatorStageFiveSavePreparation(draftId,preparation){
   const draft=readCreatorDraft()||{};
   const rows=creatorAllComponents(draft).map(row=>{
     if(row?.preparationSource!=='pending'||String(row?.pendingPreparation?.draftId||'')!==String(draftId||''))return row;
-    const nextPreparation={...row.pendingPreparation,...preparation,recipeType:'SUBRECIPE',draftId:String(draftId||row.pendingPreparation?.draftId||''),updatedAt:new Date().toISOString()};
+    const nextPreparation={...row.pendingPreparation,...preparation,recipeType:'SUBRECIPE',draftId:String(draftId||row.pendingPreparation?.draftId||''),mopComplete:false,updatedAt:new Date().toISOString()};
     return {...row,pendingPreparation:nextPreparation,displayEs:String(nextPreparation.titleEs||nextPreparation.titleEn||row.displayEs||''),displayEn:String(nextPreparation.titleEn||nextPreparation.titleEs||row.displayEn||'')}
   });
-  const next={...draft,components:rows,stage:Math.max(5,Number(draft.stage||0)),stage5Complete:false,stage6Complete:false,stage6Links:[],schemaVersion:Math.max(5,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
+  const next={...draft,components:rows,stage:Math.max(5,Number(draft.stage||0)),stage5Complete:false,stage6Complete:false,stage7Complete:false,stage6Links:[],schemaVersion:Math.max(5,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
   saveCreatorDraft(next);
   return next
 }
@@ -1688,7 +1690,7 @@ function bindCreatorStageFive(layerEl,draft){
       form.querySelector('[data-creator-status]').textContent=creatorStageFiveValidation(invalid.pendingPreparation)||tr('Guarda esta preparación como lista antes de completar la etapa.','Save this preparation as ready before completing the stage.');
       return
     }
-    const next={...current,stage:Math.max(5,Number(current.stage||0)),stage5Complete:true,schemaVersion:Math.max(5,Number(current.schemaVersion||0)),updatedAt:new Date().toISOString()};
+    const next={...current,stage:Math.max(5,Number(current.stage||0)),stage5Complete:true,stage6Complete:false,stage7Complete:false,stage6Links:[],schemaVersion:Math.max(5,Number(current.schemaVersion||0)),updatedAt:new Date().toISOString()};
     saveCreatorDraft(next);showStageFiveComplete(layerEl,next)
   });
   renderStageFiveSelector(form);renderStageFiveEditor(form)
@@ -1838,10 +1840,10 @@ function showStageSixComplete(layerEl,draft){
     '<h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3>'+
     '<div class="nexoCreatorSummary"><div><span>'+esc(tr('Vínculos existentes','Existing links'))+'</span><strong>'+existing+'</strong></div><div><span>'+esc(tr('Vínculos locales','Local links'))+'</span><strong>'+local+'</strong></div></div>'+
     '<p>'+esc(tr('La composición ya tiene referencias inequívocas. Los tokens local:<draftId> permanecen locales y se traducirán a IDs reales únicamente durante la publicación final.','The composition now has unambiguous references. local:<draftId> tokens remain local and will be translated to real IDs only during final publication.'))+'</p>'+
-    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-six-edit>'+esc(tr('Revisar etapa 6','Review stage 6'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-six-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-six-edit>'+esc(tr('Revisar etapa 6','Review stage 6'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-seven-open>'+esc(tr('Continuar a etapa 7','Continue to stage 7'))+'</button></div>'+
   '</div>';
   body.querySelector('[data-stage-six-edit]').onclick=()=>openCreateStageSix();
-  body.querySelector('[data-stage-six-close]').onclick=closeLayer
+  body.querySelector('[data-stage-seven-open]').onclick=()=>openCreateStageSeven()
 }
 function bindCreatorStageSix(layerEl){
   const form=layerEl.querySelector('[data-nexo-creator-stage-six]');
@@ -1879,9 +1881,377 @@ function openCreateStageSix(){
   bindCreatorStageSix(el)
 }
 
+
+function creatorStageSevenSteps(recipe){
+  return (Array.isArray(recipe?.mopSteps)?recipe.mopSteps:[]).filter(Boolean).slice().sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0))
+}
+function creatorStageSevenTargets(draft){
+  const main={
+    key:'main',
+    kind:'main',
+    recipe:draft,
+    label:String(lang()==='en'?(draft?.titleEn||draft?.titleEs||draft?.title||''):(draft?.titleEs||draft?.titleEn||draft?.title||''))||tr('Ficha principal','Main sheet'),
+    components:creatorAllComponents(draft)
+  };
+  const locals=creatorPendingPreparations(draft).map(row=>{
+    const p=row.pendingPreparation||{};
+    return {
+      key:'subrecipe:'+String(p.draftId||''),
+      kind:'subrecipe',
+      recipe:p,
+      ownerComponentDraftId:String(row.draftId||''),
+      label:creatorStageFivePreparationName(row),
+      components:creatorStageFiveIngredients(p)
+    }
+  });
+  return [main,...locals]
+}
+function creatorStageSevenTarget(draft,key){
+  return creatorStageSevenTargets(draft).find(target=>String(target.key)===String(key||''))||null
+}
+function creatorStageSevenComponentName(row){
+  if(String(row?.componentType||'').toUpperCase()==='SUBRECIPE')return creatorStageFourComponentName(row);
+  return creatorComponentDisplay(row)||String(lang()==='en'?(row?.displayEn||row?.displayEs||''):(row?.displayEs||row?.displayEn||''))||tr('Componente','Component')
+}
+function creatorStageSevenRefSnapshot(row){
+  return {
+    componentDraftId:String(row?.draftId||''),
+    componentType:String(row?.componentType||'').toUpperCase()||'INGREDIENT',
+    targetIngredientId:String(row?.targetIngredientId||''),
+    targetRecipeId:String(row?.targetRecipeId||''),
+    targetPreparationId:String(row?.targetPreparationId||''),
+    displayEs:String(row?.displayEs||''),
+    displayEn:String(row?.displayEn||''),
+    quantity:row?.quantity===undefined?null:row.quantity,
+    unitEs:String(row?.unitEs||''),
+    unitEn:String(row?.unitEn||''),
+    quantityMode:'COMPONENT_BASE'
+  }
+}
+function creatorStageSevenCompile(steps,language){
+  const key=language==='en'?'textEn':'textEs';
+  const fallback=language==='en'?'textEs':'textEn';
+  return steps.map((step,index)=>{
+    const body=String(step?.[key]||step?.[fallback]||'').trim();
+    return body?(index+1)+'. '+body:''
+  }).filter(Boolean).join('\n\n')
+}
+function creatorStageSevenTargetComplete(target){
+  return target?.kind==='main'?target?.recipe?.mainMopComplete===true:target?.recipe?.mopComplete===true
+}
+function creatorStageSevenStepsSignature(steps){
+  return JSON.stringify((Array.isArray(steps)?steps:[]).map((step,index)=>({
+    draftId:String(step?.draftId||''),
+    textEs:String(step?.textEs||'').trim(),
+    textEn:String(step?.textEn||'').trim(),
+    references:(Array.isArray(step?.references)?step.references:[]).map(ref=>({
+      componentDraftId:String(ref?.componentDraftId||''),
+      componentType:String(ref?.componentType||''),
+      targetIngredientId:String(ref?.targetIngredientId||''),
+      targetRecipeId:String(ref?.targetRecipeId||''),
+      targetPreparationId:String(ref?.targetPreparationId||''),
+      displayEs:String(ref?.displayEs||''),
+      displayEn:String(ref?.displayEn||''),
+      quantity:ref?.quantity===undefined?null:ref.quantity,
+      unitEs:String(ref?.unitEs||''),
+      unitEn:String(ref?.unitEn||''),
+      quantityMode:String(ref?.quantityMode||'COMPONENT_BASE')
+    })),
+    sortOrder:index+1
+  })))
+}
+function creatorStageSevenValidation(target){
+  if(!target)return tr('No se encontró la ficha del MOP.','MOP sheet target was not found.');
+  const steps=creatorStageSevenSteps(target.recipe);
+  if(!steps.length)return tr('Añade al menos un paso al MOP.','Add at least one MOP step.');
+  const available=new Set((target.components||[]).map(row=>String(row?.draftId||'')).filter(Boolean));
+  const ids=new Set();
+  for(const step of steps){
+    const id=String(step?.draftId||'').trim();
+    if(!id)return tr('Hay un paso sin identificador local.','A step is missing its local identifier.');
+    if(ids.has(id))return tr('Hay identificadores de paso duplicados.','There are duplicated step identifiers.');
+    ids.add(id);
+    if(!String(step.textEs||'').trim()&&!String(step.textEn||'').trim())return tr('Todos los pasos deben tener texto en al menos un idioma.','Every step needs text in at least one language.');
+    const refs=new Set();
+    for(const ref of Array.isArray(step.references)?step.references:[]){
+      const componentId=String(ref?.componentDraftId||'').trim();
+      if(!componentId||!available.has(componentId))return tr('Un paso contiene una referencia a un componente que ya no existe.','A step references a component that no longer exists.');
+      if(refs.has(componentId))return tr('Un paso contiene la misma referencia más de una vez.','A step contains the same reference more than once.');
+      refs.add(componentId)
+    }
+  }
+  return ''
+}
+function creatorStageSevenSaveTarget(targetKey,steps,{complete=false}={}){
+  const draft=readCreatorDraft()||{};
+  const target=creatorStageSevenTarget(draft,targetKey);
+  if(!target)return null;
+  const normalized=(Array.isArray(steps)?steps:[]).map((step,index)=>({
+    ...step,
+    draftId:String(step?.draftId||creatorDraftId('mop-step')),
+    textEs:String(step?.textEs||'').trim(),
+    textEn:String(step?.textEn||'').trim(),
+    references:Array.isArray(step?.references)?step.references:[],
+    sortOrder:index+1
+  }));
+  const unchanged=creatorStageSevenStepsSignature(creatorStageSevenSteps(target.recipe))===creatorStageSevenStepsSignature(normalized);
+  const candidate={...target.recipe,mopSteps:normalized};
+  const validation=complete?creatorStageSevenValidation({...target,recipe:candidate}):'';
+  if(validation)return {error:validation};
+  const targetComplete=complete===true?true:(unchanged&&creatorStageSevenTargetComplete(target));
+  const preserveOverall=unchanged&&draft.stage7Complete===true;
+  const methodEs=creatorStageSevenCompile(normalized,'es');
+  const methodEn=creatorStageSevenCompile(normalized,'en');
+  let next;
+  if(target.kind==='main'){
+    next={
+      ...draft,
+      mopSteps:normalized,
+      methodEs,
+      methodEn,
+      mainMopComplete:targetComplete,
+      stage7Complete:preserveOverall,
+      stage:Math.max(7,Number(draft.stage||0)),
+      schemaVersion:Math.max(7,Number(draft.schemaVersion||0)),
+      updatedAt:new Date().toISOString()
+    }
+  }else{
+    const localId=String(target.recipe?.draftId||'');
+    const components=creatorAllComponents(draft).map(row=>{
+      if(row?.preparationSource!=='pending'||String(row?.pendingPreparation?.draftId||'')!==localId)return row;
+      return {
+        ...row,
+        pendingPreparation:{
+          ...row.pendingPreparation,
+          mopSteps:normalized,
+          methodEs,
+          methodEn,
+          mopComplete:targetComplete,
+          updatedAt:new Date().toISOString()
+        }
+      }
+    });
+    next={
+      ...draft,
+      components,
+      stage7Complete:preserveOverall,
+      stage:Math.max(7,Number(draft.stage||0)),
+      schemaVersion:Math.max(7,Number(draft.schemaVersion||0)),
+      updatedAt:new Date().toISOString()
+    }
+  }
+  saveCreatorDraft(next);
+  return {draft:next}
+}
+function creatorStageSevenStepMarkup(step,index,total,target){
+  const selected=new Set((Array.isArray(step?.references)?step.references:[]).map(ref=>String(ref?.componentDraftId||'')));
+  const refs=(target.components||[]).map(row=>{
+    const id=String(row?.draftId||'');
+    const qty=row?.quantity===null||row?.quantity===undefined||row?.quantity===''?'':String(row.quantity);
+    const unit=String(row?.unitEs||row?.unitEn||'');
+    const meta=[qty,unit].filter(Boolean).join(' ');
+    const type=String(row?.componentType||'').toUpperCase()==='SUBRECIPE'?tr('Preparación','Preparation'):tr('Ingrediente','Ingredient');
+    return '<label class="nexoCreatorMopRef"><input type="checkbox" data-stage-seven-ref="'+esc(id)+'" '+(selected.has(id)?'checked':'')+'><span><strong>'+esc(creatorStageSevenComponentName(row))+'</strong><small>'+esc(type+(meta?' · '+meta:''))+'</small></span></label>'
+  }).join('');
+  const refCount=selected.size;
+  return '<article class="nexoCreatorMopStep" data-stage-seven-step="'+esc(step.draftId)+'">'+
+    '<div class="nexoCreatorMopStepHead"><div><span>'+esc(tr('Paso','Step'))+' '+(index+1)+'</span><strong>'+esc(String(step.textEs||step.textEn||tr('Nuevo paso','New step')).slice(0,80))+'</strong></div><div class="nexoCreatorMopStepActions"><button type="button" data-stage-seven-up '+(index===0?'disabled':'')+' title="'+esc(tr('Subir','Move up'))+'">↑</button><button type="button" data-stage-seven-down '+(index===total-1?'disabled':'')+' title="'+esc(tr('Bajar','Move down'))+'">↓</button><button type="button" data-stage-seven-remove title="'+esc(tr('Eliminar','Remove'))+'">×</button></div></div>'+
+    '<div class="nexoCreatorTwoCols"><label class="nexoCreatorField"><span>'+esc(tr('Instrucción ES','Instruction ES'))+'</span><textarea data-stage-seven-text-es maxlength="3000" rows="4" placeholder="'+esc(tr('Ej. Mezclar hasta integrar por completo.','E.g. Mix until fully combined.'))+'">'+esc(step.textEs||'')+'</textarea></label><label class="nexoCreatorField"><span>'+esc(tr('Instrucción EN','Instruction EN'))+'</span><textarea data-stage-seven-text-en maxlength="3000" rows="4" placeholder="E.g. Mix until fully combined.">'+esc(step.textEn||'')+'</textarea></label></div>'+
+    '<details class="nexoCreatorMopRefs" '+(refCount?'open':'')+'><summary>'+esc(tr('Vincular componentes','Link components'))+' · '+refCount+' '+esc(tr('seleccionado(s)','selected'))+'</summary>'+(refs?'<div class="nexoCreatorMopRefGrid">'+refs+'</div>':'<p>'+esc(tr('Este MOP no tiene componentes disponibles para vincular.','This MOP has no available components to link.'))+'</p>')+'</details>'+
+  '</article>'
+}
+function creatorStageSevenEditorMarkup(target){
+  const steps=creatorStageSevenSteps(target.recipe);
+  const complete=creatorStageSevenTargetComplete(target)&&!creatorStageSevenValidation(target);
+  const refs=steps.reduce((sum,step)=>sum+(Array.isArray(step.references)?step.references.length:0),0);
+  return '<section class="nexoCreatorStageSevenEditor" data-stage-seven-target="'+esc(target.key)+'">'+
+    '<div class="nexoCreatorStageSevenEditorHead"><div><span>'+esc(target.kind==='main'?tr('Ficha principal','Main sheet'):tr('SUBRECIPE local','Local SUBRECIPE'))+'</span><strong>'+esc(target.label)+'</strong></div><b class="'+(complete?'ready':'')+'">'+esc(complete?tr('MOP listo','MOP ready'):tr('En edición','Editing'))+'</b></div>'+
+    '<div class="nexoCreatorMopHint">'+esc(tr('Escribe los pasos en orden. Si incluyes cantidades como “250 g” dentro del texto, el motor actual puede escalarlas con Tandas. Las referencias guardan además qué componente base utiliza cada paso.','Write the steps in order. If you include quantities such as “250 g” in the text, the current engine can scale them with Batches. References also preserve which base component each step uses.'))+'</div>'+
+    '<div class="nexoCreatorMopStats"><span>'+steps.length+' '+esc(tr(steps.length===1?'paso':'pasos',steps.length===1?'step':'steps'))+'</span><span>'+refs+' '+esc(tr(refs===1?'referencia':'referencias',refs===1?'reference':'references'))+'</span></div>'+
+    '<div class="nexoCreatorMopStepList" data-stage-seven-step-list>'+steps.map((step,index)=>creatorStageSevenStepMarkup(step,index,steps.length,target)).join('')+'</div>'+
+    '<button type="button" class="nexoWorkspaceBtn wide nexoCreatorMopAdd" data-stage-seven-add-step>'+icon('nuevo')+'<span>'+esc(tr('Añadir paso','Add step'))+'</span></button>'+
+    '<div class="nexoCreatorStageSevenLocalActions"><button type="button" class="nexoWorkspaceBtn primary" data-stage-seven-complete-target>'+esc(tr('Guardar MOP como listo','Save MOP as ready'))+'</button></div>'+
+  '</section>'
+}
+function creatorStageSevenMarkup(draft={}){
+  const targets=creatorStageSevenTargets(draft);
+  const ready=targets.filter(target=>creatorStageSevenTargetComplete(target)&&!creatorStageSevenValidation(target)).length;
+  const options=targets.map(target=>'<option value="'+esc(target.key)+'">'+(creatorStageSevenTargetComplete(target)&&!creatorStageSevenValidation(target)?'✓ ':'')+esc(target.label)+'</option>').join('');
+  return '<form class="nexoCreatorStage nexoCreatorStageSeven" data-nexo-creator-stage-seven novalidate>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 7 de 8','Stage 7 of 8'))+'</span><strong>'+esc(tr('MOP estructurado','Structured MOP'))+'</strong></div>'+
+    '<div class="nexoCreatorStageSummary"><span>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</span><strong data-stage-seven-count>'+ready+' / '+targets.length+' '+esc(tr('MOP listos','MOPs ready'))+'</strong></div>'+
+    '<p class="nexoCreatorIntro">'+esc(tr('Construye la metodología de la ficha principal y de cada subreceta nueva. Cada paso puede referenciar los componentes que utiliza; el texto final seguirá siendo compatible con el MOP actual.','Build the method for the main sheet and every new subrecipe. Each step can reference the components it uses; the final text remains compatible with the current MOP.'))+'</p>'+
+    '<label class="nexoCreatorField nexoCreatorStageSevenSelector"><span>'+esc(tr('Ficha a documentar','Sheet to document'))+'</span><select data-stage-seven-select>'+options+'</select></label>'+
+    '<div data-stage-seven-editor></div>'+
+    '<div class="nexoCreatorStatus" data-creator-status aria-live="polite"></div>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-seven-back>'+esc(tr('← Etapa 6','← Stage 6'))+'</button><button type="button" class="nexoWorkspaceBtn" data-stage-seven-save-close>'+esc(tr('Guardar y cerrar','Save & close'))+'</button><button type="submit" class="nexoWorkspaceBtn primary">'+esc(tr('Completar etapa 7','Complete stage 7'))+'</button></div>'+
+  '</form>'
+}
+function creatorStageSevenStepsFromForm(form,target){
+  const available=new Map((target.components||[]).map(row=>[String(row?.draftId||''),row]));
+  const steps=[];
+  form.querySelectorAll('[data-stage-seven-step]').forEach((el,index)=>{
+    const references=[];
+    el.querySelectorAll('[data-stage-seven-ref]:checked').forEach(input=>{
+      const row=available.get(String(input.dataset.stageSevenRef||''));
+      if(row)references.push(creatorStageSevenRefSnapshot(row))
+    });
+    steps.push({
+      draftId:String(el.dataset.stageSevenStep||creatorDraftId('mop-step')),
+      textEs:String(el.querySelector('[data-stage-seven-text-es]')?.value||'').trim(),
+      textEn:String(el.querySelector('[data-stage-seven-text-en]')?.value||'').trim(),
+      references,
+      sortOrder:index+1
+    })
+  });
+  return steps
+}
+function saveStageSevenTargetFromForm(form,{complete=false,silent=false}={}){
+  const target=creatorStageSevenTarget(readCreatorDraft()||{},String(form.dataset.stageSevenActive||''));
+  if(!target)return null;
+  const result=creatorStageSevenSaveTarget(target.key,creatorStageSevenStepsFromForm(form,target),{complete});
+  if(result?.error&&!silent)form.querySelector('[data-creator-status]').textContent=result.error;
+  return result
+}
+function renderStageSevenSelector(form){
+  const targets=creatorStageSevenTargets(readCreatorDraft()||{});
+  const select=form.querySelector('[data-stage-seven-select]');
+  const current=String(form.dataset.stageSevenActive||select?.value||targets[0]?.key||'main');
+  if(select)select.innerHTML=targets.map(target=>{
+    const done=creatorStageSevenTargetComplete(target)&&!creatorStageSevenValidation(target);
+    return '<option value="'+esc(target.key)+'" '+(target.key===current?'selected':'')+'>'+(done?'✓ ':'')+esc(target.label)+'</option>'
+  }).join('');
+  const ready=targets.filter(target=>creatorStageSevenTargetComplete(target)&&!creatorStageSevenValidation(target)).length;
+  const count=form.querySelector('[data-stage-seven-count]');
+  if(count)count.textContent=ready+' / '+targets.length+' '+tr('MOP listos','MOPs ready')
+}
+function bindStageSevenEditor(form){
+  const target=creatorStageSevenTarget(readCreatorDraft()||{},form.dataset.stageSevenActive);
+  const editor=form.querySelector('[data-stage-seven-editor]');
+  if(!target||!editor)return;
+  const persist=()=>saveStageSevenTargetFromForm(form,{silent:true});
+  editor.querySelectorAll('[data-stage-seven-step]').forEach(el=>{
+    ['input','change'].forEach(type=>el.addEventListener(type,persist));
+    el.querySelector('[data-stage-seven-up]').onclick=()=>{
+      const result=persist();if(!result||result.error)return;
+      const current=creatorStageSevenTarget(readCreatorDraft()||{},form.dataset.stageSevenActive);
+      const steps=creatorStageSevenSteps(current.recipe);
+      const index=steps.findIndex(step=>String(step.draftId)===String(el.dataset.stageSevenStep||''));
+      if(index>0){[steps[index-1],steps[index]]=[steps[index],steps[index-1]];creatorStageSevenSaveTarget(current.key,steps);renderStageSevenEditor(form)}
+    };
+    el.querySelector('[data-stage-seven-down]').onclick=()=>{
+      const result=persist();if(!result||result.error)return;
+      const current=creatorStageSevenTarget(readCreatorDraft()||{},form.dataset.stageSevenActive);
+      const steps=creatorStageSevenSteps(current.recipe);
+      const index=steps.findIndex(step=>String(step.draftId)===String(el.dataset.stageSevenStep||''));
+      if(index>=0&&index<steps.length-1){[steps[index],steps[index+1]]=[steps[index+1],steps[index]];creatorStageSevenSaveTarget(current.key,steps);renderStageSevenEditor(form)}
+    };
+    el.querySelector('[data-stage-seven-remove]').onclick=()=>{
+      const result=persist();if(!result||result.error)return;
+      const current=creatorStageSevenTarget(readCreatorDraft()||{},form.dataset.stageSevenActive);
+      const steps=creatorStageSevenSteps(current.recipe).filter(step=>String(step.draftId)!==String(el.dataset.stageSevenStep||''));
+      creatorStageSevenSaveTarget(current.key,steps);renderStageSevenEditor(form)
+    }
+  });
+  editor.querySelector('[data-stage-seven-add-step]').onclick=()=>{
+    const result=persist();if(!result||result.error)return;
+    const current=creatorStageSevenTarget(readCreatorDraft()||{},form.dataset.stageSevenActive);
+    const steps=creatorStageSevenSteps(current.recipe);
+    steps.push({draftId:creatorDraftId('mop-step'),textEs:'',textEn:'',references:[],sortOrder:steps.length+1});
+    creatorStageSevenSaveTarget(current.key,steps);
+    renderStageSevenEditor(form);
+    form.querySelector('[data-stage-seven-editor] [data-stage-seven-step]:last-child [data-stage-seven-text-es]')?.focus()
+  };
+  editor.querySelector('[data-stage-seven-complete-target]').onclick=()=>{
+    const result=saveStageSevenTargetFromForm(form,{complete:true});
+    if(!result||result.error)return;
+    form.querySelector('[data-creator-status]').textContent=tr('MOP guardado como listo.','MOP saved as ready.');
+    renderStageSevenSelector(form);
+    const targets=creatorStageSevenTargets(readCreatorDraft()||{});
+    const remaining=targets.find(item=>!creatorStageSevenTargetComplete(item)||creatorStageSevenValidation(item));
+    if(remaining&&remaining.key!==form.dataset.stageSevenActive){
+      form.dataset.stageSevenActive=remaining.key;
+      const select=form.querySelector('[data-stage-seven-select]');
+      if(select)select.value=remaining.key
+    }
+    renderStageSevenEditor(form)
+  }
+}
+function renderStageSevenEditor(form){
+  const editor=form.querySelector('[data-stage-seven-editor]');
+  if(!editor)return;
+  const target=creatorStageSevenTarget(readCreatorDraft()||{},form.dataset.stageSevenActive);
+  if(!target){editor.innerHTML='';return}
+  editor.innerHTML=creatorStageSevenEditorMarkup(target);
+  bindStageSevenEditor(form)
+}
+function showStageSevenComplete(layerEl,draft){
+  const body=layerEl.querySelector('.nexoWorkspaceModalBody');
+  if(!body)return;
+  const targets=creatorStageSevenTargets(draft);
+  const steps=targets.reduce((sum,target)=>sum+creatorStageSevenSteps(target.recipe).length,0);
+  const refs=targets.reduce((sum,target)=>sum+creatorStageSevenSteps(target.recipe).reduce((n,step)=>n+(Array.isArray(step.references)?step.references.length:0),0),0);
+  body.innerHTML='<div class="nexoCreatorComplete">'+
+    '<div class="nexoWorkspaceEmptyIcon">'+icon('ficha-tecnica')+'</div>'+
+    '<div class="nexoCreatorProgress"><span>'+esc(tr('Etapa 7 de 8','Stage 7 of 8'))+'</span><strong>'+esc(tr('Completada','Complete'))+'</strong></div>'+
+    '<h3>'+esc(draft.title||draft.titleEs||draft.titleEn||'')+'</h3>'+
+    '<div class="nexoCreatorSummary"><div><span>'+esc(tr('MOP documentados','Documented MOPs'))+'</span><strong>'+targets.length+'</strong></div><div><span>'+esc(tr('Pasos / referencias','Steps / references'))+'</span><strong>'+steps+' / '+refs+'</strong></div></div>'+
+    '<p>'+esc(tr('Cada receta nueva del borrador ya tiene un MOP numerado compatible con el motor actual y conserva referencias estructuradas a sus componentes. La Etapa 8 podrá publicar el grafo completo.','Every new recipe in the draft now has a numbered MOP compatible with the current engine and preserves structured component references. Stage 8 can publish the complete graph.'))+'</p>'+
+    '<div class="nexoCreatorActions"><button type="button" class="nexoWorkspaceBtn" data-stage-seven-edit>'+esc(tr('Editar etapa 7','Edit stage 7'))+'</button><button type="button" class="nexoWorkspaceBtn primary" data-stage-seven-close>'+esc(tr('Listo','Done'))+'</button></div>'+
+  '</div>';
+  body.querySelector('[data-stage-seven-edit]').onclick=()=>openCreateStageSeven();
+  body.querySelector('[data-stage-seven-close]').onclick=closeLayer
+}
+function bindCreatorStageSeven(layerEl,draft){
+  const form=layerEl.querySelector('[data-nexo-creator-stage-seven]');
+  if(!form)return;
+  const targets=creatorStageSevenTargets(draft);
+  const select=form.querySelector('[data-stage-seven-select]');
+  form.dataset.stageSevenActive=String(select?.value||targets[0]?.key||'main');
+  select?.addEventListener('change',()=>{
+    saveStageSevenTargetFromForm(form,{silent:true});
+    form.dataset.stageSevenActive=String(select.value||'main');
+    renderStageSevenEditor(form)
+  });
+  form.querySelector('[data-stage-seven-back]').onclick=()=>{saveStageSevenTargetFromForm(form,{silent:true});openCreateStageSix()};
+  form.querySelector('[data-stage-seven-save-close]').onclick=()=>{saveStageSevenTargetFromForm(form,{silent:true});closeLayer()};
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const current=saveStageSevenTargetFromForm(form,{silent:true});
+    if(!current||current.error)return;
+    const latest=readCreatorDraft()||{};
+    const all=creatorStageSevenTargets(latest);
+    const invalid=all.find(target=>!creatorStageSevenTargetComplete(target)||creatorStageSevenValidation(target));
+    if(invalid){
+      form.dataset.stageSevenActive=invalid.key;
+      if(select)select.value=invalid.key;
+      renderStageSevenEditor(form);
+      form.querySelector('[data-creator-status]').textContent=creatorStageSevenValidation(invalid)||tr('Guarda este MOP como listo antes de completar la etapa.','Save this MOP as ready before completing the stage.');
+      return
+    }
+    const next={...latest,stage:Math.max(7,Number(latest.stage||0)),stage7Complete:true,schemaVersion:Math.max(7,Number(latest.schemaVersion||0)),updatedAt:new Date().toISOString()};
+    saveCreatorDraft(next);
+    showStageSevenComplete(layerEl,next)
+  });
+  renderStageSevenSelector(form);
+  renderStageSevenEditor(form)
+}
+function openCreateStageSeven(){
+  if(!canCreate())return;
+  const draft=readCreatorDraft()||{};
+  const audit=creatorStageSixAudit(draft);
+  if(Number(draft.stage||0)<6||draft.stage6Complete!==true||audit.some(item=>!item.ok)){openCreateStageSix();return}
+  const next={...draft,stage:Math.max(7,Number(draft.stage||0)),schemaVersion:Math.max(7,Number(draft.schemaVersion||0)),updatedAt:new Date().toISOString()};
+  saveCreatorDraft(next);
+  const el=layer(tr('Crear ficha técnica','Create technical sheet'),creatorStageSevenMarkup(next));
+  el.querySelector('.nexoWorkspaceModal')?.classList.add('nexoCreatorModalWide','nexoCreatorModalStageSeven');
+  bindCreatorStageSeven(el,next)
+}
+
 function openCreateFlow(){
   if(!canCreate())return;
   const draft=readCreatorDraft();
+  if(draft&&Number(draft.stage||0)>=7&&draft.stage6Complete===true&&draft.title&&draft.collectionId){openCreateStageSeven();return}
   if(draft&&Number(draft.stage||0)>=6&&draft.stage5Complete===true&&draft.title&&draft.collectionId){openCreateStageSix();return}
   if(draft&&Number(draft.stage||0)>=5&&draft.stage4Complete===true&&draft.title&&draft.collectionId){openCreateStageFive();return}
   if(draft&&Number(draft.stage||0)>=4&&draft.title&&draft.collectionId){openCreateStageFour();return}
