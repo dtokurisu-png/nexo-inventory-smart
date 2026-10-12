@@ -108,3 +108,23 @@
 .nexoCreatorStageSixEmpty{min-height:130px}
 @media(max-width:800px){.nexoCreatorStageSixRow{grid-template-columns:34px minmax(0,1fr)}.nexoCreatorStageSixTarget,.nexoCreatorStageSixRow>b{grid-column:2}.nexoCreatorStageSixRow>b{justify-self:start}}
 @media(max-width:520px){.nexoCreatorModalStageSix{width:calc(100vw - 18px)}.nexoCreatorStageSixRow{grid-template-columns:1fr}.nexoCreatorStageSixOrder,.nexoCreatorStageSixTarget,.nexoCreatorStageSixRow>b{grid-column:auto}.nexoCreatorStageSixTarget code{font-size:9px}}
+
+
+.nexoCreatorModalStageSeven{width:min(1160px,calc(100vw - 28px))}
+.nexoCreatorStageSevenSelector{max-width:620px}
+.nexoCreatorStageSevenEditor{display:grid;gap:14px}
+.nexoCreatorStageSevenEditorHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--nxo-border);border-radius:13px;background:var(--nxo-surface)}
+.nexoCreatorStageSevenEditorHead>div{display:grid;gap:3px}.nexoCreatorStageSevenEditorHead span{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--nxo-accent)}.nexoCreatorStageSevenEditorHead strong{font-size:15px;color:var(--nxo-text-primary)}
+.nexoCreatorStageSevenEditorHead>b{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--nxo-text-muted);border:1px solid var(--nxo-border);border-radius:999px;padding:5px 8px}.nexoCreatorStageSevenEditorHead>b.ready{color:var(--nxo-positive);border-color:var(--nxo-positive)}
+.nexoCreatorMopHint{font-size:11px;line-height:1.5;color:var(--nxo-text-muted);padding:10px 12px;border-left:3px solid var(--nxo-accent);background:var(--nxo-accent-soft);border-radius:8px}
+.nexoCreatorMopStats{display:flex;gap:8px;flex-wrap:wrap}.nexoCreatorMopStats span{font-size:9px;font-weight:850;color:var(--nxo-text-secondary);border:1px solid var(--nxo-border);border-radius:999px;padding:4px 7px}
+.nexoCreatorMopStepList{display:grid;gap:12px}
+.nexoCreatorMopStep{display:grid;gap:11px;padding:13px;border:1px solid var(--nxo-border);border-radius:15px;background:var(--nxo-surface)}
+.nexoCreatorMopStepHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.nexoCreatorMopStepHead>div:first-child{display:grid;gap:2px;min-width:0}.nexoCreatorMopStepHead span{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--nxo-accent)}.nexoCreatorMopStepHead strong{font-size:12px;color:var(--nxo-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nexoCreatorMopStepActions{display:flex;gap:5px}.nexoCreatorMopStepActions button{width:29px;height:29px;border:1px solid var(--nxo-border);border-radius:8px;background:var(--nxo-button-secondary-bg);color:var(--nxo-button-secondary-text);font-weight:900;cursor:pointer}.nexoCreatorMopStepActions button:disabled{opacity:.35;cursor:not-allowed}
+.nexoCreatorMopRefs{border:1px dashed var(--nxo-border);border-radius:11px;padding:8px 10px}.nexoCreatorMopRefs summary{cursor:pointer;font-size:10px;font-weight:850;color:var(--nxo-text-secondary)}.nexoCreatorMopRefs>p{margin:8px 0 0;color:var(--nxo-text-muted);font-size:10px}
+.nexoCreatorMopRefGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
+.nexoCreatorMopRef{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid var(--nxo-border);border-radius:10px;background:var(--nxo-surface-raised);cursor:pointer}.nexoCreatorMopRef input{margin-top:2px;accent-color:var(--nxo-accent)}.nexoCreatorMopRef span{display:grid;gap:2px;min-width:0}.nexoCreatorMopRef strong{font-size:10px;color:var(--nxo-text-primary)}.nexoCreatorMopRef small{font-size:9px;color:var(--nxo-text-muted)}
+.nexoCreatorMopAdd{justify-content:center}.nexoCreatorStageSevenLocalActions{display:flex;justify-content:flex-end}
+@media(max-width:760px){.nexoCreatorMopRefGrid{grid-template-columns:1fr}.nexoCreatorStageSevenEditorHead{align-items:flex-start;flex-direction:column}}
+@media(max-width:560px){.nexoCreatorModalStageSeven{width:calc(100vw - 18px)}.nexoCreatorMopStepHead{align-items:flex-start}.nexoCreatorMopStepHead>div:first-child{max-width:calc(100% - 106px)}.nexoCreatorStageSevenLocalActions .nexoWorkspaceBtn{width:100%}}
