@@ -224,8 +224,21 @@ function sheetEditorShell(){
           '<div class="nexoSheetIngredientList" data-sheet-ingredient-list></div>'+
         '</section>'+
         '<section class="nexoSheetEditorSection">'+
-          '<div class="nexoSheetEditorSectionHead"><div><span>'+esc(tr('Método','Method'))+'</span><h2>MOP</h2></div></div>'+
-          '<p class="nexoSheetEditorHelp">'+esc(tr('Escribe el método como texto normal. Usa el + junto al cursor para insertar un ingrediente de la composición como dato dinámico.','Write the method as normal text. Use the + beside the cursor to insert a composition ingredient as dynamic data.'))+'</p>'+
+          '<div class="nexoSheetEditorSectionHead nexoMopSectionHead">'+
+            '<div><span>'+esc(tr('Método','Method'))+'</span><h2>MOP</h2></div>'+
+            '<div class="nexoMopHeadActions">'+
+              '<div class="nexoMopHistoryActions" role="group" aria-label="'+esc(tr('Historial del MOP','MOP history'))+'">'+
+                '<button type="button" class="nexoMopHistoryBtn" data-mop-undo aria-label="'+esc(tr('Deshacer','Undo'))+'" title="'+esc(tr('Deshacer','Undo'))+'" disabled>↶</button>'+
+                '<button type="button" class="nexoMopHistoryBtn" data-mop-redo aria-label="'+esc(tr('Rehacer','Redo'))+'" title="'+esc(tr('Rehacer','Redo'))+'" disabled>↷</button>'+
+              '</div>'+
+              '<div class="nexoMopInfoWrap" data-mop-info-wrap>'+
+                '<button type="button" class="nexoMopInfoBtn" data-mop-info aria-label="'+esc(tr('Información del MOP','MOP information'))+'" aria-expanded="false">!</button>'+
+                '<div class="nexoMopInfoPopover" role="tooltip">'+esc(tr('Escribe el método como texto normal y usa el + junto al cursor para insertar ingredientes dinámicos. Cuando completes una acción, usa Establecer paso: el contenido se guardará arriba y el área quedará lista para el siguiente paso.','Write the method as normal text and use the + beside the cursor to insert dynamic ingredients. When an action is complete, use Set step: the content will be saved above and the editor will be cleared for the next step.'))+'</div>'+
+              '</div>'+
+              '<button type="button" class="nexoMopSetStepBtn" data-mop-set-step disabled><span>'+esc(tr('Establecer paso','Set step'))+'</span><strong aria-hidden="true">+</strong></button>'+
+            '</div>'+
+          '</div>'+
+          '<div class="nexoMopStepsList" data-mop-steps-list></div>'+
           '<div class="nexoMopEditorWrap" data-mop-wrap>'+
             '<div class="nexoMopEditor" data-sheet-mop-editor contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="'+esc(tr('Escribe aquí el MOP…','Write the MOP here…'))+'"></div>'+
             '<button type="button" class="nexoMopCaretPlus" data-mop-caret-plus aria-label="'+esc(tr('Insertar ingrediente dinámico','Insert dynamic ingredient'))+'" hidden>+</button>'+
@@ -245,6 +258,10 @@ function sheetEditorTemplate(){
     photoFile:null,
     photoUrl:'',
     components:[],
+    steps:[],
+    mopHistory:[],
+    mopHistoryIndex:-1,
+    restoringMopHistory:false,
     savedMopRange:null,
     mopChoice:null,
     restoringMopRange:false,
@@ -263,6 +280,12 @@ function sheetEditorTemplate(){
   const existingPicker=layer.querySelector('[data-sheet-existing-picker]');
   const editor=layer.querySelector('[data-sheet-mop-editor]');
   const mopWrap=layer.querySelector('[data-mop-wrap]');
+  const mopStepsList=layer.querySelector('[data-mop-steps-list]');
+  const mopUndo=layer.querySelector('[data-mop-undo]');
+  const mopRedo=layer.querySelector('[data-mop-redo]');
+  const mopSetStep=layer.querySelector('[data-mop-set-step]');
+  const mopInfo=layer.querySelector('[data-mop-info]');
+  const mopInfoWrap=layer.querySelector('[data-mop-info-wrap]');
   const caretPlus=layer.querySelector('[data-mop-caret-plus]');
   const mopPicker=layer.querySelector('[data-mop-picker]');
   layer.appendChild(mopPicker);
@@ -287,7 +310,7 @@ function sheetEditorTemplate(){
   }
   function allocatedAmount(componentId){
     let total=0;
-    editor.querySelectorAll('[data-mop-component-id="'+CSS.escape(componentId)+'"]').forEach(token=>{
+    layer.querySelectorAll('[data-mop-component-id="'+CSS.escape(componentId)+'"]').forEach(token=>{
       const value=mopAmountNumber(token.dataset.mopAllocatedQuantity);
       if(value!==null)total+=value
     });
@@ -304,17 +327,119 @@ function sheetEditorTemplate(){
     const name=String(component?.name||tr('Ingrediente','Ingredient')).trim();
     return [[quantity,unit].filter(Boolean).join(' '),name].filter(Boolean).join(' ')
   }
+  function syncStepHtmlFromDom(){
+    mopStepsList.querySelectorAll('[data-mop-step-id]').forEach(stepEl=>{
+      const step=state.steps.find(row=>row.id===stepEl.dataset.mopStepId);
+      const body=stepEl.querySelector('[data-mop-step-body]');
+      if(step&&body)step.html=body.innerHTML
+    })
+  }
+  function renderMopSteps(){
+    if(!state.steps.length){
+      mopStepsList.innerHTML='';
+      return
+    }
+    mopStepsList.innerHTML=state.steps.map((step,index)=>
+      '<article class="nexoMopStep" data-mop-step-id="'+esc(step.id)+'">'+
+        '<div class="nexoMopStepIndex" aria-hidden="true">'+(index+1)+'</div>'+
+        '<div class="nexoMopStepBody" data-mop-step-body>'+step.html+'</div>'+
+      '</article>'
+    ).join('')
+  }
+  function mopDraftHasContent(){
+    if(editor.querySelector('[data-mop-component-id]'))return true;
+    return String(editor.textContent||'').replace(/\u200b/g,'').trim().length>0
+  }
+  function mopSnapshot(){
+    return {
+      draft:editor.innerHTML,
+      steps:state.steps.map(step=>({id:step.id,html:step.html}))
+    }
+  }
+  function mopSnapshotKey(snapshot){
+    return JSON.stringify(snapshot)
+  }
+  function updateMopActionButtons(){
+    mopUndo.disabled=state.mopHistoryIndex<=0;
+    mopRedo.disabled=state.mopHistoryIndex<0||state.mopHistoryIndex>=state.mopHistory.length-1;
+    mopSetStep.disabled=!mopDraftHasContent()
+  }
+  function commitMopHistory(){
+    if(state.restoringMopHistory)return;
+    syncStepHtmlFromDom();
+    const snapshot=mopSnapshot();
+    const key=mopSnapshotKey(snapshot);
+    const current=state.mopHistory[state.mopHistoryIndex];
+    if(current&&mopSnapshotKey(current)===key){
+      updateMopActionButtons();
+      return
+    }
+    state.mopHistory=state.mopHistory.slice(0,state.mopHistoryIndex+1);
+    state.mopHistory.push(snapshot);
+    if(state.mopHistory.length>100)state.mopHistory.shift();
+    state.mopHistoryIndex=state.mopHistory.length-1;
+    updateMopActionButtons()
+  }
+  function restoreMopSnapshot(snapshot){
+    if(!snapshot)return;
+    state.restoringMopHistory=true;
+    state.steps=snapshot.steps.map(step=>({id:step.id,html:step.html}));
+    editor.innerHTML=snapshot.draft;
+    renderMopSteps();
+    state.savedMopRange=null;
+    caretPlus.hidden=true;
+    hideMopPicker();
+    refreshMopTokens();
+    state.restoringMopHistory=false;
+    updateMopActionButtons()
+  }
+  function undoMop(){
+    if(state.mopHistoryIndex<=0)return;
+    state.mopHistoryIndex-=1;
+    restoreMopSnapshot(state.mopHistory[state.mopHistoryIndex])
+  }
+  function redoMop(){
+    if(state.mopHistoryIndex>=state.mopHistory.length-1)return;
+    state.mopHistoryIndex+=1;
+    restoreMopSnapshot(state.mopHistory[state.mopHistoryIndex])
+  }
+  function establishMopStep(){
+    if(!mopDraftHasContent())return;
+    hideMopPicker();
+    state.steps.push({id:sheetEditorId('mop-step'),html:editor.innerHTML});
+    editor.innerHTML='';
+    state.savedMopRange=null;
+    caretPlus.hidden=true;
+    renderMopSteps();
+    try{editor.focus({preventScroll:true})}catch(_){editor.focus()}
+    const selection=window.getSelection();
+    if(selection){
+      const range=document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      state.savedMopRange=range.cloneRange();
+      positionCaretPlus(state.savedMopRange)
+    }
+    commitMopHistory()
+  }
+
   function refreshMopTokens(){
-    editor.querySelectorAll('[data-mop-component-id]').forEach(token=>{
+    layer.querySelectorAll('[data-mop-component-id]').forEach(token=>{
       const component=componentById(String(token.dataset.mopComponentId||''));
       if(!component){token.remove();return}
       const quantity=mopAmountNumber(token.dataset.mopAllocatedQuantity);
       if(quantity===null){token.remove();return}
       token.textContent=componentTokenText(component,quantity)
-    })
+    });
+    syncStepHtmlFromDom();
+    updateMopActionButtons()
   }
   function removeComponentTokens(id){
-    editor.querySelectorAll('[data-mop-component-id="'+CSS.escape(id)+'"]').forEach(node=>node.remove())
+    layer.querySelectorAll('[data-mop-component-id="'+CSS.escape(id)+'"]').forEach(node=>node.remove());
+    syncStepHtmlFromDom();
+    commitMopHistory()
   }
   function renderIngredientList(){
     if(!state.components.length){
@@ -647,7 +772,8 @@ function sheetEditorTemplate(){
     selection.removeAllRanges();
     selection.addRange(next);
     state.savedMopRange=next.cloneRange();
-    positionCaretPlus(state.savedMopRange)
+    positionCaretPlus(state.savedMopRange);
+    commitMopHistory()
   }
 
   title.addEventListener('input',()=>{state.title=title.value});
@@ -684,9 +810,19 @@ function sheetEditorTemplate(){
   };
 
   ['keyup','mouseup','input','focus'].forEach(type=>editor.addEventListener(type,rememberMopRange));
+  editor.addEventListener('input',()=>{
+    if(!state.restoringMopHistory)commitMopHistory()
+  });
   editor.addEventListener('blur',()=>setTimeout(()=>{
     if(!mopPicker.matches(':hover')&&!caretPlus.matches(':hover'))caretPlus.hidden=true
   },80));
+  mopUndo.onclick=undoMop;
+  mopRedo.onclick=redoMop;
+  mopSetStep.onclick=establishMopStep;
+  mopInfo.onclick=()=>{
+    const open=mopInfoWrap.classList.toggle('open');
+    mopInfo.setAttribute('aria-expanded',open?'true':'false')
+  };
   caretPlus.addEventListener('mousedown',e=>e.preventDefault());
   caretPlus.onclick=()=>{
     hideUnitPicker();
@@ -720,9 +856,15 @@ function sheetEditorTemplate(){
   layer.addEventListener('mousedown',e=>{
     if(e.target===layer){sheetEditorClose();return}
     if(!mopPicker.hidden&&!e.target.closest('[data-mop-picker]')&&!e.target.closest('[data-mop-caret-plus]'))hideMopPicker();
-    if(!unitPicker.hidden&&!e.target.closest('.nexoSheetUnitPicker')&&!e.target.closest('[data-component-unit-trigger]'))hideUnitPicker()
+    if(!unitPicker.hidden&&!e.target.closest('.nexoSheetUnitPicker')&&!e.target.closest('[data-component-unit-trigger]'))hideUnitPicker();
+    if(!e.target.closest('[data-mop-info-wrap]')){
+      mopInfoWrap.classList.remove('open');
+      mopInfo.setAttribute('aria-expanded','false')
+    }
   });
   renderIngredientList();
+  renderMopSteps();
+  commitMopHistory();
   queueMicrotask(()=>title.focus())
 }
 function openCreateFlow(){
