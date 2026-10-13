@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261013-5';
+const VERSION='20261013-6';
 if(window.NEXO_SHARED_HEADER?.version===VERSION)return;
 
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
@@ -115,7 +115,29 @@ function ensureStyle(){
 .nxo-shared-header[data-theme="day"] .nxo-nav-menu-copy small{color:#71809a}
 .nxo-shared-header .nxo-nav-divider{height:1px;margin:6px 4px;background:var(--nxo-sh-line)}
 .nxo-shared-header .nxo-workspace-group{position:relative}
-.nxo-shared-header .nxo-workspace-arrow{margin-left:auto;font-size:14px;color:var(--nxo-sh-muted)}
+.nxo-shared-header .nxo-workspace-menu-row{display:flex;align-items:stretch;gap:2px}
+.nxo-shared-header .nxo-workspace-menu-row .nxo-workspace-menu-button{flex:1 1 auto;width:auto}
+.nxo-shared-header .nxo-workspace-submenu-toggle{
+  appearance:none;flex:0 0 34px;width:34px;min-height:40px;padding:0;border:0;border-radius:9px;
+  display:grid;place-items:center;background:transparent;color:inherit;cursor:pointer
+}
+.nxo-shared-header .nxo-workspace-submenu-toggle:hover,.nxo-shared-header .nxo-workspace-submenu-toggle:focus-visible,.nxo-shared-header .nxo-workspace-submenu-toggle[aria-expanded="true"]{
+  outline:none;background:rgba(255,255,255,.08)
+}
+.nxo-shared-header[data-theme="day"] .nxo-workspace-submenu-toggle:hover,.nxo-shared-header[data-theme="day"] .nxo-workspace-submenu-toggle:focus-visible,.nxo-shared-header[data-theme="day"] .nxo-workspace-submenu-toggle[aria-expanded="true"]{
+  background:#e6eefc
+}
+.nxo-shared-header .nxo-workspace-arrow{font-size:14px;color:var(--nxo-sh-muted);transition:transform .15s ease}
+.nxo-shared-header .nxo-workspace-submenu-toggle[aria-expanded="true"] .nxo-workspace-arrow{transform:rotate(90deg)}
+.nxo-shared-header[data-theme="day"] .nxo-nav-account-copy small.nxo-nav-account-role{
+  color:#fff3a9!important;border-color:rgba(255,243,169,.55)!important
+}
+.nxo-shared-header[data-theme="day"] .nxo-nav-section-label,
+.nxo-shared-header[data-theme="day"] .nxo-nav-empty,
+.nxo-shared-header[data-theme="day"] .nxo-workspace-arrow,
+.nxo-shared-header[data-theme="day"] .nxo-nav-menu-copy small{
+  color:#5b6780!important
+}
 .nxo-shared-header .nxo-nav-submenu{
   display:none;position:absolute;left:calc(100% - 1px);top:-8px;z-index:196;width:270px;padding:8px;
   border:1px solid var(--nxo-sh-line2);border-radius:13px;background:var(--nxo-sh-panel);box-shadow:var(--nxo-sh-shadow);color:var(--nxo-sh-text)
@@ -212,26 +234,34 @@ function menuToolMarkup(tool,workspaceId=''){
 function personalMenuMarkup(navigation,t){
   const direct=Array.isArray(navigation?.personal?.tools)?navigation.personal.tools:[];
   const workspaces=Array.isArray(navigation?.workspaces)?navigation.workspaces:[];
-  let body='<button type="button" class="nxo-nav-menu-item" data-nxo-personal-home="1">'+iconTag('home','')+'<span class="nxo-nav-menu-copy"><strong>'+esc(t.personal)+'</strong></span></button>';
+  let body='';
+
   if(direct.length){
-    body+='<div class="nxo-nav-divider"></div><div class="nxo-nav-section-label">'+esc(t.personalAccess)+'</div>'+
+    body+='<div class="nxo-nav-section-label">'+esc(t.personalAccess)+'</div>'+
       direct.map(tool=>menuToolMarkup(tool,'')).join('')
   }
+
   if(workspaces.length){
-    body+='<div class="nxo-nav-divider"></div><div class="nxo-nav-section-label">'+esc(t.workspaces)+'</div>';
+    if(body)body+='<div class="nxo-nav-divider"></div>';
+    body+='<div class="nxo-nav-section-label">'+esc(t.workspaces)+'</div>';
     for(const ws of workspaces){
       const tools=Array.isArray(ws.tools)?ws.tools:[];
       body+='<div class="nxo-workspace-group" data-nxo-workspace-group="'+esc(ws.workspaceId||'')+'">'+
-        '<button type="button" class="nxo-workspace-menu-button" data-nxo-workspace-toggle="'+esc(ws.workspaceId||'')+'" data-nxo-workspace-name="'+esc(ws.name||'Workspace')+'">'+
-          iconTag('workspace','')+'<span class="nxo-nav-menu-copy"><strong>'+esc(ws.name||'Workspace')+'</strong></span><span class="nxo-workspace-arrow">›</span>'+
-        '</button>'+
-        '<div class="nxo-nav-submenu">'+
-          '<button type="button" class="nxo-nav-menu-item" data-nxo-workspace-open="'+esc(ws.workspaceId||'')+'" data-nxo-workspace-name="'+esc(ws.name||'Workspace')+'">'+iconTag('workspace','')+'<span class="nxo-nav-menu-copy"><strong>'+esc(t.openWorkspace)+'</strong></span></button>'+
-          (tools.length?'<div class="nxo-nav-divider"></div>'+tools.map(tool=>menuToolMarkup(tool,ws.workspaceId||'')).join(''):'<div class="nxo-nav-empty">'+esc(t.noTools)+'</div>')+
+        '<div class="nxo-workspace-menu-row">'+
+          '<button type="button" class="nxo-workspace-menu-button" data-nxo-workspace-open="'+esc(ws.workspaceId||'')+'" data-nxo-workspace-name="'+esc(ws.name||'Workspace')+'">'+
+            iconTag('workspace','')+'<span class="nxo-nav-menu-copy"><strong>'+esc(ws.name||'Workspace')+'</strong></span>'+
+          '</button>'+
+          (tools.length
+            ?'<button type="button" class="nxo-workspace-submenu-toggle" data-nxo-workspace-toggle="'+esc(ws.workspaceId||'')+'" aria-label="'+esc((t.openTools||'Herramientas')+' · '+(ws.name||'Workspace'))+'" aria-expanded="false"><span class="nxo-workspace-arrow">›</span></button>'
+            :'')+
         '</div>'+
+        (tools.length
+          ?'<div class="nxo-nav-submenu">'+tools.map(tool=>menuToolMarkup(tool,ws.workspaceId||'')).join('')+'</div>'
+          :'')+
       '</div>'
     }
   }
+
   return body
 }
 
@@ -306,7 +336,7 @@ async function loadNavigation(options={}){
         ws.name=String(destination.name)
       }
 
-      if(destination.canOpen===true){
+      if(destination.installed===true){
         const tools=Array.isArray(ws.tools)?ws.tools:(ws.tools=[]);
         const tool={
           toolKey:row.def.toolKey,
@@ -483,13 +513,6 @@ function bind(options={}){
     go(defaultPersonalUrl(options))
   },{signal:options.signal});
 
-  header.querySelector('[data-nxo-personal-home]')?.addEventListener('click',event=>{
-    event.stopPropagation();closeNested();closeMobile();
-    const handled=call('onPersonal',event);
-    if(handled===false)return;
-    go(defaultPersonalUrl(options))
-  },{signal:options.signal});
-
   header.querySelector('#nxo-nav-home')?.addEventListener('click',event=>{
     const handled=call('onHome',event);
     if(handled===false)return;
@@ -507,17 +530,17 @@ function bind(options={}){
     button.addEventListener('click',event=>{
       event.stopPropagation();
       const group=button.closest('.nxo-workspace-group');
-      if(mobileMode()){
-        const open=!group?.classList.contains('open');
-        header.querySelectorAll('.nxo-workspace-group.open').forEach(x=>{if(x!==group)x.classList.remove('open')});
-        group?.classList.toggle('open',open);
-        group?.querySelector('.nxo-nav-submenu')?.classList.toggle('open',open);
-        return
-      }
-      const ws=findWorkspace(button.dataset.nxoWorkspaceToggle);
-      const handled=call('onWorkspace',ws,event);
-      if(handled===false)return;
-      go(defaultWorkspaceUrl(options,ws))
+      const open=!group?.classList.contains('open');
+      header.querySelectorAll('.nxo-workspace-group.open').forEach(x=>{
+        if(x!==group){
+          x.classList.remove('open');
+          x.querySelector('.nxo-nav-submenu')?.classList.remove('open');
+          x.querySelector('[data-nxo-workspace-toggle]')?.setAttribute('aria-expanded','false')
+        }
+      });
+      group?.classList.toggle('open',open);
+      group?.querySelector('.nxo-nav-submenu')?.classList.toggle('open',open);
+      button.setAttribute('aria-expanded',open?'true':'false')
     },{signal:options.signal})
   });
 
