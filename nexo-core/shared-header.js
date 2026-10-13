@@ -209,13 +209,13 @@ function ensureStyle(){
   .nxo-shared-header .nxo-nav-link:after{display:none!important}
   .nxo-shared-header .nxo-nav-link:hover,.nxo-shared-header .nxo-nav-link:focus-visible,.nxo-shared-header .nxo-nav-link.active{background:rgba(255,255,255,.07)!important}
   .nxo-shared-header .nxo-nav-menu-caret{margin-left:auto}
-  .nxo-shared-header .nxo-nav-dropdown{display:none;position:static!important;width:100%!important;margin:4px 0 0!important;padding:6px!important;border-radius:11px!important;box-shadow:none!important;background:rgba(0,0,0,.10)!important}
-  .nxo-shared-header[data-theme="day"] .nxo-nav-dropdown{background:#edf3ff!important}
-  .nxo-shared-header .nxo-nav-group.open>.nxo-nav-dropdown{display:block!important}
+  
+  
+  
   .nxo-shared-header .nxo-workspace-group{display:block}
-  .nxo-shared-header .nxo-nav-submenu{display:none;position:static!important;width:100%!important;margin:4px 0 4px 10px!important;padding:6px!important;border-radius:10px!important;box-shadow:none!important;background:rgba(0,0,0,.10)!important}
-  .nxo-shared-header[data-theme="day"] .nxo-nav-submenu{background:#e3edff!important}
-  .nxo-shared-header .nxo-workspace-group.open>.nxo-nav-submenu{display:block!important}
+  
+  
+  
   .nxo-shared-header .nxo-nav-primary-utils .nxo-nav-account{width:auto!important;max-width:142px!important;min-width:0!important;min-height:38px!important;height:38px!important;padding:3px 5px!important;gap:5px!important}
   .nxo-shared-header .nxo-nav-primary-utils .nxo-nav-account .nxo-avatar{width:30px!important;height:30px!important;flex:0 0 30px!important}
   .nxo-shared-header .nxo-nav-primary-utils .nxo-nav-account-copy{display:block!important;min-width:0!important;flex:1 1 auto!important}
