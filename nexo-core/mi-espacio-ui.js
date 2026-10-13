@@ -2,7 +2,7 @@
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261011-nma-legacy-cleanup-95';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
-const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-4';
+const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-5';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -1301,24 +1301,49 @@ async function waitBoot(){
 }
 
 async function refreshSharedHeaderState(workspaceId=''){
+  const seedNavigation={
+    personal:{
+      name:ui('Mi espacio','My space'),
+      tools:(personal?.tools||[]).filter(t=>t?.routePath).map(t=>({
+        toolKey:t.toolKey,
+        name:t.nameEs||t.nameEn||t.toolKey,
+        description:t.descriptionEs||'',
+        routePath:t.routePath,
+        scope:'personal'
+      }))
+    },
+    workspaces:(personal?.workspaces||[])
+      .filter(w=>String(w.status||'ACTIVE').toUpperCase()!=='ARCHIVED')
+      .map(w=>({
+        workspaceId:w.workspaceId,
+        name:w.name||'Workspace',
+        logoImage:w.logoImage||null,
+        roleKey:w.roleKey||'member',
+        tools:[]
+      }))
+  };
+  let navigation=seedNavigation;
   try{
-    sharedHeaderState=await api('header.bootstrap',{workspaceId:workspaceId||''});
-    return sharedHeaderState
-  }catch(_){
-    if(!sharedHeaderState){
-      sharedHeaderState={
-        profile:personal?.profile||{},
-        roleKey:'member',
-        roleLabel:ui('Miembro','Member'),
-        context:{type:workspaceId?'workspace':'personal',id:workspaceId||personal?.personalSpace?.id||'',name:workspace?.workspace?.name||ui('Mi espacio','My space')},
-        navigation:{
-          personal:{name:ui('Mi espacio','My space'),tools:(personal?.tools||[]).filter(t=>t?.routePath).map(t=>({toolKey:t.toolKey,name:t.nameEs||t.nameEn||t.toolKey,description:t.descriptionEs||'',routePath:t.routePath,scope:'personal'}))},
-          workspaces:(personal?.workspaces||[]).filter(w=>String(w.status||'ACTIVE').toUpperCase()!=='ARCHIVED').map(w=>({workspaceId:w.workspaceId,name:w.name||'Workspace',logoImage:w.logoImage||null,roleKey:w.roleKey||'member',tools:[]}))
-        }
-      }
-    }
-    return sharedHeaderState
-  }
+    navigation=await window.NEXO_SHARED_HEADER?.loadNavigation?.({
+      seedNavigation,
+      isWonder:sharedHeaderState?.isWonder===true
+    })||seedNavigation
+  }catch(_){navigation=seedNavigation}
+
+  const isWorkspace=Boolean(workspaceId&&workspace?.workspace?.id);
+  sharedHeaderState={
+    ...(sharedHeaderState||{}),
+    profile:personal?.profile||sharedHeaderState?.profile||{},
+    roleKey:isWorkspace?String(workspace?.membership?.roleKey||'member').toLowerCase():(sharedHeaderState?.roleKey||'member'),
+    roleLabel:isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):(sharedHeaderState?.roleLabel||ui('Miembro','Member')),
+    context:{
+      type:isWorkspace?'workspace':'personal',
+      id:isWorkspace?(workspace?.workspace?.id||workspaceId):(personal?.personalSpace?.id||''),
+      name:isWorkspace?(workspace?.workspace?.name||'Workspace'):ui('Mi espacio','My space')
+    },
+    navigation
+  };
+  return sharedHeaderState
 }
 
 function siteBase(){const p=location.pathname.replace(/\/+$/,'');return (location.origin+p.replace(/\/blank-8$/,'')).replace(/\/$/,'')}
@@ -1570,8 +1595,8 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='BOOTSTRAP';
   personal=await api('bootstrap');
-  await refreshSharedHeaderState('');
   await ensureSharedHeaderRuntime();
+  await refreshSharedHeaderState('');
   applyLanguage(personal?.profile?.locale||new URLSearchParams(location.search).get('nxoLang')||storedLanguage(),true);
   if(!String(personal?.profile?.workName||'').trim()){
     await requireWorkNameOnboarding();
@@ -1583,6 +1608,7 @@ async function start(){
     try{
       loading(ui('Uniéndote al espacio de trabajo…','Joining Workspace…'));
       workspace=await api('workspace.join.link',{token:inviteToken});
+      await refreshSharedHeaderState(workspace?.workspace?.id||'');
       const u=new URL(location.href);
       u.searchParams.delete('nxoJoin');
       if(workspace?.workspace?.id)u.searchParams.set('nxoWorkspace',workspace.workspace.id);
