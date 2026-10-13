@@ -1,3 +1,11 @@
+# Nexo Inventory Smart — canonical development rules
+
+## Mandatory pre-read
+
+Before creating or modifying any UI, form, editor, creator, workflow, or customer-facing component, read and follow `DEVELOPMENT_STAGES_CANON.md`.
+
+That rule is canonical and high priority: internal development stages must not be exposed as customer-facing stages unless the owner explicitly requests staged UX.
+
 # Nexo Inventory Smart — locked boundaries
 
 The Centro de Desarrollo visual geometry is owner-locked.
