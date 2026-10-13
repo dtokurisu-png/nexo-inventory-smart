@@ -355,7 +355,7 @@ function bind(options={}){
     const list=workspace?workspace.tools:navigation?.personal?.tools;
     return (Array.isArray(list)?list:[]).find(x=>String(x.toolKey)===String(key))||null
   };
-  const go=url)=>{if(url)location.assign(url)};
+  const go=url=>{if(url)location.assign(url)};
 
   personalButton?.addEventListener('click',event=>{
     event.stopPropagation();
