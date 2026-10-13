@@ -2,7 +2,7 @@
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261011-nma-legacy-cleanup-95';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
-const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261012-3';
+const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-4';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -14,6 +14,7 @@ function accessError(code){return new Error('No se pudo completar el acceso ('+A
 function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r.style.display=visible?'none':'';document.body.classList.toggle('nxo-lock',!visible)}
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
+let sharedHeaderState=null,sharedHeaderAbort=null;
 let workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
 const NEXO_THEME_KEY='nexoTheme:v1';
 const NEXO_LANGUAGE_KEY='nexoLanguage:v1';
@@ -1299,6 +1300,27 @@ async function waitBoot(){
  }finally{loginVisible(false)}
 }
 
+async function refreshSharedHeaderState(workspaceId=''){
+  try{
+    sharedHeaderState=await api('header.bootstrap',{workspaceId:workspaceId||''});
+    return sharedHeaderState
+  }catch(_){
+    if(!sharedHeaderState){
+      sharedHeaderState={
+        profile:personal?.profile||{},
+        roleKey:'member',
+        roleLabel:ui('Miembro','Member'),
+        context:{type:workspaceId?'workspace':'personal',id:workspaceId||personal?.personalSpace?.id||'',name:workspace?.workspace?.name||ui('Mi espacio','My space')},
+        navigation:{
+          personal:{name:ui('Mi espacio','My space'),tools:(personal?.tools||[]).filter(t=>t?.routePath).map(t=>({toolKey:t.toolKey,name:t.nameEs||t.nameEn||t.toolKey,description:t.descriptionEs||'',routePath:t.routePath,scope:'personal'}))},
+          workspaces:(personal?.workspaces||[]).filter(w=>String(w.status||'ACTIVE').toUpperCase()!=='ARCHIVED').map(w=>({workspaceId:w.workspaceId,name:w.name||'Workspace',logoImage:w.logoImage||null,roleKey:w.roleKey||'member',tools:[]}))
+        }
+      }
+    }
+    return sharedHeaderState
+  }
+}
+
 function siteBase(){const p=location.pathname.replace(/\/+$/,'');return (location.origin+p.replace(/\/blank-8$/,'')).replace(/\/$/,'')}
 function routeUrl(path){const p=String(path||'').trim();return p?siteBase()+(p.startsWith('/')?p:'/'+p):''}
 function launchWithBack(url,label,workspaceId=''){if(!url)return'';try{const u=new URL(url,location.href);const back=new URL(siteBase()+'/blank-8');const lang=currentLanguage();if(workspaceId)back.searchParams.set('nxoWorkspace',workspaceId);back.searchParams.set('nxoLang',lang);u.searchParams.set('nxoBack',back.href);u.searchParams.set('nxoBackLabel',label||ui('Mi espacio','My space'));u.searchParams.set('nxoTheme',document.getElementById('nxo-app')?.dataset?.theme||storedTheme());u.searchParams.set('nxoLang',lang);return u.href}catch(_){return url}}
@@ -1329,13 +1351,13 @@ function roleName(roleKey,role){
 function hasPerm(key){const list=workspace?.role?.permissions||workspace?.membership?.permissions||[];return Array.isArray(list)&&list.includes(key)}
 function topbar(mode){
   const isWorkspace=mode==='workspace';
-  const name=personal?.profile?.displayName||ui('Usuario Nexo','Nexo user');
-  const email=String(personal?.profile?.email||'').trim();
-  const wsName=workspace?.workspace?.name||ui('Espacio de trabajo','Workspace');
-  const role=isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):ui('Cuenta personal','Personal account');
-  const roleKey=isWorkspace?String(workspace?.membership?.roleKey||'viewer').toLowerCase():'personal';
+  const state=sharedHeaderState||{};
+  const name=personal?.profile?.displayName||state?.profile?.displayName||ui('Usuario Nexo','Nexo user');
+  const email=String(personal?.profile?.email||state?.profile?.email||'').trim();
+  const wsName=workspace?.workspace?.name||state?.context?.name||ui('Espacio de trabajo','Workspace');
+  const role=isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):(state?.roleLabel||ui('Cuenta personal','Personal account'));
+  const roleKey=isWorkspace?String(workspace?.membership?.roleKey||state?.roleKey||'viewer').toLowerCase():String(state?.roleKey||'personal').toLowerCase();
   const perms=workspace?.role?.permissions||[];
-  const canTools=isWorkspace&&perms.includes('tools.configure');
   const canAdmin=isWorkspace&&(workspace?.membership?.roleKey==='owner'||perms.some(x=>['workspace.manage','members.manage','tools.configure'].includes(x)));
   const contextLabel=isWorkspace?wsName:ui('Mi espacio','My space');
 
@@ -1351,10 +1373,6 @@ function topbar(mode){
      '</div>'
     :'';
 
-  const extraNavHtml=canTools
-    ? '<button type="button" class="nxo-nav-link nxo-mobile-settings-link" id="nxo-mobile-workspace-settings">'+iconLabel('ajustes-rapidos',ui('Configuración','Settings'))+'</button>'
-    : '';
-
   if(!window.NEXO_SHARED_HEADER){
     return '<header class="nxo-topbar nxo-workspace-nav"><div class="nxo-nav-brand"><span class="nxo-nav-mark"><img src="'+esc(NEXO_LOGO)+'" alt="Nexo Group"></span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div></header>'
   }
@@ -1364,150 +1382,68 @@ function topbar(mode){
     theme:document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),
     language:currentLanguage(),
     contextLabel,
-    workspaceName:isWorkspace?wsName:'',
-    profile:{
-      displayName:name,
-      email,
-      photoImage:personal?.profile?.photoImage||null
-    },
+    navigation:state?.navigation||{},
+    profile:{displayName:name,email,photoImage:personal?.profile?.photoImage||state?.profile?.photoImage||null},
     roleKey,
     roleLabel:role,
-    notificationHtml:notification,
-    extraNavHtml
+    notificationHtml:notification
   })
 }
 function bindTopbar(mode){
   const isWorkspace=mode==='workspace';
-  const account=document.getElementById('nxo-nav-account');
-  const menu=document.getElementById('nxo-nav-account-menu');
-  const bell=document.getElementById('nxo-notification-button');
-  const bellMenu=document.getElementById('nxo-notification-menu');
-  const themeButton=document.getElementById('nxo-theme-toggle');
-  const languageButton=document.getElementById('nxo-language-toggle');
-  const quickSettingsButton=document.getElementById('nxo-quick-settings-button');
-  const quickSettingsMenu=document.getElementById('nxo-quick-settings-menu');
-  const mobileButton=document.getElementById('nxo-mobile-menu-button');
-  const mobileMenu=document.getElementById('nxo-nav-collapse');
-  const profilePhotoInput=document.getElementById('nxo-profile-photo-input');
-  const closeMobileMenu=()=>{
-    mobileMenu?.classList.remove('open');
-    mobileButton?.setAttribute('aria-expanded','false');
-    mobileButton?.setAttribute('aria-label','Abrir menú');
-  };
+  sharedHeaderAbort?.abort?.();
+  sharedHeaderAbort=new AbortController();
+
   applyTheme(document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),false);
   applyLanguage(personal?.profile?.locale||storedLanguage(),true);
-  themeButton?.addEventListener('click',e=>{e.stopPropagation();toggleTheme();quickSettingsMenu?.classList.remove('open');quickSettingsButton?.setAttribute('aria-expanded','false');if(workspace)renderWorkspace();else renderPersonal()});
-  languageButton?.addEventListener('click',e=>{e.stopPropagation();setGlobalLanguage(currentLanguage()==='es'?'en':'es')});
-  quickSettingsButton?.addEventListener('click',e=>{
-    e.stopPropagation();
-    const open=quickSettingsMenu?.classList.toggle('open')===true;
-    quickSettingsButton.setAttribute('aria-expanded',open?'true':'false');
-    bellMenu?.classList.remove('open');bell?.setAttribute('aria-expanded','false');
-    menu?.classList.remove('open');account?.setAttribute('aria-expanded','false');
-    closeMobileMenu()
-  });
-  mobileButton?.addEventListener('click',e=>{
-    e.stopPropagation();
-    const open=mobileMenu?.classList.toggle('open')===true;
-    mobileButton.setAttribute('aria-expanded',open?'true':'false');
-    mobileButton.setAttribute('aria-label',open?'Cerrar menú':'Abrir menú');
-    if(open){
-      bellMenu?.classList.remove('open');
-      bell?.setAttribute('aria-expanded','false');
-      quickSettingsMenu?.classList.remove('open');
-      quickSettingsButton?.setAttribute('aria-expanded','false');
-      menu?.classList.remove('open');
-      account?.setAttribute('aria-expanded','false');
-    }
+
+  window.NEXO_SHARED_HEADER?.bind?.({
+    navigation:sharedHeaderState?.navigation||{},
+    theme:document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),
+    language:currentLanguage(),
+    signal:sharedHeaderAbort.signal,
+    onHome:()=>{
+      if(isWorkspace){returnPersonal();return false}
+      window.scrollTo({top:0,behavior:'smooth'});return false
+    },
+    onPersonal:()=>{
+      if(isWorkspace){returnPersonal();return false}
+      window.scrollTo({top:0,behavior:'smooth'});return false
+    },
+    onWorkspace:(target)=>{
+      if(target?.workspaceId){openWorkspace(target.workspaceId);return false}
+    },
+    onDevelopment:()=>{location.assign(centerDevelopmentUrl());return false},
+    onTheme:()=>{toggleTheme();if(workspace)renderWorkspace();else renderPersonal()},
+    onLanguage:()=>setGlobalLanguage(currentLanguage()==='es'?'en':'es'),
+    onProfileSettings:()=>openProfileSettings(isWorkspace),
+    onSwitchAccount:()=>{const u=new URL(siteBase()+'/blank-8');u.searchParams.set('nxoAccountAction','switch');location.assign(u.href)},
+    onLogout:()=>{const u=new URL(siteBase()+'/blank-8');u.searchParams.set('nxoAccountAction','logout');location.assign(u.href)}
   });
 
-  if(isWorkspace){
-    document.getElementById('nxo-personal')?.addEventListener('click',returnPersonal);
-    document.getElementById('nxo-nav-home')?.addEventListener('click',returnPersonal);
-  }else{
-    document.getElementById('nxo-personal')?.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
-    document.getElementById('nxo-nav-home')?.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
-  }
-  document.getElementById('nxo-nav-development')?.addEventListener('click',()=>location.assign(centerDevelopmentUrl()));
-  document.getElementById('nxo-mobile-workspace-settings')?.addEventListener('click',()=>{
-    workspaceTab='settings';
-    closeMobileMenu();
-    renderWorkspace()
-  });
-  document.querySelectorAll('#nxo-personal,#nxo-nav-development,#nxo-mobile-workspace-settings').forEach(button=>button.addEventListener('click',closeMobileMenu));
-
-  if(!window.__nexoMobileNavOutsideBound){
-    window.__nexoMobileNavOutsideBound=true;
-    document.addEventListener('click',e=>{
-      const currentMenu=document.getElementById('nxo-nav-collapse');
-      const currentButton=document.getElementById('nxo-mobile-menu-button');
-      if(currentMenu?.classList.contains('open')&&!currentMenu.contains(e.target)&&!currentButton?.contains(e.target)){
-        currentMenu.classList.remove('open');
-        currentButton?.setAttribute('aria-expanded','false');
-        currentButton?.setAttribute('aria-label','Abrir menú');
-      }
-    });
-  }
+  const bell=document.getElementById('nxo-notification-button');
+  const bellMenu=document.getElementById('nxo-notification-menu');
+  const profilePhotoInput=document.getElementById('nxo-profile-photo-input');
 
   if(bell&&bellMenu){
     bell.addEventListener('click',e=>{
       e.stopPropagation();
       const open=bellMenu.classList.toggle('open');
-      bell.setAttribute('aria-expanded',open?'true':'false');
-      menu?.classList.remove('open');
-      account?.setAttribute('aria-expanded','false');
-      quickSettingsMenu?.classList.remove('open');
-      quickSettingsButton?.setAttribute('aria-expanded','false');
-    });
+      bell.setAttribute('aria-expanded',open?'true':'false')
+    },{signal:sharedHeaderAbort.signal});
+    document.addEventListener('click',e=>{
+      if(!bellMenu.contains(e.target)&&!bell.contains(e.target)){
+        bellMenu.classList.remove('open');
+        bell.setAttribute('aria-expanded','false')
+      }
+    },{signal:sharedHeaderAbort.signal})
   }
-
-  if(account&&menu){
-    account.addEventListener('click',e=>{
-      e.stopPropagation();
-      const open=menu.classList.toggle('open');
-      account.setAttribute('aria-expanded',open?'true':'false');
-      bellMenu?.classList.remove('open');
-      bell?.setAttribute('aria-expanded','false');
-      quickSettingsMenu?.classList.remove('open');
-      quickSettingsButton?.setAttribute('aria-expanded','false');
-    });
-  }
-
-  document.addEventListener('click',e=>{
-    if(menu&&account&&!menu.contains(e.target)&&!account.contains(e.target)){
-      menu.classList.remove('open');
-      account.setAttribute('aria-expanded','false');
-    }
-    if(bellMenu&&bell&&!bellMenu.contains(e.target)&&!bell.contains(e.target)){
-      bellMenu.classList.remove('open');
-      bell.setAttribute('aria-expanded','false');
-    }
-    if(quickSettingsMenu&&quickSettingsButton&&!quickSettingsMenu.contains(e.target)&&!quickSettingsButton.contains(e.target)){
-      quickSettingsMenu.classList.remove('open');
-      quickSettingsButton.setAttribute('aria-expanded','false');
-    }
-  },{once:true});
 
   profilePhotoInput?.addEventListener('change',()=>{
     const file=profilePhotoInput.files?.[0]||null;
     profilePhotoInput.value='';
-    if(file)openProfilePhotoCropper(file,isWorkspace);
-  });
-
-  document.querySelectorAll('[data-account-action]').forEach(button=>{
-    button.addEventListener('click',()=>{
-      const action=button.dataset.accountAction;
-      if(action==='settings'){
-        menu?.classList.remove('open');
-        account?.setAttribute('aria-expanded','false');
-        openProfileSettings(isWorkspace);
-        return;
-      }
-      const u=new URL(siteBase()+'/blank-8');
-      u.searchParams.set('nxoAccountAction',action);
-      location.assign(u.href);
-    });
-  });
+    if(file)openProfilePhotoCropper(file,isWorkspace)
+  },{signal:sharedHeaderAbort.signal})
 }
 
 function toolCard(t){const route=toolLaunchUrl(t),usable=!!route&&t.status!=='PLANNED',name=t.workspaceName||t.nameEs||t.nameEn||t.toolKey,description=t.workspaceDescription||t.descriptionEs||'';return '<article class="nxo-card '+(usable?'clickable':'')+'" '+(usable?'data-tool="'+esc(route)+'"':'')+'><div class="nxo-card-top"><div class="nxo-tool-icon">'+iconTag(toolIconKey(t),name)+'</div><span class="nxo-status '+esc(t.status||'')+'">'+esc(statusText(t.status))+'</span></div><h4>'+esc(name)+'</h4><p>'+esc(description)+'</p><div class="nxo-card-footer"><span class="nxo-role">'+(usable?ui('Abrir herramienta','Open tool'):ui('Aún no disponible','Not available yet'))+'</span><span>›</span></div></article>'}
@@ -1634,6 +1570,7 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='BOOTSTRAP';
   personal=await api('bootstrap');
+  await refreshSharedHeaderState('');
   await ensureSharedHeaderRuntime();
   applyLanguage(personal?.profile?.locale||new URLSearchParams(location.search).get('nxoLang')||storedLanguage(),true);
   if(!String(personal?.profile?.workName||'').trim()){
@@ -1723,6 +1660,7 @@ async function start(){
   if(requestedWorkspace){
     try{
       workspace=await api('workspace.open',{workspaceId:requestedWorkspace});
+      await refreshSharedHeaderState(workspace?.workspace?.id||requestedWorkspace);
       workspaceTab='tools';
       renderWorkspace();
       return
@@ -1884,8 +1822,29 @@ function joinWorkspaceModal(){
     '<div class="nxo-field"><label>'+esc(ui('Código de invitación','Invitation code'))+'</label><input id="nxo-join-code" class="nxo-input" placeholder="NEXO-ABCDE-12345" autocomplete="off" autocapitalize="characters"></div><p class="nxo-muted" style="margin:0;line-height:1.55">'+esc(ui('Pega el código que te compartió un administrador del espacio de trabajo. Los códigos son de un solo uso.','Paste the code shared by a Workspace administrator. Codes are single-use.'))+'</p><div class="nxo-modal-actions"><button id="nxo-join-submit" class="nxo-btn nxo-btn-gold">'+esc(ui('Unirme al espacio de trabajo','Join Workspace'))+'</button></div>',
     o=>{const input=o.querySelector('#nxo-join-code'),button=o.querySelector('#nxo-join-submit');input?.focus();button.onclick=async()=>{const code=input.value.trim();if(!code){toast(ui('Escribe el código de invitación','Enter the invitation code'));return}button.disabled=true;button.textContent=ui('Validando…','Validating…');try{workspace=await api('workspace.join.code',{code});o.remove();setWorkspaceReturnParam(workspace?.workspace?.id||'');workspaceTab='tools';toast(ui('Te uniste a ','You joined ')+(workspace?.workspace?.name||ui('el espacio de trabajo','the Workspace')));renderWorkspace()}catch(e){button.disabled=false;button.textContent=ui('Unirme al espacio de trabajo','Join Workspace');toast(e.message||String(e))}}})
 }
-async function openWorkspace(id,alreadyOpen=false){try{stopWorkspaceNotificationPolling();workspaceNotificationSignature='';loading(ui('Abriendo espacio de trabajo…','Opening Workspace…'));workspace=alreadyOpen&&workspace?workspace:await api('workspace.open',{workspaceId:id});workspaceRecipeComments=null;workspacePendingNotes=null;workspaceTodaySchedule=null;setWorkspaceReturnParam(workspace?.workspace?.id||id);workspaceTab='tools';renderWorkspace()}catch(e){errorView(e)}}
-async function returnPersonal(){try{loading('Volviendo a Mi espacio…');personal=await api('workspace.return');clearWorkspaceReturnParam();renderPersonal()}catch(e){errorView(e)}}
+async function openWorkspace(id,alreadyOpen=false){
+  try{
+    stopWorkspaceNotificationPolling();
+    workspaceNotificationSignature='';
+    loading(ui('Abriendo espacio de trabajo…','Opening Workspace…'));
+    workspace=alreadyOpen&&workspace?workspace:await api('workspace.open',{workspaceId:id});
+    workspaceRecipeComments=null;workspacePendingNotes=null;
+    if(typeof workspaceTodaySchedule!=='undefined')workspaceTodaySchedule=null;
+    setWorkspaceReturnParam(workspace?.workspace?.id||id);
+    await refreshSharedHeaderState(workspace?.workspace?.id||id);
+    workspaceTab='tools';
+    renderWorkspace()
+  }catch(e){errorView(e)}
+}
+async function returnPersonal(){
+  try{
+    loading('Volviendo a Mi espacio…');
+    personal=await api('workspace.return');
+    clearWorkspaceReturnParam();
+    await refreshSharedHeaderState('');
+    renderPersonal()
+  }catch(e){errorView(e)}
+}
 function renderWorkspace(){
   const ws=workspace?.workspace||{},role=workspace?.role||{},tools=workspace?.tools||[];
   const perms=role.permissions||[];
