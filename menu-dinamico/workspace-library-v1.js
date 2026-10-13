@@ -247,6 +247,7 @@ function sheetEditorTemplate(){
     components:[],
     savedMopRange:null,
     mopChoice:null,
+    restoringMopRange:false,
     openUnitComponentId:''
   };
   activeSheetEditor=state;
@@ -434,6 +435,7 @@ function sheetEditorTemplate(){
   }
 
   function rememberMopRange(){
+    if(state.restoringMopRange)return;
     const selection=window.getSelection();
     if(!selection||!selection.rangeCount)return;
     const range=selection.getRangeAt(0);
@@ -454,17 +456,32 @@ function sheetEditorTemplate(){
     caretPlus.hidden=false
   }
   function restoreMopRange(){
-    editor.focus();
-    const selection=window.getSelection();
-    if(!selection)return null;
-    let range=state.savedMopRange;
-    if(!range||!editor.contains(range.startContainer)){
+    let range=null;
+    try{
+      if(state.savedMopRange&&editor.contains(state.savedMopRange.startContainer)){
+        range=state.savedMopRange.cloneRange()
+      }
+    }catch(_){}
+    if(!range){
       range=document.createRange();
       range.selectNodeContents(editor);
       range.collapse(false)
     }
+    state.restoringMopRange=true;
+    try{
+      editor.focus({preventScroll:true});
+    }catch(_){
+      editor.focus()
+    }
+    const selection=window.getSelection();
+    if(!selection){
+      state.restoringMopRange=false;
+      return null
+    }
     selection.removeAllRanges();
     selection.addRange(range);
+    state.savedMopRange=range.cloneRange();
+    state.restoringMopRange=false;
     return range
   }
   function hideMopPicker(){
@@ -653,7 +670,7 @@ function sheetEditorTemplate(){
   editorCanvas?.addEventListener('scroll',repositionFloatingPickers,{passive:true});
   window.addEventListener('resize',repositionFloatingPickers,{passive:true});
   document.addEventListener('selectionchange',()=>{
-    if(activeSheetEditor!==state)return;
+    if(activeSheetEditor!==state||state.restoringMopRange)return;
     const selection=window.getSelection();
     if(!selection||!selection.rangeCount)return;
     const range=selection.getRangeAt(0);
