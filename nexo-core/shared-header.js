@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261013-4';
+const VERSION='20261013-5';
 if(window.NEXO_SHARED_HEADER?.version===VERSION)return;
 
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
@@ -233,6 +233,119 @@ function personalMenuMarkup(navigation,t){
     }
   }
   return body
+}
+
+const NAV_TOOL_DEFS=[
+  {toolKey:'gear-library',name:'Biblioteca de engranaje'},
+  {toolKey:'learning-core',name:'Nexo Learning Core'},
+  {toolKey:'dynamic-specs',name:'Fichas Técnicas Dinámicas'},
+  {toolKey:'inventory-smart',name:'Inventario Smart'},
+  {toolKey:'schedules',name:'Horarios'}
+];
+
+async function navigationInstallOptions(toolKey){
+  const response=await fetch(siteBase()+'/_functions/nexoDevelopmentInstall',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    credentials:'same-origin',
+    cache:'no-store',
+    body:JSON.stringify({action:'options',toolKey})
+  });
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||!data?.ok||!data?.data)throw new Error(data?.error||'NAVIGATION_OPTIONS_FAILED');
+  return data.data
+}
+
+function seedNavigationCopy(seed){
+  const personalTools=Array.isArray(seed?.personal?.tools)?seed.personal.tools.map(x=>({...x})):[];
+  const workspaces=Array.isArray(seed?.workspaces)?seed.workspaces.map(ws=>({...ws,tools:Array.isArray(ws.tools)?ws.tools.map(x=>({...x})):[]})):[];
+  return {personal:{name:String(seed?.personal?.name||'Mi espacio'),tools:personalTools},workspaces}
+}
+
+async function loadNavigation(options={}){
+  const seed=seedNavigationCopy(options.seedNavigation||{});
+  const workspaceMap=new Map(seed.workspaces.map(ws=>[String(ws.workspaceId||''),ws]).filter(([id])=>id));
+  const directMap=new Map(seed.personal.tools.map(tool=>[String(tool.toolKey||''),tool]).filter(([key])=>key));
+
+  const rows=await Promise.all(NAV_TOOL_DEFS.map(async def=>{
+    try{return {def,data:await navigationInstallOptions(def.toolKey)}}catch(_){return {def,data:null}}
+  }));
+  let successful=0;
+
+  for(const row of rows){
+    const data=row.data;
+    if(!data)continue;
+    successful++;
+    const routePath=String(data.routePath||'').trim();
+    if(!routePath)continue;
+    const destinations=Array.isArray(data.destinations)?data.destinations:[];
+
+    for(const destination of destinations){
+      const type=String(destination?.type||'').toLowerCase();
+      if(type==='personal'){
+        if(destination.canOpen===true){
+          directMap.set(row.def.toolKey,{
+            toolKey:row.def.toolKey,
+            name:String(data.nameEs||row.def.name||row.def.toolKey),
+            description:'',
+            routePath,
+            scope:'personal'
+          })
+        }
+        continue
+      }
+      if(type!=='workspace')continue;
+
+      const workspaceId=String(destination?.id||'').trim();
+      if(!workspaceId)continue;
+      let ws=workspaceMap.get(workspaceId);
+      if(!ws){
+        ws={workspaceId,name:String(destination?.name||'Workspace'),logoImage:null,roleKey:'member',tools:[]};
+        workspaceMap.set(workspaceId,ws)
+      }else if(destination?.name){
+        ws.name=String(destination.name)
+      }
+
+      if(destination.canOpen===true){
+        const tools=Array.isArray(ws.tools)?ws.tools:(ws.tools=[]);
+        const tool={
+          toolKey:row.def.toolKey,
+          name:String(data.nameEs||row.def.name||row.def.toolKey),
+          description:'',
+          routePath,
+          scope:'workspace'
+        };
+        const index=tools.findIndex(x=>String(x.toolKey)===row.def.toolKey);
+        if(index>=0)tools[index]=tool;else tools.push(tool)
+      }
+    }
+  }
+
+  if(options.isWonder===true){
+    directMap.set('camino-editorial',{
+      toolKey:'camino-editorial',name:'Camino Editorial',description:'Entorno editorial',routePath:'/blank-6',scope:'personal'
+    });
+    directMap.set('r96',{
+      toolKey:'r96',name:'R96',description:'Entorno de juegos y desarrollo',routePath:'/blank-9',scope:'personal'
+    })
+  }
+
+  if(!successful&&seed.workspaces.length===0&&seed.personal.tools.length===0){
+    return {personal:{name:'Mi espacio',tools:[]},workspaces:[]}
+  }
+
+  const workspaces=[...workspaceMap.values()].map(ws=>({
+    ...ws,
+    tools:(Array.isArray(ws.tools)?ws.tools:[]).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es',{sensitivity:'base'}))
+  })).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es',{sensitivity:'base'}));
+
+  return {
+    personal:{
+      name:seed.personal.name||'Mi espacio',
+      tools:[...directMap.values()].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es',{sensitivity:'base'}))
+    },
+    workspaces
+  }
 }
 
 function markup(options={}){
@@ -482,5 +595,5 @@ function mount(container,options={}){
   return document.getElementById('nxo-shared-header')
 }
 
-window.NEXO_SHARED_HEADER={version:VERSION,markup,bind,mount,sync,ensureStyle};
+window.NEXO_SHARED_HEADER={version:VERSION,markup,bind,mount,sync,ensureStyle,loadNavigation};
 })();
