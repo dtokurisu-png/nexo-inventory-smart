@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261012-63';
+const VERSION='20261013-64';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
