@@ -117,7 +117,7 @@ function ensureStyle(){
 .nxo-shared-header .nxo-workspace-group{position:relative}
 .nxo-shared-header .nxo-workspace-arrow{margin-left:auto;font-size:14px;color:var(--nxo-sh-muted)}
 .nxo-shared-header .nxo-nav-submenu{
-  display:none;position:absolute;left:calc(100% + 7px);top:-8px;z-index:196;width:270px;padding:8px;
+  display:none;position:absolute;left:calc(100% - 1px);top:-8px;z-index:196;width:270px;padding:8px;
   border:1px solid var(--nxo-sh-line2);border-radius:13px;background:var(--nxo-sh-panel);box-shadow:var(--nxo-sh-shadow);color:var(--nxo-sh-text)
 }
 .nxo-shared-header .nxo-nav-submenu.open{display:block}
