@@ -625,7 +625,6 @@ function sheetEditorTemplate(){
   mopPicker.addEventListener('wheel',e=>e.stopPropagation(),{passive:true});
   unitPicker.addEventListener('wheel',e=>e.stopPropagation(),{passive:true});
   const repositionFloatingPickers=()=>{
-    if(!mopPicker.hidden)positionMopPicker();
     if(!unitPicker.hidden){
       const trigger=list.querySelector('[data-component-id="'+CSS.escape(state.openUnitComponentId)+'"] [data-component-unit-trigger]');
       if(trigger)positionUnitPicker(trigger);else hideUnitPicker()
