@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261013-10';
+const VERSION='20261013-11';
 if(window.NEXO_SHARED_HEADER?.version===VERSION)return;
 
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
@@ -22,6 +22,7 @@ function labels(language){
     personal:en?'My space':'Mi espacio',
     development:en?'Development Center':'Centro de desarrollo',
     workspaces:en?'Workspaces':'Workspaces',
+    personalAccess:en?'Direct access':'Accesos directos',
     noTools:en?'No tools available':'Sin herramientas disponibles',
     quick:en?'Quick settings':'Ajustes rápidos',
     appearance:en?'Appearance':'Apariencia',
@@ -194,15 +195,25 @@ function ensureStyle(){
 
 
 function personalMenuMarkup(navigation,t){
+  const direct=Array.isArray(navigation?.personal?.tools)?navigation.personal.tools:[];
   const workspaces=Array.isArray(navigation?.workspaces)?navigation.workspaces:[];
-  if(!workspaces.length)return '<div class="nxo-personal-menu-empty">'+esc(normalizeLanguage(document.documentElement.lang)==='en'?'No Workspaces available':'Sin espacios de trabajo disponibles')+'</div>';
-  let body='<div class="nxo-personal-menu-title">'+esc(t.workspaces)+'</div>';
-  for(const ws of workspaces){
-    const tools=Array.isArray(ws.tools)?ws.tools:[];
-    body+='<section class="nxo-personal-workspace" data-nxo-workspace-row="'+esc(ws.workspaceId||'')+'">'+
-      '<button type="button" class="nxo-personal-workspace-name" data-nxo-workspace-open="'+esc(ws.workspaceId||'')+'">'+iconTag('workspace','')+'<span>'+esc(ws.name||'Workspace')+'</span></button>'+
-      tools.map(tool=>'<button type="button" class="nxo-personal-tool" data-nxo-tool="'+esc(tool?.toolKey||'')+'" data-nxo-workspace="'+esc(ws.workspaceId||'')+'">'+iconTag(toolIconKey(tool),'')+'<span>'+esc(tool?.name||tool?.toolKey||'Herramienta')+'</span></button>').join('')+
-    '</section>'
+  if(!direct.length&&!workspaces.length)return '<div class="nxo-personal-menu-empty">'+esc(normalizeLanguage(document.documentElement.lang)==='en'?'No access available':'Sin accesos disponibles')+'</div>';
+
+  let body='';
+  if(direct.length){
+    body+='<div class="nxo-personal-menu-title">'+esc(t.personalAccess)+'</div>'+
+      direct.map(tool=>'<button type="button" class="nxo-personal-tool" data-nxo-tool="'+esc(tool?.toolKey||'')+'" data-nxo-workspace="">'+iconTag(toolIconKey(tool),'')+'<span>'+esc(tool?.name||tool?.toolKey||'Herramienta')+'</span></button>').join('')
+  }
+  if(workspaces.length){
+    if(body)body+='<div class="nxo-nav-divider"></div>';
+    body+='<div class="nxo-personal-menu-title">'+esc(t.workspaces)+'</div>';
+    for(const ws of workspaces){
+      const tools=Array.isArray(ws.tools)?ws.tools:[];
+      body+='<section class="nxo-personal-workspace" data-nxo-workspace-row="'+esc(ws.workspaceId||'')+'">'+
+        '<button type="button" class="nxo-personal-workspace-name" data-nxo-workspace-open="'+esc(ws.workspaceId||'')+'">'+iconTag('workspace','')+'<span>'+esc(ws.name||'Workspace')+'</span></button>'+
+        tools.map(tool=>'<button type="button" class="nxo-personal-tool" data-nxo-tool="'+esc(tool?.toolKey||'')+'" data-nxo-workspace="'+esc(ws.workspaceId||'')+'">'+iconTag(toolIconKey(tool),'')+'<span>'+esc(tool?.name||tool?.toolKey||'Herramienta')+'</span></button>').join('')+
+      '</section>'
+    }
   }
   return body
 }
@@ -229,15 +240,17 @@ async function navigationInstallOptions(toolKey){
 }
 
 function seedNavigationCopy(seed){
+  const personalTools=Array.isArray(seed?.personal?.tools)?seed.personal.tools.map(x=>({...x})):[];
   const workspaces=Array.isArray(seed?.workspaces)
     ?seed.workspaces.map(ws=>({...ws,tools:Array.isArray(ws.tools)?ws.tools.map(x=>({...x})):[]}))
     :[];
-  return {workspaces}
+  return {personal:{name:String(seed?.personal?.name||'Mi espacio'),tools:personalTools},workspaces}
 }
 
 async function loadNavigation(options={}){
   const seed=seedNavigationCopy(options.seedNavigation||{});
   const workspaceMap=new Map(seed.workspaces.map(ws=>[String(ws.workspaceId||''),ws]).filter(([id])=>id));
+  const directMap=new Map(seed.personal.tools.map(tool=>[String(tool.toolKey||''),tool]).filter(([key])=>key));
 
   const rows=await Promise.all(NAV_TOOL_DEFS.map(async def=>{
     try{return {def,data:await navigationInstallOptions(def.toolKey)}}catch(_){return {def,data:null}}
@@ -252,8 +265,22 @@ async function loadNavigation(options={}){
     if(!routePath)continue;
 
     for(const destination of Array.isArray(data.destinations)?data.destinations:[]){
-      if(String(destination?.type||'').toLowerCase()!=='workspace')continue;
+      const type=String(destination?.type||'').toLowerCase();
 
+      if(type==='personal'){
+        if(destination.canOpen===true){
+          directMap.set(row.def.toolKey,{
+            toolKey:row.def.toolKey,
+            name:String(data.nameEs||row.def.name||row.def.toolKey),
+            description:'',
+            routePath,
+            scope:'personal'
+          })
+        }
+        continue
+      }
+
+      if(type!=='workspace')continue;
       const workspaceId=String(destination?.id||'').trim();
       if(!workspaceId)continue;
 
@@ -266,7 +293,6 @@ async function loadNavigation(options={}){
       }
 
       if(destination.installed!==true)continue;
-
       const tools=Array.isArray(ws.tools)?ws.tools:(ws.tools=[]);
       const tool={
         toolKey:row.def.toolKey,
@@ -280,9 +306,24 @@ async function loadNavigation(options={}){
     }
   }
 
-  if(!successful&&!seed.workspaces.length)return {workspaces:[]};
+  if(options.isWonder===true){
+    directMap.set('camino-editorial',{
+      toolKey:'camino-editorial',name:'Camino Editorial',description:'Entorno editorial',routePath:'/blank-6',scope:'personal'
+    });
+    directMap.set('r96',{
+      toolKey:'r96',name:'Risin9 6ames',description:'Entorno de juegos y desarrollo',routePath:'/blank-9',scope:'personal'
+    })
+  }
+
+  if(!successful&&!seed.workspaces.length&&!seed.personal.tools.length){
+    return {personal:{name:'Mi espacio',tools:[]},workspaces:[]}
+  }
 
   return {
+    personal:{
+      name:seed.personal.name||'Mi espacio',
+      tools:[...directMap.values()].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es',{sensitivity:'base'}))
+    },
     workspaces:[...workspaceMap.values()]
       .map(ws=>({
         ...ws,
