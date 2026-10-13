@@ -220,9 +220,20 @@ function sheetEditorShell(){
           '<div class="nexoSheetEditorSectionHead">'+
             '<div><span>'+esc(tr('Composición','Composition'))+'</span><h2>'+esc(tr('Ingredientes','Ingredients'))+'</h2></div>'+
             '<div class="nexoSheetEditorSectionActions">'+
-              '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-existing>'+icon('nuevo')+'<span>'+esc(tr('Insumo','Supply'))+'</span></button>'+
-              '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-preparation>'+icon('nuevo')+'<span>'+esc(tr('Preparación','Preparation'))+'</span></button>'+
-              '<button type="button" class="nexoWorkspaceBtn" data-sheet-create-ingredient>'+esc(tr('Crear ingrediente','Create ingredient'))+'</button>'+
+              '<div class="nexoCompositionAction" data-composition-action="ingredient">'+
+                '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-existing aria-haspopup="menu" aria-expanded="false">'+icon('nuevo')+'<span>'+esc(tr('Insumo','Supply'))+'</span></button>'+
+                '<div class="nexoCompositionMenu" data-composition-menu="ingredient" role="menu" hidden>'+
+                  '<button type="button" role="menuitem" data-composition-choice="existing">'+esc(tr('Existente','Existing'))+'</button>'+
+                  '<button type="button" role="menuitem" data-composition-choice="create">'+esc(tr('Crear','Create'))+'</button>'+
+                '</div>'+
+              '</div>'+
+              '<div class="nexoCompositionAction" data-composition-action="preparation">'+
+                '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-preparation aria-haspopup="menu" aria-expanded="false">'+icon('nuevo')+'<span>'+esc(tr('Preparación','Preparation'))+'</span></button>'+
+                '<div class="nexoCompositionMenu" data-composition-menu="preparation" role="menu" hidden>'+
+                  '<button type="button" role="menuitem" data-composition-choice="existing">'+esc(tr('Existente','Existing'))+'</button>'+
+                  '<button type="button" role="menuitem" data-composition-choice="create">'+esc(tr('Crear','Create'))+'</button>'+
+                '</div>'+
+              '</div>'+
             '</div>'+
           '</div>'+
           '<div class="nexoSheetIngredientPicker" data-sheet-existing-picker hidden></div>'+
@@ -283,6 +294,12 @@ function sheetEditorTemplate(){
   const photoPreview=layer.querySelector('[data-sheet-photo-preview]');
   const list=layer.querySelector('[data-sheet-ingredient-list]');
   const existingPicker=layer.querySelector('[data-sheet-existing-picker]');
+  const supplyAction=layer.querySelector('[data-composition-action="ingredient"]');
+  const preparationAction=layer.querySelector('[data-composition-action="preparation"]');
+  const supplyTrigger=layer.querySelector('[data-sheet-add-existing]');
+  const preparationTrigger=layer.querySelector('[data-sheet-add-preparation]');
+  const supplyMenu=layer.querySelector('[data-composition-menu="ingredient"]');
+  const preparationMenu=layer.querySelector('[data-composition-menu="preparation"]');
   const editor=layer.querySelector('[data-sheet-mop-editor]');
   const mopWrap=layer.querySelector('[data-mop-wrap]');
   const mopStepsList=layer.querySelector('[data-mop-steps-list]');
@@ -301,6 +318,8 @@ function sheetEditorTemplate(){
   const editorCanvas=layer.querySelector('.nexoSheetEditorCanvas');
 
   const componentById=id=>state.components.find(row=>row.id===id);
+  const isPreparationComponent=row=>row?.source==='preparation'||row?.source==='new-preparation';
+  const isEditableComponent=row=>row?.source==='new'||row?.source==='new-preparation';
 
   function mopAmountNumber(value){
     const normalized=String(value??'').trim().replace(',','.');
@@ -454,7 +473,7 @@ function sheetEditorTemplate(){
     list.innerHTML=state.components.map((row,index)=>
       '<article class="nexoSheetIngredientRow" data-component-id="'+esc(row.id)+'">'+
         '<div class="nexoSheetIngredientIndex">'+(index+1)+'</div>'+
-        '<label class="nexoSheetIngredientName"><span>'+esc(row.source==='preparation'?tr('Preparación','Preparation'):tr('Ingrediente','Ingredient'))+'</span><input data-component-name maxlength="160" value="'+esc(row.name)+'" '+(row.source!=='new'?'readonly':'')+'></label>'+
+        '<label class="nexoSheetIngredientName"><span>'+esc(isPreparationComponent(row)?tr('Preparación','Preparation'):tr('Insumo','Supply'))+'</span><input data-component-name maxlength="160" value="'+esc(row.name)+'" '+(!isEditableComponent(row)?'readonly':'')+'></label>'+
         '<label><span>'+esc(tr('Cantidad','Quantity'))+'</span><input data-component-quantity inputmode="decimal" value="'+esc(row.quantity)+'" placeholder="1000"></label>'+
         '<label class="nexoSheetUnitField"><span>'+esc(tr('Unidad','Unit'))+'</span><button type="button" class="nexoSheetUnitTrigger" data-component-unit-trigger aria-haspopup="listbox">'+
           '<strong>'+esc(row.unit||tr('Elegir unidad','Choose unit'))+'</strong>'+
@@ -470,7 +489,7 @@ function sheetEditorTemplate(){
       const qtyInput=rowEl.querySelector('[data-component-quantity]');
       const unitTrigger=rowEl.querySelector('[data-component-unit-trigger]');
       const sync=()=>{
-        if(component.source!=='existing')component.name=String(nameInput.value||'');
+        if(isEditableComponent(component))component.name=String(nameInput.value||'');
         component.quantity=String(qtyInput.value||'');
         refreshMopTokens()
       };
@@ -530,6 +549,41 @@ function sheetEditorTemplate(){
     });
     unitPicker.hidden=false;
     positionUnitPicker(trigger)
+  }
+
+  function closeCompositionMenus(except=''){
+    [
+      ['ingredient',supplyMenu,supplyTrigger],
+      ['preparation',preparationMenu,preparationTrigger]
+    ].forEach(([kind,menu,trigger])=>{
+      if(kind===except)return;
+      menu.hidden=true;
+      trigger.setAttribute('aria-expanded','false')
+    })
+  }
+  function toggleCompositionMenu(kind){
+    const menu=kind==='preparation'?preparationMenu:supplyMenu;
+    const trigger=kind==='preparation'?preparationTrigger:supplyTrigger;
+    const willOpen=menu.hidden;
+    closeCompositionMenus(kind);
+    menu.hidden=!willOpen;
+    trigger.setAttribute('aria-expanded',willOpen?'true':'false')
+  }
+  function createLocalComponent(kind){
+    const preparation=kind==='preparation';
+    const id=sheetEditorId('component');
+    state.components.push({
+      id,
+      source:preparation?'new-preparation':'new',
+      targetIngredientId:'',
+      targetRecipeId:'',
+      name:'',
+      quantity:'',
+      unit:''
+    });
+    closeCompositionMenus();
+    renderIngredientList();
+    queueMicrotask(()=>list.querySelector('[data-component-id="'+CSS.escape(id)+'"] [data-component-name]')?.focus())
   }
 
   function renderExistingPicker(kind='ingredient',query=''){
@@ -833,20 +887,20 @@ function sheetEditorTemplate(){
     photoRemove.hidden=true
   };
 
-  layer.querySelector('[data-sheet-add-existing]').onclick=()=>{
+  supplyTrigger.onclick=()=>toggleCompositionMenu('ingredient');
+  preparationTrigger.onclick=()=>toggleCompositionMenu('preparation');
+  supplyMenu.querySelector('[data-composition-choice="existing"]').onclick=()=>{
+    closeCompositionMenus();
     existingPicker.hidden=false;
     renderExistingPicker('ingredient','')
   };
-  layer.querySelector('[data-sheet-add-preparation]').onclick=()=>{
+  supplyMenu.querySelector('[data-composition-choice="create"]').onclick=()=>createLocalComponent('ingredient');
+  preparationMenu.querySelector('[data-composition-choice="existing"]').onclick=()=>{
+    closeCompositionMenus();
     existingPicker.hidden=false;
     renderExistingPicker('preparation','')
   };
-  layer.querySelector('[data-sheet-create-ingredient]').onclick=()=>{
-    const id=sheetEditorId('component');
-    state.components.push({id,source:'new',targetIngredientId:'',targetRecipeId:'',name:'',quantity:'',unit:''});
-    renderIngredientList();
-    queueMicrotask(()=>list.querySelector('[data-component-id="'+CSS.escape(id)+'"] [data-component-name]')?.focus())
-  };
+  preparationMenu.querySelector('[data-composition-choice="create"]').onclick=()=>createLocalComponent('preparation');
 
   ['keyup','mouseup','input','focus'].forEach(type=>editor.addEventListener(type,rememberMopRange));
   editor.addEventListener('input',()=>{
@@ -894,6 +948,7 @@ function sheetEditorTemplate(){
   layer.querySelector('[data-sheet-editor-close]').onclick=sheetEditorClose;
   layer.addEventListener('mousedown',e=>{
     if(e.target===layer){sheetEditorClose();return}
+    if(!e.target.closest('[data-composition-action]'))closeCompositionMenus();
     if(!mopPicker.hidden&&!e.target.closest('[data-mop-picker]')&&!e.target.closest('[data-mop-caret-plus]'))hideMopPicker();
     if(!unitPicker.hidden&&!e.target.closest('.nexoSheetUnitPicker')&&!e.target.closest('[data-component-unit-trigger]'))hideUnitPicker();
     if(!e.target.closest('[data-mop-info-wrap]')){
