@@ -5,7 +5,7 @@ const ACCESS_REVISION='fichas-workspace-context-20261007-40';
 const ENGINE_REVISION='plus-caret-20261013-64';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
-const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261012-3';
+const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-4';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -126,23 +126,17 @@ function mountFichasHeader(){
   if(!window.NEXO_SHARED_HEADER)return;
   const state=sharedHeaderState||{};
   const context=state.context||{};
+  const contextName=context.name||workspaceLabel||'Mi espacio';
   window.NEXO_SHARED_HEADER.mount(document.body,{
     active:'tool',
     theme:workspaceTheme,
     language:workspaceLanguage,
-    contextLabel:context.name||workspaceLabel||'Mi espacio',
-    workspaceName:context.type==='workspace'?(context.name||workspaceLabel):'',
-    currentToolLabel:'Fichas Técnicas Dinámicas',
-    currentToolIcon:'ficha-tecnica',
+    contextLabel:contextName+' · Fichas Técnicas Dinámicas',
+    navigation:state.navigation||{},
     profile:state.profile||{displayName:'Usuario Nexo'},
     roleKey:state.roleKey||'member',
     roleLabel:state.roleLabel||'Miembro',
     signal:sharedHeaderAbort.signal,
-    onHome:openPersonalSpace,
-    onPersonal:openPersonalSpace,
-    onDevelopment:openDevelopmentCenter,
-    onWorkspace:exitToWorkspace,
-    onCurrentTool:()=>{},
     onTheme:()=>{
       applyWorkspaceTheme(workspaceTheme==='night'?'day':'night',{persist:true,notifyEngine:true});
       mountFichasHeader();
