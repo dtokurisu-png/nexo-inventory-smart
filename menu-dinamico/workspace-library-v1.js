@@ -515,7 +515,7 @@ function sheetEditorTemplate(){
           return '<button type="button" role="option" data-unit-code="'+esc(code)+'" class="'+(component.unit===code?'active':'')+'"><strong>'+esc(code)+'</strong><span>'+esc(label)+'</span></button>'
         }).join('')+
       '</div>'+
-      '<div class="nexoSheetUnitPickerOther"><button type="button" data-unit-other disabled>'+esc(tr('Otra','Other'))+'</button><small>'+esc(tr('La creación de nuevas unidades se añadirá en otra etapa.','Creating new units will be added in a later stage.'))+'</small></div>';
+      '<div class="nexoSheetUnitPickerOther"><button type="button" data-unit-other disabled>'+esc(tr('Otra','Other'))+'</button><small>'+esc(tr('La creación de nuevas unidades no está disponible aquí.','Creating new units is not available here.'))+'</small></div>';
     unitPicker.querySelector('[data-unit-close]').onclick=hideUnitPicker;
     unitPicker.querySelectorAll('[data-unit-code]').forEach(btn=>btn.onclick=()=>{
       component.unit=String(btn.dataset.unitCode||'');
