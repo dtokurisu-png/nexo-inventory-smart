@@ -272,20 +272,43 @@ function sheetEditorTemplate(){
 
   const componentById=id=>state.components.find(row=>row.id===id);
 
-  function componentTokenText(component,mode='full'){
-    const quantity=String(component?.quantity??'').trim();
+  function mopAmountNumber(value){
+    const normalized=String(value??'').trim().replace(',','.');
+    if(!normalized)return null;
+    const number=Number(normalized);
+    return Number.isFinite(number)&&number>=0?number:null
+  }
+  function mopAmountText(value){
+    const number=Number(value);
+    if(!Number.isFinite(number))return '';
+    return String(Number(number.toFixed(6)))
+  }
+  function allocatedAmount(componentId){
+    let total=0;
+    editor.querySelectorAll('[data-mop-component-id="'+CSS.escape(componentId)+'"]').forEach(token=>{
+      const value=mopAmountNumber(token.dataset.mopAllocatedQuantity);
+      if(value!==null)total+=value
+    });
+    return total
+  }
+  function remainingAmount(component){
+    const total=mopAmountNumber(component?.quantity);
+    if(total===null)return null;
+    return Math.max(0,total-allocatedAmount(component.id))
+  }
+  function componentTokenText(component,allocatedQuantity){
+    const quantity=mopAmountText(allocatedQuantity);
     const unit=String(component?.unit??'').trim();
     const name=String(component?.name||tr('Ingrediente','Ingredient')).trim();
-    const amount=[quantity||tr('cantidad','amount'),unit].filter(Boolean).join(' ');
-    if(mode==='name')return name;
-    if(mode==='quantity')return amount;
-    return [amount,name].filter(Boolean).join(' ')
+    return [[quantity,unit].filter(Boolean).join(' '),name].filter(Boolean).join(' ')
   }
   function refreshMopTokens(){
     editor.querySelectorAll('[data-mop-component-id]').forEach(token=>{
       const component=componentById(String(token.dataset.mopComponentId||''));
       if(!component){token.remove();return}
-      token.textContent=componentTokenText(component,String(token.dataset.mopMode||'full'))
+      const quantity=mopAmountNumber(token.dataset.mopAllocatedQuantity);
+      if(quantity===null){token.remove();return}
+      token.textContent=componentTokenText(component,quantity)
     })
   }
   function removeComponentTokens(id){
@@ -449,6 +472,10 @@ function sheetEditorTemplate(){
     state.mopChoice=null
   }
   function renderMopPicker(){
+    const available=state.components.filter(row=>{
+      const remaining=remainingAmount(row);
+      return remaining!==null&&remaining>0&&String(row.unit||'').trim()
+    });
     if(!state.components.length){
       mopPicker.innerHTML='<div class="nexoMopPickerEmpty">'+esc(tr('Primero agrega ingredientes en la sección superior.','Add ingredients in the section above first.'))+'</div>';
       mopPicker.hidden=false;
@@ -457,37 +484,68 @@ function sheetEditorTemplate(){
     }
     if(!state.mopChoice){
       mopPicker.innerHTML=
-        '<div class="nexoMopPickerTitle">'+esc(tr('Insertar ingrediente','Insert ingredient'))+'</div>'+
-        '<div class="nexoMopPickerList">'+state.components.map(row=>
-          '<button type="button" data-mop-choose="'+esc(row.id)+'"><strong>'+esc(row.name||tr('Ingrediente','Ingredient'))+'</strong><span>'+esc(componentTokenText(row,'quantity'))+'</span></button>'
-        ).join('')+'</div>';
+        '<div class="nexoMopPickerTitle">'+esc(tr('Seleccionar ingrediente','Select ingredient'))+'</div>'+
+        (available.length
+          ? '<div class="nexoMopPickerList">'+available.map(row=>{
+              const remaining=remainingAmount(row);
+              return '<button type="button" data-mop-choose="'+esc(row.id)+'"><strong>'+esc(row.name||tr('Ingrediente','Ingredient'))+'</strong><span>'+esc(mopAmountText(remaining)+' '+String(row.unit||''))+' · '+esc(tr('disponible','available'))+'</span></button>'
+            }).join('')+'</div>'
+          : '<div class="nexoMopPickerEmpty">'+esc(tr('No quedan ingredientes con cantidad y unidad disponibles para insertar.','No ingredients with remaining quantity and unit are available to insert.'))+'</div>');
       mopPicker.querySelectorAll('[data-mop-choose]').forEach(btn=>btn.onclick=()=>{
-        state.mopChoice={componentId:String(btn.dataset.mopChoose),mode:'full'};
+        state.mopChoice={componentId:String(btn.dataset.mopChoose),action:''};
         renderMopPicker()
       })
     }else{
       const component=componentById(state.mopChoice.componentId);
-      if(!component){state.mopChoice=null;renderMopPicker();return}
-      const modes=[
-        ['full',tr('Cantidad + ingrediente','Quantity + ingredient')],
-        ['quantity',tr('Solo cantidad','Quantity only')],
-        ['name',tr('Solo ingrediente','Ingredient only')]
-      ];
-      mopPicker.innerHTML=
-        '<button type="button" class="nexoMopPickerBack" data-mop-back>← '+esc(tr('Ingredientes','Ingredients'))+'</button>'+
-        '<div class="nexoMopPickerSelected"><strong>'+esc(component.name||tr('Ingrediente','Ingredient'))+'</strong><span>'+esc(componentTokenText(component,'full'))+'</span></div>'+
-        '<div class="nexoMopModeList">'+modes.map(([mode,label])=>
-          '<button type="button" class="'+(state.mopChoice.mode===mode?'active':'')+'" data-mop-mode="'+mode+'"><span>'+esc(label)+'</span><strong>'+esc(componentTokenText(component,mode))+'</strong></button>'
-        ).join('')+'</div>'+
-        '<button type="button" class="nexoWorkspaceBtn primary wide" data-mop-done>'+esc(tr('Listo','Done'))+'</button>';
-      mopPicker.querySelector('[data-mop-back]').onclick=()=>{state.mopChoice=null;renderMopPicker()};
-      mopPicker.querySelectorAll('[data-mop-mode]').forEach(btn=>btn.onclick=()=>{
-        state.mopChoice.mode=String(btn.dataset.mopMode||'full');
-        renderMopPicker()
-      });
-      mopPicker.querySelector('[data-mop-done]').onclick=()=>{
-        insertMopToken(component,state.mopChoice.mode);
-        hideMopPicker()
+      const remaining=component?remainingAmount(component):null;
+      if(!component||remaining===null||remaining<=0){state.mopChoice=null;renderMopPicker();return}
+      const unit=String(component.unit||'');
+      const fullText=componentTokenText(component,remaining);
+      if(state.mopChoice.action==='split'){
+        mopPicker.innerHTML=
+          '<button type="button" class="nexoMopPickerBack" data-mop-back>← '+esc(tr('Atrás','Back'))+'</button>'+
+          '<div class="nexoMopPickerSelected"><strong>'+esc(component.name||tr('Ingrediente','Ingredient'))+'</strong><span>'+esc(tr('Disponible','Available'))+': '+esc(mopAmountText(remaining)+' '+unit)+'</span></div>'+
+          '<label class="nexoMopSplitField"><span>'+esc(tr('Cantidad a agregar','Amount to add'))+'</span><div><input data-mop-split-quantity inputmode="decimal" autocomplete="off" placeholder="'+esc(mopAmountText(remaining))+'"><strong>'+esc(unit)+'</strong></div><small data-mop-split-error></small></label>'+
+          '<button type="button" class="nexoWorkspaceBtn primary wide" data-mop-split-done>'+esc(tr('Listo','Done'))+'</button>';
+        mopPicker.querySelector('[data-mop-back]').onclick=()=>{state.mopChoice.action='';renderMopPicker()};
+        const input=mopPicker.querySelector('[data-mop-split-quantity]');
+        const error=mopPicker.querySelector('[data-mop-split-error]');
+        const submit=()=>{
+          const amount=mopAmountNumber(input.value);
+          if(amount===null||amount<=0){
+            error.textContent=tr('Ingresa una cantidad mayor que cero.','Enter an amount greater than zero.');
+            input.focus();
+            return
+          }
+          if(amount>remaining+1e-9){
+            error.textContent=tr('La cantidad supera lo que queda disponible.','The amount is greater than what remains available.');
+            input.focus();
+            return
+          }
+          insertMopToken(component,amount);
+          hideMopPicker()
+        };
+        input.addEventListener('input',()=>{error.textContent=''});
+        input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit()}});
+        mopPicker.querySelector('[data-mop-split-done]').onclick=submit;
+        queueMicrotask(()=>input.focus())
+      }else{
+        mopPicker.innerHTML=
+          '<button type="button" class="nexoMopPickerBack" data-mop-back>← '+esc(tr('Ingredientes','Ingredients'))+'</button>'+
+          '<div class="nexoMopPickerSelected"><strong>'+esc(component.name||tr('Ingrediente','Ingredient'))+'</strong><span>'+esc(tr('Quedan','Remaining'))+' '+esc(mopAmountText(remaining)+' '+unit)+'</span></div>'+
+          '<div class="nexoMopAllocationActions">'+
+            '<button type="button" data-mop-add-all><span>'+esc(tr('Agregar todo','Add all'))+'</span><strong>'+esc(fullText)+'</strong></button>'+
+            '<button type="button" data-mop-split><span>'+esc(tr('Dividir','Split'))+'</span><strong>'+esc(tr('Usar solo una parte y conservar el resto','Use only part and keep the remainder'))+'</strong></button>'+
+          '</div>';
+        mopPicker.querySelector('[data-mop-back]').onclick=()=>{state.mopChoice=null;renderMopPicker()};
+        mopPicker.querySelector('[data-mop-add-all]').onclick=()=>{
+          insertMopToken(component,remaining);
+          hideMopPicker()
+        };
+        mopPicker.querySelector('[data-mop-split]').onclick=()=>{
+          state.mopChoice.action='split';
+          renderMopPicker()
+        }
       }
     }
     mopPicker.hidden=false;
@@ -513,15 +571,19 @@ function sheetEditorTemplate(){
       mopPicker.style.bottom=Math.max(margin,window.innerHeight-rect.top+7)+'px'
     }
   }
-  function insertMopToken(component,mode){
+  function insertMopToken(component,allocatedQuantity){
+    const amount=mopAmountNumber(allocatedQuantity);
+    if(amount===null||amount<=0)return;
+    const remaining=remainingAmount(component);
+    if(remaining===null||amount>remaining+1e-9)return;
     const range=restoreMopRange();
     if(!range)return;
     const token=document.createElement('span');
     token.className='nexoMopDynamicToken';
     token.contentEditable='false';
     token.dataset.mopComponentId=component.id;
-    token.dataset.mopMode=mode;
-    token.textContent=componentTokenText(component,mode);
+    token.dataset.mopAllocatedQuantity=mopAmountText(amount);
+    token.textContent=componentTokenText(component,amount);
     range.deleteContents();
     range.insertNode(token);
     const spacer=document.createTextNode(' ');
