@@ -158,7 +158,89 @@ function enhanceRoot(){
   renderBody(root);
 }
 
+const sheetEditorStack=[];
 let activeSheetEditor=null;
+const SHEET_EDITOR_Z_BASE=2147483620;
+
+function sheetEditorTop(){
+  return sheetEditorStack[sheetEditorStack.length-1]||null
+}
+function syncSheetEditorStack(){
+  const top=sheetEditorTop();
+  sheetEditorStack.forEach((entry,index)=>{
+    const active=entry===top;
+    const layer=entry.layer;
+    if(!layer)return;
+    layer.dataset.sheetDepth=String(index);
+    layer.dataset.sheetInactive=active?'false':'true';
+    layer.style.zIndex=String(SHEET_EDITOR_Z_BASE+Math.min(index,20));
+    layer.setAttribute('aria-hidden',active?'false':'true');
+    try{layer.inert=!active}catch(_){}
+    if(!active){
+      layer.querySelectorAll('[data-mop-caret-plus],[data-mop-picker],.nexoSheetUnitPicker').forEach(node=>{node.hidden=true});
+      layer.querySelectorAll('[data-composition-menu]').forEach(node=>{node.hidden=true})
+    }
+  });
+  activeSheetEditor=top
+}
+function sheetEditorParent(state){
+  if(!state?.parentId)return null;
+  return sheetEditorStack.find(entry=>entry.id===state.parentId)||null
+}
+function sheetEditorDispose(state){
+  if(!state)return;
+  for(const cleanup of state.cleanups||[]){
+    try{cleanup()}catch(_){}
+  }
+  state.cleanups=[];
+  if(state.photoUrl){
+    try{URL.revokeObjectURL(state.photoUrl)}catch(_){}
+    state.photoUrl=''
+  }
+  try{state.layer?.remove()}catch(_){}
+}
+function sheetEditorClose(target=activeSheetEditor,reason='cancel'){
+  const current=sheetEditorTop();
+  if(!target||target!==current)return false;
+  const parent=sheetEditorParent(target);
+  const resumeFocus=parent?.resumeFocus||null;
+  sheetEditorStack.pop();
+  sheetEditorDispose(target);
+  syncSheetEditorStack();
+  if(typeof target.onClose==='function'){
+    try{target.onClose({reason,parentState:parent||null,childState:target})}catch(_){}
+  }
+  if(parent){
+    parent.resumeFocus=null;
+    queueMicrotask(()=>{
+      if(resumeFocus?.isConnected){
+        try{resumeFocus.focus({preventScroll:true})}catch(_){try{resumeFocus.focus()}catch(__){}}
+      }
+    })
+  }
+  return true
+}
+function sheetEditorComplete(target=activeSheetEditor,payload=null){
+  const current=sheetEditorTop();
+  if(!target||target!==current)return false;
+  const parent=sheetEditorParent(target);
+  const onComplete=target.onComplete;
+  const closed=sheetEditorClose(target,'complete');
+  if(closed&&typeof onComplete==='function'){
+    try{onComplete(payload,{parentState:parent||null,childState:target})}catch(_){}
+  }
+  return closed
+}
+function openNestedSheetEditor(kind,options={}){
+  const parent=sheetEditorTop();
+  if(!parent)return null;
+  parent.resumeFocus=parent.layer?.contains(document.activeElement)?document.activeElement:null;
+  return sheetEditorTemplate({
+    ...options,
+    kind:String(kind||'technical-sheet'),
+    parentState:parent
+  })
+}
 const SHEET_UNIT_CATALOG=[
   ['G','Gramo','Gram'],['KG','Kilogramo','Kilogram'],['MG','Miligramo','Milligram'],
   ['OZ','Onza','Ounce'],['LB','Libra','Pound'],
@@ -184,21 +266,19 @@ function ingredientName(row){
 function preparationSheetName(row){
   return text(row,'titleEn','titleEs')||row?.title||tr('Preparación','Preparation')
 }
-function sheetEditorClose(){
-  const current=activeSheetEditor;
-  if(current?.photoUrl){
-    try{URL.revokeObjectURL(current.photoUrl)}catch(_){}
-  }
-  document.getElementById('nexoSingleSheetEditorLayer')?.remove();
-  activeSheetEditor=null
-}
-function sheetEditorShell(){
+function sheetEditorShell(options={}){
   const el=document.createElement('div');
-  el.id='nexoSingleSheetEditorLayer';
+  const layerId=String(options.layerId||sheetEditorId('sheet-layer'));
+  el.id=layerId;
+  el.className='nexoSingleSheetEditorLayer';
+  el.dataset.sheetKind=String(options.kind||'technical-sheet');
+  const ariaLabel=options.ariaLabel||tr('Crear ficha técnica','Create technical sheet');
+  const eyebrow=options.eyebrow||tr('Nueva ficha técnica','New technical sheet');
+  const heading=options.heading||tr('Crear ficha','Create sheet');
   el.innerHTML=
-    '<div class="nexoSheetEditorFrame" role="dialog" aria-modal="true" aria-label="'+esc(tr('Crear ficha técnica','Create technical sheet'))+'">'+
+    '<div class="nexoSheetEditorFrame" role="dialog" aria-modal="true" aria-label="'+esc(ariaLabel)+'">'+
       '<header class="nexoSheetEditorHead">'+
-        '<div><span>'+esc(tr('Nueva ficha técnica','New technical sheet'))+'</span><strong>'+esc(tr('Crear ficha','Create sheet'))+'</strong></div>'+
+        '<div><span>'+esc(eyebrow)+'</span><strong>'+esc(heading)+'</strong></div>'+
         '<button type="button" data-sheet-editor-close aria-label="'+esc(tr('Cerrar','Close'))+'">'+icon('cerrar')+'</button>'+
       '</header>'+
       '<main class="nexoSheetEditorCanvas">'+
@@ -266,9 +346,20 @@ function sheetEditorShell(){
   document.body.appendChild(el);
   return el
 }
-function sheetEditorTemplate(){
-  const layer=sheetEditorShell();
+function sheetEditorTemplate(options={}){
+  const parentState=options.parentState||null;
+  if(parentState&&parentState!==sheetEditorTop())return null;
+  const editorId=sheetEditorId('sheet-editor');
+  const layer=sheetEditorShell({...options,layerId:'nexoSheetEditorLayer_'+editorId});
   const state={
+    id:editorId,
+    kind:String(options.kind||'technical-sheet'),
+    parentId:parentState?.id||'',
+    layer,
+    onComplete:typeof options.onComplete==='function'?options.onComplete:null,
+    onClose:typeof options.onClose==='function'?options.onClose:null,
+    cleanups:[],
+    resumeFocus:null,
     title:'',
     description:'',
     photoFile:null,
@@ -284,7 +375,8 @@ function sheetEditorTemplate(){
     positioningMopPlus:false,
     openUnitComponentId:''
   };
-  activeSheetEditor=state;
+  sheetEditorStack.push(state);
+  syncSheetEditorStack();
 
   const title=layer.querySelector('[data-sheet-title]');
   const description=layer.querySelector('[data-sheet-description]');
@@ -933,8 +1025,11 @@ function sheetEditorTemplate(){
     }
   };
   editorCanvas?.addEventListener('scroll',repositionFloatingPickers,{passive:true});
-  window.addEventListener('resize',repositionFloatingPickers,{passive:true});
-  document.addEventListener('selectionchange',()=>{
+  if(editorCanvas)state.cleanups.push(()=>editorCanvas.removeEventListener('scroll',repositionFloatingPickers));
+  const onEditorResize=()=>{if(activeSheetEditor===state)repositionFloatingPickers()};
+  window.addEventListener('resize',onEditorResize,{passive:true});
+  state.cleanups.push(()=>window.removeEventListener('resize',onEditorResize));
+  const onEditorSelectionChange=()=>{
     if(activeSheetEditor!==state||state.restoringMopRange)return;
     const selection=window.getSelection();
     if(!selection||!selection.rangeCount)return;
@@ -943,11 +1038,22 @@ function sheetEditorTemplate(){
       state.savedMopRange=range.cloneRange();
       positionCaretPlus(state.savedMopRange)
     }
-  });
+  };
+  document.addEventListener('selectionchange',onEditorSelectionChange);
+  state.cleanups.push(()=>document.removeEventListener('selectionchange',onEditorSelectionChange));
+  const onEditorKeydown=e=>{
+    if(activeSheetEditor!==state)return;
+    if(e.key==='Escape'){
+      e.preventDefault();
+      sheetEditorClose(state,'escape')
+    }
+  };
+  document.addEventListener('keydown',onEditorKeydown);
+  state.cleanups.push(()=>document.removeEventListener('keydown',onEditorKeydown));
 
-  layer.querySelector('[data-sheet-editor-close]').onclick=sheetEditorClose;
+  layer.querySelector('[data-sheet-editor-close]').onclick=()=>sheetEditorClose(state,'close-button');
   layer.addEventListener('mousedown',e=>{
-    if(e.target===layer){sheetEditorClose();return}
+    if(e.target===layer){sheetEditorClose(state,'backdrop');return}
     if(!e.target.closest('[data-composition-action]'))closeCompositionMenus();
     if(!mopPicker.hidden&&!e.target.closest('[data-mop-picker]')&&!e.target.closest('[data-mop-caret-plus]'))hideMopPicker();
     if(!unitPicker.hidden&&!e.target.closest('.nexoSheetUnitPicker')&&!e.target.closest('[data-component-unit-trigger]'))hideUnitPicker();
@@ -959,12 +1065,23 @@ function sheetEditorTemplate(){
   renderIngredientList();
   renderMopSteps();
   commitMopHistory();
-  queueMicrotask(()=>title.focus())
+  queueMicrotask(()=>{
+    if(activeSheetEditor===state)title.focus()
+  });
+  return state
 }
 function openCreateFlow(){
   if(!canCreate())return;
   sheetEditorTemplate()
 }
+
+window.NEXO_FICHAS_NESTED_EDITOR=Object.freeze({
+  get depth(){return sheetEditorStack.length},
+  get activeKind(){return sheetEditorTop()?.kind||''},
+  openChild(kind,options={}){return openNestedSheetEditor(kind,options)},
+  closeTop(reason='api'){return sheetEditorClose(sheetEditorTop(),reason)},
+  completeTop(payload=null){return sheetEditorComplete(sheetEditorTop(),payload)}
+});
 
 function openImport(){
   if(!canImport())return;
