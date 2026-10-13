@@ -23,6 +23,7 @@ function canImport(){return context().type==='workspace'&&capabilities().canShar
 function canCreate(){return capabilities().canEdit===true}
 function activeRecipes(){return(data().recipes||[]).filter(x=>x&&x.active!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0))}
 function activeProducts(){return(data().ingredients||[]).filter(x=>x&&x.active!==false)}
+function activePreparationSheets(){return activeRecipes().filter(x=>String(x.recipeType||'').toUpperCase()!=='DISH')}
 function hasContent(){return activeRecipes().length>0||activeProducts().length>0}
 function searchNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
 function sheetSearchCorpus(recipe){
@@ -180,6 +181,9 @@ function sheetEditorId(prefix='draft'){
 function ingredientName(row){
   return text(row,'nameEn','nameEs')||row?.name||tr('Ingrediente','Ingredient')
 }
+function preparationSheetName(row){
+  return text(row,'titleEn','titleEs')||row?.title||tr('Preparación','Preparation')
+}
 function sheetEditorClose(){
   const current=activeSheetEditor;
   if(current?.photoUrl){
@@ -216,7 +220,8 @@ function sheetEditorShell(){
           '<div class="nexoSheetEditorSectionHead">'+
             '<div><span>'+esc(tr('Composición','Composition'))+'</span><h2>'+esc(tr('Ingredientes','Ingredients'))+'</h2></div>'+
             '<div class="nexoSheetEditorSectionActions">'+
-              '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-existing>'+icon('nuevo')+'<span>'+esc(tr('Agregar existente','Add existing'))+'</span></button>'+
+              '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-existing>'+icon('nuevo')+'<span>'+esc(tr('Insumo','Supply'))+'</span></button>'+
+              '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-preparation>'+icon('nuevo')+'<span>'+esc(tr('Preparación','Preparation'))+'</span></button>'+
               '<button type="button" class="nexoWorkspaceBtn" data-sheet-create-ingredient>'+esc(tr('Crear ingrediente','Create ingredient'))+'</button>'+
             '</div>'+
           '</div>'+
@@ -231,11 +236,11 @@ function sheetEditorShell(){
                 '<button type="button" class="nexoMopHistoryBtn" data-mop-undo aria-label="'+esc(tr('Deshacer','Undo'))+'" title="'+esc(tr('Deshacer','Undo'))+'" disabled>↶</button>'+
                 '<button type="button" class="nexoMopHistoryBtn" data-mop-redo aria-label="'+esc(tr('Rehacer','Redo'))+'" title="'+esc(tr('Rehacer','Redo'))+'" disabled>↷</button>'+
               '</div>'+
+              '<button type="button" class="nexoMopSetStepBtn" data-mop-set-step disabled><span>'+esc(tr('Establecer paso','Set step'))+'</span><strong aria-hidden="true">+</strong></button>'+
               '<div class="nexoMopInfoWrap" data-mop-info-wrap>'+
                 '<button type="button" class="nexoMopInfoBtn" data-mop-info aria-label="'+esc(tr('Información del MOP','MOP information'))+'" aria-expanded="false">!</button>'+
                 '<div class="nexoMopInfoPopover" role="tooltip">'+esc(tr('Escribe el método como texto normal y usa el + junto al cursor para insertar ingredientes dinámicos. Cuando completes una acción, usa Establecer paso: el contenido se guardará arriba y el área quedará lista para el siguiente paso.','Write the method as normal text and use the + beside the cursor to insert dynamic ingredients. When an action is complete, use Set step: the content will be saved above and the editor will be cleared for the next step.'))+'</div>'+
               '</div>'+
-              '<button type="button" class="nexoMopSetStepBtn" data-mop-set-step disabled><span>'+esc(tr('Establecer paso','Set step'))+'</span><strong aria-hidden="true">+</strong></button>'+
             '</div>'+
           '</div>'+
           '<div class="nexoMopStepsList" data-mop-steps-list></div>'+
@@ -449,7 +454,7 @@ function sheetEditorTemplate(){
     list.innerHTML=state.components.map((row,index)=>
       '<article class="nexoSheetIngredientRow" data-component-id="'+esc(row.id)+'">'+
         '<div class="nexoSheetIngredientIndex">'+(index+1)+'</div>'+
-        '<label class="nexoSheetIngredientName"><span>'+esc(tr('Ingrediente','Ingredient'))+'</span><input data-component-name maxlength="160" value="'+esc(row.name)+'" '+(row.source==='existing'?'readonly':'')+'></label>'+
+        '<label class="nexoSheetIngredientName"><span>'+esc(row.source==='preparation'?tr('Preparación','Preparation'):tr('Ingrediente','Ingredient'))+'</span><input data-component-name maxlength="160" value="'+esc(row.name)+'" '+(row.source!=='new'?'readonly':'')+'></label>'+
         '<label><span>'+esc(tr('Cantidad','Quantity'))+'</span><input data-component-quantity inputmode="decimal" value="'+esc(row.quantity)+'" placeholder="1000"></label>'+
         '<label class="nexoSheetUnitField"><span>'+esc(tr('Unidad','Unit'))+'</span><button type="button" class="nexoSheetUnitTrigger" data-component-unit-trigger aria-haspopup="listbox">'+
           '<strong>'+esc(row.unit||tr('Elegir unidad','Choose unit'))+'</strong>'+
@@ -527,33 +532,63 @@ function sheetEditorTemplate(){
     positionUnitPicker(trigger)
   }
 
-  function renderExistingPicker(query=''){
+  function renderExistingPicker(kind='ingredient',query=''){
+    const isPreparation=kind==='preparation';
     const q=searchNorm(query);
-    const selectedIds=new Set(state.components.filter(row=>row.source==='existing').map(row=>row.targetIngredientId));
-    const rows=activeProducts().filter(row=>{
+    const selectedIds=new Set(
+      state.components
+        .filter(row=>isPreparation?row.source==='preparation':row.source==='existing')
+        .map(row=>isPreparation?row.targetRecipeId:row.targetIngredientId)
+        .filter(Boolean)
+        .map(String)
+    );
+    const catalog=isPreparation?activePreparationSheets():activeProducts();
+    const rows=catalog.filter(row=>{
       if(selectedIds.has(String(row._id||'')))return false;
       if(!q)return true;
-      return searchNorm([row.nameEs,row.nameEn].filter(Boolean).join(' ')).includes(q)
+      const corpus=isPreparation
+        ? [row.titleEs,row.titleEn,row.category,row.recipeType].filter(Boolean).join(' ')
+        : [row.nameEs,row.nameEn,row.descriptionEs,row.descriptionEn].filter(Boolean).join(' ');
+      return searchNorm(corpus).includes(q)
     }).slice(0,40);
+    const itemName=row=>isPreparation?preparationSheetName(row):ingredientName(row);
+    const itemDetail=row=>isPreparation
+      ? String(row.category||tr('Preparación existente','Existing preparation'))
+      : (text(row,'descriptionEn','descriptionEs')||'');
     existingPicker.innerHTML=
-      '<div class="nexoSheetIngredientPickerHead"><label>'+icon('busqueda')+'<input data-existing-search autocomplete="off" placeholder="'+esc(tr('Buscar ingrediente…','Search ingredient…'))+'" value="'+esc(query)+'"></label><button type="button" data-existing-close>×</button></div>'+
+      '<div class="nexoSheetIngredientPickerHead"><label>'+icon('busqueda')+'<input data-existing-search autocomplete="off" placeholder="'+esc(isPreparation?tr('Buscar preparación…','Search preparation…'):tr('Buscar insumo…','Search supply…'))+'" value="'+esc(query)+'"></label><button type="button" data-existing-close>×</button></div>'+
       '<div class="nexoSheetIngredientPickerResults">'+
-        (rows.length?rows.map(row=>'<button type="button" data-existing-id="'+esc(row._id)+'"><strong>'+esc(ingredientName(row))+'</strong><span>'+esc(text(row,'descriptionEn','descriptionEs')||'')+'</span></button>').join(''):'<p>'+esc(tr('No hay ingredientes disponibles con esa búsqueda.','No ingredients match that search.'))+'</p>')+
+        (rows.length
+          ? rows.map(row=>'<button type="button" data-existing-id="'+esc(row._id)+'"><strong>'+esc(itemName(row))+'</strong><span>'+esc(itemDetail(row))+'</span></button>').join('')
+          : '<p>'+esc(isPreparation?tr('No hay preparaciones disponibles con esa búsqueda.','No preparations match that search.'):tr('No hay insumos disponibles con esa búsqueda.','No supplies match that search.'))+'</p>')+
       '</div>';
     const search=existingPicker.querySelector('[data-existing-search]');
-    search?.addEventListener('input',()=>renderExistingPicker(search.value));
+    search?.addEventListener('input',()=>renderExistingPicker(kind,search.value));
     existingPicker.querySelector('[data-existing-close]').onclick=()=>{existingPicker.hidden=true};
     existingPicker.querySelectorAll('[data-existing-id]').forEach(btn=>btn.onclick=()=>{
-      const source=activeProducts().find(row=>String(row._id)===String(btn.dataset.existingId));
+      const source=catalog.find(row=>String(row._id)===String(btn.dataset.existingId));
       if(!source)return;
-      state.components.push({
-        id:sheetEditorId('component'),
-        source:'existing',
-        targetIngredientId:String(source._id),
-        name:ingredientName(source),
-        quantity:'',
-        unit:''
-      });
+      if(isPreparation){
+        state.components.push({
+          id:sheetEditorId('component'),
+          source:'preparation',
+          targetIngredientId:'',
+          targetRecipeId:String(source._id),
+          name:preparationSheetName(source),
+          quantity:'',
+          unit:''
+        })
+      }else{
+        state.components.push({
+          id:sheetEditorId('component'),
+          source:'existing',
+          targetIngredientId:String(source._id),
+          targetRecipeId:'',
+          name:ingredientName(source),
+          quantity:'',
+          unit:''
+        })
+      }
       existingPicker.hidden=true;
       renderIngredientList()
     });
@@ -800,11 +835,15 @@ function sheetEditorTemplate(){
 
   layer.querySelector('[data-sheet-add-existing]').onclick=()=>{
     existingPicker.hidden=false;
-    renderExistingPicker('')
+    renderExistingPicker('ingredient','')
+  };
+  layer.querySelector('[data-sheet-add-preparation]').onclick=()=>{
+    existingPicker.hidden=false;
+    renderExistingPicker('preparation','')
   };
   layer.querySelector('[data-sheet-create-ingredient]').onclick=()=>{
     const id=sheetEditorId('component');
-    state.components.push({id,source:'new',targetIngredientId:'',name:'',quantity:'',unit:''});
+    state.components.push({id,source:'new',targetIngredientId:'',targetRecipeId:'',name:'',quantity:'',unit:''});
     renderIngredientList();
     queueMicrotask(()=>list.querySelector('[data-component-id="'+CSS.escape(id)+'"] [data-component-name]')?.focus())
   };
