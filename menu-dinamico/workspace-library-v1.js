@@ -449,7 +449,7 @@ function sheetEditorTemplate(){
     try{rect=range.getBoundingClientRect()}catch(_){}
     const wrapRect=mopWrap.getBoundingClientRect();
     const editorRect=editor.getBoundingClientRect();
-    const x=(rect&&Number.isFinite(rect.left)&&rect.left>0?rect.right:editorRect.left)-wrapRect.left+mopWrap.scrollLeft+7;
+    const x=(rect&&Number.isFinite(rect.left)&&rect.left>0?rect.right:editorRect.left)-wrapRect.left+mopWrap.scrollLeft+18;
     const y=(rect&&Number.isFinite(rect.top)&&rect.top>0?rect.top:editorRect.top)-wrapRect.top+mopWrap.scrollTop-2;
     caretPlus.style.left=Math.max(8,Math.min(x,mopWrap.clientWidth-38))+'px';
     caretPlus.style.top=Math.max(8,y)+'px';
