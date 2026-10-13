@@ -248,6 +248,7 @@ function sheetEditorTemplate(){
     savedMopRange:null,
     mopChoice:null,
     restoringMopRange:false,
+    positioningMopPlus:false,
     openUnitComponentId:''
   };
   activeSheetEditor=state;
@@ -434,13 +435,60 @@ function sheetEditorTemplate(){
     queueMicrotask(()=>search?.focus())
   }
 
+  function positionCaretPlus(range=state.savedMopRange){
+    if(state.positioningMopPlus||!range){
+      if(!range)caretPlus.hidden=true;
+      return
+    }
+    let probe=null;
+    state.positioningMopPlus=true;
+    state.restoringMopRange=true;
+    try{
+      const work=range.cloneRange();
+      work.collapse(true);
+      probe=document.createElement('span');
+      probe.className='nexoMopCaretProbe';
+      probe.setAttribute('aria-hidden','true');
+      probe.textContent='\u200b';
+      work.insertNode(probe);
+      const rect=probe.getBoundingClientRect();
+      const caretX=rect.left;
+      const caretCenterY=rect.top+(rect.height/2);
+      caretPlus.style.left=(caretX+11)+'px';
+      caretPlus.style.top=(caretCenterY-15)+'px';
+      caretPlus.hidden=false;
+
+      const restored=document.createRange();
+      restored.setStartBefore(probe);
+      restored.collapse(true);
+      probe.remove();
+      probe=null;
+      editor.normalize();
+
+      if(document.activeElement===editor){
+        const selection=window.getSelection();
+        if(selection){
+          selection.removeAllRanges();
+          selection.addRange(restored)
+        }
+      }
+      state.savedMopRange=restored.cloneRange()
+    }catch(_){
+      caretPlus.hidden=true
+    }finally{
+      if(probe?.isConnected)probe.remove();
+      state.restoringMopRange=false;
+      state.positioningMopPlus=false
+    }
+  }
   function rememberMopRange(){
-    if(state.restoringMopRange)return;
+    if(state.restoringMopRange||state.positioningMopPlus)return;
     const selection=window.getSelection();
     if(!selection||!selection.rangeCount)return;
     const range=selection.getRangeAt(0);
     if(!editor.contains(range.startContainer))return;
-    state.savedMopRange=range.cloneRange()
+    state.savedMopRange=range.cloneRange();
+    positionCaretPlus(state.savedMopRange)
   }
   function restoreMopRange(){
     let range=null;
@@ -483,6 +531,7 @@ function sheetEditorTemplate(){
     if(!state.components.length){
       mopPicker.innerHTML='<div class="nexoMopPickerEmpty">'+esc(tr('Primero agrega ingredientes en la sección superior.','Add ingredients in the section above first.'))+'</div>';
       mopPicker.hidden=false;
+      positionMopPicker();
       return
     }
     if(!state.mopChoice){
@@ -552,6 +601,27 @@ function sheetEditorTemplate(){
       }
     }
     mopPicker.hidden=false;
+    positionMopPicker()
+  }
+  function positionMopPicker(){
+    if(mopPicker.hidden||caretPlus.hidden)return;
+    const rect=caretPlus.getBoundingClientRect();
+    const margin=10;
+    const width=Math.min(360,Math.max(270,window.innerWidth-margin*2));
+    const left=Math.max(margin,Math.min(rect.left,window.innerWidth-width-margin));
+    const maxHeight=Math.min(420,Math.max(240,window.innerHeight*0.52));
+    mopPicker.style.width=width+'px';
+    mopPicker.style.maxHeight=maxHeight+'px';
+    mopPicker.style.left=left+'px';
+    const spaceBelow=window.innerHeight-rect.bottom-margin;
+    const spaceAbove=rect.top-margin;
+    if(spaceBelow>=Math.min(300,maxHeight)||spaceBelow>=spaceAbove){
+      mopPicker.style.top=Math.max(margin,rect.bottom+7)+'px';
+      mopPicker.style.bottom='auto'
+    }else{
+      mopPicker.style.top='auto';
+      mopPicker.style.bottom=Math.max(margin,window.innerHeight-rect.top+7)+'px'
+    }
   }
   function insertMopToken(component,allocatedQuantity){
     const amount=mopAmountNumber(allocatedQuantity);
@@ -576,7 +646,8 @@ function sheetEditorTemplate(){
     const selection=window.getSelection();
     selection.removeAllRanges();
     selection.addRange(next);
-    state.savedMopRange=next.cloneRange()
+    state.savedMopRange=next.cloneRange();
+    positionCaretPlus(state.savedMopRange)
   }
 
   title.addEventListener('input',()=>{state.title=title.value});
@@ -625,6 +696,8 @@ function sheetEditorTemplate(){
   mopPicker.addEventListener('wheel',e=>e.stopPropagation(),{passive:true});
   unitPicker.addEventListener('wheel',e=>e.stopPropagation(),{passive:true});
   const repositionFloatingPickers=()=>{
+    if(state.savedMopRange&&!caretPlus.hidden)positionCaretPlus(state.savedMopRange);
+    if(!mopPicker.hidden)positionMopPicker();
     if(!unitPicker.hidden){
       const trigger=list.querySelector('[data-component-id="'+CSS.escape(state.openUnitComponentId)+'"] [data-component-unit-trigger]');
       if(trigger)positionUnitPicker(trigger);else hideUnitPicker()
@@ -638,7 +711,8 @@ function sheetEditorTemplate(){
     if(!selection||!selection.rangeCount)return;
     const range=selection.getRangeAt(0);
     if(editor.contains(range.startContainer)){
-      state.savedMopRange=range.cloneRange()
+      state.savedMopRange=range.cloneRange();
+      positionCaretPlus(state.savedMopRange)
     }
   });
 
