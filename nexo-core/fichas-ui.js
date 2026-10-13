@@ -5,7 +5,7 @@ const ACCESS_REVISION='fichas-workspace-context-20261007-40';
 const ENGINE_REVISION='plus-caret-20261013-64';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
-const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-4';
+const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-5';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -1127,6 +1127,12 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='HEADER';
   sharedHeaderState=await api('header.bootstrap',{workspaceId:requestedWorkspaceId});
+  try{
+    sharedHeaderState.navigation=await window.NEXO_SHARED_HEADER?.loadNavigation?.({
+      seedNavigation:sharedHeaderState?.navigation||{},
+      isWonder:sharedHeaderState?.isWonder===true
+    })||sharedHeaderState?.navigation||{}
+  }catch(_){}
   mountFichasHeader();
   accessStage='ENGINE';
   mountEngine();
