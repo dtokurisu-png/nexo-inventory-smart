@@ -98,3 +98,10 @@ La página debe mantenerse restringida al personal/miembros autorizados. En una 
 ## Estado
 
 La arquitectura base está creada sin modificar el `index.html` principal del proyecto de inventario existente.
+
+
+## Modelo canónico de dominio
+
+El modelo nuevo separa explícitamente Insumos, Preparaciones, Procesos reutilizables y la relación Insumo↔Proceso. Consulta `../FICHAS_DATA_MODEL_CANON.md` y `../nexo-core/fichas-domain-schema-v1.json`.
+
+`DMPreparations` se conserva únicamente como compatibilidad con cortes/procesos históricos ligados a ingredientes. Las nuevas escrituras de procesos deben usar `DMProcesses` y `DMSupplyProcesses`.

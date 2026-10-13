@@ -4,6 +4,8 @@
 
 Before creating or modifying any UI, form, editor, creator, workflow, or customer-facing component, read and follow `DEVELOPMENT_STAGES_CANON.md`.
 
+Before modifying Dynamic Technical Sheets data, creation, composition, search, import, or persistence, also read and follow `FICHAS_DATA_MODEL_CANON.md`.
+
 That rule is canonical and high priority: internal development stages must not be exposed as customer-facing stages unless the owner explicitly requests staged UX.
 
 # Nexo Inventory Smart — locked boundaries

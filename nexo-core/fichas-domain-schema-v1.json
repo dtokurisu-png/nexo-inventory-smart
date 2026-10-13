@@ -1,0 +1,135 @@
+{
+  "version": "fichas-domain-v1",
+  "purpose": "Canonical domain model for Dynamic Technical Sheets. Internal development model; not a customer-facing staged flow.",
+  "canonicalEntities": {
+    "supplies": {
+      "legacySource": "DMIngredients",
+      "required": [
+        "id",
+        "name"
+      ],
+      "fields": {
+        "id": "TEXT",
+        "nameEs": "TEXT",
+        "nameEn": "TEXT",
+        "descriptionEs": "TEXT",
+        "descriptionEn": "TEXT",
+        "supplyMode": [
+          "CONSUMABLE",
+          "PROCESSABLE"
+        ],
+        "defaultQuantity": "NUMBER|null",
+        "defaultUnit": "TEXT|null",
+        "images": "MEDIA_IMAGE[]",
+        "primaryImageId": "TEXT|null",
+        "active": "BOOLEAN",
+        "schemaVersion": "TEXT"
+      }
+    },
+    "preparationSheets": {
+      "legacySource": "DMRecipes where recipeType != DISH",
+      "fields": {
+        "id": "TEXT",
+        "titleEs": "TEXT",
+        "titleEn": "TEXT",
+        "sheetKind": "PREPARATION",
+        "heroImage": "MEDIA_IMAGE|null",
+        "active": "BOOLEAN",
+        "schemaVersion": "TEXT"
+      }
+    },
+    "processes": {
+      "physicalCollection": "DMProcesses",
+      "reusableAcrossSupplies": true,
+      "fields": {
+        "id": "TEXT",
+        "processKey": "TEXT",
+        "nameEs": "TEXT",
+        "nameEn": "TEXT",
+        "descriptionEs": "TEXT",
+        "descriptionEn": "TEXT",
+        "active": "BOOLEAN",
+        "schemaVersion": "TEXT"
+      }
+    },
+    "supplyProcesses": {
+      "physicalCollection": "DMSupplyProcesses",
+      "relation": "many-to-many via junction records",
+      "fields": {
+        "id": "TEXT",
+        "supplyId": "TEXT",
+        "processId": "TEXT",
+        "image": "MEDIA_IMAGE|null",
+        "notesEs": "TEXT",
+        "notesEn": "TEXT",
+        "sortOrder": "NUMBER",
+        "active": "BOOLEAN",
+        "legacyPreparationId": "TEXT|null",
+        "schemaVersion": "TEXT"
+      }
+    },
+    "compositionItems": {
+      "legacySource": "DMComponents",
+      "componentTypes": [
+        "SUPPLY",
+        "SUPPLY_PROCESS",
+        "PREPARATION",
+        "TEXT"
+      ],
+      "fields": {
+        "supplyId": "TEXT|null",
+        "supplyProcessId": "TEXT|null",
+        "preparationSheetId": "TEXT|null"
+      }
+    }
+  },
+  "physicalCollections": {
+    "DMIngredients": {
+      "canonicalEntity": "supplies",
+      "status": "active"
+    },
+    "DMRecipes": {
+      "canonicalEntities": [
+        "preparationSheets",
+        "finalProductSheets"
+      ],
+      "status": "active"
+    },
+    "DMComponents": {
+      "canonicalEntity": "compositionItems",
+      "status": "active"
+    },
+    "DMProcesses": {
+      "canonicalEntity": "processes",
+      "status": "new"
+    },
+    "DMSupplyProcesses": {
+      "canonicalEntity": "supplyProcesses",
+      "status": "new"
+    },
+    "DMPreparations": {
+      "status": "legacy-compatibility",
+      "meaning": "ingredient-specific cut/process records",
+      "mapsTo": [
+        "processes",
+        "supplyProcesses"
+      ],
+      "newWrites": false
+    }
+  },
+  "legacyMapping": {
+    "DMPreparations.nameEs/nameEn": "DMProcesses.nameEs/nameEn (deduplicated by normalized process name)",
+    "DMPreparations.ingredientId": "DMSupplyProcesses.supplyId",
+    "DMPreparations._id": "DMSupplyProcesses.legacyPreparationId",
+    "DMComponents targetIngredientId only": "SUPPLY",
+    "DMComponents targetIngredientId + targetPreparationId": "SUPPLY_PROCESS",
+    "DMComponents targetRecipeId": "PREPARATION"
+  },
+  "invariants": [
+    "A process is reusable and must not belong exclusively to one supply.",
+    "A supply-process record is the association between one supply and one reusable process.",
+    "A preparation is a technical sheet/subrecipe, not a cut or process.",
+    "Legacy DMPreparations remains readable but must not be used for new writes.",
+    "Supply mode is explicit when present; legacy supplies with process relations are inferred as PROCESSABLE."
+  ]
+}
