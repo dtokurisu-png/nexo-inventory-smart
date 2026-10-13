@@ -17,7 +17,7 @@ window.__nexoDevelopmentCenterStage0Version=VERSION;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
-const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261012-3';
+const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-4';
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
@@ -200,13 +200,11 @@ function mountDevelopmentHeader(){
     theme:theme(),
     language:developmentLanguage(),
     contextLabel:'Centro de desarrollo',
+    navigation:developmentSession?.navigation||{},
     profile,
     roleKey,
     roleLabel,
     signal:runtimeAbort.signal,
-    onHome:goMySpace,
-    onPersonal:goMySpace,
-    onDevelopment:()=>{},
     onTheme:()=>{
       window.NEXO_THEME_RUNTIME?.toggleTheme?.({persist:true,notify:true});
       requestAnimationFrame(mountDevelopmentHeader)
