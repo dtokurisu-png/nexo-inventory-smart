@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261013-8';
+const VERSION='20261013-9';
 if(window.NEXO_SHARED_HEADER?.version===VERSION)return;
 
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
@@ -91,70 +91,28 @@ function ensureStyle(){
 .nxo-shared-header .nxo-nav-link.active:after{background:var(--nxo-sh-active)!important}
 
 .nxo-shared-header .nxo-nav-menu-caret{font-size:10px;line-height:1;opacity:.8;transition:transform .15s ease}
-.nxo-header-flyout-root{
-  position:fixed!important;inset:0!important;z-index:2147483647!important;pointer-events:none!important;
-  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important
+.nxo-shared-header .nxo-personal-menu{
+  display:none;position:absolute;left:0;top:calc(100% + 8px);z-index:300;width:320px;max-width:min(420px,calc(100vw - 20px));
+  max-height:min(70dvh,620px);overflow:auto;overscroll-behavior:contain;padding:9px;
+  border:1px solid var(--nxo-sh-line2);border-radius:14px;background:var(--nxo-sh-panel);color:var(--nxo-sh-text);
+  box-shadow:var(--nxo-sh-shadow);-webkit-backdrop-filter:blur(22px) saturate(140%);backdrop-filter:blur(22px) saturate(140%)
 }
-.nxo-header-flyout-root *{box-sizing:border-box}
-.nxo-header-flyout{
-  position:fixed!important;display:none;width:292px;max-width:calc(100vw - 16px);padding:8px;
-  pointer-events:auto!important;border:1px solid rgba(184,197,216,.34);border-radius:12px;
-  background:rgba(15,21,30,.995);color:#f2f5f8;box-shadow:0 24px 80px rgba(0,0,0,.36);
-  -webkit-backdrop-filter:blur(22px) saturate(140%);backdrop-filter:blur(22px) saturate(140%);
-  overflow:auto;overscroll-behavior:contain
-}
-.nxo-header-flyout.open{display:block}
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-flyout{
-  background:rgba(248,251,255,.998);color:#1d2940;border-color:#b9cbed;
-  box-shadow:0 24px 70px rgba(23,39,85,.28)
-}
-.nxo-header-flyout-section{
-  padding:8px 9px 5px;color:#91a0b5;font-size:8px;font-weight:900;letter-spacing:.075em;text-transform:uppercase
-}
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-flyout-section{color:#59667e}
-.nxo-header-flyout-divider{height:1px;margin:6px 4px;background:rgba(145,160,181,.18)}
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-flyout-divider{background:#d4def0}
-.nxo-header-flyout-item,
-.nxo-header-workspace-open,
-.nxo-header-workspace-tools{
-  appearance:none;border:0;background:transparent;color:inherit;cursor:pointer;font:inherit
-}
-.nxo-header-flyout-item{
-  width:100%;min-height:40px;padding:8px 9px;border-radius:9px;display:flex;align-items:center;gap:8px;text-align:left
-}
-.nxo-header-flyout-item:hover,.nxo-header-flyout-item:focus-visible,
-.nxo-header-workspace-open:hover,.nxo-header-workspace-open:focus-visible,
-.nxo-header-workspace-tools:hover,.nxo-header-workspace-tools:focus-visible{
-  outline:none;background:rgba(255,255,255,.09)
-}
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-flyout-item:hover,
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-flyout-item:focus-visible,
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-workspace-open:hover,
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-workspace-open:focus-visible,
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-workspace-tools:hover,
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-workspace-tools:focus-visible{
-  background:#e6eefc
-}
-.nxo-header-flyout .nxo-icon-img{width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto}
-.nxo-header-flyout-copy{display:grid;min-width:0;flex:1}
-.nxo-header-flyout-copy strong{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nxo-header-flyout-copy small{margin-top:2px;color:#91a0b5;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-flyout-copy small{color:#59667e}
-.nxo-header-workspace-row{display:flex;align-items:stretch;gap:2px;border-radius:9px}
-.nxo-header-workspace-open{
-  flex:1 1 auto;min-width:0;min-height:40px;padding:8px 9px;border-radius:9px;
-  display:flex;align-items:center;gap:8px;text-align:left
-}
-.nxo-header-workspace-tools{
-  flex:0 0 34px;width:34px;min-height:40px;padding:0;border-radius:9px;display:grid;place-items:center
-}
-.nxo-header-workspace-arrow{font-size:15px;line-height:1;color:#91a0b5}
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-workspace-arrow{color:#59667e}
-.nxo-header-workspace-tools[aria-expanded="true"] .nxo-header-workspace-arrow{transform:rotate(90deg)}
-.nxo-header-flyout-empty{padding:10px;color:#91a0b5;font-size:9px}
-.nxo-header-flyout-root[data-theme="day"] .nxo-header-flyout-empty{color:#59667e}
+.nxo-shared-header .nxo-personal-menu.open{display:grid;gap:7px}
+.nxo-shared-header[data-theme="day"] .nxo-personal-menu{color:#1d2940}
+.nxo-shared-header .nxo-personal-menu-title{padding:7px 9px 4px;color:var(--nxo-sh-muted);font-size:8px;font-weight:900;letter-spacing:.075em;text-transform:uppercase}
+.nxo-shared-header .nxo-personal-workspace{display:grid;gap:4px;padding:5px;border:1px solid transparent;border-radius:11px}
+.nxo-shared-header .nxo-personal-workspace:hover{border-color:var(--nxo-sh-line)}
+.nxo-shared-header .nxo-personal-workspace-name,.nxo-shared-header .nxo-personal-tool{appearance:none;width:100%;border:0;background:transparent;color:inherit;cursor:pointer;font:inherit;text-align:left}
+.nxo-shared-header .nxo-personal-workspace-name{min-height:40px;padding:8px 9px;border-radius:9px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:850}
+.nxo-shared-header .nxo-personal-tool{min-height:34px;padding:7px 9px 7px 34px;border-radius:8px;display:flex;align-items:center;gap:8px;font-size:10px;font-weight:740}
+.nxo-shared-header .nxo-personal-workspace-name:hover,.nxo-shared-header .nxo-personal-workspace-name:focus-visible,.nxo-shared-header .nxo-personal-tool:hover,.nxo-shared-header .nxo-personal-tool:focus-visible{outline:none;background:rgba(255,255,255,.09)}
+.nxo-shared-header[data-theme="day"] .nxo-personal-workspace-name:hover,.nxo-shared-header[data-theme="day"] .nxo-personal-workspace-name:focus-visible,.nxo-shared-header[data-theme="day"] .nxo-personal-tool:hover,.nxo-shared-header[data-theme="day"] .nxo-personal-tool:focus-visible{background:#e6eefc}
+.nxo-shared-header .nxo-personal-menu .nxo-icon-img{width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto}
+.nxo-shared-header .nxo-personal-tool .nxo-icon-img{width:14px;height:14px}
+.nxo-shared-header .nxo-personal-menu-empty{padding:12px 10px;color:var(--nxo-sh-muted);font-size:10px}
 @media(max-width:760px){
-  .nxo-header-flyout{width:calc(100vw - 20px);max-width:none;border-radius:14px}
+  .nxo-shared-header .nxo-nav-group:has(#nxo-personal){display:grid!important;width:100%!important}
+  .nxo-shared-header .nxo-personal-menu{position:static!important;width:100%!important;max-width:none!important;max-height:52dvh!important;margin-top:3px!important;box-shadow:none!important;background:var(--nxo-sh-panel2)!important}
 }
 
 .nxo-shared-header .nxo-nav-primary-utils{position:relative!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:4px!important;flex:0 0 auto!important}
@@ -237,47 +195,18 @@ function ensureStyle(){
 }
 
 
-function flyoutToolMarkup(tool,workspaceId=''){
-  const name=String(tool?.name||tool?.toolKey||'Herramienta');
-  const description=String(tool?.description||'');
-  const icon=toolIconKey(tool);
-  return '<button type="button" class="nxo-header-flyout-item" data-nxo-tool="'+esc(tool?.toolKey||'')+'" data-nxo-workspace="'+esc(workspaceId)+'">'+
-    iconTag(icon,'')+'<span class="nxo-header-flyout-copy"><strong>'+esc(name)+'</strong>'+(description?'<small>'+esc(description)+'</small>':'')+'</span></button>'
-}
-
-function personalFlyoutMarkup(navigation,t){
-  const direct=Array.isArray(navigation?.personal?.tools)?navigation.personal.tools:[];
+function personalMenuMarkup(navigation,t){
   const workspaces=Array.isArray(navigation?.workspaces)?navigation.workspaces:[];
-  let body='';
-
-  if(direct.length){
-    body+='<div class="nxo-header-flyout-section">'+esc(t.personalAccess)+'</div>'+
-      direct.map(tool=>flyoutToolMarkup(tool,'')).join('')
+  if(!workspaces.length)return '<div class="nxo-personal-menu-empty">'+esc(normalizeLanguage(document.documentElement.lang)==='en'?'No Workspaces available':'Sin espacios de trabajo disponibles')+'</div>';
+  let body='<div class="nxo-personal-menu-title">'+esc(t.workspaces)+'</div>';
+  for(const ws of workspaces){
+    const tools=Array.isArray(ws.tools)?ws.tools:[];
+    body+='<section class="nxo-personal-workspace" data-nxo-workspace-row="'+esc(ws.workspaceId||'')+'">'+
+      '<button type="button" class="nxo-personal-workspace-name" data-nxo-workspace-open="'+esc(ws.workspaceId||'')+'">'+iconTag('workspace','')+'<span>'+esc(ws.name||'Workspace')+'</span></button>'+
+      tools.map(tool=>'<button type="button" class="nxo-personal-tool" data-nxo-tool="'+esc(tool?.toolKey||'')+'" data-nxo-workspace="'+esc(ws.workspaceId||'')+'">'+iconTag(toolIconKey(tool),'')+'<span>'+esc(tool?.name||tool?.toolKey||'Herramienta')+'</span></button>').join('')+
+    '</section>'
   }
-
-  if(workspaces.length){
-    if(body)body+='<div class="nxo-header-flyout-divider"></div>';
-    body+='<div class="nxo-header-flyout-section">'+esc(t.workspaces)+'</div>';
-    for(const ws of workspaces){
-      const tools=Array.isArray(ws.tools)?ws.tools:[];
-      body+='<div class="nxo-header-workspace-row" data-nxo-workspace-row="'+esc(ws.workspaceId||'')+'">'+
-        '<button type="button" class="nxo-header-workspace-open" data-nxo-workspace-open="'+esc(ws.workspaceId||'')+'">'+
-          iconTag('workspace','')+'<span class="nxo-header-flyout-copy"><strong>'+esc(ws.name||'Workspace')+'</strong></span>'+
-        '</button>'+
-        (tools.length?'<button type="button" class="nxo-header-workspace-tools" data-nxo-workspace-tools="'+esc(ws.workspaceId||'')+'" aria-expanded="false" aria-label="Herramientas · '+esc(ws.name||'Workspace')+'"><span class="nxo-header-workspace-arrow">›</span></button>':'')+
-      '</div>'
-    }
-  }
-
-  if(!body)body='<div class="nxo-header-flyout-empty">'+esc(t.noTools)+'</div>';
   return body
-}
-
-function workspaceFlyoutMarkup(workspace,t){
-  const tools=Array.isArray(workspace?.tools)?workspace.tools:[];
-  if(!tools.length)return '<div class="nxo-header-flyout-empty">'+esc(t.noTools)+'</div>';
-  return '<div class="nxo-header-flyout-section">'+esc(workspace?.name||'Workspace')+'</div>'+
-    tools.map(tool=>flyoutToolMarkup(tool,workspace?.workspaceId||'')).join('')
 }
 
 const NAV_TOOL_DEFS=[
@@ -416,7 +345,8 @@ function markup(options={}){
 
   const nav=
     '<div class="nxo-nav-group">'+
-      '<button type="button" class="nxo-nav-link '+(personalActive?'active':'')+'" id="nxo-personal" aria-haspopup="true" aria-expanded="false">'+iconLabel('home',t.personal)+'<span class="nxo-nav-menu-caret">⌄</span></button>'+
+      '<button type="button" class="nxo-nav-link '+(personalActive?'active':'')+'" id="nxo-personal" aria-haspopup="true" aria-expanded="false" aria-controls="nxo-personal-menu">'+iconLabel('home',t.personal)+'<span class="nxo-nav-menu-caret">⌄</span></button>'+
+      '<div class="nxo-personal-menu" id="nxo-personal-menu" role="menu"></div>'+
     '</div>'+
     '<div class="nxo-nav-group">'+
       '<button type="button" class="nxo-nav-link '+(active==='development'?'active':'')+'" id="nxo-nav-development">'+iconLabel('desarrollo',t.development)+'</button>'+
@@ -503,167 +433,40 @@ function bind(options={}){
     return (Array.isArray(list)?list:[]).find(x=>String(x.toolKey)===String(key))||null
   };
 
-  document.getElementById('nxo-header-flyout-root')?.remove();
-  const flyoutRoot=document.createElement('div');
-  flyoutRoot.id='nxo-header-flyout-root';
-  flyoutRoot.className='nxo-header-flyout-root';
-  flyoutRoot.dataset.theme=normalizeTheme(options.theme);
-  flyoutRoot.innerHTML='<div class="nxo-header-flyout" id="nxo-header-personal-flyout"></div><div class="nxo-header-flyout" id="nxo-header-workspace-flyout"></div>';
-  document.body.appendChild(flyoutRoot);
-
-  const personalFlyout=flyoutRoot.querySelector('#nxo-header-personal-flyout');
-  const workspaceFlyout=flyoutRoot.querySelector('#nxo-header-workspace-flyout');
-  let mainCloseTimer=null;
-  let subCloseTimer=null;
-  let activeWorkspaceId='';
-
-  const clearMainTimer=()=>{if(mainCloseTimer){clearTimeout(mainCloseTimer);mainCloseTimer=null}};
-  const clearSubTimer=()=>{if(subCloseTimer){clearTimeout(subCloseTimer);subCloseTimer=null}};
-  const closeWorkspaceFlyout=()=>{
-    clearSubTimer();
-    workspaceFlyout.classList.remove('open');
-    workspaceFlyout.innerHTML='';
-    activeWorkspaceId='';
-    personalFlyout.querySelectorAll('[data-nxo-workspace-tools]').forEach(x=>x.setAttribute('aria-expanded','false'))
-  };
-  const closePersonalFlyout=()=>{
-    clearMainTimer();
-    closeWorkspaceFlyout();
-    personalFlyout.classList.remove('open');
-    personalFlyout.innerHTML='';
-    personalButton?.setAttribute('aria-expanded','false')
-  };
-  const scheduleMainClose=()=>{
-    clearMainTimer();
-    mainCloseTimer=setTimeout(closePersonalFlyout,180)
-  };
-  const scheduleSubClose=()=>{
-    clearSubTimer();
-    subCloseTimer=setTimeout(closeWorkspaceFlyout,160)
-  };
-
-  const positionPersonalFlyout=()=>{
-    if(!personalButton||!personalFlyout.classList.contains('open'))return;
-    const r=personalButton.getBoundingClientRect();
-    const margin=10;
-    const mobile=window.innerWidth<=760;
-    const width=mobile?Math.max(240,window.innerWidth-(margin*2)):Math.min(292,window.innerWidth-(margin*2));
-    personalFlyout.style.width=width+'px';
-    personalFlyout.style.maxHeight=Math.max(160,window.innerHeight-r.bottom-margin)+'px';
-    const left=mobile?margin:Math.min(Math.max(margin,r.left),Math.max(margin,window.innerWidth-width-margin));
-    personalFlyout.style.left=left+'px';
-    personalFlyout.style.top=Math.max(margin,r.bottom+1)+'px'
-  };
-
-  const positionWorkspaceFlyout=anchor=>{
-    if(!anchor||!workspaceFlyout.classList.contains('open'))return;
-    const r=anchor.getBoundingClientRect();
-    const margin=10;
-    const mobile=window.innerWidth<=760;
-    const width=mobile?Math.max(240,window.innerWidth-(margin*2)):Math.min(280,window.innerWidth-(margin*2));
-    workspaceFlyout.style.width=width+'px';
-    if(mobile){
-      workspaceFlyout.style.left=margin+'px';
-      workspaceFlyout.style.top=Math.min(window.innerHeight-margin,r.bottom+4)+'px';
-      workspaceFlyout.style.maxHeight=Math.max(150,window.innerHeight-r.bottom-margin-4)+'px'
-    }else{
-      let left=r.right+2;
-      if(left+width>window.innerWidth-margin)left=Math.max(margin,r.left-width-2);
-      let top=Math.max(margin,r.top-8);
-      const estimated=Math.min(workspaceFlyout.scrollHeight||320,window.innerHeight-(margin*2));
-      if(top+estimated>window.innerHeight-margin)top=Math.max(margin,window.innerHeight-estimated-margin);
-      workspaceFlyout.style.left=left+'px';
-      workspaceFlyout.style.top=top+'px';
-      workspaceFlyout.style.maxHeight=Math.max(160,window.innerHeight-top-margin)+'px'
-    }
-  };
-
-  const bindFlyoutItems=()=>{
-    personalFlyout.querySelectorAll('[data-nxo-workspace-open]').forEach(button=>{
-      button.addEventListener('click',event=>{
-        event.stopPropagation();
-        const ws=findWorkspace(button.dataset.nxoWorkspaceOpen);
-        closePersonalFlyout();
-        const handled=call('onWorkspace',ws,event);
-        if(handled===false)return;
-        go(defaultWorkspaceUrl(options,ws))
-      },{signal:options.signal})
-    });
-
-    personalFlyout.querySelectorAll('[data-nxo-workspace-tools]').forEach(button=>{
-      const workspaceId=button.dataset.nxoWorkspaceTools;
-      const row=button.closest('[data-nxo-workspace-row]');
-      const openSub=event=>{
-        event?.stopPropagation?.();
-        const ws=findWorkspace(workspaceId);
-        if(!ws||!Array.isArray(ws.tools)||!ws.tools.length)return;
-        clearSubTimer();
-        activeWorkspaceId=workspaceId;
-        personalFlyout.querySelectorAll('[data-nxo-workspace-tools]').forEach(x=>x.setAttribute('aria-expanded',String(x===button)));
-        workspaceFlyout.innerHTML=workspaceFlyoutMarkup(ws,t);
-        workspaceFlyout.classList.add('open');
-        positionWorkspaceFlyout(row);
-        bindWorkspaceTools(ws)
-      };
-      button.addEventListener('click',openSub,{signal:options.signal});
-      if(hoverCapable()){
-        row?.addEventListener('mouseenter',openSub,{signal:options.signal});
-        row?.addEventListener('mouseleave',scheduleSubClose,{signal:options.signal})
-      }
-    });
-
-    personalFlyout.querySelectorAll('[data-nxo-tool]').forEach(button=>{
-      button.addEventListener('click',event=>{
-        event.stopPropagation();
-        const tool=findTool(button.dataset.nxoTool,null);
-        closePersonalFlyout();
-        const handled=call('onTool',tool,null,event);
-        if(handled===false)return;
-        go(defaultToolUrl(options,tool,null))
-      },{signal:options.signal})
-    })
-  };
-
-  const bindWorkspaceTools=workspace=>{
-    workspaceFlyout.querySelectorAll('[data-nxo-tool]').forEach(button=>{
-      button.addEventListener('click',event=>{
-        event.stopPropagation();
-        const tool=findTool(button.dataset.nxoTool,workspace);
-        closePersonalFlyout();
-        const handled=call('onTool',tool,workspace,event);
-        if(handled===false)return;
-        go(defaultToolUrl(options,tool,workspace))
-      },{signal:options.signal})
-    })
-  };
-
-  const openPersonalFlyout=()=>{
-    clearMainTimer();
-    flyoutRoot.dataset.theme=normalizeTheme(options.theme);
-    personalFlyout.innerHTML=personalFlyoutMarkup(navigation,t);
-    personalFlyout.classList.add('open');
+  const personalMenu=header.querySelector('#nxo-personal-menu');
+  let personalCloseTimer=null;
+  const clearPersonalTimer=()=>{if(personalCloseTimer){clearTimeout(personalCloseTimer);personalCloseTimer=null}};
+  const closePersonalFlyout=()=>{clearPersonalTimer();personalMenu?.classList.remove('open');personalButton?.setAttribute('aria-expanded','false')};
+  const openPersonalMenu=()=>{
+    clearPersonalTimer();
+    if(!personalMenu)return;
+    personalMenu.innerHTML=personalMenuMarkup(navigation,t);
+    personalMenu.classList.add('open');
     personalButton?.setAttribute('aria-expanded','true');
-    positionPersonalFlyout();
-    bindFlyoutItems()
+    personalMenu.querySelectorAll('[data-nxo-workspace-open]').forEach(button=>button.addEventListener('click',event=>{
+      event.stopPropagation();
+      const ws=findWorkspace(button.dataset.nxoWorkspaceOpen);
+      closePersonalFlyout();
+      const handled=call('onWorkspace',ws,event);
+      if(handled===false)return;
+      go(defaultWorkspaceUrl(options,ws))
+    },{signal:options.signal}));
+    personalMenu.querySelectorAll('[data-nxo-tool]').forEach(button=>button.addEventListener('click',event=>{
+      event.stopPropagation();
+      const ws=findWorkspace(button.dataset.nxoWorkspace);
+      const tool=findTool(button.dataset.nxoTool,ws);
+      closePersonalFlyout();
+      const handled=call('onTool',tool,ws,event);
+      if(handled===false)return;
+      go(defaultToolUrl(options,tool,ws))
+    },{signal:options.signal}))
   };
-
-  personalButton?.addEventListener('mouseenter',()=>{if(hoverCapable())openPersonalFlyout()},{signal:options.signal});
-  personalButton?.addEventListener('mouseleave',()=>{if(hoverCapable())scheduleMainClose()},{signal:options.signal});
-  personalButton?.addEventListener('click',event=>{
-    event.stopPropagation();
-    if(!hoverCapable()){
-      if(personalFlyout.classList.contains('open'))closePersonalFlyout();else openPersonalFlyout();
-      return
-    }
-    const handled=call('onPersonal',event);
-    if(handled===false)return;
-    go(defaultPersonalUrl(options))
-  },{signal:options.signal});
-
-  personalFlyout.addEventListener('mouseenter',()=>{clearMainTimer();clearSubTimer()},{signal:options.signal});
-  personalFlyout.addEventListener('mouseleave',()=>{if(hoverCapable())scheduleMainClose()},{signal:options.signal});
-  workspaceFlyout.addEventListener('mouseenter',()=>{clearMainTimer();clearSubTimer()},{signal:options.signal});
-  workspaceFlyout.addEventListener('mouseleave',()=>{if(hoverCapable()){scheduleSubClose();scheduleMainClose()}},{signal:options.signal});
+  const schedulePersonalClose=()=>{clearPersonalTimer();personalCloseTimer=setTimeout(closePersonalFlyout,180)};
+  personalButton?.addEventListener('mouseenter',()=>{if(hoverCapable())openPersonalMenu()},{signal:options.signal});
+  personalButton?.addEventListener('mouseleave',()=>{if(hoverCapable())schedulePersonalClose()},{signal:options.signal});
+  personalButton?.addEventListener('click',event=>{event.stopPropagation();if(personalMenu?.classList.contains('open'))closePersonalFlyout();else openPersonalMenu()},{signal:options.signal});
+  personalMenu?.addEventListener('mouseenter',clearPersonalTimer,{signal:options.signal});
+  personalMenu?.addEventListener('mouseleave',()=>{if(hoverCapable())schedulePersonalClose()},{signal:options.signal});
 
   const closeUtilities=except=>{
     if(except!=='account'){accountMenu?.classList.remove('open');account?.setAttribute('aria-expanded','false')}
@@ -706,25 +509,9 @@ function bind(options={}){
   },{signal:options.signal});
 
   document.addEventListener('click',event=>{
-    if(header.contains(event.target)||flyoutRoot.contains(event.target))return;
+    if(header.contains(event.target))return;
     closePersonalFlyout();closeUtilities('');closeMobile()
   },{signal:options.signal});
-
-  window.addEventListener('resize',()=>{
-    if(personalFlyout.classList.contains('open'))positionPersonalFlyout();
-    if(workspaceFlyout.classList.contains('open')&&activeWorkspaceId){
-      const row=personalFlyout.querySelector('[data-nxo-workspace-row="'+CSS.escape(activeWorkspaceId)+'"]');
-      positionWorkspaceFlyout(row)
-    }
-  },{signal:options.signal});
-
-  window.addEventListener('scroll',()=>{
-    if(personalFlyout.classList.contains('open'))positionPersonalFlyout();
-    if(workspaceFlyout.classList.contains('open')&&activeWorkspaceId){
-      const row=personalFlyout.querySelector('[data-nxo-workspace-row="'+CSS.escape(activeWorkspaceId)+'"]');
-      positionWorkspaceFlyout(row)
-    }
-  },{signal:options.signal,capture:true});
 
   header.querySelector('#nxo-theme-toggle')?.addEventListener('click',event=>{event.stopPropagation();call('onTheme',event)},{signal:options.signal});
   header.querySelector('#nxo-language-toggle')?.addEventListener('click',event=>{event.stopPropagation();call('onLanguage',event)},{signal:options.signal});
@@ -741,11 +528,7 @@ function bind(options={}){
 function sync({theme,language}={}){
   const header=document.getElementById('nxo-shared-header');
   if(!header)return;
-  if(theme){
-    header.dataset.theme=normalizeTheme(theme);
-    const flyoutRoot=document.getElementById('nxo-header-flyout-root');
-    if(flyoutRoot)flyoutRoot.dataset.theme=normalizeTheme(theme)
-  }
+  if(theme)header.dataset.theme=normalizeTheme(theme)
   if(language)header.dataset.language=normalizeLanguage(language)
 }
 
@@ -753,7 +536,6 @@ function mount(container,options={}){
   ensureStyle();
   const target=typeof container==='string'?document.querySelector(container):container;
   if(!target)return null;
-  document.getElementById('nxo-header-flyout-root')?.remove();
   document.getElementById('nxo-shared-header')?.remove();
   target.insertAdjacentHTML(options.position==='append'?'beforeend':'afterbegin',markup(options));
   bind(options);
