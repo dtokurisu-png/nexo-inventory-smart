@@ -443,14 +443,69 @@ function sheetEditorTemplate(){
     state.savedMopRange=range.cloneRange();
     positionCaretPlus(range)
   }
+  function mopCaretPoint(range){
+    const validRect=rect=>rect&&Number.isFinite(rect.left)&&Number.isFinite(rect.right)&&Number.isFinite(rect.top)&&Number.isFinite(rect.bottom)&&(rect.width>0||rect.height>0||rect.left!==0||rect.top!==0);
+    const point=(rect,edge='right')=>({x:edge==='left'?rect.left:rect.right,top:rect.top});
+    try{
+      const rect=range.getBoundingClientRect();
+      if(validRect(rect))return point(rect)
+    }catch(_){}
+    const node=range.startContainer;
+    const offset=range.startOffset;
+    const probe=document.createRange();
+    const textPoint=(textNode,start,end,edge)=>{
+      probe.setStart(textNode,start);
+      probe.setEnd(textNode,end);
+      const rect=probe.getBoundingClientRect();
+      return validRect(rect)?point(rect,edge):null
+    };
+    try{
+      if(node.nodeType===Node.TEXT_NODE){
+        const length=String(node.nodeValue||'').length;
+        if(offset>0){
+          const prev=textPoint(node,offset-1,offset,'right');
+          if(prev)return prev
+        }
+        if(offset<length){
+          const next=textPoint(node,offset,offset+1,'left');
+          if(next)return next
+        }
+      }else if(node.nodeType===Node.ELEMENT_NODE){
+        const children=node.childNodes;
+        if(offset>0){
+          const prev=children[offset-1];
+          if(prev?.nodeType===Node.TEXT_NODE&&String(prev.nodeValue||'').length){
+            const length=String(prev.nodeValue||'').length;
+            const previousText=textPoint(prev,length-1,length,'right');
+            if(previousText)return previousText
+          }else if(prev?.nodeType===Node.ELEMENT_NODE){
+            const rect=prev.getBoundingClientRect();
+            if(validRect(rect))return point(rect,'right')
+          }
+        }
+        if(offset<children.length){
+          const next=children[offset];
+          if(next?.nodeType===Node.TEXT_NODE&&String(next.nodeValue||'').length){
+            const nextText=textPoint(next,0,1,'left');
+            if(nextText)return nextText
+          }else if(next?.nodeType===Node.ELEMENT_NODE){
+            const rect=next.getBoundingClientRect();
+            if(validRect(rect))return point(rect,'left')
+          }
+        }
+      }
+    }catch(_){}
+    return null
+  }
   function positionCaretPlus(range=state.savedMopRange){
     if(!range){caretPlus.hidden=true;return}
-    let rect=null;
-    try{rect=range.getBoundingClientRect()}catch(_){}
+    const caret=mopCaretPoint(range);
     const wrapRect=mopWrap.getBoundingClientRect();
     const editorRect=editor.getBoundingClientRect();
-    const x=(rect&&Number.isFinite(rect.left)&&rect.left>0?rect.right:editorRect.left)-wrapRect.left+mopWrap.scrollLeft+18;
-    const y=(rect&&Number.isFinite(rect.top)&&rect.top>0?rect.top:editorRect.top)-wrapRect.top+mopWrap.scrollTop-2;
+    const caretX=caret&&Number.isFinite(caret.x)?caret.x:editorRect.left;
+    const caretTop=caret&&Number.isFinite(caret.top)?caret.top:editorRect.top;
+    const x=caretX-wrapRect.left+mopWrap.scrollLeft+18;
+    const y=caretTop-wrapRect.top+mopWrap.scrollTop-2;
     caretPlus.style.left=Math.max(8,Math.min(x,mopWrap.clientWidth-38))+'px';
     caretPlus.style.top=Math.max(8,y)+'px';
     caretPlus.hidden=false
@@ -606,7 +661,7 @@ function sheetEditorTemplate(){
     const spacer=document.createTextNode(' ');
     token.after(spacer);
     const next=document.createRange();
-    next.setStartAfter(spacer);
+    next.setStart(spacer,String(spacer.nodeValue||'').length);
     next.collapse(true);
     const selection=window.getSelection();
     selection.removeAllRanges();
