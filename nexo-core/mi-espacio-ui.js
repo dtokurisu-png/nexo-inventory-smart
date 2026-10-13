@@ -1301,6 +1301,42 @@ async function waitBoot(){
 }
 
 async function refreshSharedHeaderState(workspaceId=''){
+  if((!Array.isArray(personal?.workspaces)||!personal.workspaces.length)&&sessionToken){
+    try{personal=await api('personal.refresh')}catch(_){}
+  }
+
+  const workspaceMap=new Map(
+    (personal?.workspaces||[])
+      .filter(w=>String(w.status||'ACTIVE').toUpperCase()!=='ARCHIVED')
+      .map(w=>[String(w.workspaceId||''),{
+        workspaceId:w.workspaceId,
+        name:w.name||'Workspace',
+        logoImage:w.logoImage||null,
+        roleKey:w.roleKey||'member',
+        tools:[]
+      }])
+      .filter(([id])=>id)
+  );
+
+  if(workspace?.workspace?.id){
+    const currentId=String(workspace.workspace.id);
+    const existing=workspaceMap.get(currentId)||{};
+    workspaceMap.set(currentId,{
+      ...existing,
+      workspaceId:currentId,
+      name:workspace.workspace.name||existing.name||'Workspace',
+      logoImage:workspace.workspace.logoImage||existing.logoImage||null,
+      roleKey:workspace.membership?.roleKey||existing.roleKey||'member',
+      tools:(workspace.tools||[]).filter(t=>t?.routePath).map(t=>({
+        toolKey:t.toolKey,
+        name:t.workspaceName||t.nameEs||t.nameEn||t.toolKey,
+        description:t.workspaceDescription||t.descriptionEs||'',
+        routePath:t.routePath,
+        scope:'workspace'
+      }))
+    })
+  }
+
   const seedNavigation={
     personal:{
       name:ui('Mi espacio','My space'),
@@ -1312,16 +1348,9 @@ async function refreshSharedHeaderState(workspaceId=''){
         scope:'personal'
       }))
     },
-    workspaces:(personal?.workspaces||[])
-      .filter(w=>String(w.status||'ACTIVE').toUpperCase()!=='ARCHIVED')
-      .map(w=>({
-        workspaceId:w.workspaceId,
-        name:w.name||'Workspace',
-        logoImage:w.logoImage||null,
-        roleKey:w.roleKey||'member',
-        tools:[]
-      }))
+    workspaces:[...workspaceMap.values()]
   };
+
   let navigation=seedNavigation;
   try{
     navigation=await window.NEXO_SHARED_HEADER?.loadNavigation?.({
@@ -1329,6 +1358,18 @@ async function refreshSharedHeaderState(workspaceId=''){
       isWonder:sharedHeaderState?.isWonder===true
     })||seedNavigation
   }catch(_){navigation=seedNavigation}
+
+  if(workspace?.workspace?.id){
+    const currentId=String(workspace.workspace.id);
+    const currentSeed=seedNavigation.workspaces.find(w=>String(w.workspaceId)===currentId);
+    const resolved=Array.isArray(navigation?.workspaces)?navigation.workspaces:[];
+    const index=resolved.findIndex(w=>String(w.workspaceId)===currentId);
+    if(index>=0&&currentSeed){
+      navigation={...navigation,workspaces:resolved.map((w,i)=>i===index?{...currentSeed,...w,tools:(w.tools?.length?w.tools:currentSeed.tools)}:w)}
+    }else if(currentSeed){
+      navigation={...navigation,workspaces:[...resolved,currentSeed]}
+    }
+  }
 
   const isWorkspace=Boolean(workspaceId&&workspace?.workspace?.id);
   sharedHeaderState={
