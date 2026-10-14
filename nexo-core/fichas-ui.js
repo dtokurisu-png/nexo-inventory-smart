@@ -70,7 +70,19 @@ function ensureThemeRuntime(){
     document.head.appendChild(script);
   });
 }
+function exposeWixGlobalHeader(){
+  ['SITE_HEADER','SITE_HEADER_WRAPPER'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.style.setProperty('position','relative','important');
+    el.style.setProperty('z-index','2147483647','important');
+    el.style.setProperty('visibility','visible','important');
+    el.style.setProperty('opacity','1','important');
+  })
+}
+
 function syncFichasFrameGeometry(){
+  exposeWixGlobalHeader();
   const root=document.getElementById('nx-fichas-app');
   if(!root)return;
   document.getElementById('nxo-shared-header')?.remove();
