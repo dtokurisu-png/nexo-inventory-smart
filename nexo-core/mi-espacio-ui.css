@@ -59,7 +59,7 @@ html,body{margin:0}
 }
 .nxo-app:before{width:260px;height:260px;left:-100px;top:16%;background:rgba(105,167,255,.24)}
 .nxo-app:after{width:300px;height:300px;right:-120px;bottom:8%;background:rgba(215,173,85,.16)}
-.nxo-shell{position:relative;z-index:1;min-height:100dvh}
+.nxo-shell{position:relative;z-index:1;min-height:100dvh;padding-top:var(--nexo-global-header-height,68px)}
 
 /* Shared glass surfaces */
 .nxo-hero-card,.nxo-card,.nxo-panel,.nxo-stat,.nxo-member,.nxo-tool-toggle,
@@ -4402,51 +4402,4 @@ button.nxo-workspace-logo-edit.uploading{
     drop-shadow(0 1px 0 rgba(255,255,255,.96))
     drop-shadow(0 -1px 0 rgba(255,255,255,.96))
     drop-shadow(0 0 4px rgba(255,255,255,.78))!important
-}
-
-
-/* GLOBAL WIX HEADER CLEARANCE · 2026-10-14 */
-#nxo-shared-header,
-#nxo-dev-header,
-.nxo-topbar,
-.nxo-topbar.nxo-workspace-nav{
-  display:none!important
-}
-.nxo-app{
-  top:68px!important;
-  right:0!important;
-  bottom:0!important;
-  left:0!important;
-  height:auto!important;
-  min-height:0!important
-}
-.nxo-app:before,
-.nxo-app:after{
-  top:calc(68px + 16%)!important
-}
-@media(max-width:760px){
-  .nxo-app{
-    top:68px!important
-  }
-}
-
-
-/* GLOBAL WIX HEADER HARD CLEARANCE · 2026-10-14 */
-html,body{
-  background:transparent!important;
-}
-body{padding-top:0!important}
-.nxo-app{
-  top:68px!important;
-  background-clip:padding-box!important;
-}
-
-
-/* WIX HEADER ABOVE RUNTIME · 2026-10-14 */
-#SITE_HEADER,
-#SITE_HEADER_WRAPPER{
-  position:relative!important;
-  z-index:2147483647!important;
-  visibility:visible!important;
-  opacity:1!important
 }
