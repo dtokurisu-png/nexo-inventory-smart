@@ -1752,8 +1752,8 @@ function renderPersonal(){
   const workspaceMobileActions='<div class="nxo-workspace-mobile-actions" aria-label="'+esc(ui('Acciones de espacios de trabajo','Workspace actions'))+'"><button id="nxo-join-workspace-mobile" class="nxo-btn">'+iconLabel('unirse-a-workspace',ui('Unirse a un espacio de trabajo','Join a Workspace'))+'</button><button id="nxo-create-workspace-mobile" class="nxo-btn nxo-btn-gold">'+iconLabel('nuevo-workspace',ui('Nuevo espacio de trabajo','New Workspace'))+'</button></div>';
   const workspaceCards='<section class="nxo-section"><div class="nxo-section-head nxo-workspace-list-head"><div><h3>'+esc(ui('Mis espacios de trabajo','My Workspaces'))+'</h3><p>'+esc(ui('Espacios de trabajo que creaste o a los que te uniste.','Workspaces you created or joined.'))+'</p></div><div class="nxo-section-actions nxo-workspace-desktop-actions"><button id="nxo-join-workspace" class="nxo-btn">'+iconLabel('unirse-a-workspace',ui('Unirse a un espacio de trabajo','Join a Workspace'))+'</button><button id="nxo-create-workspace" class="nxo-btn nxo-btn-gold">'+iconLabel('nuevo-workspace',ui('Nuevo espacio de trabajo','New Workspace'))+'</button></div></div>'+(activeSpaces.length?'<div class="nxo-grid">'+activeSpaces.map(w=>workspaceCard(w,false)).join('')+'</div>':'<div class="nxo-empty">'+esc(ui('No tienes espacios de trabajo activos.','You have no active Workspaces.'))+'</div>')+'</section>';
   const archivedCards=archivedSpaces.length?'<section class="nxo-section nxo-archived-section"><div class="nxo-section-head"><div><h3>'+esc(ui('Archivados','Archived'))+'</h3><p>'+esc(ui('Espacios de trabajo guardados fuera de la vista activa. Puedes restaurarlos cuando quieras.','Workspaces stored outside the active view. You can restore them at any time.'))+'</p></div><span class="nxo-chip">'+archivedSpaces.length+'</span></div><div class="nxo-grid">'+archivedSpaces.map(w=>workspaceCard(w,true)).join('')+'</div></section>':'';
-  html('<div class="nxo-shell">'+topbar('personal')+'<main class="nxo-main">'+welcome+summary+legacyInvites+personalTools+workspaceMobileActions+workspaceCards+archivedCards+'</main></div>');
-  bindTopbar('personal');bindTools();bindWorkspaceCards();
+  html('<div class="nxo-shell"><main class="nxo-main">'+welcome+summary+legacyInvites+personalTools+workspaceMobileActions+workspaceCards+archivedCards+'</main></div>');
+  bindTools();bindWorkspaceCards();
   document.getElementById('nxo-create-workspace')?.addEventListener('click',createWorkspaceModal);
   document.getElementById('nxo-join-workspace')?.addEventListener('click',joinWorkspaceModal);
   document.getElementById('nxo-create-workspace-mobile')?.addEventListener('click',createWorkspaceModal);
@@ -1927,8 +1927,7 @@ function renderWorkspace(){
   else if(workspaceTab==='members')body='<div id="nxo-members-zone"><div class="nxo-empty">'+esc(ui('Cargando miembros…','Loading members…'))+'</div></div>';
   else if(workspaceTab==='settings')body='<div id="nxo-settings-zone"><div class="nxo-empty">'+esc(ui('Cargando configuración…','Loading settings…'))+'</div></div>';
   else body=renderAccess(role);
-  html('<div class="nxo-shell">'+topbar('workspace')+'<main class="nxo-main"><div class="nxo-workspace-header"><div><div class="nxo-eyebrow">'+esc(ui('Espacio de trabajo','Workspace'))+'</div><h2>'+esc(ws.name||ui('Espacio de trabajo','Workspace'))+'</h2><p>'+esc(ws.description||'')+'</p></div></div><div class="nxo-tabs">'+tabs.join('')+'</div>'+body+'</main></div>');
-  bindTopbar('workspace');
+  html('<div class="nxo-shell"><main class="nxo-main"><div class="nxo-workspace-header"><div><div class="nxo-eyebrow">'+esc(ui('Espacio de trabajo','Workspace'))+'</div><h2>'+esc(ws.name||ui('Espacio de trabajo','Workspace'))+'</h2><p>'+esc(ws.description||'')+'</p></div></div><div class="nxo-tabs">'+tabs.join('')+'</div>'+body+'</main></div>');
   document.querySelectorAll('[data-wtab]').forEach(b=>b.onclick=()=>{workspaceTab=b.dataset.wtab;renderWorkspace()});
   bindTools();
   if(canAdmin){
