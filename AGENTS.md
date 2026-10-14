@@ -8,6 +8,8 @@ Before modifying Dynamic Technical Sheets data, creation, composition, search, i
 
 Before modifying nested creation or editor lifecycle in Dynamic Technical Sheets, also read and follow `FICHAS_NESTED_EDITOR_CANON.md`.
 
+Before modifying the main Dynamic Technical Sheets library, collections, tabs, or sheet catalog, also read and follow `FICHAS_LIBRARY_VIEW_CANON.md`.
+
 That rule is canonical and high priority: internal development stages must not be exposed as customer-facing stages unless the owner explicitly requests staged UX.
 
 # Nexo Inventory Smart — locked boundaries

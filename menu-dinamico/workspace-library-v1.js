@@ -7,6 +7,8 @@ const modalRoot=document.getElementById('modal');
 if(!view||!modalRoot)return;
 
 let activeTab='collections';
+let activeCollectionId='';
+const pendingCollectionRequests=new Map();
 
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],collections:[],context:{},capabilities:{}};
 const lang=()=>document.documentElement.lang==='en'?'en':'es';
@@ -25,7 +27,17 @@ function activeRecipes(){return(data().recipes||[]).filter(x=>x&&x.active!==fals
 function activeProducts(){return(data().ingredients||[]).filter(x=>x&&x.active!==false)}
 function activeProcesses(){return(data().processes||[]).filter(x=>x&&x.active!==false).sort((a,b)=>String(text(a,'nameEn','nameEs')||a?._id||'').localeCompare(String(text(b,'nameEn','nameEs')||b?._id||'')))}
 function activePreparationSheets(){return activeRecipes().filter(x=>String(x.recipeType||'').toUpperCase()!=='DISH')}
-function hasContent(){return activeRecipes().length>0||activeProducts().length>0}
+function activeCollections(){
+  return (data().collections||[])
+    .filter(row=>row&&row.active!==false)
+    .sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)||String(a.name||'').localeCompare(String(b.name||''),'es'))
+}
+function collectionById(id){return activeCollections().find(row=>String(row.id||row._id)===String(id))||null}
+function collectionId(row){return String(row?.id||row?._id||'')}
+function collectionName(row){return String(row?.name||row?.title||tr('Colección','Collection'))}
+function collectionDescription(row){return String(row?.description||'')}
+function recipesForCollection(id){return activeRecipes().filter(row=>String(row.collectionId||'')===String(id))}
+function hasContent(){return activeCollections().length>0||activeRecipes().length>0||activeProducts().length>0}
 function searchNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
 function sheetSearchCorpus(recipe){
   const d=data(),vals=[recipe?.titleEn,recipe?.titleEs,recipe?.category,recipe?.recipeType,recipe?.notesEn,recipe?.notesEs];
@@ -54,6 +66,18 @@ function sheetMatches(recipe,query){
   if(!tokens.length)return true;
   const corpus=sheetSearchCorpus(recipe);
   return tokens.every(token=>corpus.includes(token))
+}
+
+function requestCollectionCreate(input){
+  const requestId='collection_create_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  return new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{
+      pendingCollectionRequests.delete(requestId);
+      reject(new Error(tr('La creación de la colección tardó demasiado.','Collection creation timed out.')))
+    },30000);
+    pendingCollectionRequests.set(requestId,{resolve,reject,timer});
+    parent.postMessage({type:'NEXO_DM_CREATE_COLLECTION',payload:{requestId,input}},'*')
+  })
 }
 
 function sheetCard(r){
@@ -107,17 +131,130 @@ function renderSheets(root){
   }
 }
 
+function collectionCard(row){
+  const id=collectionId(row);
+  const count=recipesForCollection(id).length;
+  const description=collectionDescription(row);
+  return '<button type="button" class="nexoCollectionCard" data-nexo-collection="'+esc(id)+'">'+
+    '<div class="nexoCollectionCardIcon">'+icon('coleccion')+'</div>'+
+    '<div class="nexoCollectionCardBody">'+
+      '<div class="nexoCollectionCardMeta"><span>'+esc(tr('Colección','Collection'))+'</span><strong>'+count+'</strong></div>'+
+      '<h3>'+esc(collectionName(row))+'</h3>'+
+      '<p>'+esc(description||tr('Colección de fichas técnicas.','Technical sheet collection.'))+'</p>'+
+      '<small>'+esc(count===1?tr('1 ficha técnica','1 technical sheet'):count+' '+tr('fichas técnicas','technical sheets'))+'</small>'+
+    '</div>'+
+  '</button>'
+}
+
+function closeCollectionCreate(){
+  document.getElementById('nexoCollectionCreateLayer')?.remove()
+}
+function openCollectionCreate(root){
+  if(!canCreate())return;
+  closeCollectionCreate();
+  const layer=document.createElement('div');
+  layer.id='nexoCollectionCreateLayer';
+  layer.innerHTML=
+    '<div class="nexoCollectionCreateDialog" role="dialog" aria-modal="true" aria-label="'+esc(tr('Nueva colección','New collection'))+'">'+
+      '<header><div><span>'+esc(tr('Colecciones','Collections'))+'</span><strong>'+esc(tr('Nueva colección','New collection'))+'</strong></div><button type="button" data-collection-create-close>×</button></header>'+
+      '<form data-collection-create-form>'+
+        '<label><span>'+esc(tr('Nombre','Name'))+'</span><input data-collection-create-name maxlength="120" autocomplete="off" placeholder="'+esc(tr('Ej. Menú de temporada','E.g. Seasonal menu'))+'"></label>'+
+        '<label><span>'+esc(tr('Descripción opcional','Optional description'))+'</span><textarea data-collection-create-description maxlength="1000" rows="4" placeholder="'+esc(tr('Describe qué fichas agrupará esta colección.','Describe what this collection will contain.'))+'"></textarea></label>'+
+        '<div class="nexoCollectionCreateStatus" data-collection-create-status aria-live="polite"></div>'+
+        '<div class="nexoCollectionCreateActions"><button type="button" class="nexoWorkspaceBtn" data-collection-create-cancel>'+esc(tr('Cancelar','Cancel'))+'</button><button type="submit" class="nexoWorkspaceBtn primary">'+esc(tr('Crear colección','Create collection'))+'</button></div>'+
+      '</form>'+
+    '</div>';
+  document.body.appendChild(layer);
+  const form=layer.querySelector('[data-collection-create-form]');
+  const nameInput=layer.querySelector('[data-collection-create-name]');
+  const status=layer.querySelector('[data-collection-create-status]');
+  const close=()=>closeCollectionCreate();
+  layer.querySelector('[data-collection-create-close]').onclick=close;
+  layer.querySelector('[data-collection-create-cancel]').onclick=close;
+  layer.addEventListener('mousedown',e=>{if(e.target===layer)close()});
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const name=String(nameInput.value||'').trim();
+    const description=String(layer.querySelector('[data-collection-create-description]')?.value||'').trim();
+    if(!name){
+      status.textContent=tr('Escribe el nombre de la colección.','Enter the collection name.');
+      nameInput.focus();
+      return
+    }
+    const submit=form.querySelector('[type="submit"]');
+    submit.disabled=true;
+    status.textContent=tr('Creando colección…','Creating collection…');
+    try{
+      const result=await requestCollectionCreate({name,description});
+      const created=result?.collection||result;
+      if(!created?.id)throw new Error(tr('No se recibió la colección creada.','The created collection was not returned.'));
+      const rows=data().collections||(data().collections=[]);
+      if(!rows.some(row=>String(row?.id||row?._id)===String(created.id)))rows.push({...created,active:created.active!==false});
+      close();
+      activeCollectionId=String(created.id);
+      renderCollections(root)
+    }catch(error){
+      submit.disabled=false;
+      status.textContent=String(error?.message||error||tr('No se pudo crear la colección.','Could not create collection.'))
+    }
+  });
+  queueMicrotask(()=>nameInput.focus())
+}
+
+function renderCollectionDetail(root,collection){
+  const body=root.querySelector('[data-nexo-workspace-body]');
+  if(!body)return;
+  const id=collectionId(collection);
+  const recipes=recipesForCollection(id);
+  body.innerHTML=
+    '<div class="nexoCollectionDetailHead">'+
+      '<button type="button" class="nexoWorkspaceBtn nexoCollectionBack" data-collection-back>← '+esc(tr('Colecciones','Collections'))+'</button>'+
+      '<div><span>'+esc(tr('Colección','Collection'))+'</span><h2>'+esc(collectionName(collection))+'</h2><p>'+esc(collectionDescription(collection)||tr('Colección de fichas técnicas.','Technical sheet collection.'))+'</p></div>'+
+      (canCreate()?'<button type="button" class="nexoWorkspaceBtn" data-nexo-create>'+icon('nuevo')+'<span>'+esc(tr('Crear ficha','Create sheet'))+'</span></button>':'')+
+    '</div>'+
+    (recipes.length
+      ? '<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-collection-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar dentro de la colección…','Search within collection…'))+'"></label><span data-collection-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-collection-sheet-grid>'+recipes.map(sheetCard).join('')+'</div>'
+      : '<div class="nexoCollectionEmpty">'+icon('ficha-tecnica')+'<strong>'+esc(tr('Esta colección todavía no tiene fichas','This collection has no sheets yet'))+'</strong><span>'+esc(tr('Crea una ficha para comenzar a organizar esta colección.','Create a sheet to start organizing this collection.'))+'</span></div>');
+  body.querySelector('[data-collection-back]').onclick=()=>{activeCollectionId='';renderCollections(root)};
+  body.querySelectorAll('[data-workspace-sheet]').forEach(card=>card.onclick=()=>window.NEXO_MENU_API?.openRecipe?.(card.dataset.workspaceSheet));
+  bindActions(body);
+  const search=body.querySelector('[data-collection-sheet-search]');
+  const count=body.querySelector('[data-collection-search-count]');
+  if(search)search.addEventListener('input',()=>{
+    const q=String(search.value||'');
+    let visible=0;
+    body.querySelectorAll('[data-workspace-sheet]').forEach(card=>{
+      const recipe=recipes.find(row=>String(row._id)===String(card.dataset.workspaceSheet));
+      const show=recipe?sheetMatches(recipe,q):false;
+      card.hidden=!show;
+      card.style.display=show?'':'none';
+      if(show)visible++
+    });
+    if(count)count.textContent=q.trim()?visible+' / '+recipes.length:''
+  })
+}
+
 function renderCollections(root){
   const body=root.querySelector('[data-nexo-workspace-body]');
   if(!body)return;
-  if(!hasContent()){
-    body.innerHTML=emptyState();
-    bindActions(body);
-    return;
+  const rows=activeCollections();
+  if(activeCollectionId){
+    const selected=collectionById(activeCollectionId);
+    if(selected){renderCollectionDetail(root,selected);return}
+    activeCollectionId=''
   }
-  body.innerHTML='';
-  const grid=root.__nexoCollectionGrid;
-  if(grid)body.appendChild(grid);
+  body.innerHTML=
+    '<div class="nexoCollectionsToolbar"><div><span>'+esc(tr('Biblioteca','Library'))+'</span><h2>'+esc(tr('Colecciones','Collections'))+'</h2><p>'+esc(tr('Agrupa fichas técnicas sin duplicarlas.','Group technical sheets without duplicating them.'))+'</p></div>'+
+      (canCreate()?'<button type="button" class="nexoWorkspaceBtn primary" data-create-collection>'+icon('nuevo')+'<span>'+esc(tr('Nueva colección','New collection'))+'</span></button>':'')+
+    '</div>'+
+    (rows.length
+      ? '<div class="nexoCollectionsGrid">'+rows.map(collectionCard).join('')+'</div>'
+      : '<div class="nexoCollectionEmpty">'+icon('coleccion')+'<strong>'+esc(tr('Todavía no hay colecciones','No collections yet'))+'</strong><span>'+esc(tr('Crea una colección para organizar las fichas de este Workspace.','Create a collection to organize this Workspace\'s sheets.'))+'</span></div>');
+  body.querySelector('[data-create-collection]')?.addEventListener('click',()=>openCollectionCreate(root));
+  body.querySelectorAll('[data-nexo-collection]').forEach(card=>card.onclick=()=>{
+    activeCollectionId=String(card.dataset.nexoCollection||'');
+    renderCollections(root)
+  })
 }
 
 function renderBody(root){
@@ -136,9 +273,7 @@ function enhanceRoot(){
   root.dataset.nexoWorkspaceEnhanced='1';
   const intro=root.querySelector('.taxonomyIntro');
   const grid=root.querySelector('.taxonomyGrid');
-  if(!grid)return;
-  root.__nexoCollectionGrid=grid;
-  grid.remove();
+  if(grid)grid.remove();
   if(intro)intro.remove();
 
   const header=document.createElement('div');
@@ -154,7 +289,7 @@ function enhanceRoot(){
   body.dataset.nexoWorkspaceBody='1';
 
   root.prepend(header,nav,body);
-  root.querySelectorAll('[data-nexo-tab]').forEach(btn=>btn.onclick=()=>{activeTab=btn.dataset.nexoTab;renderBody(root)});
+  root.querySelectorAll('[data-nexo-tab]').forEach(btn=>btn.onclick=()=>{activeTab=btn.dataset.nexoTab;if(activeTab!=='collections')activeCollectionId='';renderBody(root)});
   bindActions(header);
   renderBody(root);
 }
@@ -1375,6 +1510,17 @@ window.addEventListener('NEXO_NATIVE_RENDERED',e=>{
 window.addEventListener('message',e=>{
   let m=e.data;
   if(typeof m==='string')try{m=JSON.parse(m)}catch{return}
+  const p=m?.payload||{};
+  if(m?.type==='NEXO_DM_COLLECTION_CREATED'||m?.type==='NEXO_DM_COLLECTION_ERROR'){
+    const requestId=String(p.requestId||'');
+    const wait=pendingCollectionRequests.get(requestId);
+    if(!wait)return;
+    clearTimeout(wait.timer);
+    pendingCollectionRequests.delete(requestId);
+    if(m.type==='NEXO_DM_COLLECTION_CREATED'&&p.ok!==false)wait.resolve(p);
+    else wait.reject(new Error(String(p.error||tr('No se pudo crear la colección.','Could not create collection.'))));
+    return
+  }
   if(m?.type==='MENU_DATA_LOADED')setTimeout(enhanceRoot,0);
 });
 
