@@ -671,8 +671,8 @@ function sheetEditorShell(options={}){
           '<div class="nexoSupplyModeBlock">'+
             '<span class="nexoSupplyFieldLabel">'+esc(tr('Tipo de insumo','Supply type'))+'</span>'+
             '<div class="nexoSupplyModeGroup" role="radiogroup" aria-label="'+esc(tr('Tipo de insumo','Supply type'))+'">'+
-              '<button type="button" data-supply-mode="CONSUMABLE" aria-pressed="true"><strong>'+esc(tr('Consumible','Consumable'))+'</strong><span>'+esc(tr('Se utiliza tal como está.','Used as-is.'))+'</span></button>'+
-              '<button type="button" data-supply-mode="PROCESSABLE" aria-pressed="false"><strong>'+esc(tr('Procesable','Processable'))+'</strong><span>'+esc(tr('Puede tener una o varias formas de proceso.','Can have one or more processing forms.'))+'</span></button>'+
+              '<button type="button" data-supply-mode="CONSUMABLE" aria-pressed="true"><span class="nexoSupplyModeChoiceCopy"><strong>'+esc(tr('Consumible','Consumable'))+'</strong><span>'+esc(tr('Se utiliza tal como está.','Used as-is.'))+'</span></span><span class="nexoSupplyModeChoiceIcon consumable" aria-hidden="true">'+icon('completado')+'</span></button>'+
+              '<button type="button" data-supply-mode="PROCESSABLE" aria-pressed="false"><span class="nexoSupplyModeChoiceCopy"><strong>'+esc(tr('Procesable','Processable'))+'</strong><span>'+esc(tr('Puede tener una o varias formas de proceso.','Can have one or more processing forms.'))+'</span></span><span class="nexoSupplyModeChoiceIcon processable" aria-hidden="true">'+icon('preparaciones')+'</span></button>'+
             '</div>'+
           '</div>'+
         '</section>'+
