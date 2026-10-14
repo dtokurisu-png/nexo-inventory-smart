@@ -287,6 +287,7 @@ function sheetEditorShell(options={}){
   const photoLabel=options.photoLabel||tr('Foto del producto','Product photo');
   const titlePlaceholder=options.titlePlaceholder||tr('Nombre del producto o preparación','Product or preparation name');
   const descriptionPlaceholder=options.descriptionPlaceholder||tr('Describe brevemente esta ficha.','Briefly describe this sheet.');
+  const allowPreparationComponent=String(options.kind||'')!=='preparation';
   el.innerHTML=
     '<div class="nexoSheetEditorFrame" role="dialog" aria-modal="true" aria-label="'+esc(ariaLabel)+'">'+
       '<header class="nexoSheetEditorHead">'+
@@ -352,13 +353,15 @@ function sheetEditorShell(options={}){
                   '<button type="button" role="menuitem" data-composition-choice="create">'+esc(tr('Crear','Create'))+'</button>'+
                 '</div>'+
               '</div>'+
-              '<div class="nexoCompositionAction" data-composition-action="preparation">'+
-                '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-preparation aria-haspopup="menu" aria-expanded="false">'+icon('nuevo')+'<span>'+esc(tr('Preparación','Preparation'))+'</span></button>'+
-                '<div class="nexoCompositionMenu" data-composition-menu="preparation" role="menu" hidden>'+
-                  '<button type="button" role="menuitem" data-composition-choice="existing">'+esc(tr('Existente','Existing'))+'</button>'+
-                  '<button type="button" role="menuitem" data-composition-choice="create">'+esc(tr('Crear','Create'))+'</button>'+
-                '</div>'+
-              '</div>'+
+              (allowPreparationComponent
+                ? '<div class="nexoCompositionAction" data-composition-action="preparation">'+
+                    '<button type="button" class="nexoWorkspaceBtn" data-sheet-add-preparation aria-haspopup="menu" aria-expanded="false">'+icon('nuevo')+'<span>'+esc(tr('Preparación','Preparation'))+'</span></button>'+
+                    '<div class="nexoCompositionMenu" data-composition-menu="preparation" role="menu" hidden>'+
+                      '<button type="button" role="menuitem" data-composition-choice="existing">'+esc(tr('Existente','Existing'))+'</button>'+
+                      '<button type="button" role="menuitem" data-composition-choice="create">'+esc(tr('Crear','Create'))+'</button>'+
+                    '</div>'+
+                  '</div>'
+                : '')+
             '</div>'+
           '</div>'+
           '<div class="nexoSheetIngredientPicker" data-sheet-existing-picker hidden></div>'+
@@ -862,7 +865,7 @@ function sheetEditorTemplate(options={}){
       ['ingredient',supplyMenu,supplyTrigger],
       ['preparation',preparationMenu,preparationTrigger]
     ].forEach(([kind,menu,trigger])=>{
-      if(kind===except)return;
+      if(kind===except||!menu||!trigger)return;
       menu.hidden=true;
       trigger.setAttribute('aria-expanded','false')
     })
@@ -870,6 +873,7 @@ function sheetEditorTemplate(options={}){
   function toggleCompositionMenu(kind){
     const menu=kind==='preparation'?preparationMenu:supplyMenu;
     const trigger=kind==='preparation'?preparationTrigger:supplyTrigger;
+    if(!menu||!trigger)return;
     const willOpen=menu.hidden;
     closeCompositionMenus(kind);
     menu.hidden=!willOpen;
@@ -1249,19 +1253,21 @@ function sheetEditorTemplate(options={}){
   }
 
   supplyTrigger.onclick=()=>toggleCompositionMenu('ingredient');
-  preparationTrigger.onclick=()=>toggleCompositionMenu('preparation');
   supplyMenu.querySelector('[data-composition-choice="existing"]').onclick=()=>{
     closeCompositionMenus();
     existingPicker.hidden=false;
     renderExistingPicker('ingredient','')
   };
   supplyMenu.querySelector('[data-composition-choice="create"]').onclick=()=>openCreateChild('supply');
-  preparationMenu.querySelector('[data-composition-choice="existing"]').onclick=()=>{
-    closeCompositionMenus();
-    existingPicker.hidden=false;
-    renderExistingPicker('preparation','')
-  };
-  preparationMenu.querySelector('[data-composition-choice="create"]').onclick=()=>openCreateChild('preparation');
+  if(preparationTrigger&&preparationMenu){
+    preparationTrigger.onclick=()=>toggleCompositionMenu('preparation');
+    preparationMenu.querySelector('[data-composition-choice="existing"]').onclick=()=>{
+      closeCompositionMenus();
+      existingPicker.hidden=false;
+      renderExistingPicker('preparation','')
+    };
+    preparationMenu.querySelector('[data-composition-choice="create"]').onclick=()=>openCreateChild('preparation')
+  }
 
   ['keyup','mouseup','input','focus'].forEach(type=>editor.addEventListener(type,rememberMopRange));
   editor.addEventListener('input',()=>{

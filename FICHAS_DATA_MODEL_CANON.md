@@ -120,3 +120,12 @@ Campos y comportamiento obligatorios:
 Los procesos existentes se toman del catálogo canónico `DMProcesses`. Un proceso nuevo puede existir como borrador local hasta que la persistencia de creación de procesos esté implementada; nunca debe escribirse en `DMPreparations`.
 
 Cambiar un insumo a `CONSUMABLE` oculta sus controles de procesos, pero no necesita destruir inmediatamente el borrador local de esos procesos mientras la ficha siga abierta.
+
+
+## Composición de una Preparación nueva
+
+En el creador de una entidad `PREPARATION`, la composición permite agregar **Insumos**.
+
+El control `+ Preparación` no debe renderizarse dentro de una ficha que ya se está creando como Preparación. Este creador no soporta Preparación dentro de Preparación.
+
+Esto no cambia la compatibilidad de lectura con datos históricos que puedan contener referencias anteriores; la restricción aplica al flujo de creación nuevo.
