@@ -126,6 +126,23 @@ function ensureStyle(){
   --ngh-shadow:var(--nxo-shadow,rgba(0,0,0,.28));
   --ngh-role:var(--nxo-role-text,#F0CE83)
 }
+#${ID}[data-variant="camino"][data-theme="night"]{
+  --ngh-bg:#06130F;
+  --ngh-border:#21483C;
+  --ngh-text:#F0FBF7;
+  --ngh-muted:#86A399;
+  --ngh-active:#65F2C6;
+  --ngh-interaction:#20C997;
+  --ngh-interaction-contrast:#032219;
+  --ngh-surface:#0B1914;
+  --ngh-surface2:#0E241C;
+  --ngh-panel-text:#EDF8F4;
+  --ngh-panel-muted:#819B91;
+  --ngh-panel-border:#2A5144;
+  --ngh-panel-border-strong:#34705D;
+  --ngh-shadow:rgba(0,0,0,.34);
+  --ngh-role:#74E8C4
+}
 #${ID},#${ID} *{box-sizing:border-box}
 #${ID} .ngh-bar{
   height:100%;padding:0 22px;display:flex;align-items:center;gap:22px;
@@ -258,6 +275,10 @@ function ensureStyle(){
   #${ID} .ngh-user small{display:none}
   #${ID} .ngh-product-nav{gap:10px;overflow:auto}
   #${ID} .ngh-contexts{display:none}
+  #${ID}[data-variant="camino"] .ngh-contexts{display:flex}
+  #${ID}[data-variant="camino"] .ngh-context:first-child{display:none}
+  #${ID}[data-variant="camino"] .ngh-context-btn{min-width:92px}
+  #${ID}[data-variant="camino"] .ngh-user{display:none}
   #${ID} .ngh-desktop-settings{display:none}
   #${ID} .ngh-mobile-settings{display:block}
 }
