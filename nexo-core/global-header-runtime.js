@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261014-8';
+const VERSION='20261014-9';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -21,6 +21,10 @@ function toolIconKey(tool){
   return'herramientas'
 }
 function icon(name){return ICON_BASE+encodeURIComponent(name)+'.png'}
+function iconMarkup(name,extra=''){
+  const src=icon(name);
+  return '<span class="ngh-icon-wrap" style="--ngh-icon-mask:url(&quot;'+esc(src)+'&quot;)"><img class="ngh-icon '+extra+'" src="'+esc(src)+'" alt=""></span>'
+}
 
 function ensureStyle(){
   if(document.getElementById(STYLE_ID))return;
@@ -93,26 +97,29 @@ function ensureStyle(){
 #${ID} .ngh-nav-btn:hover:after,#${ID} .ngh-nav-btn:focus-visible:after{background:var(--ngh-interaction)}
 #${ID} .ngh-nav-btn.active{color:var(--ngh-active);font-weight:900}
 #${ID} .ngh-nav-btn.active:after{background:var(--ngh-active)}
-#${ID} .ngh-icon{
-  width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto;
-  filter:drop-shadow(.5px 0 0 rgba(255,255,255,.68))
-         drop-shadow(-.5px 0 0 rgba(255,255,255,.68))
-         drop-shadow(0 .5px 0 rgba(255,255,255,.68))
-         drop-shadow(0 -.5px 0 rgba(255,255,255,.68))
-         drop-shadow(.5px .5px 0 rgba(255,255,255,.68))
-         drop-shadow(-.5px .5px 0 rgba(255,255,255,.68))
-         drop-shadow(.5px -.5px 0 rgba(255,255,255,.68))
-         drop-shadow(-.5px -.5px 0 rgba(255,255,255,.68))!important
+#${ID} .ngh-icon-wrap{
+  position:relative;display:inline-grid;place-items:center;
+  width:16px;height:16px;flex:0 0 16px
 }
-#${ID}[data-theme="night"] .ngh-icon{
-  filter:drop-shadow(.5px 0 0 rgba(225,189,105,.74))
-         drop-shadow(-.5px 0 0 rgba(225,189,105,.74))
-         drop-shadow(0 .5px 0 rgba(225,189,105,.74))
-         drop-shadow(0 -.5px 0 rgba(225,189,105,.74))
-         drop-shadow(.5px .5px 0 rgba(225,189,105,.74))
-         drop-shadow(-.5px .5px 0 rgba(225,189,105,.74))
-         drop-shadow(.5px -.5px 0 rgba(225,189,105,.74))
-         drop-shadow(-.5px -.5px 0 rgba(225,189,105,.74))!important
+#${ID} .ngh-icon-wrap::before{
+  content:"";position:absolute;inset:0;
+  background:#fff;
+  -webkit-mask-image:var(--ngh-icon-mask);
+  mask-image:var(--ngh-icon-mask);
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-size:contain;mask-size:contain;
+  transform:scale(1.055);
+  transform-origin:50% 50%;
+  opacity:.72;
+  pointer-events:none
+}
+#${ID}[data-theme="night"] .ngh-icon-wrap::before{
+  background:#E1BD69;opacity:.78
+}
+#${ID} .ngh-icon{
+  position:relative;z-index:1;width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto;
+  filter:none!important
 }
 #${ID} .ngh-menu{
   display:none;position:absolute;top:calc(100% + 8px);left:0;width:320px;max-width:min(420px,calc(100vw - 20px));
@@ -217,9 +224,9 @@ function mount(container,opts={}){
   const photo=profile?.photoImage?.url||profile?.photoImage?.image?.url||profile?.photoImage?.src||'';
   h.innerHTML='<header class="ngh-bar">'+
     '<button class="ngh-brand" data-home><img class="ngh-logo" src="'+LOGO+'" alt="Nexo Group"><span class="ngh-brand-copy"><strong>Nexo Group</strong><small>'+esc(context)+'</small></span></button>'+
-    '<nav class="ngh-nav"><div class="ngh-group"><button class="ngh-nav-btn '+(active==='personal'||active==='workspace'||active==='tool'?'active':'')+'" data-personal data-menu-target="ngh-space" aria-expanded="false"><img class="ngh-icon" src="'+icon('home')+'" alt=""><span>'+(lang==='en'?'My space':'Mi espacio')+'</span><span>⌄</span></button><div class="ngh-menu" id="ngh-space">'+menuMarkup(nav)+'</div></div>'+
-    '<button class="ngh-nav-btn '+(active==='development'?'active':'')+'" data-development><img class="ngh-icon" src="'+icon('desarrollo')+'" alt=""><span>'+(lang==='en'?'Development Center':'Centro de desarrollo')+'</span></button></nav>'+
-    '<div class="ngh-utils"><div class="ngh-group"><button class="ngh-icon-btn" data-settings data-menu-target="ngh-settings" aria-expanded="false"><img class="ngh-icon" src="'+icon('ajustes-rapidos')+'" alt=""></button><div class="ngh-pop" id="ngh-settings"><button class="ngh-setting-row" data-language><span class="ngh-setting-label"><img class="ngh-icon" src="'+icon('idioma')+'" alt=""><span>'+(lang==='en'?'Language':'Idioma')+'</span></span><strong class="ngh-setting-value">'+lang.toUpperCase()+'</strong></button><button class="ngh-setting-row" data-theme><span class="ngh-setting-label"><img class="ngh-icon" data-theme-icon src="'+icon(theme==='night'?'modo-oscuro':'modo-claro')+'" alt=""><span>'+(lang==='en'?'Appearance':'Apariencia')+'</span></span><strong class="ngh-setting-value">'+(theme==='night'?(lang==='en'?'Dark':'Oscuro'):(lang==='en'?'Light':'Claro'))+'</strong></button></div></div>'+
+    '<nav class="ngh-nav"><div class="ngh-group"><button class="ngh-nav-btn '+(active==='personal'||active==='workspace'||active==='tool'?'active':'')+'" data-personal data-menu-target="ngh-space" aria-expanded="false">'+iconMarkup('home')+'<span>'+(lang==='en'?'My space':'Mi espacio')+'</span><span>⌄</span></button><div class="ngh-menu" id="ngh-space">'+menuMarkup(nav)+'</div></div>'+
+    '<button class="ngh-nav-btn '+(active==='development'?'active':'')+'" data-development>'+iconMarkup('desarrollo')+'<span>'+(lang==='en'?'Development Center':'Centro de desarrollo')+'</span></button></nav>'+
+    '<div class="ngh-utils"><div class="ngh-group"><button class="ngh-icon-btn" data-settings data-menu-target="ngh-settings" aria-expanded="false">'+iconMarkup('ajustes-rapidos')+'</button><div class="ngh-pop" id="ngh-settings"><button class="ngh-setting-row" data-language><span class="ngh-setting-label">'+iconMarkup('idioma')+'<span>'+(lang==='en'?'Language':'Idioma')+'</span></span><strong class="ngh-setting-value">'+lang.toUpperCase()+'</strong></button><button class="ngh-setting-row" data-theme><span class="ngh-setting-label">'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<span>'+(lang==='en'?'Appearance':'Apariencia')+'</span></span><strong class="ngh-setting-value">'+(theme==='night'?(lang==='en'?'Dark':'Oscuro'):(lang==='en'?'Light':'Claro'))+'</strong></button></div></div>'+
     '<div class="ngh-group"><button class="ngh-account" data-account data-menu-target="ngh-account" aria-expanded="false"><span class="ngh-avatar">'+(photo?'<img src="'+esc(photo)+'" alt="">':esc(initials(profile.displayName||'Usuario Nexo')))+'</span><span class="ngh-user"><strong>'+esc(profile.displayName||'Usuario Nexo')+'</strong><span class="ngh-role">'+esc(opts.roleLabel||'Miembro')+'</span><small>'+esc(profile.email||'')+'</small></span><span>⌄</span></button><div class="ngh-pop" id="ngh-account"><button data-profile>'+(lang==='en'?'Profile settings':'Ajustes de perfil')+'</button><button data-switch>'+(lang==='en'?'Switch account':'Cambiar cuenta')+'</button><button class="danger" data-logout>'+(lang==='en'?'Sign out':'Cerrar sesión')+'</button></div></div></div>'+
     '</header>';
 
