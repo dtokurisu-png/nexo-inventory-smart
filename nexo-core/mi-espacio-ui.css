@@ -4429,3 +4429,16 @@ button.nxo-workspace-logo-edit.uploading{
     top:68px!important
   }
 }
+
+
+/* GLOBAL WIX HEADER HARD CLEARANCE · 2026-10-14 */
+html,body{
+  background:transparent!important;
+}
+body{
+  padding-top:68px!important;
+}
+.nxo-app{
+  top:68px!important;
+  background-clip:padding-box!important;
+}
