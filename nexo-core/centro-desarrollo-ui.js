@@ -2542,14 +2542,15 @@ async function start(){
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
   ensureStyle();
   ensureDevelopmentTaxonomyStyle();
-  await Promise.all([ensureThemeRuntime(),ensureSharedHeaderRuntime()]);
+  await ensureThemeRuntime();
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
   await window.NEXO_THEME_RUNTIME?.ready;
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
 
   try{await loadDevelopmentSession()}catch(_){developmentSession=null}
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
-  mountDevelopmentHeader();
+  document.getElementById('nxo-shared-header')?.remove();
+  document.getElementById('nxo-dev-header')?.remove();
   ensureDevelopmentApp();
   applyRequestedDevelopmentView();
   ensurePreviewPanel();
@@ -2557,7 +2558,7 @@ async function start(){
   bindFeatureInterception();
   refresh();
 
-  window.addEventListener('nexo-theme-change',()=>{mountDevelopmentHeader();syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
+  window.addEventListener('nexo-theme-change',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
   window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
 
   observer=new MutationObserver(schedule);
