@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261014-12';
+const VERSION='20261014-13';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -70,9 +70,43 @@ function ensureStyle(){
   --ngh-danger:var(--nxo-danger,#B94242);
   --ngh-shadow:var(--nxo-shadow,rgba(23,39,85,.18));
   --ngh-role:var(--nxo-role-text,var(--nxo-header-active,#E79069));
-  position:fixed;inset:0 0 auto 0;height:${HEIGHT}px;z-index:2147483600;
+  position:fixed;inset:var(--nexo-global-header-top,0px) 0 auto 0;height:${HEIGHT}px;z-index:2147483600;
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   pointer-events:auto
+}
+#${ID}[data-variant="camino"]{
+  --ngh-bg:#06130F;
+  --ngh-border:#21483C;
+  --ngh-text:#F0FBF7;
+  --ngh-muted:#86A399;
+  --ngh-active:#65F2C6;
+  --ngh-interaction:#20C997;
+  --ngh-interaction-contrast:#032219;
+  --ngh-surface:#0B1914;
+  --ngh-surface2:#0E241C;
+  --ngh-panel-text:#EDF8F4;
+  --ngh-panel-muted:#819B91;
+  --ngh-panel-border:#2A5144;
+  --ngh-panel-border-strong:#34705D;
+  --ngh-shadow:rgba(0,0,0,.34);
+  --ngh-role:#74E8C4
+}
+#${ID}[data-variant="camino"][data-theme="day"]{
+  --ngh-bg:#071A14;
+  --ngh-border:#285849;
+  --ngh-text:#F3FFFB;
+  --ngh-muted:#A3C4B8;
+  --ngh-active:#65F2C6;
+  --ngh-interaction:#27D3A2;
+  --ngh-interaction-contrast:#032219;
+  --ngh-surface:#F3FBF7;
+  --ngh-surface2:#E8F6F0;
+  --ngh-panel-text:#10231D;
+  --ngh-panel-muted:#5F786F;
+  --ngh-panel-border:#B9D8CD;
+  --ngh-panel-border-strong:#5C8E7D;
+  --ngh-shadow:rgba(4,31,23,.22);
+  --ngh-role:#0D7559
 }
 #${ID}[data-theme="night"]{
   --ngh-bg:var(--nxo-header-background,rgba(6,9,14,.94));
@@ -107,6 +141,17 @@ function ensureStyle(){
 #${ID} .ngh-brand-copy{display:grid;text-align:left}
 #${ID} .ngh-brand-copy strong{font-size:13px;line-height:1.1;color:var(--ngh-text)}
 #${ID} .ngh-brand-copy small{margin-top:3px;color:var(--ngh-muted);font-size:10px;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#${ID} .ngh-product-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:11px;background:var(--ngh-active);color:var(--ngh-interaction-contrast);font-size:17px;font-weight:950;box-shadow:0 7px 20px var(--ngh-shadow)}
+#${ID} .ngh-product-nav{display:flex;align-items:stretch;gap:18px}
+#${ID} .ngh-contexts{display:flex;align-items:center;gap:7px}
+#${ID} .ngh-context{position:relative;display:flex;align-items:center}
+#${ID} .ngh-context-btn{min-width:118px;height:42px;padding:5px 9px;border:1px solid color-mix(in srgb,var(--ngh-text) 14%,transparent);border-radius:11px;background:color-mix(in srgb,var(--ngh-text) 7%,transparent);color:var(--ngh-text);display:grid;text-align:left;cursor:pointer}
+#${ID} .ngh-context-btn.static{cursor:default}
+#${ID} .ngh-context-btn:not(.static):hover,#${ID} .ngh-context-btn[aria-expanded="true"]{background:var(--ngh-interaction);border-color:var(--ngh-interaction);color:var(--ngh-interaction-contrast)}
+#${ID} .ngh-context-btn span{font-size:7px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;opacity:.72}
+#${ID} .ngh-context-btn strong{margin-top:2px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#${ID} .ngh-context-menu{left:auto;right:0;min-width:250px}
+
 #${ID} .ngh-nav{align-self:stretch;display:flex;align-items:stretch;gap:18px;flex:1;min-width:0}
 #${ID} .ngh-group{position:relative;display:flex;align-items:stretch}
 #${ID} .ngh-nav-btn{
@@ -211,6 +256,8 @@ function ensureStyle(){
   #${ID} .ngh-account{max-width:150px;padding:3px 5px}
   #${ID} .ngh-user strong{max-width:70px;font-size:9px}
   #${ID} .ngh-user small{display:none}
+  #${ID} .ngh-product-nav{gap:10px;overflow:auto}
+  #${ID} .ngh-contexts{display:none}
   #${ID} .ngh-desktop-settings{display:none}
   #${ID} .ngh-mobile-settings{display:block}
 }
@@ -223,6 +270,22 @@ function toggle(h,id,button){const menu=h.querySelector('#'+id);if(!menu)return;
 function findTool(nav,key,workspaceId=''){if(workspaceId){const ws=(nav?.workspaces||[]).find(x=>String(x.workspaceId)===String(workspaceId));return (ws?.tools||[]).find(x=>String(x.toolKey)===String(key))||null}return (nav?.personal?.tools||[]).find(x=>String(x.toolKey)===String(key))||null}
 function fallbackTool(tool,ws){const route=String(tool?.routePath||'').trim();if(!route)return;const u=new URL(route,location.origin);if(ws?.workspaceId)u.searchParams.set('nxoWorkspace',ws.workspaceId);location.assign(u.href)}
 function normalizeTheme(value){return value==='night'?'night':'day'}
+function productNavMarkup(items,active=''){
+  if(!Array.isArray(items)||!items.length)return '';
+  return '<div class="ngh-product-nav">'+items.map(item=>
+    '<button class="ngh-nav-btn '+((item.active||String(active)===String(item.key))?'active':'')+'" data-product-nav="'+esc(item.key||'')+'" '+(item.disabled?'disabled':'')+'>'+esc(item.label||item.key||'')+'</button>'
+  ).join('')+'</div>'
+}
+function contextMarkup(items){
+  if(!Array.isArray(items)||!items.length)return '';
+  return '<div class="ngh-contexts">'+items.map(item=>{
+    const options=Array.isArray(item.options)?item.options:[];
+    const menuId='ngh-context-'+esc(item.key||'context');
+    return '<div class="ngh-context"><button class="ngh-context-btn '+(options.length?'':'static')+'" data-context="'+esc(item.key||'')+'" '+(options.length?'data-menu-target="'+menuId+'" aria-expanded="false"':'')+'><span>'+esc(item.label||'')+'</span><strong>'+esc(item.value||'')+'</strong></button>'+
+      (options.length?'<div class="ngh-menu ngh-context-menu" id="'+menuId+'">'+options.map(opt=>'<button class="ngh-item '+(opt.active?'active':'')+'" data-context-option="'+esc(item.key||'')+'" data-context-value="'+esc(opt.value||'')+'"><span>'+esc(opt.label||opt.value||'')+'</span></button>').join('')+'</div>':'')+
+    '</div>'
+  }).join('')+'</div>'
+}
 function menuMarkup(nav){
   const direct=Array.isArray(nav?.personal?.tools)?nav.personal.tools:[];
   const spaces=Array.isArray(nav?.workspaces)?nav.workspaces:[];
@@ -238,14 +301,21 @@ function mount(container,opts={}){
   const active=opts.active||'personal';
   const theme=normalizeTheme(opts.theme);
   h.dataset.theme=theme;
+  h.dataset.variant=String(opts.variant||'');
   const context=opts.contextLabel||'Mi espacio';
   const lang=String(opts.language||'es').toLowerCase().startsWith('en')?'en':'es';
   const photo=profile?.photoImage?.url||profile?.photoImage?.image?.url||profile?.photoImage?.src||'';
+  const brand=opts.brand&&typeof opts.brand==='object'?opts.brand:null;
+  const brandMarkup=brand
+    ?('<button class="ngh-brand" data-home>'+(brand.mark?'<span class="ngh-product-mark">'+esc(brand.mark)+'</span>':(brand.logoUrl?'<img class="ngh-logo" src="'+esc(brand.logoUrl)+'" alt="">':'<img class="ngh-logo" src="'+LOGO+'" alt="Nexo Group">'))+'<span class="ngh-brand-copy"><strong>'+esc(brand.title||'Nexo Group')+'</strong><small>'+esc(brand.subtitle||context)+'</small></span></button>')
+    :('<button class="ngh-brand" data-home><img class="ngh-logo" src="'+LOGO+'" alt="Nexo Group"><span class="ngh-brand-copy"><strong>Nexo Group</strong><small>'+esc(context)+'</small></span></button>');
+  const customNav=productNavMarkup(opts.productNavigation,opts.productActive);
+  const globalNav=opts.hideGlobalNavigation?'':('<div class="ngh-group"><button class="ngh-nav-btn '+(active==='personal'||active==='workspace'||active==='tool'?'active':'')+'" data-personal data-menu-target="ngh-space" aria-expanded="false">'+iconMarkup('home')+'<span>'+(lang==='en'?'My space':'Mi espacio')+'</span><span>⌄</span></button><div class="ngh-menu" id="ngh-space">'+menuMarkup(nav)+'</div></div>'+
+    '<button class="ngh-nav-btn '+(active==='development'?'active':'')+'" data-development>'+iconMarkup('desarrollo')+'<span>'+(lang==='en'?'Development Center':'Centro de desarrollo')+'</span></button>');
   h.innerHTML='<header class="ngh-bar">'+
-    '<button class="ngh-brand" data-home><img class="ngh-logo" src="'+LOGO+'" alt="Nexo Group"><span class="ngh-brand-copy"><strong>Nexo Group</strong><small>'+esc(context)+'</small></span></button>'+
-    '<nav class="ngh-nav"><div class="ngh-group"><button class="ngh-nav-btn '+(active==='personal'||active==='workspace'||active==='tool'?'active':'')+'" data-personal data-menu-target="ngh-space" aria-expanded="false">'+iconMarkup('home')+'<span>'+(lang==='en'?'My space':'Mi espacio')+'</span><span>⌄</span></button><div class="ngh-menu" id="ngh-space">'+menuMarkup(nav)+'</div></div>'+
-    '<button class="ngh-nav-btn '+(active==='development'?'active':'')+'" data-development>'+iconMarkup('desarrollo')+'<span>'+(lang==='en'?'Development Center':'Centro de desarrollo')+'</span></button></nav>'+
-    '<div class="ngh-utils"><div class="ngh-desktop-settings"><button class="ngh-direct-setting" data-language>'+iconMarkup('idioma')+'<strong>'+lang.toUpperCase()+'</strong></button><button class="ngh-direct-setting" data-theme>'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<strong>'+(theme==='night'?'Dark':'Light')+'</strong></button></div><div class="ngh-mobile-settings"><button class="ngh-icon-btn" data-settings data-menu-target="ngh-settings" aria-expanded="false">'+iconMarkup('ajustes-rapidos')+'</button><div class="ngh-pop" id="ngh-settings"><button class="ngh-setting-row" data-language><span class="ngh-setting-label">'+iconMarkup('idioma')+'<span>'+(lang==='en'?'Language':'Idioma')+'</span></span><strong class="ngh-setting-value">'+lang.toUpperCase()+'</strong></button><button class="ngh-setting-row" data-theme><span class="ngh-setting-label">'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<span>'+(lang==='en'?'Appearance':'Apariencia')+'</span></span><strong class="ngh-setting-value">'+(theme==='night'?'Dark':'Light')+'</strong></button></div></div>'+
+    brandMarkup+
+    '<nav class="ngh-nav">'+customNav+globalNav+'</nav>'+
+    '<div class="ngh-utils">'+contextMarkup(opts.contextControls)+'<div class="ngh-desktop-settings"><button class="ngh-direct-setting" data-language>'+iconMarkup('idioma')+'<strong>'+lang.toUpperCase()+'</strong></button><button class="ngh-direct-setting" data-theme>'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<strong>'+(theme==='night'?'Dark':'Light')+'</strong></button></div><div class="ngh-mobile-settings"><button class="ngh-icon-btn" data-settings data-menu-target="ngh-settings" aria-expanded="false">'+iconMarkup('ajustes-rapidos')+'</button><div class="ngh-pop" id="ngh-settings"><button class="ngh-setting-row" data-language><span class="ngh-setting-label">'+iconMarkup('idioma')+'<span>'+(lang==='en'?'Language':'Idioma')+'</span></span><strong class="ngh-setting-value">'+lang.toUpperCase()+'</strong></button><button class="ngh-setting-row" data-theme><span class="ngh-setting-label">'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<span>'+(lang==='en'?'Appearance':'Apariencia')+'</span></span><strong class="ngh-setting-value">'+(theme==='night'?'Dark':'Light')+'</strong></button></div></div>'+
     '<div class="ngh-group"><button class="ngh-account" data-account data-menu-target="ngh-account" aria-expanded="false"><span class="ngh-avatar">'+(photo?'<img src="'+esc(photo)+'" alt="">':esc(initials(profile.displayName||'Usuario Nexo')))+'</span><span class="ngh-user"><strong>'+esc(profile.displayName||'Usuario Nexo')+'</strong><span class="ngh-role">'+esc(opts.roleLabel||'Miembro')+'</span><small>'+esc(profile.email||'')+'</small></span><span>⌄</span></button><div class="ngh-pop" id="ngh-account"><button data-profile>'+(lang==='en'?'Profile settings':'Ajustes de perfil')+'</button><button data-switch>'+(lang==='en'?'Switch account':'Cambiar cuenta')+'</button><button class="danger" data-logout>'+(lang==='en'?'Sign out':'Cerrar sesión')+'</button></div></div></div>'+
     '</header>';
 
@@ -255,6 +325,9 @@ function mount(container,opts={}){
   h.querySelector('[data-development]')?.addEventListener('click',e=>{if(call('onDevelopment',e)!==false&&location.pathname!=='/')location.assign('/')});
   h.querySelector('[data-settings]')?.addEventListener('click',e=>{e.stopPropagation();toggle(h,'ngh-settings',e.currentTarget)});
   h.querySelector('[data-account]')?.addEventListener('click',e=>{e.stopPropagation();toggle(h,'ngh-account',e.currentTarget)});
+  h.querySelectorAll('[data-product-nav]').forEach(button=>button.addEventListener('click',e=>call('onProductNav',button.dataset.productNav,e)));
+  h.querySelectorAll('[data-context]').forEach(button=>button.addEventListener('click',e=>{const target=button.dataset.menuTarget;if(target){e.stopPropagation();toggle(h,target,e.currentTarget)}}));
+  h.querySelectorAll('[data-context-option]').forEach(button=>button.addEventListener('click',e=>call('onContextAction',button.dataset.contextOption,button.dataset.contextValue,e)));
   h.querySelectorAll('[data-language]').forEach(button=>button.addEventListener('click',e=>call('onLanguage',e)));
   h.querySelectorAll('[data-theme]').forEach(button=>button.addEventListener('click',e=>call('onTheme',e)));
   h.querySelector('[data-profile]')?.addEventListener('click',e=>call('onProfileSettings',e));
