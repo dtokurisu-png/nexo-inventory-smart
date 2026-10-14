@@ -1,6 +1,6 @@
 (()=>{'use strict';
 if(window.__NEXO_TAXONOMY_CORE_V3__)return;window.__NEXO_TAXONOMY_CORE_V3__=true;
-const view=document.getElementById('view'),back=document.getElementById('back'),home=document.getElementById('home'),modal=document.getElementById('modal');
+const view=document.getElementById('view'),back=document.getElementById('back'),modal=document.getElementById('modal');
 if(!view||!back||!home||!modal)return;
 const mobileDevice=()=>{const ua=navigator.userAgent||'',vw=Math.max(1,window.innerWidth||document.documentElement.clientWidth||9999),mobileUa=/Android|iPhone|iPad|iPod|Mobile/i.test(ua),coarse=matchMedia('(pointer:coarse)').matches;return mobileUa||vw<=720||(coarse&&vw<=900)};
 const root=document.documentElement;
@@ -170,7 +170,13 @@ function activeRecipes(){return(data().recipes||[]).filter(r=>r&&r.active!==fals
 function activeProducts(){return(data().ingredients||[]).filter(i=>i&&i.active!==false).sort((a,b)=>text(a,'nameEn','nameEs').localeCompare(text(b,'nameEn','nameEs')))}
 function createdMs(r){let v=r?._createdDate||r?.createdDate||0;if(v&&typeof v==='object'&&v.$date)v=v.$date;const n=Date.parse(v);return Number.isFinite(n)?n:0}
 function isNewRecipe(r){const n=createdMs(r);if(!n||n<NEW_BADGE_START_MS)return false;const age=Date.now()-n;return age>=0&&age<NEW_RECIPE_MS}
-function syncBack(){if(state.productModal||state.mode!=='root'||window.__NEXO_WORKSPACE_MODE__===true)back.classList.remove('hidden');else if(!view.querySelector('.recipeView'))back.classList.add('hidden')}
+function syncBack(){
+  if(!back)return;
+  if(view.querySelector('.recipeView'))return;
+  const taxonomyCanGoBack=!!state.productModal||state.mode!=='root';
+  back.disabled=!taxonomyCanGoBack;
+  back.setAttribute('aria-disabled',taxonomyCanGoBack?'false':'true')
+}
 function master(kind,count,label,copy,url){return '<button class="taxonomyMaster '+kind+'" data-taxonomy-open="'+kind+'">'+(url?'<div class="taxonomyMasterImage"><img src="'+esc(url)+'" alt=""></div>':'')+'<span class="taxonomyCount">'+count+'</span><div class="taxonomyMasterBody"><span class="taxonomyLabel">'+esc(label)+'</span><h2>'+esc(label)+'</h2><p>'+esc(copy)+'</p></div></button>'}
 function renderRoot(){clearInterval(state.searchWatch);state.searchWatch=null;if(state.applying||view.querySelector('.recipeView'))return;state.applying=true;const recipes=activeRecipes(),dishes=recipes.filter(r=>String(r.recipeType).toUpperCase()==='DISH').length,preps=recipes.length-dishes,products=activeProducts().length,imgs=data().categoryImages||{};view.innerHTML='<div class="homeView taxonomyHome" data-taxonomy-view="root"><div class="taxonomyIntro"><h1 class="title">'+esc(tr('Recetario dinámico','Dynamic recipe book'))+'</h1><p class="subtitle">'+esc(tr('Productos finales, preparaciones e insumos organizados por categoría.','Final products, preparations, and supplies organized by category.'))+'</p></div><div class="taxonomyGrid">'+master('dish',dishes,tr('Productos finales','Final products'),tr('Productos terminados listos para servicio.','Finished products ready for service.'),imgs.dish)+master('prep',preps,tr('Preparaciones','Preparations'),tr('Subrecetas y elaboraciones reutilizables.','Reusable subrecipes and preparations.'),imgs.prep)+master('product',products,tr('Insumos','Supplies'),tr('Insumos y productos base.','Base supplies and products.'),imgs.product)+'</div></div>';view.querySelectorAll('[data-taxonomy-open]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.taxonomyOpen;renderCategory()});syncBack();state.applying=false;window.dispatchEvent(new CustomEvent('NEXO_TAXONOMY_RENDERED',{detail:{mode:'root'}}))}
 function recipeCard(r){const u=img(r.heroImage),dish=String(r.recipeType).toUpperCase()==='DISH',fresh=isNewRecipe(r),tag=dish?tr('Producto final','Final product'):tr('Preparación','Preparation');return '<button class="card recipeCard '+(dish?'cardDish':'cardPrep')+'" data-r="'+esc(r._id)+'"><div class="thumb">'+(u?'<img src="'+esc(u)+'" alt="'+esc(text(r,'titleEn','titleEs'))+'">':'<span class="muted">'+esc(tr('Sin foto','No photo'))+'</span>')+'</div><div class="meta"><span class="tag '+(dish?'tagDish':'tagPrep')+'">'+esc(tag)+'</span><h3>'+esc(text(r,'titleEn','titleEs')||'—')+'</h3><span class="muted">'+esc(r.category||'')+'</span></div>'+(fresh?'<span class="nexoNewStar" title="'+esc(tr('Nueva · menos de 30 días','New · less than 30 days'))+'">★</span>':'')+'</button>'}
@@ -293,8 +299,8 @@ function startTaxonomySearchWatch(){
 
 function openProductImage(id){const p=activeProducts().find(x=>x._id===id),u=img(p?.baseImage);if(!p||!u)return;state.productModal=true;syncBack();const name=text(p,'nameEn','nameEs');modal.innerHTML='<div class="taxonomyImageShade" id="taxonomyShade"><div class="taxonomyImageViewer"><img src="'+esc(u)+'" alt="'+esc(name)+'"><button id="taxonomyClose" class="taxonomyImageClose">×</button></div></div>';const close=()=>{state.productModal=false;modal.innerHTML='';syncBack()};document.getElementById('taxonomyClose').onclick=close;document.getElementById('taxonomyShade').onclick=e=>{if(e.target.id==='taxonomyShade')close()};state.closeProduct=close}
 function applyHome(){if(view.querySelector('.recipeView')){syncBack();return}if(state.mode==='root')renderRoot();else renderCategory()}
-back.addEventListener('click',e=>{if(state.productModal){e.preventDefault();e.stopImmediatePropagation();state.closeProduct?.();return}if(view.querySelector('[data-taxonomy-view]')&&state.mode!=='root'){e.preventDefault();e.stopImmediatePropagation();state.mode='root';renderRoot()}},true);
-home.addEventListener('click',()=>{state.mode='root';if(state.productModal)state.closeProduct?.()},true);
+back?.addEventListener('click',e=>{if(state.productModal){e.preventDefault();e.stopImmediatePropagation();state.closeProduct?.();return}if(view.querySelector('[data-taxonomy-view]')&&state.mode!=='root'){e.preventDefault();e.stopImmediatePropagation();state.mode='root';renderRoot()}},true);
+
 window.addEventListener('NEXO_NATIVE_RENDERED',e=>{if(e.detail?.kind==='recipe'&&e.detail?.recipeId)rememberRecipe(e.detail.recipeId);if(e.detail?.kind==='home')applyHome();else syncBack()});
 window.addEventListener('NEXO_WORKSPACE_HOME_REQUEST',()=>queueMicrotask(applyHome));
 window.addEventListener('message',e=>{let m=e.data;if(typeof m==='string')try{m=JSON.parse(m)}catch{return}if(m?.type==='MENU_DATA_LOADED')queueMicrotask(applyHome);if(m?.type==='NEXO_WORKSPACE_CONTEXT'){window.__NEXO_WORKSPACE_MODE__=!!m?.payload?.workspaceMode;queueMicrotask(syncBack)}});

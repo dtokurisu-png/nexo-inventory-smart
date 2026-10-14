@@ -128,3 +128,10 @@ Reglas:
 - Sugerir cambio además requiere contexto de Workspace.
 - Volver es navegación interna de Fichas y nunca debe sacar al usuario al Workspace desde la raíz.
 - Herramientas nuevas propias de Fichas Técnicas se incorporan a esta barra, no al header global.
+
+
+### Compatibilidad de la barra con Taxonomy Core
+
+La barra contextual no expone el antiguo botón `#home`. Ningún módulo interno puede depender de ese nodo.
+
+`taxonomy-core-v3.js` usa exclusivamente `#back` para navegación interna de categorías y no controla visibilidad mediante la clase `hidden`; solo puede ajustar el estado `disabled` cuando la taxonomía posee la navegación. La raíz de la biblioteca mantiene Volver deshabilitado.
