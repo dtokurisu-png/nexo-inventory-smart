@@ -30,7 +30,8 @@ El backend devuelve la colección creada con al menos `id` y `name`.
 Es el catálogo reutilizable de fichas individuales.
 
 - Las fichas siguen existiendo como entidades propias.
-- Cada ficha publicada pertenece a una colección mediante `collectionId`.
+- La pertenencia canónica se guarda en `NexoTechnicalSheetCollectionItems` mediante `collectionId + technicalSheetId + sourceCollection`.
+- Durante la migración, `DMRecipes.collectionId` puede mantenerse como espejo de compatibilidad para clientes antiguos, pero no sustituye la tabla de vínculos.
 - Abrir una ficha desde una colección y abrirla desde el catálogo global debe llevar a la misma ficha, no a copias distintas.
 - La búsqueda global de Fichas técnicas puede buscar por nombre y por contenido/ingredientes.
 
@@ -60,3 +61,10 @@ Las categorías heredadas Platos / Preparaciones / Productos pueden seguir exist
 ## Regla de producto
 
 Las etapas internas de desarrollo nunca se muestran en esta biblioteca.
+
+
+## Colección principal de Olhicory
+
+La colección histórica `nexo-collection-332129eeaf581385111ce8e12011` es el contenedor principal del proyecto y su nombre visible es **Recetario de Olhicory**.
+
+Las asociaciones existentes viven en `NexoTechnicalSheetCollectionItems`. No inferir un conteo cero únicamente porque una receta antigua no tenga `collectionId`.

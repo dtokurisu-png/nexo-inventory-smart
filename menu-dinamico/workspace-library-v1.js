@@ -10,7 +10,7 @@ let activeTab='collections';
 let activeCollectionId='';
 const pendingCollectionRequests=new Map();
 
-const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],collections:[],context:{},capabilities:{}};
+const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],collections:[],collectionItems:[],context:{},capabilities:{}};
 const lang=()=>document.documentElement.lang==='en'?'en':'es';
 const tr=(es,en)=>lang()==='en'?en:es;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -36,7 +36,28 @@ function collectionById(id){return activeCollections().find(row=>String(row.id||
 function collectionId(row){return String(row?.id||row?._id||'')}
 function collectionName(row){return String(row?.name||row?.title||tr('Colección','Collection'))}
 function collectionDescription(row){return String(row?.description||'')}
-function recipesForCollection(id){return activeRecipes().filter(row=>String(row.collectionId||'')===String(id))}
+function activeCollectionItems(){
+  const rows=data().collectionItems||data().technicalSheetCollectionItems||data().collectionMemberships||[];
+  return (Array.isArray(rows)?rows:[]).filter(row=>row&&row.active!==false)
+}
+function collectionMembers(id){
+  const links=activeCollectionItems().filter(row=>String(row.collectionId||'')===String(id));
+  if(links.length){
+    const recipeIds=new Set(links.filter(row=>String(row.sourceCollection||'DMRecipes')==='DMRecipes').map(row=>String(row.technicalSheetId||'')));
+    const supplyIds=new Set(links.filter(row=>String(row.sourceCollection||'')==='DMIngredients').map(row=>String(row.technicalSheetId||'')));
+    return {
+      recipes:activeRecipes().filter(row=>recipeIds.has(String(row._id))),
+      supplies:activeProducts().filter(row=>supplyIds.has(String(row._id)))
+    }
+  }
+  return {
+    recipes:activeRecipes().filter(row=>String(row.collectionId||'')===String(id)),
+    supplies:activeProducts().filter(row=>String(row.collectionId||'')===String(id))
+  }
+}
+function recipesForCollection(id){return collectionMembers(id).recipes}
+function suppliesForCollection(id){return collectionMembers(id).supplies}
+function collectionItemCount(id){const members=collectionMembers(id);return members.recipes.length+members.supplies.length}
 function hasContent(){return activeCollections().length>0||activeRecipes().length>0||activeProducts().length>0}
 function searchNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
 function sheetSearchCorpus(recipe){
@@ -67,6 +88,20 @@ function sheetMatches(recipe,query){
   const corpus=sheetSearchCorpus(recipe);
   return tokens.every(token=>corpus.includes(token))
 }
+function supplySearchCorpus(supply){
+  const d=data(),vals=[supply?.nameEn,supply?.nameEs,supply?.descriptionEn,supply?.descriptionEs,supply?.supplyMode];
+  (d.supplyProcesses||[]).filter(row=>String(row?.supplyId||'')===String(supply?._id||'')).forEach(relation=>{
+    const process=(d.processes||[]).find(row=>String(row?._id||'')===String(relation?.processId||''));
+    if(process)vals.push(process.nameEn,process.nameEs,process.descriptionEn,process.descriptionEs)
+  });
+  return searchNorm(vals.filter(Boolean).join(' '))
+}
+function supplyMatches(supply,query){
+  const tokens=searchNorm(query).split(' ').filter(Boolean);
+  if(!tokens.length)return true;
+  const corpus=supplySearchCorpus(supply);
+  return tokens.every(token=>corpus.includes(token))
+}
 
 function requestCollectionCreate(input){
   const requestId='collection_create_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
@@ -88,6 +123,20 @@ function sheetCard(r){
     '<div class="thumb">'+(u?'<img src="'+esc(u)+'" alt="'+esc(title)+'">':'<span class="muted">'+esc(tr('Sin foto','No photo'))+'</span>')+'</div>'+
     '<div class="meta"><span class="tag '+(dish?'tagDish':'tagPrep')+'">'+esc(dish?tr('Plato','Dish'):tr('Preparación','Preparation'))+'</span><h3>'+esc(title)+'</h3><span class="muted">'+esc(r.category||'')+'</span></div></button>';
 }
+function supplyCard(supply){
+  const photos=Array.isArray(supply?.images)?supply.images.filter(Boolean):[];
+  const u=img(supply?.baseImage||photos[0]);
+  const title=text(supply,'nameEn','nameEs')||'—';
+  const mode=String(supply?.supplyMode||'').toUpperCase();
+  const meta=mode==='PROCESSABLE'?tr('Procesable','Processable'):mode==='CONSUMABLE'?tr('Consumible','Consumable'):tr('Insumo base','Base supply');
+  return '<button class="card recipeCard cardProduct nexoWorkspaceSupply" data-workspace-supply="'+esc(supply._id)+'">'+
+    '<div class="thumb">'+(u?'<img src="'+esc(u)+'" alt="'+esc(title)+'">':'<span class="muted">'+esc(tr('Sin foto','No photo'))+'</span>')+'</div>'+
+    '<div class="meta"><span class="tag tagProduct">'+esc(tr('Insumo','Supply'))+'</span><h3>'+esc(title)+'</h3><span class="muted">'+esc(meta)+'</span></div></button>';
+}
+function bindTechnicalCards(scope){
+  scope.querySelectorAll('[data-workspace-sheet]').forEach(card=>card.onclick=()=>window.NEXO_MENU_API?.openRecipe?.(card.dataset.workspaceSheet));
+  scope.querySelectorAll('[data-workspace-supply]').forEach(card=>card.onclick=()=>window.NEXO_MENU_API?.openIngredient?.(card.dataset.workspaceSupply))
+}
 
 function actionButtons(){
   return '<div class="nexoWorkspaceActions">'+
@@ -104,26 +153,35 @@ function renderSheets(root){
   const body=root.querySelector('[data-nexo-workspace-body]');
   if(!body)return;
   const recipes=activeRecipes();
-  if(!recipes.length){
+  const supplies=activeProducts().slice().sort((a,b)=>String(text(a,'nameEn','nameEs')||'').localeCompare(String(text(b,'nameEn','nameEs')||''),'es'));
+  const total=recipes.length+supplies.length;
+  if(!total){
     body.innerHTML=emptyState();
     bindActions(body);
     return;
   }
-  body.innerHTML='<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-nexo-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar receta, ingrediente o preparación…','Search recipe, ingredient or preparation…'))+'"></label><span data-nexo-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-nexo-sheet-grid>'+recipes.map(sheetCard).join('')+'</div>';
-  body.querySelectorAll('[data-workspace-sheet]').forEach(card=>card.onclick=()=>window.NEXO_MENU_API?.openRecipe?.(card.dataset.workspaceSheet));
+  body.innerHTML='<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-nexo-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar plato, preparación o insumo…','Search dish, preparation, or supply…'))+'"></label><span data-nexo-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-nexo-sheet-grid>'+recipes.map(sheetCard).join('')+supplies.map(supplyCard).join('')+'</div>';
+  bindTechnicalCards(body);
   const search=body.querySelector('[data-nexo-sheet-search]');
   const count=body.querySelector('[data-nexo-search-count]');
   const applySearch=()=>{
     const q=String(search?.value||'');
     let visible=0;
     body.querySelectorAll('[data-workspace-sheet]').forEach(card=>{
-      const recipe=recipes.find(r=>r._id===card.dataset.workspaceSheet);
+      const recipe=recipes.find(r=>String(r._id)===String(card.dataset.workspaceSheet));
       const show=recipe?sheetMatches(recipe,q):false;
       card.hidden=!show;
       card.style.display=show?'':'none';
-      if(show)visible++;
+      if(show)visible++
     });
-    if(count)count.textContent=q.trim()?visible+' / '+recipes.length:'';
+    body.querySelectorAll('[data-workspace-supply]').forEach(card=>{
+      const supply=supplies.find(row=>String(row._id)===String(card.dataset.workspaceSupply));
+      const show=supply?supplyMatches(supply,q):false;
+      card.hidden=!show;
+      card.style.display=show?'':'none';
+      if(show)visible++
+    });
+    if(count)count.textContent=q.trim()?visible+' / '+total:''
   };
   if(search){
     ['input','keyup','change','search','compositionend'].forEach(type=>search.addEventListener(type,applySearch));
@@ -133,7 +191,7 @@ function renderSheets(root){
 
 function collectionCard(row){
   const id=collectionId(row);
-  const count=recipesForCollection(id).length;
+  const count=collectionItemCount(id);
   const description=collectionDescription(row);
   return '<button type="button" class="nexoCollectionCard" data-nexo-collection="'+esc(id)+'">'+
     '<div class="nexoCollectionCardIcon">'+icon('coleccion')+'</div>'+
@@ -205,18 +263,21 @@ function renderCollectionDetail(root,collection){
   const body=root.querySelector('[data-nexo-workspace-body]');
   if(!body)return;
   const id=collectionId(collection);
-  const recipes=recipesForCollection(id);
+  const members=collectionMembers(id);
+  const recipes=members.recipes;
+  const supplies=members.supplies;
+  const total=recipes.length+supplies.length;
   body.innerHTML=
     '<div class="nexoCollectionDetailHead">'+
       '<button type="button" class="nexoWorkspaceBtn nexoCollectionBack" data-collection-back>← '+esc(tr('Colecciones','Collections'))+'</button>'+
       '<div><span>'+esc(tr('Colección','Collection'))+'</span><h2>'+esc(collectionName(collection))+'</h2><p>'+esc(collectionDescription(collection)||tr('Colección de fichas técnicas.','Technical sheet collection.'))+'</p></div>'+
       (canCreate()?'<button type="button" class="nexoWorkspaceBtn" data-nexo-create>'+icon('nuevo')+'<span>'+esc(tr('Crear ficha','Create sheet'))+'</span></button>':'')+
     '</div>'+
-    (recipes.length
-      ? '<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-collection-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar dentro de la colección…','Search within collection…'))+'"></label><span data-collection-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-collection-sheet-grid>'+recipes.map(sheetCard).join('')+'</div>'
+    (total
+      ? '<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-collection-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar dentro de la colección…','Search within collection…'))+'"></label><span data-collection-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-collection-sheet-grid>'+recipes.map(sheetCard).join('')+supplies.map(supplyCard).join('')+'</div>'
       : '<div class="nexoCollectionEmpty">'+icon('ficha-tecnica')+'<strong>'+esc(tr('Esta colección todavía no tiene fichas','This collection has no sheets yet'))+'</strong><span>'+esc(tr('Crea una ficha para comenzar a organizar esta colección.','Create a sheet to start organizing this collection.'))+'</span></div>');
   body.querySelector('[data-collection-back]').onclick=()=>{activeCollectionId='';renderCollections(root)};
-  body.querySelectorAll('[data-workspace-sheet]').forEach(card=>card.onclick=()=>window.NEXO_MENU_API?.openRecipe?.(card.dataset.workspaceSheet));
+  bindTechnicalCards(body);
   bindActions(body);
   const search=body.querySelector('[data-collection-sheet-search]');
   const count=body.querySelector('[data-collection-search-count]');
@@ -230,7 +291,14 @@ function renderCollectionDetail(root,collection){
       card.style.display=show?'':'none';
       if(show)visible++
     });
-    if(count)count.textContent=q.trim()?visible+' / '+recipes.length:''
+    body.querySelectorAll('[data-workspace-supply]').forEach(card=>{
+      const supply=supplies.find(row=>String(row._id)===String(card.dataset.workspaceSupply));
+      const show=supply?supplyMatches(supply,q):false;
+      card.hidden=!show;
+      card.style.display=show?'':'none';
+      if(show)visible++
+    });
+    if(count)count.textContent=q.trim()?visible+' / '+total:''
   })
 }
 
