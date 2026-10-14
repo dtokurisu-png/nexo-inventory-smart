@@ -135,3 +135,15 @@ Reglas:
 La barra contextual no expone el antiguo botón `#home`. Ningún módulo interno puede depender de ese nodo.
 
 `taxonomy-core-v3.js` usa exclusivamente `#back` para navegación interna de categorías y no controla visibilidad mediante la clase `hidden`; solo puede ajustar el estado `disabled` cuando la taxonomía posee la navegación. La raíz de la biblioteca mantiene Volver deshabilitado.
+
+
+### Revisión del motor interno
+
+El host de Fichas carga `live.html`, y `live.html` carga `mobile-v3.html`. Los tres niveles forman parte del contrato de despliegue.
+
+Cuando se cambia la barra interna o el arranque del motor:
+- `mobile-v3.html` debe recibir una revisión nueva en `live.html`;
+- `ENGINE_REVISION` debe cambiar para forzar un `live.html` fresco;
+- el Custom Embed de Wix debe cargar una revisión nueva de `fichas-ui.js`.
+
+No reutilizar una revisión antigua de `mobile-v3.html` después de modificar su DOM o lógica de arranque.
