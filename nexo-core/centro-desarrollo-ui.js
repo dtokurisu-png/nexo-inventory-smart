@@ -377,9 +377,7 @@ html,body{background:transparent!important}
 
 /* Canonical owned Development Center shell.
    Geometry restored from the previously approved Development Center layout. */
-#PAGES_CONTAINER{
-  display:none!important
-}
+#PAGES_CONTAINER{display:block!important}
 #nxo-dev-app{
   position:relative!important;
   z-index:1!important;
