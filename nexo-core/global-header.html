@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nexo Global Header</title>
+<style>
+:root{
+  --nxo-bg:#264c8f;
+  --nxo-text:#ffffff;
+  --nxo-muted:#d8e3f8;
+  --nxo-active:#fff3a9;
+  --nxo-hover:#f88f5b;
+  --nxo-line:rgba(255,255,255,.18);
+  --nxo-panel:#f8fbff;
+  --nxo-panel-text:#1d2940;
+  --nxo-shadow:0 18px 50px rgba(23,39,85,.28);
+  --nxo-interaction:#f2b35c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;min-height:64px;background:transparent;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button{font:inherit}
+#nexo-global-header{
+  position:relative;
+  width:100%;
+  min-height:64px;
+  padding:0 22px;
+  display:flex;
+  align-items:center;
+  gap:22px;
+  background:var(--nxo-bg);
+  color:var(--nxo-text);
+  border-bottom:1px solid var(--nxo-line);
+  box-shadow:0 8px 28px rgba(23,39,85,.16);
+}
+.nxo-brand{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:inherit;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0;
+  min-width:max-content;
+  cursor:pointer;
+}
+.nxo-logo{
+  width:72px;
+  height:48px;
+  flex:0 0 72px;
+  display:block;
+  overflow:visible;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.nxo-logo img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:left center;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.nxo-brand-copy{
+  display:grid;
+  min-width:0;
+  text-align:left;
+}
+.nxo-brand-copy strong{
+  color:#fff;
+  font-size:13px;
+  line-height:1.1;
+}
+.nxo-brand-copy small{
+  margin-top:3px;
+  color:var(--nxo-muted);
+  font-size:10px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:190px;
+}
+.nxo-nav{
+  align-self:stretch;
+  display:flex;
+  align-items:stretch;
+  gap:18px;
+  flex:1;
+  min-width:0;
+}
+.nxo-nav-group{
+  position:relative;
+  display:flex;
+  align-items:stretch;
+}
+.nxo-nav-button{
+  position:relative;
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:var(--nxo-muted);
+  padding:0 2px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  font-weight:760;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.nxo-nav-button::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:3px;
+  border-radius:3px 3px 0 0;
+  background:transparent;
+}
+.nxo-nav-button:hover,.nxo-nav-button:focus-visible{outline:none;color:#fff}
+.nxo-nav-button:hover::after,.nxo-nav-button:focus-visible::after{background:var(--nxo-hover)}
+.nxo-nav-button.active{color:var(--nxo-active);font-weight:900}
+.nxo-nav-button.active::after{background:var(--nxo-active)}
+.nxo-icon{width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto}
+.nxo-caret{font-size:10px;line-height:1;opacity:.85}
+.nxo-menu{
+  display:none;
+  position:absolute;
+  left:0;
+  top:calc(100% + 8px);
+  width:320px;
+  max-width:min(420px,calc(100vw - 20px));
+  max-height:min(68vh,620px);
+  overflow:auto;
+  padding:9px;
+  border:1px solid #d7dfed;
+  border-radius:14px;
+  background:var(--nxo-panel);
+  color:var(--nxo-panel-text);
+  box-shadow:var(--nxo-shadow);
+  z-index:50;
+}
+.nxo-menu.open{display:grid;gap:7px}
+.nxo-menu-title{
+  padding:7px 9px 4px;
+  color:#667085;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.075em;
+  text-transform:uppercase;
+}
+.nxo-menu-divider{height:1px;background:#d7dfed;margin:3px 5px}
+.nxo-menu-group{
+  display:grid;
+  gap:4px;
+  padding:5px;
+  border:1px solid transparent;
+  border-radius:11px;
+}
+.nxo-menu-group:hover{border-color:#d7dfed}
+.nxo-menu-item{
+  appearance:none;
+  width:100%;
+  min-height:36px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:inherit;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 9px;
+  text-align:left;
+  cursor:pointer;
+  font-size:10px;
+  font-weight:760;
+}
+.nxo-menu-item.group{min-height:40px;font-size:11px;font-weight:850}
+.nxo-menu-item.child{padding-left:34px}
+.nxo-menu-item:hover,.nxo-menu-item:focus-visible{outline:none;background:#e6eefc}
+.nxo-empty{padding:12px 10px;color:#667085;font-size:10px}
+.nxo-utils{
+  position:relative;
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  flex:0 0 auto;
+}
+.nxo-icon-button{
+  appearance:none;
+  width:38px;
+  height:38px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:11px;
+  background:rgba(255,255,255,.07);
+  color:#fff;
+  cursor:pointer;
+}
+.nxo-icon-button:hover,.nxo-icon-button:focus-visible,.nxo-icon-button[aria-expanded="true"]{
+  outline:none;
+  background:var(--nxo-interaction);
+  border-color:var(--nxo-interaction);
+}
+.nxo-account{
+  appearance:none;
+  min-height:42px;
+  padding:5px 9px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:11px;
+  background:rgba(255,255,255,.07);
+  color:#fff;
+  cursor:pointer;
+}
+.nxo-account:hover,.nxo-account:focus-visible,.nxo-account[aria-expanded="true"]{
+  outline:none;
+  background:var(--nxo-interaction);
+  border-color:var(--nxo-interaction);
+  color:#111827;
+}
+.nxo-avatar{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  border-radius:50%;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.26);
+  background:rgba(255,255,255,.10);
+  color:var(--nxo-active);
+  font-size:12px;
+  font-weight:850;
+}
+.nxo-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.nxo-account-copy{display:grid;text-align:left;min-width:0}
+.nxo-account-name-row{display:flex;align-items:center;gap:5px;min-width:0}
+.nxo-account-copy strong{
+  max-width:160px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11px;
+}
+.nxo-email{
+  display:block;
+  max-width:170px;
+  margin-top:2px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--nxo-muted);
+  font-size:8px;
+}
+.nxo-role{
+  display:inline-flex;
+  width:max-content;
+  max-width:90px;
+  padding:1px 5px;
+  border:1px solid rgba(255,255,255,.26);
+  border-radius:999px;
+  color:var(--nxo-active);
+  font-size:7px;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.nxo-account:hover .nxo-email,.nxo-account:focus-visible .nxo-email,.nxo-account[aria-expanded="true"] .nxo-email{color:#111827}
+.nxo-account:hover .nxo-role,.nxo-account:focus-visible .nxo-role,.nxo-account[aria-expanded="true"] .nxo-role{color:#111827;border-color:rgba(17,24,39,.22)}
+.nxo-account-menu,.nxo-settings-menu{
+  display:none;
+  position:absolute;
+  right:0;
+  top:calc(100% + 8px);
+  width:230px;
+  overflow:hidden;
+  border:1px solid #d7dfed;
+  border-radius:14px;
+  background:#f8fbff;
+  color:#111827;
+  box-shadow:var(--nxo-shadow);
+  z-index:60;
+}
+.nxo-account-menu.open,.nxo-settings-menu.open{display:block}
+.nxo-account-menu button,.nxo-settings-menu button{
+  width:100%;
+  min-height:42px;
+  border:0;
+  border-top:1px solid #e2e8f0;
+  background:transparent;
+  color:inherit;
+  padding:0 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  text-align:left;
+  font-size:11px;
+  font-weight:760;
+  cursor:pointer;
+}
+.nxo-account-menu button:first-child,.nxo-settings-menu button:first-child{border-top:0}
+.nxo-account-menu button:hover,.nxo-settings-menu button:hover{background:#eaf1ff}
+.nxo-account-menu .danger{color:#9c2f2f}
+.nxo-mobile{
+  display:none;
+  width:38px;
+  height:38px;
+  padding:8px;
+  border:1px solid var(--nxo-line);
+  border-radius:11px;
+  background:rgba(255,255,255,.05);
+  color:#fff;
+  cursor:pointer;
+}
+.nxo-mobile span{display:block;width:20px;height:2px;margin:4px auto;border-radius:999px;background:currentColor}
+@media(max-width:760px){
+  html,body{min-height:58px}
+  #nexo-global-header{min-height:58px;padding:8px 10px;gap:7px;flex-wrap:wrap}
+  .nxo-logo{width:58px;height:40px;flex-basis:58px}
+  .nxo-brand-copy{display:none}
+  .nxo-utils{order:2;flex:1 1 auto;justify-content:flex-end}
+  .nxo-mobile{display:block;order:3}
+  .nxo-nav{display:none;order:5;width:100%;align-self:auto;padding:8px 0 0;flex-direction:column;gap:5px;border-top:1px solid var(--nxo-line)}
+  .nxo-nav.open{display:flex}
+  .nxo-nav-group{display:grid;width:100%}
+  .nxo-nav-button,.nxo-nav-button.active{min-height:44px;width:100%;padding:0 12px;border-radius:10px;justify-content:flex-start}
+  .nxo-nav-button::after{display:none}
+  .nxo-nav-button:hover,.nxo-nav-button:focus-visible,.nxo-nav-button.active{background:rgba(255,255,255,.07)}
+  .nxo-menu{position:static;width:100%;max-width:none;max-height:48vh;margin-top:3px;box-shadow:none}
+  .nxo-account{max-width:150px;height:38px;min-height:38px;padding:3px 5px;gap:5px}
+  .nxo-avatar{width:30px;height:30px;flex-basis:30px}
+  .nxo-account-copy strong{max-width:72px;font-size:9px}
+  .nxo-email{max-width:98px;font-size:7px}
+  .nxo-role{max-width:64px;font-size:7px}
+  .nxo-account-menu,.nxo-settings-menu{position:fixed;top:64px;left:10px;right:10px;width:auto}
+}
+</style>
+</head>
+<body>
+<header id="nexo-global-header">
+  <button class="nxo-brand" id="nxoHome" type="button" aria-label="Nexo Group">
+    <span class="nxo-logo"><img id="nxoLogo" src="https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png" alt="Nexo Group"></span>
+    <span class="nxo-brand-copy"><strong>Nexo Group</strong><small id="nxoContext">Mi espacio</small></span>
+  </button>
+
+  <nav class="nxo-nav" id="nxoNav" aria-label="Navegación principal">
+    <div class="nxo-nav-group">
+      <button class="nxo-nav-button active" id="nxoSpaceButton" type="button" aria-expanded="false">
+        <img class="nxo-icon" src="https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/home.png" alt="">
+        <span>Mi espacio</span><span class="nxo-caret">⌄</span>
+      </button>
+      <div class="nxo-menu" id="nxoSpaceMenu"></div>
+    </div>
+
+    <div class="nxo-nav-group">
+      <button class="nxo-nav-button" id="nxoDevelopment" type="button">
+        <img class="nxo-icon" src="https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/desarrollo.png" alt="">
+        <span>Centro de desarrollo</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="nxo-utils">
+    <div style="position:relative">
+      <button class="nxo-icon-button" id="nxoSettings" type="button" aria-label="Ajustes rápidos" aria-expanded="false">
+        <img class="nxo-icon" src="https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/ajustes-rapidos.png" alt="">
+      </button>
+      <div class="nxo-settings-menu" id="nxoSettingsMenu">
+        <button type="button" data-action="language"><span>Idioma</span><strong id="nxoLanguageValue">ES</strong></button>
+        <button type="button" data-action="theme"><span>Apariencia</span><strong id="nxoThemeValue">Claro</strong></button>
+      </div>
+    </div>
+
+    <div style="position:relative">
+      <button class="nxo-account" id="nxoAccount" type="button" aria-expanded="false">
+        <span class="nxo-avatar" id="nxoAvatar">US</span>
+        <span class="nxo-account-copy">
+          <span class="nxo-account-name-row"><strong id="nxoUserName">Usuario Nexo</strong><small class="nxo-role" id="nxoRole">Miembro</small></span>
+          <small class="nxo-email" id="nxoEmail"></small>
+        </span>
+        <span class="nxo-caret">⌄</span>
+      </button>
+      <div class="nxo-account-menu" id="nxoAccountMenu">
+        <button type="button" data-account-action="settings">Ajustes de perfil</button>
+        <button type="button" data-account-action="switch">Cambiar cuenta</button>
+        <button type="button" class="danger" data-account-action="logout">Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="nxo-mobile" id="nxoMobile" type="button" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+</header>
+
+<script>
+(function(){
+  'use strict';
+  const state={
+    contextLabel:'Mi espacio',
+    active:'personal',
+    language:'es',
+    theme:'day',
+    profile:{displayName:'Usuario Nexo',email:'',photoImage:null},
+    roleLabel:'Miembro',
+    navigation:{personal:{tools:[]},workspaces:[]}
+  };
+
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const initials=v=>String(v||'N').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'N';
+  const iconBase='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
+  function iconKey(tool){
+    const key=String(tool?.toolKey||tool?.name||'').toLowerCase();
+    if(/fich|dynamic-spec/.test(key))return'ficha-tecnica';
+    if(/invent/.test(key))return'productos';
+    if(/bibli|engranaje|gear/.test(key))return'guia';
+    if(/learning|desarrollo/.test(key))return'desarrollo';
+    if(/schedule|horario/.test(key))return'recordatorio';
+    if(/camino|editorial/.test(key))return'guia';
+    if(/r96|rising|game/.test(key))return'catalogo';
+    return'herramientas';
+  }
+  function send(action,payload={}){
+    parent.postMessage({source:'NEXO_GLOBAL_HEADER',action,payload},'*');
+  }
+  function closeMenus(except=''){
+    if(except!=='space'){$('nxoSpaceMenu').classList.remove('open');$('nxoSpaceButton').setAttribute('aria-expanded','false')}
+    if(except!=='settings'){$('nxoSettingsMenu').classList.remove('open');$('nxoSettings').setAttribute('aria-expanded','false')}
+    if(except!=='account'){$('nxoAccountMenu').classList.remove('open');$('nxoAccount').setAttribute('aria-expanded','false')}
+  }
+  function toggle(id,buttonId,key){
+    const el=$(id),button=$(buttonId),open=!el.classList.contains('open');
+    closeMenus(open?key:'');
+    el.classList.toggle('open',open);
+    button.setAttribute('aria-expanded',open?'true':'false');
+    send(open?'MENU_OPEN':'MENU_CLOSE',{menu:key});
+  }
+  function renderMenu(){
+    const direct=Array.isArray(state.navigation?.personal?.tools)?state.navigation.personal.tools:[];
+    const workspaces=Array.isArray(state.navigation?.workspaces)?state.navigation.workspaces:[];
+    let html='';
+    if(direct.length){
+      html+='<div class="nxo-menu-title">Accesos directos</div>';
+      html+=direct.map(t=>'<button class="nxo-menu-item" type="button" data-tool="'+esc(t.toolKey||'')+'" data-workspace=""><img class="nxo-icon" src="'+iconBase+encodeURIComponent(iconKey(t))+'.png" alt=""><span>'+esc(t.name||t.toolKey||'Herramienta')+'</span></button>').join('');
+    }
+    if(workspaces.length){
+      if(html)html+='<div class="nxo-menu-divider"></div>';
+      html+='<div class="nxo-menu-title">Workspaces</div>';
+      for(const ws of workspaces){
+        const tools=Array.isArray(ws.tools)?ws.tools:[];
+        html+='<section class="nxo-menu-group"><button class="nxo-menu-item group" type="button" data-workspace-open="'+esc(ws.workspaceId||'')+'"><img class="nxo-icon" src="'+iconBase+'workspace.png" alt=""><span>'+esc(ws.name||'Workspace')+'</span></button>'+
+          tools.map(t=>'<button class="nxo-menu-item child" type="button" data-tool="'+esc(t.toolKey||'')+'" data-workspace="'+esc(ws.workspaceId||'')+'"><img class="nxo-icon" src="'+iconBase+encodeURIComponent(iconKey(t))+'.png" alt=""><span>'+esc(t.name||t.toolKey||'Herramienta')+'</span></button>').join('')+
+          '</section>';
+      }
+    }
+    if(!html)html='<div class="nxo-empty">Sin accesos disponibles</div>';
+    $('nxoSpaceMenu').innerHTML=html;
+    $('nxoSpaceMenu').querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>send('OPEN_TOOL',{toolKey:b.dataset.tool||'',workspaceId:b.dataset.workspace||''})));
+    $('nxoSpaceMenu').querySelectorAll('[data-workspace-open]').forEach(b=>b.addEventListener('click',()=>send('OPEN_WORKSPACE',{workspaceId:b.dataset.workspaceOpen||''})));
+  }
+  function render(){
+    $('nxoContext').textContent=state.contextLabel||'Mi espacio';
+    $('nxoSpaceButton').classList.toggle('active',state.active!=='development');
+    $('nxoDevelopment').classList.toggle('active',state.active==='development');
+    $('nxoLanguageValue').textContent=String(state.language||'es').toUpperCase();
+    $('nxoThemeValue').textContent=state.theme==='night'?'Oscuro':'Claro';
+    const profile=state.profile||{};
+    $('nxoUserName').textContent=profile.displayName||'Usuario Nexo';
+    $('nxoEmail').textContent=profile.email||'';
+    $('nxoRole').textContent=state.roleLabel||'Miembro';
+    const avatar=$('nxoAvatar');
+    if(profile.photoImage?.url){
+      avatar.innerHTML='<img src="'+esc(profile.photoImage.url)+'" alt="">';
+    }else{
+      avatar.textContent=initials(profile.displayName||'Usuario Nexo');
+    }
+    renderMenu();
+  }
+
+  $('nxoHome').addEventListener('click',()=>send('HOME'));
+  $('nxoSpaceButton').addEventListener('click',e=>{e.stopPropagation();toggle('nxoSpaceMenu','nxoSpaceButton','space')});
+  $('nxoDevelopment').addEventListener('click',()=>send('OPEN_DEVELOPMENT'));
+  $('nxoSettings').addEventListener('click',e=>{e.stopPropagation();toggle('nxoSettingsMenu','nxoSettings','settings')});
+  $('nxoAccount').addEventListener('click',e=>{e.stopPropagation();toggle('nxoAccountMenu','nxoAccount','account')});
+  $('nxoSettingsMenu').querySelector('[data-action="language"]').addEventListener('click',()=>send('TOGGLE_LANGUAGE'));
+  $('nxoSettingsMenu').querySelector('[data-action="theme"]').addEventListener('click',()=>send('TOGGLE_THEME'));
+  $('nxoAccountMenu').querySelectorAll('[data-account-action]').forEach(b=>b.addEventListener('click',()=>send('ACCOUNT_ACTION',{action:b.dataset.accountAction})));
+  $('nxoMobile').addEventListener('click',()=>{
+    const open=$('nxoNav').classList.toggle('open');
+    $('nxoMobile').setAttribute('aria-expanded',open?'true':'false');
+    send(open?'MENU_OPEN':'MENU_CLOSE',{menu:'mobile'});
+  });
+  document.addEventListener('click',e=>{if(!$('nexo-global-header').contains(e.target))closeMenus('')});
+  window.addEventListener('message',event=>{
+    const msg=event.data||{};
+    if(msg.type!=='NEXO_HEADER_STATE')return;
+    Object.assign(state,msg.state||{});
+    render();
+  });
+  render();
+  send('READY',{height:document.documentElement.scrollHeight});
+})();
+</script>
+</body>
+</html>
