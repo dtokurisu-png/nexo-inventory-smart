@@ -101,6 +101,8 @@ html.nexoMobile .timerActions button{min-height:32px;font-size:11px;padding:6px 
 @media(max-width:520px){.timerItem{grid-template-columns:1fr}.timerActions{justify-content:flex-start}}
 
 /* CANONICAL NEXO ICON GALLERY · 2026-10-01 */
+html[data-nxo-theme="day"] .topbar .nexoUiIcon{filter:url(#nexo-toolbar-icon-outline-day)!important}
+html[data-nxo-theme="night"] .topbar .nexoUiIcon{filter:url(#nexo-toolbar-icon-outline-night)!important}
 .nexoUiIcon{width:20px;height:20px;display:block;object-fit:contain;object-position:center;flex:0 0 auto}
 .nexoToolButton{display:inline-grid;place-items:center}
 .nexoToolButton .nexoUiIcon{width:20px;height:20px}
@@ -119,7 +121,7 @@ html.nexoMobile .timerActions button{min-height:32px;font-size:11px;padding:6px 
 
 </style>
 </head>
-<body>
+<body><svg id="nexo-toolbar-icon-outline-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none"><filter id="nexo-toolbar-icon-outline-day" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/><feFlood flood-color="#ffffff" flood-opacity="0.68" result="c"/><feComposite in="c" in2="d" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="nexo-toolbar-icon-outline-night" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/><feFlood flood-color="#E1BD69" flood-opacity="0.74" result="c"/><feComposite in="c" in2="d" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter></svg>
 <div class="app"><div class="nexoToolstrip" role="toolbar" aria-label="Herramientas de fichas técnicas"><div class="nexoToolGroup nexoToolNavGroup"><button id="back" class="nexoToolButton" type="button" aria-label="Volver" title="Volver" disabled><img class="nexoUiIcon" src="../assets/icons/nexo/volver.png" alt=""></button></div><span class="nexoToolDivider" aria-hidden="true"></span><div class="nexoToolGroup"><button id="legendBtn" class="nexoToolButton" type="button" aria-label="Guía de colores" title="Guía de colores"><img class="nexoUiIcon" src="../assets/icons/nexo/guia.png" alt=""></button><button id="calcBtn" class="nexoToolButton" type="button" aria-label="Calculadora" title="Calculadora"><img class="nexoUiIcon" src="../assets/icons/nexo/calculadora.png" alt=""></button><button id="timerBtn" class="nexoToolButton" type="button" aria-label="Temporizadores" title="Temporizadores" disabled><img class="nexoUiIcon" src="../assets/icons/nexo/temporizador.png" alt=""></button><button id="commentBtn" class="nexoToolButton" type="button" aria-label="Sugerir cambio" title="Sugerir cambio" disabled><img class="nexoUiIcon" src="../assets/icons/nexo/comentarios.png" alt=""></button></div></div><main id="view"></main></div><div id="modal"></div><div id="status" class="status hidden"></div>
 <script>
 (()=>{'use strict';
