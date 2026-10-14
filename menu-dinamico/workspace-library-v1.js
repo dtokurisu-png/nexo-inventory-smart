@@ -32,9 +32,37 @@ function activeCollections(){
     .filter(row=>row&&row.active!==false)
     .sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)||String(a.name||'').localeCompare(String(b.name||''),'es'))
 }
-function collectionById(id){return activeCollections().find(row=>String(row.id||row._id)===String(id))||null}
-function collectionId(row){return String(row?.id||row?._id||'')}
+function collectionStableSlug(value){
+  return searchNorm(value).replace(/\s+/g,'-').replace(/^-+|-+$/g,'')
+}
+function collectionId(row){
+  const explicit=String(row?.id||row?._id||row?.collectionId||row?.key||'').trim();
+  if(explicit)return explicit;
+  const sourceKey=String(row?.sourceKey||row?.sourcePackageKey||'').trim();
+  if(sourceKey)return 'source:'+sourceKey;
+  const name=String(row?.name||row?.title||'').trim();
+  return name?'name:'+collectionStableSlug(name):''
+}
+function collectionById(id){return activeCollections().find(row=>collectionId(row)===String(id))||null}
 function collectionName(row){return String(row?.name||row?.title||tr('Colección','Collection'))}
+function isOlhicoryCollection(row){
+  if(!row)return false;
+  const corpus=searchNorm([
+    collectionId(row),
+    row.sourceKey,
+    row.sourcePackageKey,
+    row.name,
+    row.title,
+    row.description,
+    row.workspaceName,
+    row.projectName
+  ].filter(Boolean).join(' '));
+  return collectionId(row)==='nexo-collection-332129eeaf581385111ce8e12011'||
+    corpus.includes('old hickory')||
+    corpus.includes('olhicory')||
+    corpus.includes('old-hickory')||
+    corpus.includes('menu dinamico')
+}
 function collectionDescription(row){return String(row?.description||'')}
 function activeCollectionItems(){
   const rows=data().collectionItems||data().technicalSheetCollectionItems||data().collectionMemberships||[];
@@ -77,7 +105,7 @@ function collectionMembers(id){
       });
       if(recipes.length)return {recipes,supplies:[]}
     }
-    if(String(id)==='nexo-collection-332129eeaf581385111ce8e12011'){
+    if(isOlhicoryCollection(collection)){
       const recipes=activeRecipes().filter(row=>!workspaceId||!row.workspaceId||String(row.workspaceId)===workspaceId);
       if(recipes.length)return {recipes,supplies:[]}
     }
