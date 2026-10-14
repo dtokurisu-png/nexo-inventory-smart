@@ -361,6 +361,13 @@ html[data-nxo-theme="night"] .nxo-dev-quick-row:focus-visible strong{
   background:color-mix(in srgb,var(--nxo-accent-contrast) 8%,transparent)
 }
 
+
+/* GLOBAL WIX HEADER CLEARANCE · 2026-10-14 */
+html,body{background:transparent!important}
+#nxo-shared-header,#nxo-dev-header{display:none!important}
+#nxo-dev-app{margin-top:68px!important;min-height:calc(100vh - 68px)!important;min-height:calc(100dvh - 68px)!important}
+.nxo-dev-owned-shell{height:calc(100vh - 68px)!important;height:calc(100dvh - 68px)!important}
+
 /* Canonical owned Development Center shell.
    Geometry restored from the previously approved Development Center layout. */
 #PAGES_CONTAINER{
