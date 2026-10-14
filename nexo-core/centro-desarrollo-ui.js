@@ -246,6 +246,13 @@ function ensureThemeRuntime(){
   })
 }
 
+/* GLOBAL WIX HEADER HARD CLEARANCE · 2026-10-14 */
+try{
+  document.documentElement.style.background='transparent';
+  document.body.style.background='transparent';
+  document.body.style.paddingTop='68px';
+}catch(_){}
+
 function ensureStyle(){
   if(document.getElementById('nxo-dev-center-css'))return;
   const style=document.createElement('style');
