@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261014-10';
+const VERSION='20261014-11';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -32,13 +32,13 @@ function ensureOutlineDefs(){
   box.style.cssText='position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
   box.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true">'+
     '<filter id="nexo-global-icon-outline-day" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">'+
-      '<feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/>'+
+      '<feMorphology in="SourceAlpha" operator="dilate" radius="0.55" result="d"/>'+
       '<feFlood flood-color="#ffffff" flood-opacity="0.68" result="c"/>'+
       '<feComposite in="c" in2="d" operator="in" result="o"/>'+
       '<feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>'+
     '</filter>'+
     '<filter id="nexo-global-icon-outline-night" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">'+
-      '<feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/>'+
+      '<feMorphology in="SourceAlpha" operator="dilate" radius="0.55" result="d"/>'+
       '<feFlood flood-color="#E1BD69" flood-opacity="0.74" result="c"/>'+
       '<feComposite in="c" in2="d" operator="in" result="o"/>'+
       '<feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>'+
