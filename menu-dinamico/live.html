@@ -14,11 +14,62 @@ const currentDataPromise=nexoMode?Promise.resolve({}):fetch('./data-recipes-curr
 function enrich(d){d=d||{};(d.recipes||[]).forEach(r=>{if(heroes[r._id]&&!r.heroImage)r.heroImage=heroes[r._id]});d.categoryImages=categoryImages;return window.NEXO_FICHAS_DOMAIN_MODEL?.normalizePayload?window.NEXO_FICHAS_DOMAIN_MODEL.normalizePayload(d):d}
 function withCurrent(d){if(nexoMode)return Promise.resolve(enrich(d||{}));return currentDataPromise.then(extra=>enrich(mergeData(d,extra))).catch(()=>enrich(d))}
 function fallback(){return fetch('./data.json?ts=20260903-3',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('No se pudo cargar data.json: '+r.status);return r.json()})}
-function load(){if(data)return Promise.resolve(data);if(promise)return promise;promise=new Promise((resolve,reject)=>{let finished=false;const clearWait=()=>{clearTimeout(loadTimer);loadResolve=null;loadReject=null};const finish=d=>{if(finished)return;finished=true;clearWait();withCurrent(d).then(x=>{data=x;resolve(data)}).catch(reject)};const fail=error=>{if(finished)return;finished=true;clearWait();reject(error instanceof Error?error:new Error(String(error||'No se pudieron cargar las colecciones.')))};loadResolve=finish;loadReject=fail;toWix('DM_LOAD_MENU_DATA',{requestId:'menu_'+Date.now()});loadTimer=setTimeout(()=>{if(nexoMode){fail(new Error('La carga de colecciones superó el tiempo de espera.'));return}fallback().then(finish).catch(fail)},nexoMode?32000:1400)});return promise}
+function load(){if(data)return Promise.resolve(data);if(promise)return promise;promise=new Promise((resolve,reject)=>{let finished=false;const clearWait=()=>{clearTimeout(loadTimer);loadResolve=null;loadReject=null};const finish=d=>{if(finished)return;finished=true;clearWait();withCurrent(d).then(x=>{data=x;resolve(data)}).catch(error=>{promise=null;reject(error)})};const fail=error=>{if(finished)return;finished=true;clearWait();promise=null;reject(error instanceof Error?error:new Error(String(error||'No se pudieron cargar las colecciones.')))};loadResolve=finish;loadReject=fail;toWix('DM_LOAD_MENU_DATA',{requestId:'menu_'+Date.now()});loadTimer=setTimeout(()=>{if(nexoMode){fail(new Error('La carga de colecciones superó el tiempo de espera.'));return}fallback().then(finish).catch(fail)},nexoMode?32000:1400)});return promise}
 function addCss(doc,id,href){if(doc.getElementById(id))return;const l=doc.createElement('link');l.id=id;l.rel='stylesheet';l.href=href;doc.head.appendChild(l)}
-function addJs(doc,id,src){if(doc.getElementById(id))return;const s=doc.createElement('script');s.id=id;s.src=src;s.async=false;doc.head.appendChild(s)}
-function installFeatures(d){try{const w=f.contentWindow,doc=f.contentDocument;if(!w||!doc)return;w.__NEXO_DM_DATA__=d;w.__NEXO_WORKSPACE_MODE__=nexoMode;addCss(doc,'nexo-grams-center','./grams-center-v1.css?v=20261001-theme-unified-1');addCss(doc,'nexo-stripes','./stripe-system-v3.css?v=20261001-theme-unified-1');addCss(doc,'nexo-workflow-style','./recipe-workflow-v1.css?v=20261006-clear-progress-3');if(nexoMode){addCss(doc,'nexo-workspace-library-style','./workspace-library-v1.css?v=20261014-supply-mode-selector-icons-26');addJs(doc,'nexo-workspace-library','./workspace-library-v1.js?v=20261014-supply-mode-selector-icons-41')}addJs(doc,'nexo-taxonomy-core-v3','./taxonomy-core-v3.js?v=20261014-taxonomy-home-guard-9');addJs(doc,'nexo-photo-system-v1','./photo-system-v1.js?v=20261009-photo-stability-delete-5');addJs(doc,'nexo-unit-semantics','./unit-semantics-v1.js?v=20261001-theme-unified-1');addJs(doc,'nexo-workflow','./recipe-workflow-v1.js?v=20261006-clear-progress-7');addJs(doc,'nexo-navigation','./navigation-client-v1.js?v=20260924-3');addJs(doc,'nexo-paragraph-reader','./paragraph-reader-v1.js?v=20261009-reader-noselect-3')}catch(_){}}
-function deliver(d){if(!d||d===lastDelivered)return;lastDelivered=d;try{f.contentWindow.__NEXO_DM_DATA__=d}catch(_){}send('MENU_DATA_LOADED',d);setTimeout(()=>{installFeatures(d);openRequestedRecipe()},0)}
+function addJs(doc,id,src){
+  if(doc.getElementById(id))return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    const script=doc.createElement('script');
+    script.id=id;script.src=src;script.async=false;
+    script.onload=()=>resolve();
+    script.onerror=()=>reject(new Error('No se pudo cargar el módulo '+id+'.'));
+    doc.head.appendChild(script);
+  });
+}
+async function installFeatures(d){
+  const w=f.contentWindow,doc=f.contentDocument;
+  if(!w||!doc)throw new Error('El motor de fichas no está disponible.');
+  w.__NEXO_DM_DATA__=d;
+  w.__NEXO_WORKSPACE_MODE__=nexoMode;
+  addCss(doc,'nexo-grams-center','./grams-center-v1.css?v=20261001-theme-unified-1');
+  addCss(doc,'nexo-stripes','./stripe-system-v3.css?v=20261001-theme-unified-1');
+  addCss(doc,'nexo-workflow-style','./recipe-workflow-v1.css?v=20261006-clear-progress-3');
+  if(nexoMode){
+    addCss(doc,'nexo-workspace-library-style','./workspace-library-v1.css?v=20261014-supply-mode-selector-icons-26');
+    await addJs(doc,'nexo-workspace-library','./workspace-library-v1.js?v=20261014-supply-mode-selector-icons-41');
+  }
+  await addJs(doc,'nexo-taxonomy-core-v3','./taxonomy-core-v3.js?v=20261014-taxonomy-home-guard-9');
+  // El evento se envía después de instalar ambos listeners: una sola ruta de arranque.
+  w.dispatchEvent(new w.CustomEvent('NEXO_WORKSPACE_HOME_REQUEST'));
+  await new Promise(resolve=>w.setTimeout(resolve,0));
+  if(nexoMode&&!doc.querySelector('[data-nexo-workspace-body]')){
+    throw new Error('La biblioteca de colecciones no pudo inicializarse.');
+  }
+  const auxiliary=[
+    ['nexo-photo-system-v1','./photo-system-v1.js?v=20261009-photo-stability-delete-5'],
+    ['nexo-unit-semantics','./unit-semantics-v1.js?v=20261001-theme-unified-1'],
+    ['nexo-workflow','./recipe-workflow-v1.js?v=20261006-clear-progress-7'],
+    ['nexo-navigation','./navigation-client-v1.js?v=20260924-3'],
+    ['nexo-paragraph-reader','./paragraph-reader-v1.js?v=20261009-reader-noselect-3']
+  ];
+  for(const [id,src] of auxiliary){void addJs(doc,id,src).catch(error=>note(String(error?.message||error)));}
+}
+function deliver(d){
+  if(!d||d===lastDelivered)return;
+  lastDelivered=d;
+  try{f.contentWindow.__NEXO_DM_DATA__=d}catch(_){}
+  send('MENU_DATA_LOADED',d);
+  installFeatures(d).then(()=>openRequestedRecipe()).catch(error=>{
+    const message=String(error?.message||error||'Error de inicialización de Fichas.');
+    const view=f.contentDocument?.getElementById('view');
+    if(view&&view.querySelector('.loadingState')){
+      view.textContent=message;
+      view.setAttribute('role','alert');
+    }
+    send('ERROR',{message});
+    note(message);
+  });
+}
 function openRequestedRecipe(rawId){
   const id=String(rawId||'').trim();
   if(id)pendingRecipeId=id;
