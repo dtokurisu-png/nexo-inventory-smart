@@ -1,7 +1,7 @@
 (()=>{'use strict';
 if(window.__NEXO_TAXONOMY_CORE_V3__)return;window.__NEXO_TAXONOMY_CORE_V3__=true;
 const view=document.getElementById('view'),back=document.getElementById('back'),modal=document.getElementById('modal');
-if(!view||!back||!home||!modal)return;
+if(!view||!back||!modal)return;
 const mobileDevice=()=>{const ua=navigator.userAgent||'',vw=Math.max(1,window.innerWidth||document.documentElement.clientWidth||9999),mobileUa=/Android|iPhone|iPad|iPod|Mobile/i.test(ua),coarse=matchMedia('(pointer:coarse)').matches;return mobileUa||vw<=720||(coarse&&vw<=900)};
 const root=document.documentElement;
 let deviceSyncFrame=0;
