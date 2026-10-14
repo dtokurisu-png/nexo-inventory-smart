@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261014-4';
+const VERSION='20261014-5';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -94,10 +94,7 @@ function ensureStyle(){
 #${ID} .ngh-nav-btn.active{color:var(--ngh-active);font-weight:900}
 #${ID} .ngh-nav-btn.active:after{background:var(--ngh-active)}
 #${ID} .ngh-icon{width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto;
-  filter:drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 2px 0 #fff) drop-shadow(-2px 2px 0 #fff) drop-shadow(2px -2px 0 #fff) drop-shadow(-2px -2px 0 #fff)!important
-}
-#${ID}[data-theme="night"] .ngh-icon{
-  filter:drop-shadow(2px 0 0 #E1BD69) drop-shadow(-2px 0 0 #E1BD69) drop-shadow(0 2px 0 #E1BD69) drop-shadow(0 -2px 0 #E1BD69) drop-shadow(2px 2px 0 #E1BD69) drop-shadow(-2px 2px 0 #E1BD69) drop-shadow(2px -2px 0 #E1BD69) drop-shadow(-2px -2px 0 #E1BD69)!important
+  filter:drop-shadow(1px 0 0 rgba(255,255,255,.82)) drop-shadow(-1px 0 0 rgba(255,255,255,.82)) drop-shadow(0 1px 0 rgba(255,255,255,.82)) drop-shadow(0 -1px 0 rgba(255,255,255,.82)) drop-shadow(1px 1px 0 rgba(255,255,255,.82)) drop-shadow(-1px 1px 0 rgba(255,255,255,.82)) drop-shadow(1px -1px 0 rgba(255,255,255,.82)) drop-shadow(-1px -1px 0 rgba(255,255,255,.82))!important
 }
 #${ID} .ngh-menu{
   display:none;position:absolute;top:calc(100% + 8px);left:0;width:320px;max-width:min(420px,calc(100vw - 20px));
