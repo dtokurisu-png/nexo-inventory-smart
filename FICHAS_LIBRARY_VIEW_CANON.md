@@ -80,3 +80,20 @@ En ese caso, y **solo para colecciones importadas**, la biblioteca puede reconst
 2. `sourceKey` de la colección contenido en el `sourcePackageKey` de la ficha, limitado al mismo `workspaceId`.
 
 Esta inferencia no aplica a colecciones creadas manualmente y nunca sustituye la tabla canónica de vínculos.
+
+
+## Clasificación visible de fichas
+
+La biblioteca usa tres clasificaciones visibles:
+
+- **Producto final**: receta cuyo `recipeType === "DISH"`. `DISH` queda únicamente como identificador técnico heredado.
+- **Preparación**: receta reutilizable cuyo `recipeType !== "DISH"`.
+- **Insumo**: entidad base de `DMIngredients` / `SUPPLY`.
+
+Los contenedores de una colección se muestran como **Productos finales**, **Preparaciones** e **Insumos** y se calculan automáticamente a partir del tipo de cada entidad.
+
+No mostrar al usuario las etiquetas heredadas **Plato/Platos** ni **Producto/Productos** cuando esta última se refiera a un Insumo.
+
+Los contenedores son vistas de agrupación: no crean copias de las fichas.
+
+Para **Recetario de Olhicory**, si la membresía histórica enumera únicamente `DMRecipes`, los Insumos del mismo Workspace también se muestran dentro del contenedor Insumos para conservar la estructura funcional del recetario histórico.

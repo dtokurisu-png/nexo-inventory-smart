@@ -8,6 +8,7 @@ if(!view||!modalRoot)return;
 
 let activeTab='collections';
 let activeCollectionId='';
+let activeCollectionGroup='';
 const pendingCollectionRequests=new Map();
 
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],collections:[],collectionItems:[],context:{},capabilities:{}};
@@ -68,46 +69,53 @@ function activeCollectionItems(){
   const rows=data().collectionItems||data().technicalSheetCollectionItems||data().collectionMemberships||[];
   return (Array.isArray(rows)?rows:[]).filter(row=>row&&row.active!==false)
 }
+function collectionWorkspaceSupplies(collection){
+  if(!collection)return [];
+  const workspaceId=String(collection.workspaceId||'').trim();
+  return activeProducts().filter(row=>!workspaceId||!row.workspaceId||String(row.workspaceId)===workspaceId)
+}
 function collectionMembers(id){
   const collection=collectionById(id);
   const links=activeCollectionItems().filter(row=>String(row.collectionId||'')===String(id));
   if(links.length){
     const recipeIds=new Set(links.filter(row=>String(row.sourceCollection||'DMRecipes')==='DMRecipes').map(row=>String(row.technicalSheetId||'')));
     const supplyIds=new Set(links.filter(row=>String(row.sourceCollection||'')==='DMIngredients').map(row=>String(row.technicalSheetId||'')));
-    return {
-      recipes:activeRecipes().filter(row=>recipeIds.has(String(row._id))),
-      supplies:activeProducts().filter(row=>supplyIds.has(String(row._id)))
-    }
+    const recipes=activeRecipes().filter(row=>recipeIds.has(String(row._id)));
+    let supplies=activeProducts().filter(row=>supplyIds.has(String(row._id)));
+    if(!supplies.length&&isOlhicoryCollection(collection))supplies=collectionWorkspaceSupplies(collection);
+    return {recipes,supplies}
   }
 
   const mirroredRecipes=activeRecipes().filter(row=>String(row.collectionId||'')===String(id));
-  const mirroredSupplies=activeProducts().filter(row=>String(row.collectionId||'')===String(id));
-  if(mirroredRecipes.length||mirroredSupplies.length){
-    return {recipes:mirroredRecipes,supplies:mirroredSupplies}
-  }
+  let mirroredSupplies=activeProducts().filter(row=>String(row.collectionId||'')===String(id));
+  if(!mirroredSupplies.length&&mirroredRecipes.length&&isOlhicoryCollection(collection))mirroredSupplies=collectionWorkspaceSupplies(collection);
+  if(mirroredRecipes.length||mirroredSupplies.length)return {recipes:mirroredRecipes,supplies:mirroredSupplies};
 
   if(collection){
     const packageKey=String(collection.sourcePackageKey||'').trim();
     const sourceKey=String(collection.sourceKey||'').trim().toLowerCase();
     const workspaceId=String(collection.workspaceId||'').trim();
+
     if(packageKey){
       const recipes=activeRecipes().filter(row=>
         String(row.sourcePackageKey||'').trim()===packageKey&&
         (!workspaceId||!row.workspaceId||String(row.workspaceId)===workspaceId)
       );
-      if(recipes.length)return {recipes,supplies:[]}
+      if(recipes.length)return {recipes,supplies:isOlhicoryCollection(collection)?collectionWorkspaceSupplies(collection):[]}
     }
+
     if(sourceKey){
       const recipes=activeRecipes().filter(row=>{
         const recipePackage=String(row.sourcePackageKey||'').trim().toLowerCase();
         if(!recipePackage||!recipePackage.includes(sourceKey))return false;
         return !workspaceId||!row.workspaceId||String(row.workspaceId)===workspaceId
       });
-      if(recipes.length)return {recipes,supplies:[]}
+      if(recipes.length)return {recipes,supplies:isOlhicoryCollection(collection)?collectionWorkspaceSupplies(collection):[]}
     }
+
     if(isOlhicoryCollection(collection)){
       const recipes=activeRecipes().filter(row=>!workspaceId||!row.workspaceId||String(row.workspaceId)===workspaceId);
-      if(recipes.length)return {recipes,supplies:[]}
+      if(recipes.length)return {recipes,supplies:collectionWorkspaceSupplies(collection)}
     }
   }
 
@@ -179,7 +187,7 @@ function sheetCard(r){
   const title=text(r,'titleEn','titleEs')||'—';
   return '<button class="card recipeCard '+(dish?'cardDish':'cardPrep')+' nexoWorkspaceSheet" data-workspace-sheet="'+esc(r._id)+'">'+
     '<div class="thumb">'+(u?'<img src="'+esc(u)+'" alt="'+esc(title)+'">':'<span class="muted">'+esc(tr('Sin foto','No photo'))+'</span>')+'</div>'+
-    '<div class="meta"><span class="tag '+(dish?'tagDish':'tagPrep')+'">'+esc(dish?tr('Plato','Dish'):tr('Preparación','Preparation'))+'</span><h3>'+esc(title)+'</h3><span class="muted">'+esc(r.category||'')+'</span></div></button>';
+    '<div class="meta"><span class="tag '+(dish?'tagDish':'tagPrep')+'">'+esc(dish?tr('Producto final','Final product'):tr('Preparación','Preparation'))+'</span><h3>'+esc(title)+'</h3><span class="muted">'+esc(r.category||'')+'</span></div></button>';
 }
 function supplyCard(supply){
   const photos=Array.isArray(supply?.images)?supply.images.filter(Boolean):[];
@@ -247,6 +255,88 @@ function renderSheets(root){
   }
 }
 
+function collectionGroupsFor(collection){
+  const members=collectionMembers(collectionId(collection));
+  return {
+    final:members.recipes.filter(row=>String(row.recipeType||'').toUpperCase()==='DISH'),
+    preparation:members.recipes.filter(row=>String(row.recipeType||'').toUpperCase()!=='DISH'),
+    supply:members.supplies
+  }
+}
+function collectionGroupMeta(group){
+  if(group==='final')return {
+    title:tr('Productos finales','Final products'),
+    label:tr('Producto final','Final product'),
+    description:tr('Productos terminados listos para servicio.','Finished products ready for service.'),
+    icon:'platos'
+  };
+  if(group==='preparation')return {
+    title:tr('Preparaciones','Preparations'),
+    label:tr('Preparación','Preparation'),
+    description:tr('Preparaciones y elaboraciones reutilizables.','Reusable preparations and components.'),
+    icon:'preparaciones'
+  };
+  return {
+    title:tr('Insumos','Supplies'),
+    label:tr('Insumo','Supply'),
+    description:tr('Insumos y productos base utilizados por las fichas.','Base supplies used by technical sheets.'),
+    icon:'productos'
+  }
+}
+function collectionGroupCard(group,items){
+  const meta=collectionGroupMeta(group);
+  return '<button type="button" class="nexoCollectionGroupCard '+esc(group)+'" data-collection-group="'+esc(group)+'">'+
+    '<div class="nexoCollectionGroupIcon">'+icon(meta.icon)+'</div>'+
+    '<div class="nexoCollectionGroupCount">'+items.length+'</div>'+
+    '<span>'+esc(meta.label)+'</span>'+
+    '<h3>'+esc(meta.title)+'</h3>'+
+    '<p>'+esc(meta.description)+'</p>'+
+  '</button>'
+}
+function renderCollectionGroup(root,collection,group){
+  const body=root.querySelector('[data-nexo-workspace-body]');
+  if(!body)return;
+  const groups=collectionGroupsFor(collection);
+  const rows=groups[group]||[];
+  const meta=collectionGroupMeta(group);
+  body.innerHTML=
+    '<div class="nexoCollectionDetailHead">'+
+      '<button type="button" class="nexoWorkspaceBtn nexoCollectionBack" data-collection-group-back>← '+esc(collectionName(collection))+'</button>'+
+      '<div><span>'+esc(tr('Colección','Collection'))+'</span><h2>'+esc(meta.title)+'</h2><p>'+esc(meta.description)+'</p></div>'+
+      (canCreate()?'<button type="button" class="nexoWorkspaceBtn" data-nexo-create>'+icon('nuevo')+'<span>'+esc(tr('Crear ficha','Create sheet'))+'</span></button>':'')+
+    '</div>'+
+    (rows.length
+      ? '<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-collection-group-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar en este grupo…','Search this group…'))+'"></label><span data-collection-group-count class="muted" style="font-size:11px"></span></div><div class="grid" data-collection-group-grid>'+(group==='supply'?rows.map(supplyCard).join(''):rows.map(sheetCard).join(''))+'</div>'
+      : '<div class="nexoCollectionEmpty">'+icon(meta.icon)+'<strong>'+esc(tr('No hay elementos en este grupo','No items in this group'))+'</strong><span>'+esc(meta.description)+'</span></div>');
+  body.querySelector('[data-collection-group-back]').onclick=()=>{activeCollectionGroup='';renderCollectionDetail(root,collection)};
+  bindTechnicalCards(body);
+  bindActions(body);
+  const search=body.querySelector('[data-collection-group-search]');
+  const count=body.querySelector('[data-collection-group-count]');
+  if(search)search.addEventListener('input',()=>{
+    const q=String(search.value||'');
+    let visible=0;
+    if(group==='supply'){
+      body.querySelectorAll('[data-workspace-supply]').forEach(card=>{
+        const item=rows.find(row=>String(row._id)===String(card.dataset.workspaceSupply));
+        const show=item?supplyMatches(item,q):false;
+        card.hidden=!show;
+        card.style.display=show?'':'none';
+        if(show)visible++
+      })
+    }else{
+      body.querySelectorAll('[data-workspace-sheet]').forEach(card=>{
+        const item=rows.find(row=>String(row._id)===String(card.dataset.workspaceSheet));
+        const show=item?sheetMatches(item,q):false;
+        card.hidden=!show;
+        card.style.display=show?'':'none';
+        if(show)visible++
+      })
+    }
+    if(count)count.textContent=q.trim()?visible+' / '+rows.length:''
+  })
+}
+
 function collectionCard(row){
   const id=collectionId(row);
   const count=collectionItemCount(id);
@@ -308,6 +398,7 @@ function openCollectionCreate(root){
       if(!rows.some(row=>String(row?.id||row?._id)===String(created.id)))rows.push({...created,active:created.active!==false});
       close();
       activeCollectionId=String(created.id);
+      activeCollectionGroup='';
       renderCollections(root)
     }catch(error){
       submit.disabled=false;
@@ -320,11 +411,12 @@ function openCollectionCreate(root){
 function renderCollectionDetail(root,collection){
   const body=root.querySelector('[data-nexo-workspace-body]');
   if(!body)return;
-  const id=collectionId(collection);
-  const members=collectionMembers(id);
-  const recipes=members.recipes;
-  const supplies=members.supplies;
-  const total=recipes.length+supplies.length;
+  if(activeCollectionGroup){
+    renderCollectionGroup(root,collection,activeCollectionGroup);
+    return
+  }
+  const groups=collectionGroupsFor(collection);
+  const total=groups.final.length+groups.preparation.length+groups.supply.length;
   body.innerHTML=
     '<div class="nexoCollectionDetailHead">'+
       '<button type="button" class="nexoWorkspaceBtn nexoCollectionBack" data-collection-back>← '+esc(tr('Colecciones','Collections'))+'</button>'+
@@ -332,32 +424,14 @@ function renderCollectionDetail(root,collection){
       (canCreate()?'<button type="button" class="nexoWorkspaceBtn" data-nexo-create>'+icon('nuevo')+'<span>'+esc(tr('Crear ficha','Create sheet'))+'</span></button>':'')+
     '</div>'+
     (total
-      ? '<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-collection-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar dentro de la colección…','Search within collection…'))+'"></label><span data-collection-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-collection-sheet-grid>'+recipes.map(sheetCard).join('')+supplies.map(supplyCard).join('')+'</div>'
+      ? '<div class="nexoCollectionGroups">'+collectionGroupCard('final',groups.final)+collectionGroupCard('preparation',groups.preparation)+collectionGroupCard('supply',groups.supply)+'</div>'
       : '<div class="nexoCollectionEmpty">'+icon('ficha-tecnica')+'<strong>'+esc(tr('Esta colección todavía no tiene fichas','This collection has no sheets yet'))+'</strong><span>'+esc(tr('Crea una ficha para comenzar a organizar esta colección.','Create a sheet to start organizing this collection.'))+'</span></div>');
-  body.querySelector('[data-collection-back]').onclick=()=>{activeCollectionId='';renderCollections(root)};
-  bindTechnicalCards(body);
-  bindActions(body);
-  const search=body.querySelector('[data-collection-sheet-search]');
-  const count=body.querySelector('[data-collection-search-count]');
-  if(search)search.addEventListener('input',()=>{
-    const q=String(search.value||'');
-    let visible=0;
-    body.querySelectorAll('[data-workspace-sheet]').forEach(card=>{
-      const recipe=recipes.find(row=>String(row._id)===String(card.dataset.workspaceSheet));
-      const show=recipe?sheetMatches(recipe,q):false;
-      card.hidden=!show;
-      card.style.display=show?'':'none';
-      if(show)visible++
-    });
-    body.querySelectorAll('[data-workspace-supply]').forEach(card=>{
-      const supply=supplies.find(row=>String(row._id)===String(card.dataset.workspaceSupply));
-      const show=supply?supplyMatches(supply,q):false;
-      card.hidden=!show;
-      card.style.display=show?'':'none';
-      if(show)visible++
-    });
-    if(count)count.textContent=q.trim()?visible+' / '+total:''
-  })
+  body.querySelector('[data-collection-back]').onclick=()=>{activeCollectionId='';activeCollectionGroup='';renderCollections(root)};
+  body.querySelectorAll('[data-collection-group]').forEach(card=>card.onclick=()=>{
+    activeCollectionGroup=String(card.dataset.collectionGroup||'');
+    renderCollectionDetail(root,collection)
+  });
+  bindActions(body)
 }
 
 function renderCollections(root){
@@ -379,6 +453,7 @@ function renderCollections(root){
   body.querySelector('[data-create-collection]')?.addEventListener('click',()=>openCollectionCreate(root));
   body.querySelectorAll('[data-nexo-collection]').forEach(card=>card.onclick=()=>{
     activeCollectionId=String(card.dataset.nexoCollection||'');
+    activeCollectionGroup='';
     renderCollections(root)
   })
 }
@@ -415,7 +490,7 @@ function enhanceRoot(){
   body.dataset.nexoWorkspaceBody='1';
 
   root.prepend(header,nav,body);
-  root.querySelectorAll('[data-nexo-tab]').forEach(btn=>btn.onclick=()=>{activeTab=btn.dataset.nexoTab;if(activeTab!=='collections')activeCollectionId='';renderBody(root)});
+  root.querySelectorAll('[data-nexo-tab]').forEach(btn=>btn.onclick=()=>{activeTab=btn.dataset.nexoTab;if(activeTab!=='collections'){activeCollectionId='';activeCollectionGroup=''}renderBody(root)});
   bindActions(header);
   renderBody(root);
 }
