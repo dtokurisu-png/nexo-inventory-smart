@@ -77,6 +77,10 @@ function collectionMembers(id){
       });
       if(recipes.length)return {recipes,supplies:[]}
     }
+    if(String(id)==='nexo-collection-332129eeaf581385111ce8e12011'){
+      const recipes=activeRecipes().filter(row=>!workspaceId||!row.workspaceId||String(row.workspaceId)===workspaceId);
+      if(recipes.length)return {recipes,supplies:[]}
+    }
   }
 
   return {recipes:[],supplies:[]}
