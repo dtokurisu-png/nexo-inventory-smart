@@ -17,7 +17,7 @@ window.__nexoDevelopmentCenterStage0Version=VERSION;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
-const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-8';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261014-1';
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
@@ -104,20 +104,20 @@ function goBack(){
 }
 function goMySpace(){location.assign('/my-site-1/blank-8')}
 
-function ensureSharedHeaderRuntime(){
-  if(window.NEXO_SHARED_HEADER)return Promise.resolve(window.NEXO_SHARED_HEADER);
+function ensureGlobalHeaderRuntime(){
+  if(window.NEXO_GLOBAL_HEADER)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
   return new Promise((resolve,reject)=>{
-    let script=document.getElementById('nxo-shared-header-runtime');
+    let script=document.getElementById('nexo-global-header-runtime-script');
     if(!script){
       script=document.createElement('script');
-      script.id='nxo-shared-header-runtime';
-      script.src=SHARED_HEADER_RUNTIME;
+      script.id='nexo-global-header-runtime-script';
+      script.src=GLOBAL_HEADER_RUNTIME;
       script.defer=true;
-      script.onload=()=>resolve(window.NEXO_SHARED_HEADER);
+      script.onload=()=>resolve(window.NEXO_GLOBAL_HEADER);
       script.onerror=reject;
       document.head.appendChild(script)
     }else{
-      script.addEventListener('load',()=>resolve(window.NEXO_SHARED_HEADER),{once:true});
+      script.addEventListener('load',()=>resolve(window.NEXO_GLOBAL_HEADER),{once:true});
       script.addEventListener('error',reject,{once:true})
     }
   })
@@ -177,12 +177,6 @@ async function loadDevelopmentSession(){
   stripDevelopmentBoot();
   if(!developmentSessionToken)throw new Error('NO_SESSION_TOKEN');
   developmentSession=await developmentUiApi('bootstrap');
-  try{
-    developmentSession.navigation=await window.NEXO_SHARED_HEADER?.loadNavigation?.({
-      seedNavigation:developmentSession?.navigation||{},
-      isWonder:developmentSession?.isWonder===true
-    })||developmentSession?.navigation||{}
-  }catch(_){}
   return developmentSession
 }
 
@@ -197,11 +191,10 @@ function developmentAccountAction(action){
 }
 
 function mountDevelopmentHeader(){
-  if(!window.NEXO_SHARED_HEADER)return;
   const profile=developmentSession?.profile||{displayName:'Usuario Nexo',email:'',photoImage:null};
   const roleKey=developmentSession?.roleKey||(developmentSession?.isWonder?'wonder':'member');
   const roleLabel=developmentSession?.roleLabel||(developmentSession?.isWonder?'Wonder':'Miembro');
-  window.NEXO_SHARED_HEADER.mount(document.body,{
+  window.NEXO_GLOBAL_HEADER?.mount?.(document.body,{
     active:'development',
     theme:theme(),
     language:developmentLanguage(),
@@ -210,7 +203,15 @@ function mountDevelopmentHeader(){
     profile,
     roleKey,
     roleLabel,
-    signal:runtimeAbort.signal,
+    onHome:()=>{location.assign(developmentBaseUrl()+'/blank-8');return false},
+    onPersonal:()=>{location.assign(developmentBaseUrl()+'/blank-8');return false},
+    onWorkspace:(target)=>{
+      if(!target?.workspaceId)return false;
+      const u=new URL(developmentBaseUrl()+'/blank-8');
+      u.searchParams.set('nxoWorkspace',target.workspaceId);
+      location.assign(u.href);return false
+    },
+    onDevelopment:()=>false,
     onTheme:()=>{
       window.NEXO_THEME_RUNTIME?.toggleTheme?.({persist:true,notify:true});
       requestAnimationFrame(mountDevelopmentHeader)
@@ -243,24 +244,6 @@ function ensureThemeRuntime(){
       script.addEventListener('load',()=>resolve(window.NEXO_THEME_RUNTIME?.ready),{once:true});
       script.addEventListener('error',reject,{once:true})
     }
-  })
-}
-
-/* GLOBAL WIX HEADER HARD CLEARANCE · 2026-10-14 */
-try{
-  document.documentElement.style.background='transparent';
-  document.body.style.background='transparent';
-  document.body.style.paddingTop='0';
-}catch(_){}
-
-function exposeWixGlobalHeader(){
-  ['SITE_HEADER','SITE_HEADER_WRAPPER'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(!el)return;
-    el.style.setProperty('position','relative','important');
-    el.style.setProperty('z-index','2147483647','important');
-    el.style.setProperty('visibility','visible','important');
-    el.style.setProperty('opacity','1','important');
   })
 }
 
@@ -379,20 +362,15 @@ html[data-nxo-theme="night"] .nxo-dev-quick-row:focus-visible strong{
   background:color-mix(in srgb,var(--nxo-accent-contrast) 8%,transparent)
 }
 
-
-/* GLOBAL WIX HEADER CLEARANCE · 2026-10-14 */
-html,body{background:transparent!important}
-#nxo-shared-header,#nxo-dev-header{display:none!important}
-#nxo-dev-app{margin-top:68px!important;min-height:calc(100vh - 68px)!important;min-height:calc(100dvh - 68px)!important}
-.nxo-dev-owned-shell{height:calc(100vh - 68px)!important;height:calc(100dvh - 68px)!important}
-
 /* Canonical owned Development Center shell.
    Geometry restored from the previously approved Development Center layout. */
-#PAGES_CONTAINER{display:block!important}
+#PAGES_CONTAINER{
+  display:none!important
+}
 #nxo-dev-app{
   position:relative!important;
   z-index:1!important;
-  min-height:calc(100vh - 64px)!important;
+  min-height:calc(100vh - var(--nexo-global-header-height,68px))!important;
   width:100%!important;
   box-sizing:border-box!important;
   color:var(--nxo-text-primary)!important;
@@ -414,8 +392,8 @@ html[data-nxo-theme="night"] #nxo-dev-app{
 #nxo-dev-app .nxo-dev-owned-shell[hidden]{display:none!important}
 .nxo-dev-owned-shell{
   width:min(1120px,100%);
-  height:calc(100vh - 64px);
-  height:calc(100dvh - 64px);
+  height:calc(100vh - var(--nexo-global-header-height,68px));
+  height:calc(100dvh - var(--nexo-global-header-height,68px));
   margin:auto;
   padding:42px 20px 60px;
   box-sizing:border-box;
@@ -1060,7 +1038,7 @@ html[data-nxo-theme] [data-nxo-dev-card="1"] .nxo-dev-action{
 /* Marketplace preview rail */
 #nxo-dev-preview{
   position:fixed!important;
-  top:64px!important;
+  top:var(--nexo-global-header-height,68px)!important;
   right:0!important;
   bottom:0!important;
   left:auto!important;
@@ -2544,8 +2522,6 @@ function destroy(){
   [
     'nxo-dev-center-css',
     'nxo-dev-taxonomy-css',
-    'nxo-dev-header',
-    'nxo-shared-header',
     'nxo-dev-preview',
     'nxo-dev-preview-handle',
     'nxo-dev-app'
@@ -2563,18 +2539,16 @@ runtime.destroy=destroy;
 
 async function start(){
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
-  exposeWixGlobalHeader();
   ensureStyle();
   ensureDevelopmentTaxonomyStyle();
-  await ensureThemeRuntime();
+  await Promise.all([ensureThemeRuntime(),ensureGlobalHeaderRuntime()]);
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
   await window.NEXO_THEME_RUNTIME?.ready;
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
 
   try{await loadDevelopmentSession()}catch(_){developmentSession=null}
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
-  document.getElementById('nxo-shared-header')?.remove();
-  document.getElementById('nxo-dev-header')?.remove();
+  mountDevelopmentHeader();
   ensureDevelopmentApp();
   applyRequestedDevelopmentView();
   ensurePreviewPanel();
@@ -2582,7 +2556,7 @@ async function start(){
   bindFeatureInterception();
   refresh();
 
-  window.addEventListener('nexo-theme-change',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
+  window.addEventListener('nexo-theme-change',()=>{mountDevelopmentHeader();syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
   window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
 
   observer=new MutationObserver(schedule);
