@@ -1,8 +1,8 @@
 (function(){
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
-const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261014-global-header-clearance-1';
+const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261014-global-runtime-1';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
-const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-11';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261014-1';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -88,20 +88,20 @@ function ensureCurrentCssLink(id,url){
   }
   return link;
 }
-function ensureSharedHeaderRuntime(){
-  if(window.NEXO_SHARED_HEADER)return Promise.resolve(window.NEXO_SHARED_HEADER);
+function ensureGlobalHeaderRuntime(){
+  if(window.NEXO_GLOBAL_HEADER)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
   return new Promise((resolve,reject)=>{
-    let script=document.getElementById('nxo-shared-header-runtime');
+    let script=document.getElementById('nexo-global-header-runtime-script');
     if(!script){
       script=document.createElement('script');
-      script.id='nxo-shared-header-runtime';
-      script.src=SHARED_HEADER_RUNTIME;
+      script.id='nexo-global-header-runtime-script';
+      script.src=GLOBAL_HEADER_RUNTIME;
       script.defer=true;
-      script.onload=()=>resolve(window.NEXO_SHARED_HEADER);
+      script.onload=()=>resolve(window.NEXO_GLOBAL_HEADER);
       script.onerror=reject;
       document.head.appendChild(script)
     }else{
-      script.addEventListener('load',()=>resolve(window.NEXO_SHARED_HEADER),{once:true});
+      script.addEventListener('load',()=>resolve(window.NEXO_GLOBAL_HEADER),{once:true});
       script.addEventListener('error',reject,{once:true})
     }
   })
@@ -1352,12 +1352,12 @@ async function refreshSharedHeaderState(workspaceId=''){
   };
 
   let navigation=seedNavigation;
-  try{
-    navigation=await window.NEXO_SHARED_HEADER?.loadNavigation?.({
-      seedNavigation,
-      isWonder:sharedHeaderState?.isWonder===true
-    })||seedNavigation
-  }catch(_){navigation=seedNavigation}
+  if(sharedHeaderState?.isWonder===true){
+    const direct=navigation.personal.tools;
+    const ensure=(tool)=>{if(!direct.some(x=>String(x.toolKey)===tool.toolKey))direct.push(tool)};
+    ensure({toolKey:'camino-editorial',name:'Camino Editorial',description:'Entorno editorial',routePath:'/blank-6',scope:'personal'});
+    ensure({toolKey:'r96',name:'Risin9 6ames',description:'Entorno de juegos y desarrollo',routePath:'/blank-9',scope:'personal'})
+  }
 
   if(workspace?.workspace?.id){
     const currentId=String(workspace.workspace.id);
@@ -1457,59 +1457,49 @@ function topbar(mode){
 }
 function bindTopbar(mode){
   const isWorkspace=mode==='workspace';
-  sharedHeaderAbort?.abort?.();
-  sharedHeaderAbort=new AbortController();
-
   applyTheme(document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),false);
   applyLanguage(personal?.profile?.locale||storedLanguage(),true);
-
-  window.NEXO_SHARED_HEADER?.bind?.({
-    navigation:sharedHeaderState?.navigation||{},
+  const state=sharedHeaderState||{};
+  const profile={
+    displayName:personal?.profile?.displayName||state?.profile?.displayName||ui('Usuario Nexo','Nexo user'),
+    email:personal?.profile?.email||state?.profile?.email||'',
+    photoImage:personal?.profile?.photoImage||state?.profile?.photoImage||null
+  };
+  window.NEXO_GLOBAL_HEADER?.mount?.(document.body,{
+    active:isWorkspace?'workspace':'personal',
     theme:document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),
     language:currentLanguage(),
-    signal:sharedHeaderAbort.signal,
-    onHome:()=>{
-      if(isWorkspace){returnPersonal();return false}
-      window.scrollTo({top:0,behavior:'smooth'});return false
-    },
-    onPersonal:()=>{
-      if(isWorkspace){returnPersonal();return false}
-      window.scrollTo({top:0,behavior:'smooth'});return false
-    },
-    onWorkspace:(target)=>{
-      if(target?.workspaceId){openWorkspace(target.workspaceId);return false}
-    },
+    contextLabel:isWorkspace?(workspace?.workspace?.name||state?.context?.name||'Workspace'):ui('Mi espacio','My space'),
+    navigation:state?.navigation||{},
+    profile,
+    roleKey:isWorkspace?String(workspace?.membership?.roleKey||state?.roleKey||'member').toLowerCase():String(state?.roleKey||'member').toLowerCase(),
+    roleLabel:isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):(state?.roleLabel||ui('Miembro','Member')),
+    onHome:()=>{if(isWorkspace){returnPersonal();return false}window.scrollTo({top:0,behavior:'smooth'});return false},
+    onPersonal:()=>{if(isWorkspace){returnPersonal();return false}window.scrollTo({top:0,behavior:'smooth'});return false},
+    onWorkspace:(target)=>{if(target?.workspaceId){openWorkspace(target.workspaceId);return false}},
     onDevelopment:()=>{location.assign(centerDevelopmentUrl());return false},
+    onTool:(tool,targetWorkspace)=>{
+      if(!tool)return false;
+      if(targetWorkspace?.workspaceId&&(!workspace||String(workspace?.workspace?.id)!==String(targetWorkspace.workspaceId))){
+        const route=routeUrl(tool.routePath);
+        if(!route)return false;
+        const u=new URL(route,location.href);
+        u.searchParams.set('nxoWorkspace',targetWorkspace.workspaceId);
+        if(tool.name)u.searchParams.set('nxoToolName',tool.name);
+        if(tool.description)u.searchParams.set('nxoToolDescription',tool.description);
+        u.searchParams.set('nxoTheme',document.getElementById('nxo-app')?.dataset?.theme||storedTheme());
+        u.searchParams.set('nxoLang',currentLanguage());
+        location.assign(u.href);return false
+      }
+      const url=toolLaunchUrl(tool);
+      if(url){location.assign(url);return false}
+    },
     onTheme:()=>{toggleTheme();if(workspace)renderWorkspace();else renderPersonal()},
     onLanguage:()=>setGlobalLanguage(currentLanguage()==='es'?'en':'es'),
     onProfileSettings:()=>openProfileSettings(isWorkspace),
     onSwitchAccount:()=>{const u=new URL(siteBase()+'/blank-8');u.searchParams.set('nxoAccountAction','switch');location.assign(u.href)},
     onLogout:()=>{const u=new URL(siteBase()+'/blank-8');u.searchParams.set('nxoAccountAction','logout');location.assign(u.href)}
-  });
-
-  const bell=document.getElementById('nxo-notification-button');
-  const bellMenu=document.getElementById('nxo-notification-menu');
-  const profilePhotoInput=document.getElementById('nxo-profile-photo-input');
-
-  if(bell&&bellMenu){
-    bell.addEventListener('click',e=>{
-      e.stopPropagation();
-      const open=bellMenu.classList.toggle('open');
-      bell.setAttribute('aria-expanded',open?'true':'false')
-    },{signal:sharedHeaderAbort.signal});
-    document.addEventListener('click',e=>{
-      if(!bellMenu.contains(e.target)&&!bell.contains(e.target)){
-        bellMenu.classList.remove('open');
-        bell.setAttribute('aria-expanded','false')
-      }
-    },{signal:sharedHeaderAbort.signal})
-  }
-
-  profilePhotoInput?.addEventListener('change',()=>{
-    const file=profilePhotoInput.files?.[0]||null;
-    profilePhotoInput.value='';
-    if(file)openProfilePhotoCropper(file,isWorkspace)
-  },{signal:sharedHeaderAbort.signal})
+  })
 }
 
 function toolCard(t){const route=toolLaunchUrl(t),usable=!!route&&t.status!=='PLANNED',name=t.workspaceName||t.nameEs||t.nameEn||t.toolKey,description=t.workspaceDescription||t.descriptionEs||'';return '<article class="nxo-card '+(usable?'clickable':'')+'" '+(usable?'data-tool="'+esc(route)+'"':'')+'><div class="nxo-card-top"><div class="nxo-tool-icon">'+iconTag(toolIconKey(t),name)+'</div><span class="nxo-status '+esc(t.status||'')+'">'+esc(statusText(t.status))+'</span></div><h4>'+esc(name)+'</h4><p>'+esc(description)+'</p><div class="nxo-card-footer"><span class="nxo-role">'+(usable?ui('Abrir herramienta','Open tool'):ui('Aún no disponible','Not available yet'))+'</span><span>›</span></div></article>'}
@@ -1636,7 +1626,7 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='BOOTSTRAP';
   personal=await api('bootstrap');
-  await ensureSharedHeaderRuntime();
+  await ensureGlobalHeaderRuntime();
   await refreshSharedHeaderState('');
   applyLanguage(personal?.profile?.locale||new URLSearchParams(location.search).get('nxoLang')||storedLanguage(),true);
   if(!String(personal?.profile?.workName||'').trim()){
@@ -1753,7 +1743,7 @@ function renderPersonal(){
   const workspaceCards='<section class="nxo-section"><div class="nxo-section-head nxo-workspace-list-head"><div><h3>'+esc(ui('Mis espacios de trabajo','My Workspaces'))+'</h3><p>'+esc(ui('Espacios de trabajo que creaste o a los que te uniste.','Workspaces you created or joined.'))+'</p></div><div class="nxo-section-actions nxo-workspace-desktop-actions"><button id="nxo-join-workspace" class="nxo-btn">'+iconLabel('unirse-a-workspace',ui('Unirse a un espacio de trabajo','Join a Workspace'))+'</button><button id="nxo-create-workspace" class="nxo-btn nxo-btn-gold">'+iconLabel('nuevo-workspace',ui('Nuevo espacio de trabajo','New Workspace'))+'</button></div></div>'+(activeSpaces.length?'<div class="nxo-grid">'+activeSpaces.map(w=>workspaceCard(w,false)).join('')+'</div>':'<div class="nxo-empty">'+esc(ui('No tienes espacios de trabajo activos.','You have no active Workspaces.'))+'</div>')+'</section>';
   const archivedCards=archivedSpaces.length?'<section class="nxo-section nxo-archived-section"><div class="nxo-section-head"><div><h3>'+esc(ui('Archivados','Archived'))+'</h3><p>'+esc(ui('Espacios de trabajo guardados fuera de la vista activa. Puedes restaurarlos cuando quieras.','Workspaces stored outside the active view. You can restore them at any time.'))+'</p></div><span class="nxo-chip">'+archivedSpaces.length+'</span></div><div class="nxo-grid">'+archivedSpaces.map(w=>workspaceCard(w,true)).join('')+'</div></section>':'';
   html('<div class="nxo-shell"><main class="nxo-main">'+welcome+summary+legacyInvites+personalTools+workspaceMobileActions+workspaceCards+archivedCards+'</main></div>');
-  bindTools();bindWorkspaceCards();
+  bindTopbar('personal');bindTools();bindWorkspaceCards();
   document.getElementById('nxo-create-workspace')?.addEventListener('click',createWorkspaceModal);
   document.getElementById('nxo-join-workspace')?.addEventListener('click',joinWorkspaceModal);
   document.getElementById('nxo-create-workspace-mobile')?.addEventListener('click',createWorkspaceModal);
@@ -1928,6 +1918,7 @@ function renderWorkspace(){
   else if(workspaceTab==='settings')body='<div id="nxo-settings-zone"><div class="nxo-empty">'+esc(ui('Cargando configuración…','Loading settings…'))+'</div></div>';
   else body=renderAccess(role);
   html('<div class="nxo-shell"><main class="nxo-main"><div class="nxo-workspace-header"><div><div class="nxo-eyebrow">'+esc(ui('Espacio de trabajo','Workspace'))+'</div><h2>'+esc(ws.name||ui('Espacio de trabajo','Workspace'))+'</h2><p>'+esc(ws.description||'')+'</p></div></div><div class="nxo-tabs">'+tabs.join('')+'</div>'+body+'</main></div>');
+  bindTopbar('workspace');
   document.querySelectorAll('[data-wtab]').forEach(b=>b.onclick=()=>{workspaceTab=b.dataset.wtab;renderWorkspace()});
   bindTools();
   if(canAdmin){
