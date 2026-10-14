@@ -4435,10 +4435,18 @@ button.nxo-workspace-logo-edit.uploading{
 html,body{
   background:transparent!important;
 }
-body{
-  padding-top:68px!important;
-}
+body{padding-top:0!important}
 .nxo-app{
   top:68px!important;
   background-clip:padding-box!important;
+}
+
+
+/* WIX HEADER ABOVE RUNTIME · 2026-10-14 */
+#SITE_HEADER,
+#SITE_HEADER_WRAPPER{
+  position:relative!important;
+  z-index:2147483647!important;
+  visibility:visible!important;
+  opacity:1!important
 }
