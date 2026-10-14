@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261014-2';
+const VERSION='20261014-3';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -93,7 +93,12 @@ function ensureStyle(){
 #${ID} .ngh-nav-btn:hover:after,#${ID} .ngh-nav-btn:focus-visible:after{background:var(--ngh-interaction)}
 #${ID} .ngh-nav-btn.active{color:var(--ngh-active);font-weight:900}
 #${ID} .ngh-nav-btn.active:after{background:var(--ngh-active)}
-#${ID} .ngh-icon{width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto}
+#${ID} .ngh-icon{width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto;
+  filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff)
+}
+#${ID}[data-theme="night"] .ngh-icon{
+  filter:drop-shadow(1px 0 0 #E1BD69) drop-shadow(-1px 0 0 #E1BD69) drop-shadow(0 1px 0 #E1BD69) drop-shadow(0 -1px 0 #E1BD69)
+}
 #${ID} .ngh-menu{
   display:none;position:absolute;top:calc(100% + 8px);left:0;width:320px;max-width:min(420px,calc(100vw - 20px));
   max-height:min(68vh,620px);overflow:auto;padding:9px;border:1px solid var(--ngh-panel-border);
