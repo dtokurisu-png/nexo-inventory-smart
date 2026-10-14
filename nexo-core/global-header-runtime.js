@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261014-9';
+const VERSION='20261014-10';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -22,8 +22,29 @@ function toolIconKey(tool){
 }
 function icon(name){return ICON_BASE+encodeURIComponent(name)+'.png'}
 function iconMarkup(name,extra=''){
-  const src=icon(name);
-  return '<span class="ngh-icon-wrap" style="--ngh-icon-mask:url(&quot;'+esc(src)+'&quot;)"><img class="ngh-icon '+extra+'" src="'+esc(src)+'" alt=""></span>'
+  return '<img class="ngh-icon '+extra+'" src="'+esc(icon(name))+'" alt="">'
+}
+
+function ensureOutlineDefs(){
+  if(document.getElementById('nexo-global-icon-outline-defs'))return;
+  const box=document.createElement('div');
+  box.id='nexo-global-icon-outline-defs';
+  box.style.cssText='position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+  box.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true">'+
+    '<filter id="nexo-global-icon-outline-day" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">'+
+      '<feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/>'+
+      '<feFlood flood-color="#ffffff" flood-opacity="0.68" result="c"/>'+
+      '<feComposite in="c" in2="d" operator="in" result="o"/>'+
+      '<feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>'+
+    '</filter>'+
+    '<filter id="nexo-global-icon-outline-night" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">'+
+      '<feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/>'+
+      '<feFlood flood-color="#E1BD69" flood-opacity="0.74" result="c"/>'+
+      '<feComposite in="c" in2="d" operator="in" result="o"/>'+
+      '<feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>'+
+    '</filter>'+
+  '</svg>';
+  document.body.appendChild(box)
 }
 
 function ensureStyle(){
@@ -97,29 +118,12 @@ function ensureStyle(){
 #${ID} .ngh-nav-btn:hover:after,#${ID} .ngh-nav-btn:focus-visible:after{background:var(--ngh-interaction)}
 #${ID} .ngh-nav-btn.active{color:var(--ngh-active);font-weight:900}
 #${ID} .ngh-nav-btn.active:after{background:var(--ngh-active)}
-#${ID} .ngh-icon-wrap{
-  position:relative;display:inline-grid;place-items:center;
-  width:16px;height:16px;flex:0 0 16px
-}
-#${ID} .ngh-icon-wrap::before{
-  content:"";position:absolute;inset:0;
-  background:#fff;
-  -webkit-mask-image:var(--ngh-icon-mask);
-  mask-image:var(--ngh-icon-mask);
-  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  -webkit-mask-position:center;mask-position:center;
-  -webkit-mask-size:contain;mask-size:contain;
-  transform:scale(1.055);
-  transform-origin:50% 50%;
-  opacity:.72;
-  pointer-events:none
-}
-#${ID}[data-theme="night"] .ngh-icon-wrap::before{
-  background:#E1BD69;opacity:.78
-}
 #${ID} .ngh-icon{
-  position:relative;z-index:1;width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto;
-  filter:none!important
+  width:16px;height:16px;display:block;object-fit:contain;flex:0 0 auto;
+  filter:url(#nexo-global-icon-outline-day)!important
+}
+#${ID}[data-theme="night"] .ngh-icon{
+  filter:url(#nexo-global-icon-outline-night)!important
 }
 #${ID} .ngh-menu{
   display:none;position:absolute;top:calc(100% + 8px);left:0;width:320px;max-width:min(420px,calc(100vw - 20px));
@@ -198,7 +202,7 @@ function ensureStyle(){
 `
   document.head.appendChild(s)
 }
-function host(){ensureStyle();let h=document.getElementById(ID);if(!h){h=document.createElement('div');h.id=ID;document.body.appendChild(h)}return h}
+function host(){ensureStyle();ensureOutlineDefs();let h=document.getElementById(ID);if(!h){h=document.createElement('div');h.id=ID;document.body.appendChild(h)}return h}
 function closeMenus(h,except=''){h.querySelectorAll('.ngh-menu,.ngh-pop').forEach(x=>{if(x.id!==except)x.classList.remove('open')});h.querySelectorAll('[aria-expanded="true"]').forEach(x=>{const target=x.dataset.menuTarget;if(target!==except)x.setAttribute('aria-expanded','false')})}
 function toggle(h,id,button){const menu=h.querySelector('#'+id);if(!menu)return;const open=!menu.classList.contains('open');closeMenus(h,open?id:'');menu.classList.toggle('open',open);button?.setAttribute('aria-expanded',open?'true':'false')}
 function findTool(nav,key,workspaceId=''){if(workspaceId){const ws=(nav?.workspaces||[]).find(x=>String(x.workspaceId)===String(workspaceId));return (ws?.tools||[]).find(x=>String(x.toolKey)===String(key))||null}return (nav?.personal?.tools||[]).find(x=>String(x.toolKey)===String(key))||null}
