@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261014-11';
+const VERSION='20261014-12';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -139,7 +139,20 @@ function ensureStyle(){
 #${ID} .ngh-item.child{padding-left:34px}
 #${ID} .ngh-workspace{padding:5px;border:1px solid transparent;border-radius:11px}
 #${ID} .ngh-workspace:hover{border-color:var(--ngh-panel-border)}
-#${ID} .ngh-utils{position:relative;margin-left:auto;display:flex;align-items:center;gap:5px}
+#${ID} .ngh-utils{position:relative;margin-left:auto;display:flex;align-items:center;gap:7px}
+#${ID} .ngh-desktop-settings{display:flex;align-items:center;gap:7px}
+#${ID} .ngh-mobile-settings{display:none;position:relative}
+#${ID} .ngh-direct-setting{
+  min-height:38px;padding:0 9px;border:1px solid color-mix(in srgb,var(--ngh-text) 12%,transparent);
+  border-radius:11px;background:color-mix(in srgb,var(--ngh-text) 7%,transparent);
+  color:var(--ngh-text);display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  font-size:10px;font-weight:850
+}
+#${ID} .ngh-direct-setting:hover,#${ID} .ngh-direct-setting:focus-visible{
+  outline:none;background:var(--ngh-interaction);border-color:var(--ngh-interaction);color:var(--ngh-interaction-contrast)
+}
+#${ID} .ngh-direct-setting .ngh-icon{width:16px;height:16px}
+#${ID} .ngh-direct-setting strong{font-size:9px;letter-spacing:.02em}
 #${ID} .ngh-icon-btn{
   width:38px;height:38px;padding:0;display:grid;place-items:center;
   border:1px solid color-mix(in srgb,var(--ngh-text) 12%,transparent);
@@ -198,6 +211,8 @@ function ensureStyle(){
   #${ID} .ngh-account{max-width:150px;padding:3px 5px}
   #${ID} .ngh-user strong{max-width:70px;font-size:9px}
   #${ID} .ngh-user small{display:none}
+  #${ID} .ngh-desktop-settings{display:none}
+  #${ID} .ngh-mobile-settings{display:block}
 }
 `
   document.head.appendChild(s)
@@ -230,7 +245,7 @@ function mount(container,opts={}){
     '<button class="ngh-brand" data-home><img class="ngh-logo" src="'+LOGO+'" alt="Nexo Group"><span class="ngh-brand-copy"><strong>Nexo Group</strong><small>'+esc(context)+'</small></span></button>'+
     '<nav class="ngh-nav"><div class="ngh-group"><button class="ngh-nav-btn '+(active==='personal'||active==='workspace'||active==='tool'?'active':'')+'" data-personal data-menu-target="ngh-space" aria-expanded="false">'+iconMarkup('home')+'<span>'+(lang==='en'?'My space':'Mi espacio')+'</span><span>⌄</span></button><div class="ngh-menu" id="ngh-space">'+menuMarkup(nav)+'</div></div>'+
     '<button class="ngh-nav-btn '+(active==='development'?'active':'')+'" data-development>'+iconMarkup('desarrollo')+'<span>'+(lang==='en'?'Development Center':'Centro de desarrollo')+'</span></button></nav>'+
-    '<div class="ngh-utils"><div class="ngh-group"><button class="ngh-icon-btn" data-settings data-menu-target="ngh-settings" aria-expanded="false">'+iconMarkup('ajustes-rapidos')+'</button><div class="ngh-pop" id="ngh-settings"><button class="ngh-setting-row" data-language><span class="ngh-setting-label">'+iconMarkup('idioma')+'<span>'+(lang==='en'?'Language':'Idioma')+'</span></span><strong class="ngh-setting-value">'+lang.toUpperCase()+'</strong></button><button class="ngh-setting-row" data-theme><span class="ngh-setting-label">'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<span>'+(lang==='en'?'Appearance':'Apariencia')+'</span></span><strong class="ngh-setting-value">'+(theme==='night'?(lang==='en'?'Dark':'Oscuro'):(lang==='en'?'Light':'Claro'))+'</strong></button></div></div>'+
+    '<div class="ngh-utils"><div class="ngh-desktop-settings"><button class="ngh-direct-setting" data-language>'+iconMarkup('idioma')+'<strong>'+lang.toUpperCase()+'</strong></button><button class="ngh-direct-setting" data-theme>'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<strong>'+(theme==='night'?'Dark':'Light')+'</strong></button></div><div class="ngh-mobile-settings"><button class="ngh-icon-btn" data-settings data-menu-target="ngh-settings" aria-expanded="false">'+iconMarkup('ajustes-rapidos')+'</button><div class="ngh-pop" id="ngh-settings"><button class="ngh-setting-row" data-language><span class="ngh-setting-label">'+iconMarkup('idioma')+'<span>'+(lang==='en'?'Language':'Idioma')+'</span></span><strong class="ngh-setting-value">'+lang.toUpperCase()+'</strong></button><button class="ngh-setting-row" data-theme><span class="ngh-setting-label">'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<span>'+(lang==='en'?'Appearance':'Apariencia')+'</span></span><strong class="ngh-setting-value">'+(theme==='night'?'Dark':'Light')+'</strong></button></div></div>'+
     '<div class="ngh-group"><button class="ngh-account" data-account data-menu-target="ngh-account" aria-expanded="false"><span class="ngh-avatar">'+(photo?'<img src="'+esc(photo)+'" alt="">':esc(initials(profile.displayName||'Usuario Nexo')))+'</span><span class="ngh-user"><strong>'+esc(profile.displayName||'Usuario Nexo')+'</strong><span class="ngh-role">'+esc(opts.roleLabel||'Miembro')+'</span><small>'+esc(profile.email||'')+'</small></span><span>⌄</span></button><div class="ngh-pop" id="ngh-account"><button data-profile>'+(lang==='en'?'Profile settings':'Ajustes de perfil')+'</button><button data-switch>'+(lang==='en'?'Switch account':'Cambiar cuenta')+'</button><button class="danger" data-logout>'+(lang==='en'?'Sign out':'Cerrar sesión')+'</button></div></div></div>'+
     '</header>';
 
@@ -240,8 +255,8 @@ function mount(container,opts={}){
   h.querySelector('[data-development]')?.addEventListener('click',e=>{if(call('onDevelopment',e)!==false&&location.pathname!=='/')location.assign('/')});
   h.querySelector('[data-settings]')?.addEventListener('click',e=>{e.stopPropagation();toggle(h,'ngh-settings',e.currentTarget)});
   h.querySelector('[data-account]')?.addEventListener('click',e=>{e.stopPropagation();toggle(h,'ngh-account',e.currentTarget)});
-  h.querySelector('[data-language]')?.addEventListener('click',e=>call('onLanguage',e));
-  h.querySelector('[data-theme]')?.addEventListener('click',e=>call('onTheme',e));
+  h.querySelectorAll('[data-language]').forEach(button=>button.addEventListener('click',e=>call('onLanguage',e)));
+  h.querySelectorAll('[data-theme]').forEach(button=>button.addEventListener('click',e=>call('onTheme',e)));
   h.querySelector('[data-profile]')?.addEventListener('click',e=>call('onProfileSettings',e));
   h.querySelector('[data-switch]')?.addEventListener('click',e=>call('onSwitchAccount',e));
   h.querySelector('[data-logout]')?.addEventListener('click',e=>call('onLogout',e));
