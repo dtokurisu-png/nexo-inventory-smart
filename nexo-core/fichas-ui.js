@@ -5,7 +5,6 @@ const ACCESS_REVISION='fichas-workspace-context-20261007-40';
 const ENGINE_REVISION='collection-membership-20261014-77';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
-const SHARED_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/shared-header.js?v=20261013-8';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -71,25 +70,6 @@ function ensureThemeRuntime(){
     document.head.appendChild(script);
   });
 }
-function ensureSharedHeaderRuntime(){
-  if(window.NEXO_SHARED_HEADER)return Promise.resolve(window.NEXO_SHARED_HEADER);
-  return new Promise((resolve,reject)=>{
-    let script=document.getElementById('nxo-shared-header-runtime');
-    if(!script){
-      script=document.createElement('script');
-      script.id='nxo-shared-header-runtime';
-      script.src=SHARED_HEADER_RUNTIME;
-      script.async=false;
-      script.onload=()=>resolve(window.NEXO_SHARED_HEADER);
-      script.onerror=()=>reject(new Error('NEXO_SHARED_HEADER_LOAD_FAILED'));
-      document.head.appendChild(script)
-    }else{
-      script.addEventListener('load',()=>resolve(window.NEXO_SHARED_HEADER),{once:true});
-      script.addEventListener('error',()=>reject(new Error('NEXO_SHARED_HEADER_LOAD_FAILED')),{once:true})
-    }
-  })
-}
-
 function syncFichasFrameGeometry(){
   const root=document.getElementById('nx-fichas-app');
   if(!root)return;
@@ -1091,7 +1071,7 @@ function mountEngine(){
   window.addEventListener('message',handleEngineMessage);
 }
 async function start(){
-  await Promise.all([ensureThemeRuntime(),ensureSharedHeaderRuntime()]);
+  await ensureThemeRuntime();
   applyWorkspaceTheme(workspaceTheme,{persist:false,notifyEngine:false});
   loading();
   if(!requestedWorkspaceId){
@@ -1105,13 +1085,9 @@ async function start(){
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
   accessStage='HEADER';
   sharedHeaderState=await api('header.bootstrap',{workspaceId:requestedWorkspaceId});
-  try{
-    sharedHeaderState.navigation=await window.NEXO_SHARED_HEADER?.loadNavigation?.({
-      seedNavigation:sharedHeaderState?.navigation||{},
-      isWonder:sharedHeaderState?.isWonder===true
-    })||sharedHeaderState?.navigation||{}
-  }catch(_){}
-  mountFichasHeader();
+  document.getElementById('nxo-shared-header')?.remove();
+  document.getElementById('nxo-dev-header')?.remove();
+  syncFichasFrameGeometry();
   accessStage='ENGINE';
   mountEngine();
   syncFichasFrameGeometry();
