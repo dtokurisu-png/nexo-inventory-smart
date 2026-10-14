@@ -10,10 +10,7 @@
 <link rel="stylesheet" href="./nexo-theme-contract-v1.css?v=20261006-paragraph-reader-7">
 <style>
 :root{--bg:var(--nxo-background);--panel:var(--nxo-surface);--ink:var(--nxo-text-primary);--muted:var(--nxo-text-muted);--line:var(--nxo-border);--accent:var(--nxo-accent);--toolstrip:52px;--radius:18px;--shadow:0 14px 42px var(--nxo-shadow);--dish:var(--nxo-taxonomy-dish);--prep:var(--nxo-taxonomy-preparation);--product:var(--nxo-taxonomy-product);--metricMass:var(--nxo-unit-metric-mass);--imperialMass:var(--nxo-unit-imperial-mass);--metricVolume:var(--nxo-unit-metric-volume);--count:var(--nxo-unit-count);--spoon:var(--nxo-unit-spoon);--cup:var(--nxo-unit-cup);--otherUnit:var(--nxo-unit-other)}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}body{overscroll-behavior-y:none}.app{min-height:100dvh;padding-top:calc(var(--toolstrip) + env(safe-area-inset-top))}html[data-nxo-theme="day"] .nexoToolstrip .nexoUiIcon{
-  filter:drop-shadow(1px 0 0 rgba(255,255,255,.82)) drop-shadow(-1px 0 0 rgba(255,255,255,.82)) drop-shadow(0 1px 0 rgba(255,255,255,.82)) drop-shadow(0 -1px 0 rgba(255,255,255,.82)) drop-shadow(1px 1px 0 rgba(255,255,255,.82)) drop-shadow(-1px 1px 0 rgba(255,255,255,.82)) drop-shadow(1px -1px 0 rgba(255,255,255,.82)) drop-shadow(-1px -1px 0 rgba(255,255,255,.82))!important
-}
-.nexoToolButton{width:38px;height:38px;border:1px solid rgba(255,255,255,.16);background:transparent;border-radius:8px;color:#fff;display:inline-grid;place-items:center;padding:0;transition:background .12s ease,border-color .12s ease,transform .12s ease,opacity .12s ease;position:relative}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}body{overscroll-behavior-y:none}.app{min-height:100dvh;padding-top:calc(var(--toolstrip) + env(safe-area-inset-top))}.nexoToolButton{width:38px;height:38px;border:1px solid rgba(255,255,255,.16);background:transparent;border-radius:8px;color:#fff;display:inline-grid;place-items:center;padding:0;transition:background .12s ease,border-color .12s ease,transform .12s ease,opacity .12s ease;position:relative}
 .nexoToolButton:hover:not(:disabled),.nexoToolButton:focus-visible:not(:disabled){background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.34);outline:none;transform:translateY(-1px)}
 .nexoToolButton:active:not(:disabled){transform:translateY(0)}
 .nexoToolButton.active:not(:disabled){background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.42);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
@@ -52,8 +49,39 @@ html.nexoMobile .calcWrap{gap:5px!important}html.nexoMobile .calcScreen{padding:
 }
 .nexoToolGroup{display:flex;align-items:center;gap:5px}
 .nexoToolDivider{width:1px;height:26px;background:rgba(255,255,255,.18);margin:0 3px;flex:0 0 auto}
-.nexoToolstrip .nexoUiIcon{filter:drop-shadow(1px 0 0 rgba(255,255,255,.72)) drop-shadow(-1px 0 0 rgba(255,255,255,.72)) drop-shadow(0 1px 0 rgba(255,255,255,.72)) drop-shadow(0 -1px 0 rgba(255,255,255,.72))}
-.nexoToolstrip .nexoToolButton:disabled .nexoUiIcon{filter:grayscale(1) brightness(.9)}
+html[data-theme="day"] .nexoToolstrip .nexoUiIcon,
+html[data-nxo-theme="day"] .nexoToolstrip .nexoUiIcon{filter:url(#nexo-toolbar-icon-outline-day)!important}
+html[data-theme="night"] .nexoToolstrip .nexoUiIcon,
+html[data-nxo-theme="night"] .nexoToolstrip .nexoUiIcon{filter:url(#nexo-toolbar-icon-outline-night)!important}
+.nexoToolstrip .nexoToolButton:disabled .nexoUiIcon{opacity:.48}
+.nexoToolSpacer{flex:1}
+.nexoToolbarDesktopSettings{display:flex;align-items:center;gap:7px;margin-left:auto}
+.nexoToolbarSetting{
+  min-height:36px;padding:0 10px;border:1px solid rgba(255,255,255,.16);border-radius:8px;
+  background:transparent;color:#fff;display:inline-flex;align-items:center;gap:7px;
+  font-size:12px;font-weight:850;letter-spacing:.01em
+}
+.nexoToolbarSetting:hover,.nexoToolbarSetting:focus-visible{
+  background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.34);outline:none
+}
+.nexoToolbarSetting .nexoUiIcon{width:18px;height:18px}
+.nexoToolbarMobileSettings{display:none;position:relative;margin-left:auto}
+.nexoToolbarSettingsMenu{
+  display:none;position:absolute;right:0;top:calc(100% + 7px);width:220px;padding:6px;
+  border:1px solid var(--nxo-border);border-radius:12px;background:var(--nxo-surface-raised);
+  box-shadow:0 16px 42px var(--nxo-shadow);z-index:90
+}
+.nexoToolbarSettingsMenu.open{display:grid;gap:4px}
+.nexoToolbarSettingsMenu .nexoToolbarSetting{
+  width:100%;justify-content:flex-start;color:var(--nxo-text-primary);
+  border-color:transparent;background:transparent
+}
+.nexoToolbarSettingsMenu .nexoToolbarSetting:hover,
+.nexoToolbarSettingsMenu .nexoToolbarSetting:focus-visible{background:var(--nxo-accent-soft)}
+@media(max-width:720px){
+  .nexoToolbarDesktopSettings{display:none}
+  .nexoToolbarMobileSettings{display:block}
+}
 @media(max-width:720px){
   .nexoToolstrip{gap:4px;padding-left:max(7px,env(safe-area-inset-left));padding-right:max(7px,env(safe-area-inset-right))}
   .nexoToolGroup{gap:4px}
@@ -101,8 +129,6 @@ html.nexoMobile .timerActions button{min-height:32px;font-size:11px;padding:6px 
 @media(max-width:520px){.timerItem{grid-template-columns:1fr}.timerActions{justify-content:flex-start}}
 
 /* CANONICAL NEXO ICON GALLERY · 2026-10-01 */
-html[data-nxo-theme="day"] .topbar .nexoUiIcon{filter:url(#nexo-toolbar-icon-outline-day)!important}
-html[data-nxo-theme="night"] .topbar .nexoUiIcon{filter:url(#nexo-toolbar-icon-outline-night)!important}
 .nexoUiIcon{width:20px;height:20px;display:block;object-fit:contain;object-position:center;flex:0 0 auto}
 .nexoToolButton{display:inline-grid;place-items:center}
 .nexoToolButton .nexoUiIcon{width:20px;height:20px}
@@ -121,8 +147,8 @@ html[data-nxo-theme="night"] .topbar .nexoUiIcon{filter:url(#nexo-toolbar-icon-o
 
 </style>
 </head>
-<body><svg id="nexo-toolbar-icon-outline-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none"><filter id="nexo-toolbar-icon-outline-day" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/><feFlood flood-color="#ffffff" flood-opacity="0.68" result="c"/><feComposite in="c" in2="d" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="nexo-toolbar-icon-outline-night" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/><feFlood flood-color="#E1BD69" flood-opacity="0.74" result="c"/><feComposite in="c" in2="d" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter></svg>
-<div class="app"><div class="nexoToolstrip" role="toolbar" aria-label="Herramientas de fichas técnicas"><div class="nexoToolGroup nexoToolNavGroup"><button id="back" class="nexoToolButton" type="button" aria-label="Volver" title="Volver" disabled><img class="nexoUiIcon" src="../assets/icons/nexo/volver.png" alt=""></button></div><span class="nexoToolDivider" aria-hidden="true"></span><div class="nexoToolGroup"><button id="legendBtn" class="nexoToolButton" type="button" aria-label="Guía de colores" title="Guía de colores"><img class="nexoUiIcon" src="../assets/icons/nexo/guia.png" alt=""></button><button id="calcBtn" class="nexoToolButton" type="button" aria-label="Calculadora" title="Calculadora"><img class="nexoUiIcon" src="../assets/icons/nexo/calculadora.png" alt=""></button><button id="timerBtn" class="nexoToolButton" type="button" aria-label="Temporizadores" title="Temporizadores" disabled><img class="nexoUiIcon" src="../assets/icons/nexo/temporizador.png" alt=""></button><button id="commentBtn" class="nexoToolButton" type="button" aria-label="Sugerir cambio" title="Sugerir cambio" disabled><img class="nexoUiIcon" src="../assets/icons/nexo/comentarios.png" alt=""></button></div></div><main id="view"></main></div><div id="modal"></div><div id="status" class="status hidden"></div>
+<body><svg id="nexo-toolbar-icon-outline-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none"><filter id="nexo-toolbar-icon-outline-day" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="0.55" result="d"/><feFlood flood-color="#ffffff" flood-opacity="0.68" result="c"/><feComposite in="c" in2="d" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="nexo-toolbar-icon-outline-night" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="0.55" result="d"/><feFlood flood-color="#E1BD69" flood-opacity="0.74" result="c"/><feComposite in="c" in2="d" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter></svg>
+<div class="app"><div class="nexoToolstrip" role="toolbar" aria-label="Herramientas de fichas técnicas"><div class="nexoToolGroup nexoToolNavGroup"><button id="back" class="nexoToolButton" type="button" aria-label="Volver" title="Volver" disabled><img class="nexoUiIcon" src="../assets/icons/nexo/volver.png" alt=""></button></div><span class="nexoToolDivider" aria-hidden="true"></span><div class="nexoToolGroup"><button id="legendBtn" class="nexoToolButton" type="button" aria-label="Guía de colores" title="Guía de colores"><img class="nexoUiIcon" src="../assets/icons/nexo/guia.png" alt=""></button><button id="calcBtn" class="nexoToolButton" type="button" aria-label="Calculadora" title="Calculadora"><img class="nexoUiIcon" src="../assets/icons/nexo/calculadora.png" alt=""></button><button id="timerBtn" class="nexoToolButton" type="button" aria-label="Temporizadores" title="Temporizadores" disabled><img class="nexoUiIcon" src="../assets/icons/nexo/temporizador.png" alt=""></button><button id="commentBtn" class="nexoToolButton" type="button" aria-label="Sugerir cambio" title="Sugerir cambio" disabled><img class="nexoUiIcon" src="../assets/icons/nexo/comentarios.png" alt=""></button></div><span class="nexoToolSpacer"></span><div class="nexoToolbarDesktopSettings"><button id="desktopLangBtn" class="nexoToolbarSetting" type="button"><img class="nexoUiIcon" src="../assets/icons/nexo/idioma.png" alt=""><span id="desktopLangValue">ES</span></button><button id="desktopThemeBtn" class="nexoToolbarSetting" type="button"><img id="desktopThemeIcon" class="nexoUiIcon" src="../assets/icons/nexo/modo-claro.png" alt=""><span id="desktopThemeValue">Light</span></button></div><div class="nexoToolbarMobileSettings"><button id="mobileSettingsBtn" class="nexoToolButton" type="button" aria-label="Ajustes" aria-expanded="false"><img class="nexoUiIcon" src="../assets/icons/nexo/ajustes-rapidos.png" alt=""></button><div id="mobileSettingsMenu" class="nexoToolbarSettingsMenu"><button id="mobileLangBtn" class="nexoToolbarSetting" type="button"><img class="nexoUiIcon" src="../assets/icons/nexo/idioma.png" alt=""><span id="mobileLangValue">ES</span></button><button id="mobileThemeBtn" class="nexoToolbarSetting" type="button"><img id="mobileThemeIcon" class="nexoUiIcon" src="../assets/icons/nexo/modo-claro.png" alt=""><span id="mobileThemeValue">Light</span></button></div></div></div><main id="view"></main></div><div id="modal"></div><div id="status" class="status hidden"></div>
 <script>
 (()=>{'use strict';
 const I={es:{library:'Recetario dinámico',sub:'Productos finales, preparaciones e insumos conectados.',search:'Buscar producto final, preparación o insumo…',noResults:'No se encontraron coincidencias',all:'Todo',dish:'Producto final',prep:'Preparación',product:'Insumos',yield:'Rendimiento',method:'Método / MOP',noPhoto:'Sin foto',whole:'Insumo entero / base',cut:'Preparación / corte',add:'Agregar foto',replace:'Cambiar foto',empty:'Todavía no hay recetas cargadas',waiting:'Cargando colecciones existentes…',loadingHint:'Estamos preparando las fichas disponibles para este Workspace.',legend:'Guía de colores',openRecipe:'Abrir receta',pending:'Ficha técnica pendiente',subrecipe:'Preparación / subreceta',ingredient:'Insumo',unit:'Unidad de medida',close:'Cerrar',calculator:'Calculadora',calcHint:'Calculadora rápida para cocina. Usa punto o coma para decimales.',comments:'Sugerir cambio',commentTitle:'Recomendación sobre la receta',commentHint:'Escribe una recomendación de cambio para esta ficha técnica. El administrador del Workspace podrá revisarla, aceptarla, rechazarla o guardarla como pendiente.',commentPlaceholder:'Describe el cambio que recomiendas…',sendComment:'Enviar recomendación',sendingComment:'Enviando…',commentSaved:'Recomendación enviada.',done:'Listo'},en:{library:'Dynamic recipe book',sub:'Connected final products, preparations, and supplies.',search:'Search final product, preparation, or supply…',noResults:'No matches found',all:'All',dish:'Final product',prep:'Preparation',product:'Supplies',yield:'Yield',method:'Method / MOP',noPhoto:'No photo',whole:'Whole / base supply',cut:'Preparation / cut',add:'Add photo',replace:'Replace photo',empty:'No recipes have been added yet',waiting:'Loading existing collections…',loadingHint:'We are preparing the technical sheets available in this Workspace.',legend:'Color guide',openRecipe:'Open recipe',pending:'Technical sheet pending',subrecipe:'Preparation / subrecipe',ingredient:'Supply',unit:'Unit of measure',close:'Close',calculator:'Calculator',calcHint:'Quick kitchen calculator. Use a dot or comma for decimals.',comments:'Suggest change',commentTitle:'Recipe change recommendation',commentHint:'Write a change recommendation for this technical sheet. Workspace administrators can review, accept, reject, or keep it pending.',commentPlaceholder:'Describe the change you recommend…',sendComment:'Send recommendation',sendingComment:'Sending…',commentSaved:'Recommendation sent.',done:'Done'}};
@@ -132,7 +158,7 @@ const TIMER_NOTIFICATION_SW='./sw.js?v=20260929-system-notifications-10';
 const TIMER_NOTIFICATION_ICON='https://static.wixstatic.com/media/8b64a8_9aaf5cc2adbb41d484291557d6024f08~mv2.png';
 const T={items:[],seq:0,tick:null,ringing:false,primed:false,audio:new Audio(TIMER_ALARM_URL),notificationRegistration:null,notificationRegistrationPromise:null};
 const NEXO_ICON_BASE='../assets/icons/nexo/';
-T.audio.loop=true;T.audio.preload='auto';T.audio.volume=1;const $=q=>document.querySelector(q),view=$('#view'),modal=$('#modal'),back=$('#back'),legendBtn=$('#legendBtn'),calcBtn=$('#calcBtn'),timerBtn=$('#timerBtn'),commentBtn=$('#commentBtn'),status=$('#status');const t=k=>I[S.lang][k]||k,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),iconSrc=name=>NEXO_ICON_BASE+encodeURIComponent(String(name||''))+'.png',iconTag=(name,label='')=>'<img class="nexoUiIcon" src="'+esc(iconSrc(name))+'" alt="'+esc(label)+'" loading="lazy" decoding="async">',txt=(o,a,b)=>S.lang==='es'?(o?.[b]||o?.[a]||''):(o?.[a]||o?.[b]||''),rname=r=>txt(r,'titleEn','titleEs')||'—',iname=x=>txt(x,'nameEn','nameEs')||'—',pname=x=>txt(x,'nameEn','nameEs')||'—',img=x=>typeof x==='string'?x:(x&&(x.url||x.image?.url||x.src)||'');const send=(type,payload={})=>parent.postMessage({type,payload},'*');
+T.audio.loop=true;T.audio.preload='auto';T.audio.volume=1;const $=q=>document.querySelector(q),view=$('#view'),modal=$('#modal'),back=$('#back'),legendBtn=$('#legendBtn'),calcBtn=$('#calcBtn'),timerBtn=$('#timerBtn'),commentBtn=$('#commentBtn'),status=$('#status'),desktopLangBtn=$('#desktopLangBtn'),desktopLangValue=$('#desktopLangValue'),desktopThemeBtn=$('#desktopThemeBtn'),desktopThemeIcon=$('#desktopThemeIcon'),desktopThemeValue=$('#desktopThemeValue'),mobileSettingsBtn=$('#mobileSettingsBtn'),mobileSettingsMenu=$('#mobileSettingsMenu'),mobileLangBtn=$('#mobileLangBtn'),mobileLangValue=$('#mobileLangValue'),mobileThemeBtn=$('#mobileThemeBtn'),mobileThemeIcon=$('#mobileThemeIcon'),mobileThemeValue=$('#mobileThemeValue');const t=k=>I[S.lang][k]||k,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),iconSrc=name=>NEXO_ICON_BASE+encodeURIComponent(String(name||''))+'.png',iconTag=(name,label='')=>'<img class="nexoUiIcon" src="'+esc(iconSrc(name))+'" alt="'+esc(label)+'" loading="lazy" decoding="async">',txt=(o,a,b)=>S.lang==='es'?(o?.[b]||o?.[a]||''):(o?.[a]||o?.[b]||''),rname=r=>txt(r,'titleEn','titleEs')||'—',iname=x=>txt(x,'nameEn','nameEs')||'—',pname=x=>txt(x,'nameEn','nameEs')||'—',img=x=>typeof x==='string'?x:(x&&(x.url||x.image?.url||x.src)||'');const send=(type,payload={})=>parent.postMessage({type,payload},'*');
 function searchNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
 function searchCorpus(r){const A=x=>Array.isArray(x)?x:[],vals=[r?.titleEn,r?.titleEs,r?.category,r?.recipeType,r?.notesEn,r?.notesEs],secs=A(S.sections).filter(s=>s&&s.recipeId===r?._id),secIds=new Set(secs.map(s=>s._id));secs.forEach(s=>vals.push(s.titleEn,s.titleEs));A(S.components).filter(c=>c&&(c.recipeId===r?._id||secIds.has(c.sectionId))).forEach(c=>{vals.push(c.displayEn,c.displayEs,c.noteEn,c.noteEs);if(c.targetIngredientId){const i=A(S.ingredients).find(x=>x&&x._id===c.targetIngredientId);if(i)vals.push(i.nameEn,i.nameEs)}if(c.targetPreparationId){const p=A(S.preparations).find(x=>x&&x._id===c.targetPreparationId);if(p)vals.push(p.nameEn,p.nameEs)}if(c.targetRecipeId){const x=A(S.recipes).find(x=>x&&x._id===c.targetRecipeId);if(x)vals.push(x.titleEn,x.titleEs)}});return searchNorm(vals.filter(Boolean).join(' '))}
 function searchMatch(r,q){const tokens=searchNorm(q).split(' ').filter(Boolean);if(!tokens.length)return true;const hay=searchCorpus(r);return tokens.every(x=>hay.includes(x))}
@@ -158,9 +184,21 @@ function syncToolstrip(){
   setToolState(timerBtn,insideTechnicalSheet,S.modal?.kind==='timers');
   setToolState(commentBtn,insideTechnicalSheet&&S.workspaceMode,S.modal?.kind==='comment')
 }
+function syncToolbarSettings(){
+  const lang=S.lang==='en'?'EN':'ES';
+  const isNight=S.theme==='night';
+  if(desktopLangValue)desktopLangValue.textContent=lang;
+  if(mobileLangValue)mobileLangValue.textContent=lang;
+  if(desktopThemeValue)desktopThemeValue.textContent=isNight?'Dark':'Light';
+  if(mobileThemeValue)mobileThemeValue.textContent=isNight?'Dark':'Light';
+  const themeSrc=iconSrc(isNight?'modo-oscuro':'modo-claro');
+  if(desktopThemeIcon)desktopThemeIcon.src=themeSrc;
+  if(mobileThemeIcon)mobileThemeIcon.src=themeSrc
+}
 function setTheme(v,notify=true){
   S.theme=v==='night'?'night':'day';
   window.NEXO_THEME_RUNTIME?.setTheme?.(S.theme,{persist:false});
+  syncToolbarSettings();
   if(notify)send('NEXO_THEME_CHANGED',{theme:S.theme})
 }
 function setLang(v,notify=true){
@@ -178,10 +216,18 @@ function setLang(v,notify=true){
   commentBtn?.setAttribute('aria-label',t('comments'));
   commentBtn?.setAttribute('title',t('comments'));
   document.documentElement.lang=v;
+  syncToolbarSettings();
   render();
   if(S.modal)renderModal();
   if(notify)send('NEXO_LANGUAGE_CHANGED',{language:v})
 }
+desktopLangBtn?.addEventListener('click',()=>setLang(S.lang==='es'?'en':'es',true));
+desktopThemeBtn?.addEventListener('click',()=>setTheme(S.theme==='night'?'day':'night',true));
+mobileLangBtn?.addEventListener('click',()=>{setLang(S.lang==='es'?'en':'es',true);mobileSettingsMenu?.classList.remove('open');mobileSettingsBtn?.setAttribute('aria-expanded','false')});
+mobileThemeBtn?.addEventListener('click',()=>{setTheme(S.theme==='night'?'day':'night',true);mobileSettingsMenu?.classList.remove('open');mobileSettingsBtn?.setAttribute('aria-expanded','false')});
+mobileSettingsBtn?.addEventListener('click',e=>{e.stopPropagation();const open=mobileSettingsMenu?.classList.toggle('open')===true;mobileSettingsBtn.setAttribute('aria-expanded',open?'true':'false')});
+document.addEventListener('click',e=>{if(mobileSettingsMenu&&mobileSettingsBtn&&!mobileSettingsMenu.contains(e.target)&&!mobileSettingsBtn.contains(e.target)){mobileSettingsMenu.classList.remove('open');mobileSettingsBtn.setAttribute('aria-expanded','false')}});
+syncToolbarSettings();
 calcBtn.onclick=()=>{S.modal={kind:'calculator'};renderModal()};
 timerBtn.onclick=()=>{if(timerBtn.disabled)return;S.modal={kind:'timers'};renderModal()};
 commentBtn.onclick=()=>{if(commentBtn.disabled)return;const cur=S.route.at(-1);if(!cur||!S.workspaceMode)return;S.modal={kind:'comment',recipeId:cur.id,requestId:''};renderModal()};
