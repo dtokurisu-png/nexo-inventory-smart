@@ -23,6 +23,7 @@ function canImport(){return context().type==='workspace'&&capabilities().canShar
 function canCreate(){return capabilities().canEdit===true}
 function activeRecipes(){return(data().recipes||[]).filter(x=>x&&x.active!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0))}
 function activeProducts(){return(data().ingredients||[]).filter(x=>x&&x.active!==false)}
+function activeProcesses(){return(data().processes||[]).filter(x=>x&&x.active!==false).sort((a,b)=>String(text(a,'nameEn','nameEs')||a?._id||'').localeCompare(String(text(b,'nameEn','nameEs')||b?._id||'')))}
 function activePreparationSheets(){return activeRecipes().filter(x=>String(x.recipeType||'').toUpperCase()!=='DISH')}
 function hasContent(){return activeRecipes().length>0||activeProducts().length>0}
 function searchNorm(v){try{return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(_){return String(v??'').toLowerCase().trim()}}
@@ -197,6 +198,13 @@ function sheetEditorDispose(state){
     try{URL.revokeObjectURL(state.photoUrl)}catch(_){}
     state.photoUrl=''
   }
+  for(const photo of state.supplyPhotos||[]){
+    if(photo?.url)try{URL.revokeObjectURL(photo.url)}catch(_){}
+  }
+  state.supplyPhotos=[];
+  for(const relation of state.supplyProcesses||[]){
+    if(relation?.imageUrl)try{URL.revokeObjectURL(relation.imageUrl)}catch(_){}
+  }
   try{state.layer?.remove()}catch(_){}
 }
 function sheetEditorClose(target=activeSheetEditor,reason='cancel'){
@@ -241,6 +249,7 @@ function openNestedSheetEditor(kind,options={}){
     parentState:parent
   })
 }
+const SUPPLY_PHOTO_LIMIT=3;
 const SHEET_UNIT_CATALOG=[
   ['G','Gramo','Gram'],['KG','Kilogramo','Kilogram'],['MG','Miligramo','Milligram'],
   ['OZ','Onza','Ounce'],['LB','Libra','Pound'],
@@ -295,9 +304,42 @@ function sheetEditorShell(options={}){
             '<div class="nexoSheetEditorPhotoActions">'+
               '<button type="button" class="nexoWorkspaceBtn" data-sheet-photo-choose>'+icon('nuevo')+'<span>'+esc(tr('Agregar foto','Add photo'))+'</span></button>'+
               '<button type="button" class="nexoWorkspaceBtn" data-sheet-photo-remove hidden>'+esc(tr('Quitar foto','Remove photo'))+'</button>'+
-              '<input type="file" accept="image/jpeg,image/png,image/webp" data-sheet-photo-input hidden>'+
+              '<input type="file" accept="image/jpeg,image/png,image/webp" '+(String(options.kind||'')==='supply'?'multiple ':'')+'data-sheet-photo-input hidden>'+
+            '</div>'+
+            '<div class="nexoSupplyPhotoGallery" data-supply-photo-gallery hidden></div>'+
+          '</div>'+
+        '</section>'+
+        '<section class="nexoSheetEditorSection nexoSupplyEditorSection" data-sheet-supply-section hidden>'+
+          '<div class="nexoSheetEditorSectionHead">'+
+            '<div><span>'+esc(tr('Presentación','Presentation'))+'</span><h2>'+esc(tr('Uso del insumo','Supply usage'))+'</h2></div>'+
+          '</div>'+
+          '<div class="nexoSupplyPresentationGrid">'+
+            '<label><span>'+esc(tr('Cantidad opcional','Optional quantity'))+'</span><input data-supply-quantity inputmode="decimal" autocomplete="off" placeholder="'+esc(tr('Ej. 1000','e.g. 1000'))+'"></label>'+
+            '<label><span>'+esc(tr('Unidad opcional','Optional unit'))+'</span><select data-supply-unit><option value="">'+esc(tr('Sin unidad','No unit'))+'</option>'+SHEET_UNIT_CATALOG.map(row=>'<option value="'+esc(row[0])+'">'+esc(row[0]+' — '+(lang()==='en'?row[2]:row[1]))+'</option>').join('')+'</select></label>'+
+          '</div>'+
+          '<div class="nexoSupplyModeBlock">'+
+            '<span class="nexoSupplyFieldLabel">'+esc(tr('Tipo de insumo','Supply type'))+'</span>'+
+            '<div class="nexoSupplyModeGroup" role="radiogroup" aria-label="'+esc(tr('Tipo de insumo','Supply type'))+'">'+
+              '<button type="button" data-supply-mode="CONSUMABLE" aria-pressed="true"><strong>'+esc(tr('Consumible','Consumable'))+'</strong><span>'+esc(tr('Se utiliza tal como está.','Used as-is.'))+'</span></button>'+
+              '<button type="button" data-supply-mode="PROCESSABLE" aria-pressed="false"><strong>'+esc(tr('Procesable','Processable'))+'</strong><span>'+esc(tr('Puede tener una o varias formas de proceso.','Can have one or more processing forms.'))+'</span></button>'+
             '</div>'+
           '</div>'+
+        '</section>'+
+        '<section class="nexoSheetEditorSection nexoSupplyEditorSection" data-sheet-supply-processes hidden>'+
+          '<div class="nexoSheetEditorSectionHead">'+
+            '<div><span>'+esc(tr('Procesos','Processes'))+'</span><h2>'+esc(tr('Formas de procesar este insumo','Ways to process this supply'))+'</h2></div>'+
+            '<div class="nexoSheetEditorSectionActions">'+
+              '<div class="nexoCompositionAction" data-supply-process-action>'+
+                '<button type="button" class="nexoWorkspaceBtn" data-supply-process-add aria-haspopup="menu" aria-expanded="false">'+icon('nuevo')+'<span>'+esc(tr('Proceso','Process'))+'</span></button>'+
+                '<div class="nexoCompositionMenu" data-supply-process-menu role="menu" hidden>'+
+                  '<button type="button" role="menuitem" data-supply-process-choice="existing">'+esc(tr('Existente','Existing'))+'</button>'+
+                  '<button type="button" role="menuitem" data-supply-process-choice="create">'+esc(tr('Crear','Create'))+'</button>'+
+                '</div>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="nexoSheetIngredientPicker" data-supply-process-picker hidden></div>'+
+          '<div class="nexoSupplyProcessList" data-supply-process-list></div>'+
         '</section>'+
         '<section class="nexoSheetEditorSection" data-sheet-ingredients-section>'+
           '<div class="nexoSheetEditorSectionHead">'+
@@ -367,6 +409,12 @@ function sheetEditorTemplate(options={}){
     description:'',
     photoFile:null,
     photoUrl:'',
+    supplyPhotos:[],
+    primaryPhotoId:'',
+    defaultQuantity:'',
+    defaultUnit:'',
+    supplyMode:'CONSUMABLE',
+    supplyProcesses:[],
     components:[],
     steps:[],
     mopHistory:[],
@@ -385,6 +433,16 @@ function sheetEditorTemplate(options={}){
   const description=layer.querySelector('[data-sheet-description]');
   const compositionSection=layer.querySelector('[data-sheet-ingredients-section]');
   const mopSection=layer.querySelector('[data-sheet-mop-section]');
+  const supplySection=layer.querySelector('[data-sheet-supply-section]');
+  const supplyProcessesSection=layer.querySelector('[data-sheet-supply-processes]');
+  const supplyQuantity=layer.querySelector('[data-supply-quantity]');
+  const supplyUnit=layer.querySelector('[data-supply-unit]');
+  const supplyPhotoGallery=layer.querySelector('[data-supply-photo-gallery]');
+  const supplyProcessAction=layer.querySelector('[data-supply-process-action]');
+  const supplyProcessTrigger=layer.querySelector('[data-supply-process-add]');
+  const supplyProcessMenu=layer.querySelector('[data-supply-process-menu]');
+  const supplyProcessPicker=layer.querySelector('[data-supply-process-picker]');
+  const supplyProcessList=layer.querySelector('[data-supply-process-list]');
   const photoInput=layer.querySelector('[data-sheet-photo-input]');
   const photoChoose=layer.querySelector('[data-sheet-photo-choose]');
   const photoRemove=layer.querySelector('[data-sheet-photo-remove]');
@@ -416,7 +474,9 @@ function sheetEditorTemplate(options={}){
   const isSupplyEditor=state.kind==='supply';
   if(isSupplyEditor){
     compositionSection.hidden=true;
-    mopSection.hidden=true
+    mopSection.hidden=true;
+    supplySection.hidden=false;
+    supplyPhotoGallery.hidden=false
   }
 
   const componentById=id=>state.components.find(row=>row.id===id);
@@ -651,6 +711,150 @@ function sheetEditorTemplate(options={}){
     });
     unitPicker.hidden=false;
     positionUnitPicker(trigger)
+  }
+
+  function supplyPhotoById(id){
+    return state.supplyPhotos.find(photo=>photo.id===id)||null
+  }
+  function renderSupplyPhotos(){
+    if(!isSupplyEditor)return;
+    if(!state.supplyPhotos.length){
+      state.primaryPhotoId='';
+      photoPreview.innerHTML='<div>'+icon('ficha-tecnica')+'<span>'+esc(tr('Foto del insumo','Supply photo'))+'</span></div>';
+      supplyPhotoGallery.innerHTML='<div class="nexoSupplyPhotoEmpty">'+esc(tr('Puedes agregar hasta 3 fotos y elegir una como principal.','You can add up to 3 photos and choose one as primary.'))+'</div>';
+      photoRemove.hidden=true;
+      return
+    }
+    if(!supplyPhotoById(state.primaryPhotoId))state.primaryPhotoId=state.supplyPhotos[0].id;
+    const primary=supplyPhotoById(state.primaryPhotoId)||state.supplyPhotos[0];
+    photoPreview.innerHTML='<img src="'+esc(primary.url)+'" alt="">';
+    photoRemove.hidden=true;
+    photoChoose.disabled=state.supplyPhotos.length>=SUPPLY_PHOTO_LIMIT;
+    supplyPhotoGallery.innerHTML=state.supplyPhotos.map(photo=>
+      '<article class="nexoSupplyPhotoThumb '+(photo.id===state.primaryPhotoId?'primary':'')+'" data-supply-photo-id="'+esc(photo.id)+'">'+
+        '<button type="button" class="nexoSupplyPhotoMain" data-supply-photo-primary title="'+esc(tr('Usar como foto principal','Use as primary photo'))+'">'+
+          '<img src="'+esc(photo.url)+'" alt="">'+
+          '<span aria-hidden="true">'+(photo.id===state.primaryPhotoId?'★':'☆')+'</span>'+
+        '</button>'+
+        '<button type="button" class="nexoSupplyPhotoDelete" data-supply-photo-delete aria-label="'+esc(tr('Eliminar foto','Remove photo'))+'">×</button>'+
+      '</article>'
+    ).join('');
+    supplyPhotoGallery.querySelectorAll('[data-supply-photo-id]').forEach(card=>{
+      const id=card.dataset.supplyPhotoId;
+      card.querySelector('[data-supply-photo-primary]').onclick=()=>{
+        state.primaryPhotoId=id;
+        renderSupplyPhotos()
+      };
+      card.querySelector('[data-supply-photo-delete]').onclick=()=>{
+        const photo=supplyPhotoById(id);
+        if(photo?.url)try{URL.revokeObjectURL(photo.url)}catch(_){}
+        state.supplyPhotos=state.supplyPhotos.filter(row=>row.id!==id);
+        if(state.primaryPhotoId===id)state.primaryPhotoId=state.supplyPhotos[0]?.id||'';
+        photoInput.value='';
+        renderSupplyPhotos()
+      }
+    })
+  }
+  function supplyProcessName(row){
+    return text(row,'nameEn','nameEs')||row?.name||tr('Proceso','Process')
+  }
+  function renderSupplyProcessList(){
+    if(!isSupplyEditor)return;
+    if(!state.supplyProcesses.length){
+      supplyProcessList.innerHTML='<div class="nexoSheetIngredientEmpty"><strong>'+esc(tr('Todavía no hay procesos','No processes yet'))+'</strong><span>'+esc(tr('Agrega un proceso existente o crea uno nuevo.','Add an existing process or create a new one.'))+'</span></div>';
+      return
+    }
+    supplyProcessList.innerHTML=state.supplyProcesses.map((relation,index)=>
+      '<article class="nexoSupplyProcessRow" data-supply-process-id="'+esc(relation.id)+'">'+
+        '<div class="nexoSheetIngredientIndex">'+(index+1)+'</div>'+
+        '<label><span>'+esc(tr('Proceso','Process'))+'</span><input data-supply-process-name maxlength="160" value="'+esc(relation.name||'')+'" '+(relation.source==='new'?'':'readonly')+'></label>'+
+        '<label><span>'+esc(tr('Descripción','Description'))+'</span><input data-supply-process-description maxlength="300" value="'+esc(relation.description||'')+'" '+(relation.source==='new'?'':'readonly')+'></label>'+
+        '<div class="nexoSupplyProcessPhoto">'+
+          (relation.imageUrl?'<img src="'+esc(relation.imageUrl)+'" alt="">':'<span>'+esc(tr('Sin foto','No photo'))+'</span>')+
+          '<button type="button" data-supply-process-photo>'+esc(relation.imageUrl?tr('Cambiar','Change'):tr('Agregar foto','Add photo'))+'</button>'+
+          '<input type="file" accept="image/jpeg,image/png,image/webp" data-supply-process-photo-input hidden>'+
+        '</div>'+
+        '<button type="button" class="nexoSheetIngredientRemove" data-supply-process-remove aria-label="'+esc(tr('Eliminar proceso','Remove process'))+'">×</button>'+
+      '</article>'
+    ).join('');
+    supplyProcessList.querySelectorAll('[data-supply-process-id]').forEach(rowEl=>{
+      const relation=state.supplyProcesses.find(row=>row.id===rowEl.dataset.supplyProcessId);
+      if(!relation)return;
+      const nameInput=rowEl.querySelector('[data-supply-process-name]');
+      const descriptionInput=rowEl.querySelector('[data-supply-process-description]');
+      if(relation.source==='new'){
+        nameInput.addEventListener('input',()=>{relation.name=nameInput.value});
+        descriptionInput.addEventListener('input',()=>{relation.description=descriptionInput.value})
+      }
+      const processPhotoInput=rowEl.querySelector('[data-supply-process-photo-input]');
+      rowEl.querySelector('[data-supply-process-photo]').onclick=()=>processPhotoInput.click();
+      processPhotoInput.onchange=()=>{
+        const file=processPhotoInput.files?.[0];
+        if(!file||!/^image\/(jpeg|png|webp)$/i.test(String(file.type||'')))return;
+        if(relation.imageUrl)try{URL.revokeObjectURL(relation.imageUrl)}catch(_){}
+        relation.imageFile=file;
+        relation.imageUrl=URL.createObjectURL(file);
+        renderSupplyProcessList()
+      };
+      rowEl.querySelector('[data-supply-process-remove]').onclick=()=>{
+        if(relation.imageUrl)try{URL.revokeObjectURL(relation.imageUrl)}catch(_){}
+        state.supplyProcesses=state.supplyProcesses.filter(row=>row.id!==relation.id);
+        renderSupplyProcessList()
+      }
+    })
+  }
+  function closeSupplyProcessMenu(){
+    if(!isSupplyEditor)return;
+    supplyProcessMenu.hidden=true;
+    supplyProcessTrigger.setAttribute('aria-expanded','false')
+  }
+  function renderSupplyProcessPicker(query=''){
+    if(!isSupplyEditor)return;
+    const q=searchNorm(query);
+    const selected=new Set(state.supplyProcesses.filter(row=>row.processId).map(row=>String(row.processId)));
+    const rows=activeProcesses().filter(row=>{
+      if(selected.has(String(row._id||'')))return false;
+      if(!q)return true;
+      return searchNorm([row.nameEs,row.nameEn,row.descriptionEs,row.descriptionEn].filter(Boolean).join(' ')).includes(q)
+    }).slice(0,40);
+    supplyProcessPicker.innerHTML=
+      '<div class="nexoSheetIngredientPickerHead"><label>'+icon('busqueda')+'<input data-supply-process-search autocomplete="off" placeholder="'+esc(tr('Buscar proceso…','Search process…'))+'" value="'+esc(query)+'"></label><button type="button" data-supply-process-picker-close>×</button></div>'+
+      '<div class="nexoSheetIngredientPickerResults">'+
+        (rows.length?rows.map(row=>'<button type="button" data-process-catalog-id="'+esc(row._id)+'"><strong>'+esc(supplyProcessName(row))+'</strong><span>'+esc(text(row,'descriptionEn','descriptionEs')||'')+'</span></button>').join(''):'<p>'+esc(tr('No hay procesos disponibles con esa búsqueda.','No processes match that search.'))+'</p>')+
+      '</div>';
+    const search=supplyProcessPicker.querySelector('[data-supply-process-search]');
+    search?.addEventListener('input',()=>renderSupplyProcessPicker(search.value));
+    supplyProcessPicker.querySelector('[data-supply-process-picker-close]').onclick=()=>{supplyProcessPicker.hidden=true};
+    supplyProcessPicker.querySelectorAll('[data-process-catalog-id]').forEach(btn=>btn.onclick=()=>{
+      const process=activeProcesses().find(row=>String(row._id)===String(btn.dataset.processCatalogId));
+      if(!process)return;
+      state.supplyProcesses.push({
+        id:sheetEditorId('supply-process'),
+        source:'existing',
+        processId:String(process._id),
+        name:supplyProcessName(process),
+        description:text(process,'descriptionEn','descriptionEs')||'',
+        imageFile:null,
+        imageUrl:''
+      });
+      supplyProcessPicker.hidden=true;
+      renderSupplyProcessList()
+    });
+    queueMicrotask(()=>search?.focus())
+  }
+  function setSupplyMode(mode){
+    if(!isSupplyEditor)return;
+    state.supplyMode=mode==='PROCESSABLE'?'PROCESSABLE':'CONSUMABLE';
+    layer.querySelectorAll('[data-supply-mode]').forEach(btn=>{
+      const active=btn.dataset.supplyMode===state.supplyMode;
+      btn.classList.toggle('active',active);
+      btn.setAttribute('aria-pressed',active?'true':'false')
+    });
+    supplyProcessesSection.hidden=state.supplyMode!=='PROCESSABLE';
+    if(state.supplyMode!=='PROCESSABLE'){
+      supplyProcessPicker.hidden=true;
+      closeSupplyProcessMenu()
+    }
   }
 
   function closeCompositionMenus(except=''){
@@ -978,6 +1182,18 @@ function sheetEditorTemplate(options={}){
   description.addEventListener('input',()=>{state.description=description.value});
   photoChoose.onclick=()=>photoInput.click();
   photoInput.onchange=()=>{
+    if(isSupplyEditor){
+      const room=Math.max(0,SUPPLY_PHOTO_LIMIT-state.supplyPhotos.length);
+      const files=[...(photoInput.files||[])].filter(file=>/^image\/(jpeg|png|webp)$/i.test(String(file.type||''))).slice(0,room);
+      files.forEach(file=>{
+        const photo={id:sheetEditorId('supply-photo'),file,url:URL.createObjectURL(file)};
+        state.supplyPhotos.push(photo);
+        if(!state.primaryPhotoId)state.primaryPhotoId=photo.id
+      });
+      photoInput.value='';
+      renderSupplyPhotos();
+      return
+    }
     const file=photoInput.files?.[0];
     if(!file)return;
     if(!/^image\/(jpeg|png|webp)$/i.test(String(file.type||'')))return;
@@ -988,13 +1204,49 @@ function sheetEditorTemplate(options={}){
     photoRemove.hidden=false
   };
   photoRemove.onclick=()=>{
+    if(isSupplyEditor)return;
     if(state.photoUrl)try{URL.revokeObjectURL(state.photoUrl)}catch(_){}
     state.photoFile=null;
     state.photoUrl='';
     photoInput.value='';
-    photoPreview.innerHTML='<div>'+icon('ficha-tecnica')+'<span>'+esc(isSupplyEditor?tr('Foto del insumo','Supply photo'):tr('Foto del producto','Product photo'))+'</span></div>';
+    photoPreview.innerHTML='<div>'+icon('ficha-tecnica')+'<span>'+esc(tr('Foto del producto','Product photo'))+'</span></div>';
     photoRemove.hidden=true
   };
+
+  if(isSupplyEditor){
+    supplyQuantity.addEventListener('input',()=>{state.defaultQuantity=String(supplyQuantity.value||'')});
+    supplyUnit.addEventListener('change',()=>{state.defaultUnit=String(supplyUnit.value||'')});
+    layer.querySelectorAll('[data-supply-mode]').forEach(btn=>btn.onclick=()=>setSupplyMode(btn.dataset.supplyMode));
+    supplyProcessTrigger.onclick=()=>{
+      const open=supplyProcessMenu.hidden;
+      supplyProcessMenu.hidden=!open;
+      supplyProcessTrigger.setAttribute('aria-expanded',open?'true':'false')
+    };
+    supplyProcessMenu.querySelector('[data-supply-process-choice="existing"]').onclick=()=>{
+      closeSupplyProcessMenu();
+      supplyProcessPicker.hidden=false;
+      renderSupplyProcessPicker('')
+    };
+    supplyProcessMenu.querySelector('[data-supply-process-choice="create"]').onclick=()=>{
+      closeSupplyProcessMenu();
+      supplyProcessPicker.hidden=true;
+      const id=sheetEditorId('supply-process');
+      state.supplyProcesses.push({
+        id,
+        source:'new',
+        processId:'',
+        name:'',
+        description:'',
+        imageFile:null,
+        imageUrl:''
+      });
+      renderSupplyProcessList();
+      queueMicrotask(()=>supplyProcessList.querySelector('[data-supply-process-id="'+CSS.escape(id)+'"] [data-supply-process-name]')?.focus())
+    };
+    renderSupplyPhotos();
+    renderSupplyProcessList();
+    setSupplyMode('CONSUMABLE')
+  }
 
   supplyTrigger.onclick=()=>toggleCompositionMenu('ingredient');
   preparationTrigger.onclick=()=>toggleCompositionMenu('preparation');
@@ -1071,6 +1323,7 @@ function sheetEditorTemplate(options={}){
   layer.querySelector('[data-sheet-editor-close]').onclick=()=>sheetEditorClose(state,'close-button');
   layer.addEventListener('mousedown',e=>{
     if(e.target===layer){sheetEditorClose(state,'backdrop');return}
+    if(isSupplyEditor&&!e.target.closest('[data-supply-process-action]'))closeSupplyProcessMenu();
     if(!e.target.closest('[data-composition-action]'))closeCompositionMenus();
     if(!mopPicker.hidden&&!e.target.closest('[data-mop-picker]')&&!e.target.closest('[data-mop-caret-plus]'))hideMopPicker();
     if(!unitPicker.hidden&&!e.target.closest('.nexoSheetUnitPicker')&&!e.target.closest('[data-component-unit-trigger]'))hideUnitPicker();

@@ -99,3 +99,24 @@ Se incorporan:
 `DMPreparations` queda como colección de compatibilidad para datos históricos.
 
 El contrato legible por máquina está en `nexo-core/fichas-domain-schema-v1.json`.
+
+
+## Borrador de creación de Insumo
+
+La ventana `Crear Insumo` debe representar desde el borrador la entidad `SUPPLY` completa, aunque la persistencia se conecte en una etapa interna posterior.
+
+Campos y comportamiento obligatorios:
+
+- nombre;
+- descripción breve;
+- hasta 3 fotografías del insumo;
+- una fotografía marcada como principal;
+- cantidad opcional;
+- unidad opcional;
+- `supplyMode`: `CONSUMABLE` o `PROCESSABLE`;
+- si es `PROCESSABLE`, una lista de relaciones con procesos reutilizables;
+- cada relación Insumo↔Proceso puede tener una imagen propia del resultado procesado.
+
+Los procesos existentes se toman del catálogo canónico `DMProcesses`. Un proceso nuevo puede existir como borrador local hasta que la persistencia de creación de procesos esté implementada; nunca debe escribirse en `DMPreparations`.
+
+Cambiar un insumo a `CONSUMABLE` oculta sus controles de procesos, pero no necesita destruir inmediatamente el borrador local de esos procesos mientras la ficha siga abierta.
