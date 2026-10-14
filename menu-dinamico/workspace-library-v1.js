@@ -275,6 +275,9 @@ function sheetEditorShell(options={}){
   const ariaLabel=options.ariaLabel||tr('Crear ficha técnica','Create technical sheet');
   const eyebrow=options.eyebrow||tr('Nueva ficha técnica','New technical sheet');
   const heading=options.heading||tr('Crear ficha','Create sheet');
+  const photoLabel=options.photoLabel||tr('Foto del producto','Product photo');
+  const titlePlaceholder=options.titlePlaceholder||tr('Nombre del producto o preparación','Product or preparation name');
+  const descriptionPlaceholder=options.descriptionPlaceholder||tr('Describe brevemente esta ficha.','Briefly describe this sheet.');
   el.innerHTML=
     '<div class="nexoSheetEditorFrame" role="dialog" aria-modal="true" aria-label="'+esc(ariaLabel)+'">'+
       '<header class="nexoSheetEditorHead">'+
@@ -284,11 +287,11 @@ function sheetEditorShell(options={}){
       '<main class="nexoSheetEditorCanvas">'+
         '<section class="nexoSheetEditorHero">'+
           '<div class="nexoSheetEditorPhoto" data-sheet-photo-preview>'+
-            '<div>'+icon('ficha-tecnica')+'<span>'+esc(tr('Foto del producto','Product photo'))+'</span></div>'+
+            '<div>'+icon('ficha-tecnica')+'<span>'+esc(photoLabel)+'</span></div>'+
           '</div>'+
           '<div class="nexoSheetEditorIdentity">'+
-            '<label><span>'+esc(tr('Nombre','Name'))+'</span><input data-sheet-title maxlength="160" autocomplete="off" placeholder="'+esc(tr('Nombre del producto o preparación','Product or preparation name'))+'"></label>'+
-            '<label><span>'+esc(tr('Descripción breve','Short description'))+'</span><textarea data-sheet-description maxlength="800" rows="3" placeholder="'+esc(tr('Describe brevemente esta ficha.','Briefly describe this sheet.'))+'"></textarea></label>'+
+            '<label><span>'+esc(tr('Nombre','Name'))+'</span><input data-sheet-title maxlength="160" autocomplete="off" placeholder="'+esc(titlePlaceholder)+'"></label>'+
+            '<label><span>'+esc(tr('Descripción breve','Short description'))+'</span><textarea data-sheet-description maxlength="800" rows="3" placeholder="'+esc(descriptionPlaceholder)+'"></textarea></label>'+
             '<div class="nexoSheetEditorPhotoActions">'+
               '<button type="button" class="nexoWorkspaceBtn" data-sheet-photo-choose>'+icon('nuevo')+'<span>'+esc(tr('Agregar foto','Add photo'))+'</span></button>'+
               '<button type="button" class="nexoWorkspaceBtn" data-sheet-photo-remove hidden>'+esc(tr('Quitar foto','Remove photo'))+'</button>'+
@@ -319,7 +322,7 @@ function sheetEditorShell(options={}){
           '<div class="nexoSheetIngredientPicker" data-sheet-existing-picker hidden></div>'+
           '<div class="nexoSheetIngredientList" data-sheet-ingredient-list></div>'+
         '</section>'+
-        '<section class="nexoSheetEditorSection">'+
+        '<section class="nexoSheetEditorSection" data-sheet-mop-section>'+
           '<div class="nexoSheetEditorSectionHead nexoMopSectionHead">'+
             '<div><span>'+esc(tr('Método','Method'))+'</span><h2>MOP</h2></div>'+
             '<div class="nexoMopHeadActions">'+
@@ -380,6 +383,8 @@ function sheetEditorTemplate(options={}){
 
   const title=layer.querySelector('[data-sheet-title]');
   const description=layer.querySelector('[data-sheet-description]');
+  const compositionSection=layer.querySelector('[data-sheet-ingredients-section]');
+  const mopSection=layer.querySelector('[data-sheet-mop-section]');
   const photoInput=layer.querySelector('[data-sheet-photo-input]');
   const photoChoose=layer.querySelector('[data-sheet-photo-choose]');
   const photoRemove=layer.querySelector('[data-sheet-photo-remove]');
@@ -408,6 +413,11 @@ function sheetEditorTemplate(options={}){
   unitPicker.hidden=true;
   layer.appendChild(unitPicker);
   const editorCanvas=layer.querySelector('.nexoSheetEditorCanvas');
+  const isSupplyEditor=state.kind==='supply';
+  if(isSupplyEditor){
+    compositionSection.hidden=true;
+    mopSection.hidden=true
+  }
 
   const componentById=id=>state.components.find(row=>row.id===id);
   const isPreparationComponent=row=>row?.source==='preparation'||row?.source==='new-preparation';
@@ -661,21 +671,28 @@ function sheetEditorTemplate(options={}){
     menu.hidden=!willOpen;
     trigger.setAttribute('aria-expanded',willOpen?'true':'false')
   }
-  function createLocalComponent(kind){
-    const preparation=kind==='preparation';
-    const id=sheetEditorId('component');
-    state.components.push({
-      id,
-      source:preparation?'new-preparation':'new',
-      targetIngredientId:'',
-      targetRecipeId:'',
-      name:'',
-      quantity:'',
-      unit:''
-    });
+  function openCreateChild(kind){
     closeCompositionMenus();
-    renderIngredientList();
-    queueMicrotask(()=>list.querySelector('[data-component-id="'+CSS.escape(id)+'"] [data-component-name]')?.focus())
+    existingPicker.hidden=true;
+    if(kind==='preparation'){
+      openNestedSheetEditor('preparation',{
+        ariaLabel:tr('Crear preparación','Create preparation'),
+        eyebrow:tr('Nueva preparación','New preparation'),
+        heading:tr('Crear preparación','Create preparation'),
+        photoLabel:tr('Foto de la preparación','Preparation photo'),
+        titlePlaceholder:tr('Nombre de la preparación','Preparation name'),
+        descriptionPlaceholder:tr('Describe brevemente esta preparación.','Briefly describe this preparation.')
+      });
+      return
+    }
+    openNestedSheetEditor('supply',{
+      ariaLabel:tr('Crear insumo','Create supply'),
+      eyebrow:tr('Nuevo insumo','New supply'),
+      heading:tr('Crear insumo','Create supply'),
+      photoLabel:tr('Foto del insumo','Supply photo'),
+      titlePlaceholder:tr('Nombre del insumo','Supply name'),
+      descriptionPlaceholder:tr('Describe brevemente este insumo.','Briefly describe this supply.')
+    })
   }
 
   function renderExistingPicker(kind='ingredient',query=''){
@@ -975,7 +992,7 @@ function sheetEditorTemplate(options={}){
     state.photoFile=null;
     state.photoUrl='';
     photoInput.value='';
-    photoPreview.innerHTML='<div>'+icon('ficha-tecnica')+'<span>'+esc(tr('Foto del producto','Product photo'))+'</span></div>';
+    photoPreview.innerHTML='<div>'+icon('ficha-tecnica')+'<span>'+esc(isSupplyEditor?tr('Foto del insumo','Supply photo'):tr('Foto del producto','Product photo'))+'</span></div>';
     photoRemove.hidden=true
   };
 
@@ -986,13 +1003,13 @@ function sheetEditorTemplate(options={}){
     existingPicker.hidden=false;
     renderExistingPicker('ingredient','')
   };
-  supplyMenu.querySelector('[data-composition-choice="create"]').onclick=()=>createLocalComponent('ingredient');
+  supplyMenu.querySelector('[data-composition-choice="create"]').onclick=()=>openCreateChild('supply');
   preparationMenu.querySelector('[data-composition-choice="existing"]').onclick=()=>{
     closeCompositionMenus();
     existingPicker.hidden=false;
     renderExistingPicker('preparation','')
   };
-  preparationMenu.querySelector('[data-composition-choice="create"]').onclick=()=>createLocalComponent('preparation');
+  preparationMenu.querySelector('[data-composition-choice="create"]').onclick=()=>openCreateChild('preparation');
 
   ['keyup','mouseup','input','focus'].forEach(type=>editor.addEventListener(type,rememberMopRange));
   editor.addEventListener('input',()=>{
