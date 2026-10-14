@@ -109,3 +109,22 @@ Las tarjetas del grupo **Insumos** muestran un indicador visual pequeño, sin te
 El significado debe exponerse mediante `title` y `aria-label`.
 
 La clasificación primaria viene de `DMIngredients.supplyMode` con valores `PROCESSABLE` o `CONSUMABLE`. Para compatibilidad con registros viejos sin ese campo, una relación activa en `supplyProcesses` o una transformación heredada en `DMPreparations` implica `PROCESSABLE`; en ausencia de ambas se considera `CONSUMABLE`.
+
+
+## Barra de herramientas interna
+
+La franja interna histórica de Fichas Técnicas deja de ser un segundo header y se convierte en una **barra de herramientas contextual**.
+
+Reglas:
+
+- Fondo fijo: `#2A3157`.
+- No muestra marca N, nombre Nexo Group, nombre de herramienta ni navegación global.
+- No muestra Mi espacio, Workspace, Fichas técnicas, Centro de desarrollo ni Volver al Workspace.
+- No contiene Idioma ni Apariencia; esas opciones pertenecen exclusivamente al header global.
+- Las herramientas permanecen visibles y ocupan posiciones estables.
+- Una herramienta no disponible para el contexto actual permanece visible, deshabilitada y visualmente atenuada.
+- Guía de colores y Calculadora están disponibles desde cualquier vista.
+- Temporizador y Sugerir cambio se habilitan únicamente dentro de una ficha de Producto final o Preparación.
+- Sugerir cambio además requiere contexto de Workspace.
+- Volver es navegación interna de Fichas y nunca debe sacar al usuario al Workspace desde la raíz.
+- Herramientas nuevas propias de Fichas Técnicas se incorporan a esta barra, no al header global.
