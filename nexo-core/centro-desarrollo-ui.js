@@ -250,8 +250,19 @@ function ensureThemeRuntime(){
 try{
   document.documentElement.style.background='transparent';
   document.body.style.background='transparent';
-  document.body.style.paddingTop='68px';
+  document.body.style.paddingTop='0';
 }catch(_){}
+
+function exposeWixGlobalHeader(){
+  ['SITE_HEADER','SITE_HEADER_WRAPPER'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.style.setProperty('position','relative','important');
+    el.style.setProperty('z-index','2147483647','important');
+    el.style.setProperty('visibility','visible','important');
+    el.style.setProperty('opacity','1','important');
+  })
+}
 
 function ensureStyle(){
   if(document.getElementById('nxo-dev-center-css'))return;
@@ -2552,6 +2563,7 @@ runtime.destroy=destroy;
 
 async function start(){
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
+  exposeWixGlobalHeader();
   ensureStyle();
   ensureDevelopmentTaxonomyStyle();
   await ensureThemeRuntime();
