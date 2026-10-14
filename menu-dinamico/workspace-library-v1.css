@@ -71,3 +71,9 @@
 .nexoCollectionGroupCard>span{display:inline-flex;padding:5px 9px;border:1px solid var(--groupStripe);border-radius:999px;color:var(--groupStripe);font-size:9px;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
 .nexoCollectionGroupCard h3{margin:13px 0 6px;font-size:24px;letter-spacing:-.025em}.nexoCollectionGroupCard p{margin:0;color:var(--nxo-text-muted);font-size:11px;line-height:1.45}
 @media(max-width:800px){.nexoCollectionGroups{grid-template-columns:1fr}.nexoCollectionGroupCard{min-height:175px}}
+
+.nexoWorkspaceSupply{position:relative}
+.nexoSupplyModeIndicator{position:absolute;top:10px;right:10px;z-index:3;width:28px;height:28px;border:1px solid var(--nxo-border-strong);border-radius:999px;background:var(--nxo-surface-raised);display:grid;place-items:center;box-shadow:0 4px 12px var(--nxo-shadow);pointer-events:auto}
+.nexoSupplyModeIndicator .nexoWorkspaceIcon{width:16px;height:16px}
+.nexoSupplyModeIndicator.processable{box-shadow:0 0 0 2px var(--nxo-accent-soft),0 4px 12px var(--nxo-shadow)}
+.nexoSupplyModeIndicator.consumable{opacity:.92}

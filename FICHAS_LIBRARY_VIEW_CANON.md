@@ -97,3 +97,15 @@ No mostrar al usuario las etiquetas heredadas **Plato/Platos** ni **Producto/Pro
 Los contenedores son vistas de agrupación: no crean copias de las fichas.
 
 Para **Recetario de Olhicory**, si la membresía histórica enumera únicamente `DMRecipes`, los Insumos del mismo Workspace también se muestran dentro del contenedor Insumos para conservar la estructura funcional del recetario histórico.
+
+
+## Indicador visual de Insumos
+
+Las tarjetas del grupo **Insumos** muestran un indicador visual pequeño, sin texto visible:
+
+- **Procesable** → icono de Preparaciones.
+- **Consumible** → icono de Completado.
+
+El significado debe exponerse mediante `title` y `aria-label`.
+
+La clasificación primaria viene de `DMIngredients.supplyMode` con valores `PROCESSABLE` o `CONSUMABLE`. Para compatibilidad con registros viejos sin ese campo, una relación activa en `supplyProcesses` o una transformación heredada en `DMPreparations` implica `PROCESSABLE`; en ausencia de ambas se considera `CONSUMABLE`.

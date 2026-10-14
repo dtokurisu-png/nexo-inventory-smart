@@ -189,15 +189,29 @@ function sheetCard(r){
     '<div class="thumb">'+(u?'<img src="'+esc(u)+'" alt="'+esc(title)+'">':'<span class="muted">'+esc(tr('Sin foto','No photo'))+'</span>')+'</div>'+
     '<div class="meta"><span class="tag '+(dish?'tagDish':'tagPrep')+'">'+esc(dish?tr('Producto final','Final product'):tr('Preparación','Preparation'))+'</span><h3>'+esc(title)+'</h3><span class="muted">'+esc(r.category||'')+'</span></div></button>';
 }
+function supplyModeFor(supply){
+  const explicit=String(supply?.supplyMode||'').toUpperCase();
+  if(explicit==='PROCESSABLE'||explicit==='CONSUMABLE')return explicit;
+  const id=String(supply?._id||'');
+  if((data().supplyProcesses||[]).some(row=>row&&row.active!==false&&String(row.supplyId||'')===id))return'PROCESSABLE';
+  if((data().preparations||[]).some(row=>row&&row.active!==false&&String(row.ingredientId||'')===id))return'PROCESSABLE';
+  return'CONSUMABLE'
+}
+function supplyModeIndicator(supply){
+  const processable=supplyModeFor(supply)==='PROCESSABLE';
+  const label=processable?tr('Procesable','Processable'):tr('Consumible','Consumable');
+  return '<span class="nexoSupplyModeIndicator '+(processable?'processable':'consumable')+'" title="'+esc(label)+'" aria-label="'+esc(label)+'">'+
+    icon(processable?'preparaciones':'completado')+
+  '</span>'
+}
 function supplyCard(supply){
   const photos=Array.isArray(supply?.images)?supply.images.filter(Boolean):[];
   const u=img(supply?.baseImage||photos[0]);
   const title=text(supply,'nameEn','nameEs')||'—';
-  const mode=String(supply?.supplyMode||'').toUpperCase();
-  const meta=mode==='PROCESSABLE'?tr('Procesable','Processable'):mode==='CONSUMABLE'?tr('Consumible','Consumable'):tr('Insumo base','Base supply');
   return '<button class="card recipeCard cardProduct nexoWorkspaceSupply" data-workspace-supply="'+esc(supply._id)+'">'+
+    supplyModeIndicator(supply)+
     '<div class="thumb">'+(u?'<img src="'+esc(u)+'" alt="'+esc(title)+'">':'<span class="muted">'+esc(tr('Sin foto','No photo'))+'</span>')+'</div>'+
-    '<div class="meta"><span class="tag tagProduct">'+esc(tr('Insumo','Supply'))+'</span><h3>'+esc(title)+'</h3><span class="muted">'+esc(meta)+'</span></div></button>';
+    '<div class="meta"><span class="tag tagProduct">'+esc(tr('Insumo','Supply'))+'</span><h3>'+esc(title)+'</h3></div></button>';
 }
 function bindTechnicalCards(scope){
   scope.querySelectorAll('[data-workspace-sheet]').forEach(card=>card.onclick=()=>window.NEXO_MENU_API?.openRecipe?.(card.dataset.workspaceSheet));
