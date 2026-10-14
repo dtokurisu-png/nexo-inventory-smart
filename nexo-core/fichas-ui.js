@@ -2,7 +2,7 @@
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
 const ACCESS_REVISION='fichas-workspace-context-20261007-40';
-const ENGINE_REVISION='contextual-toolstrip-load-20261014-84';
+const ENGINE_REVISION='proactive-engine-data-20261014-85';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261014-12';
@@ -15,6 +15,7 @@ let accessStage='WAITING_PAGE';
 let sessionToken='';
 let frame=null;
 let loadingData=false;
+let engineDataPromise=null;
 let importing=false;
 let importPreview=null;
 let importCode='';
@@ -686,18 +687,27 @@ function postToEngine(type,payload={}){
   try{frame?.contentWindow?.postMessage({type,payload},'*')}catch(_){}
 }
 async function pushEngineData(){
-  if(loadingData)return;
-  loadingData=true;
-  try{
-    const data=await api('engine.data',{workspaceId:requestedWorkspaceId});
-    engineDataCache=data||null;
-    postToEngine('DM_MENU_DATA',{ok:true,...data});
-  }catch(error){
-    postToEngine('DM_MENU_DATA',{ok:false,error:String(error?.message||error)});
-    throw error;
-  }finally{
-    loadingData=false;
+  if(engineDataCache){
+    postToEngine('DM_MENU_DATA',{ok:true,...engineDataCache});
+    return engineDataCache
   }
+  if(engineDataPromise)return engineDataPromise;
+  loadingData=true;
+  engineDataPromise=(async()=>{
+    try{
+      const data=await api('engine.data',{workspaceId:requestedWorkspaceId},60000);
+      engineDataCache=data||null;
+      postToEngine('DM_MENU_DATA',{ok:true,...data});
+      return data
+    }catch(error){
+      postToEngine('DM_MENU_DATA',{ok:false,error:String(error?.message||error)});
+      throw error
+    }finally{
+      loadingData=false;
+      engineDataPromise=null
+    }
+  })();
+  return engineDataPromise
 }
 function ensureImportHostStyles(){
   if(document.getElementById('nx-import-host-style'))return;
@@ -1120,6 +1130,11 @@ function mountEngine(){
   frame.addEventListener('load',()=>{
     postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,toolName:workspaceToolName,toolDescription:workspaceToolDescription,theme:workspaceTheme,language:workspaceLanguage});
     setTimeout(openRequestedSheet,180);
+    queueMicrotask(()=>pushEngineData().catch(showError));
+    setTimeout(()=>{
+      if(engineDataCache)postToEngine('DM_MENU_DATA',{ok:true,...engineDataCache});
+      else pushEngineData().catch(showError)
+    },1600);
   });
   root.appendChild(frame);
   window.addEventListener('message',handleEngineMessage);
