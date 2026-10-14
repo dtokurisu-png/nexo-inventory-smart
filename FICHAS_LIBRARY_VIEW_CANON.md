@@ -68,3 +68,15 @@ Las etapas internas de desarrollo nunca se muestran en esta biblioteca.
 La colección histórica `nexo-collection-332129eeaf581385111ce8e12011` es el contenedor principal del proyecto y su nombre visible es **Recetario de Olhicory**.
 
 Las asociaciones existentes viven en `NexoTechnicalSheetCollectionItems`. No inferir un conteo cero únicamente porque una receta antigua no tenga `collectionId`.
+
+
+### Compatibilidad de colecciones importadas
+
+Durante la migración puede ocurrir que el payload de `engine.data` todavía no entregue `NexoTechnicalSheetCollectionItems` ni el espejo `collectionId` aunque los vínculos sí existan en Wix.
+
+En ese caso, y **solo para colecciones importadas**, la biblioteca puede reconstruir temporalmente la pertenencia usando:
+
+1. `sourcePackageKey` idéntico entre colección y ficha; o
+2. `sourceKey` de la colección contenido en el `sourcePackageKey` de la ficha, limitado al mismo `workspaceId`.
+
+Esta inferencia no aplica a colecciones creadas manualmente y nunca sustituye la tabla canónica de vínculos.

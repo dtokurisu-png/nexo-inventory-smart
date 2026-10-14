@@ -41,6 +41,7 @@ function activeCollectionItems(){
   return (Array.isArray(rows)?rows:[]).filter(row=>row&&row.active!==false)
 }
 function collectionMembers(id){
+  const collection=collectionById(id);
   const links=activeCollectionItems().filter(row=>String(row.collectionId||'')===String(id));
   if(links.length){
     const recipeIds=new Set(links.filter(row=>String(row.sourceCollection||'DMRecipes')==='DMRecipes').map(row=>String(row.technicalSheetId||'')));
@@ -50,10 +51,35 @@ function collectionMembers(id){
       supplies:activeProducts().filter(row=>supplyIds.has(String(row._id)))
     }
   }
-  return {
-    recipes:activeRecipes().filter(row=>String(row.collectionId||'')===String(id)),
-    supplies:activeProducts().filter(row=>String(row.collectionId||'')===String(id))
+
+  const mirroredRecipes=activeRecipes().filter(row=>String(row.collectionId||'')===String(id));
+  const mirroredSupplies=activeProducts().filter(row=>String(row.collectionId||'')===String(id));
+  if(mirroredRecipes.length||mirroredSupplies.length){
+    return {recipes:mirroredRecipes,supplies:mirroredSupplies}
   }
+
+  if(collection){
+    const packageKey=String(collection.sourcePackageKey||'').trim();
+    const sourceKey=String(collection.sourceKey||'').trim().toLowerCase();
+    const workspaceId=String(collection.workspaceId||'').trim();
+    if(packageKey){
+      const recipes=activeRecipes().filter(row=>
+        String(row.sourcePackageKey||'').trim()===packageKey&&
+        (!workspaceId||!row.workspaceId||String(row.workspaceId)===workspaceId)
+      );
+      if(recipes.length)return {recipes,supplies:[]}
+    }
+    if(sourceKey){
+      const recipes=activeRecipes().filter(row=>{
+        const recipePackage=String(row.sourcePackageKey||'').trim().toLowerCase();
+        if(!recipePackage||!recipePackage.includes(sourceKey))return false;
+        return !workspaceId||!row.workspaceId||String(row.workspaceId)===workspaceId
+      });
+      if(recipes.length)return {recipes,supplies:[]}
+    }
+  }
+
+  return {recipes:[],supplies:[]}
 }
 function recipesForCollection(id){return collectionMembers(id).recipes}
 function suppliesForCollection(id){return collectionMembers(id).supplies}
