@@ -24,6 +24,35 @@ function capabilities(){return data().capabilities||{}}
 function context(){return data().context||{}}
 function canImport(){return context().type==='workspace'&&capabilities().canShare===true}
 function canCreate(){return capabilities().canEdit===true}
+function toolbar(){return window.NEXO_TOOLBAR_API||null}
+function libraryToolbarActions(root,extra={}){
+  const actions=[
+    {id:'collections',icon:'coleccion',label:tr('Colecciones','Collections'),active:activeTab==='collections',onClick:()=>{activeTab='collections';activeCollectionId='';activeCollectionGroup='';renderBody(root)}},
+    {id:'sheets',icon:'ficha-tecnica',label:tr('Fichas técnicas','Technical sheets'),active:activeTab==='sheets',onClick:()=>{activeTab='sheets';activeCollectionId='';activeCollectionGroup='';renderBody(root)}}
+  ];
+  if(activeTab==='collections'&&!activeCollectionId&&canCreate()){
+    actions.push({id:'new-collection',icon:'nuevo',label:tr('Nueva colección','New collection'),onClick:()=>openCollectionCreate(root)})
+  }
+  if((activeTab==='sheets'||activeCollectionId)&&canCreate()){
+    actions.push({id:'create-sheet',icon:'nuevo',label:tr('Crear ficha','Create sheet'),onClick:openCreateFlow})
+  }
+  if(canImport())actions.push({id:'import-sheets',icon:'sincronizar',label:tr('Importar fichas','Import sheets'),onClick:openImport});
+  if(extra.search){
+    actions.push({type:'search',label:tr('Buscar en grupo','Search in group'),placeholder:tr('Buscar en este grupo…','Search this group…'),value:extra.search.value||'',onInput:extra.search.onInput})
+  }
+  return actions
+}
+function syncLibraryToolbar(root,extra={}){
+  const api=toolbar();
+  if(!api)return;
+  let onBack=null;
+  if(activeCollectionGroup){
+    onBack=()=>{const collection=collectionById(activeCollectionId);activeCollectionGroup='';if(collection)renderCollectionDetail(root,collection);else renderCollections(root)}
+  }else if(activeCollectionId){
+    onBack=()=>{activeCollectionId='';activeCollectionGroup='';renderCollections(root)}
+  }
+  api.setContext({backEnabled:!!onBack,onBack,actions:libraryToolbarActions(root,extra)})
+}
 function activeRecipes(){return(data().recipes||[]).filter(x=>x&&x.active!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0))}
 function activeProducts(){return(data().ingredients||[]).filter(x=>x&&x.active!==false)}
 function activeProcesses(){return(data().processes||[]).filter(x=>x&&x.active!==false).sort((a,b)=>String(text(a,'nameEn','nameEs')||a?._id||'').localeCompare(String(text(b,'nameEn','nameEs')||b?._id||'')))}
@@ -226,7 +255,7 @@ function actionButtons(){
 }
 
 function emptyState(){
-  return '<div class="nexoWorkspaceEmpty"><div class="nexoWorkspaceEmptyIcon">'+icon('ficha-tecnica')+'</div><h2>'+esc(tr('Este Workspace todavía no tiene fichas técnicas','This Workspace has no technical sheets yet'))+'</h2><p>'+esc(tr('Puedes crear una ficha desde cero o importar un paquete preparado por Nexo Group.','Create a sheet from scratch or import a package prepared by Nexo Group.'))+'</p>'+actionButtons()+'</div>';
+  return '<div class="nexoWorkspaceEmpty"><div class="nexoWorkspaceEmptyIcon">'+icon('ficha-tecnica')+'</div><h2>'+esc(tr('Este Workspace todavía no tiene fichas técnicas','This Workspace has no technical sheets yet'))+'</h2><p>'+esc(tr('Puedes crear una ficha desde cero o importar un paquete preparado por Nexo Group.','Create a sheet from scratch or import a package prepared by Nexo Group.'))+'</p></div>';
 }
 
 function renderSheets(root){
@@ -237,7 +266,7 @@ function renderSheets(root){
   const total=recipes.length+supplies.length;
   if(!total){
     body.innerHTML=emptyState();
-    bindActions(body);
+    syncLibraryToolbar(root);
     return;
   }
   body.innerHTML='<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-nexo-sheet-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar plato, preparación o insumo…','Search dish, preparation, or supply…'))+'"></label><span data-nexo-search-count class="muted" style="font-size:11px"></span></div><div class="grid" data-nexo-sheet-grid>'+recipes.map(sheetCard).join('')+supplies.map(supplyCard).join('')+'</div>';
@@ -267,6 +296,7 @@ function renderSheets(root){
     ['input','keyup','change','search','compositionend'].forEach(type=>search.addEventListener(type,applySearch));
     search.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applySearch();search.blur()}});
   }
+  syncLibraryToolbar(root)
 }
 
 function collectionGroupsFor(collection){
@@ -315,20 +345,14 @@ function renderCollectionGroup(root,collection,group){
   const meta=collectionGroupMeta(group);
   body.innerHTML=
     '<div class="nexoCollectionDetailHead">'+
-      '<button type="button" class="nexoWorkspaceBtn nexoCollectionBack" data-collection-group-back>← '+esc(collectionName(collection))+'</button>'+
-      '<div><span>'+esc(tr('Colección','Collection'))+'</span><h2>'+esc(meta.title)+'</h2><p>'+esc(meta.description)+'</p></div>'+
-      (canCreate()?'<button type="button" class="nexoWorkspaceBtn" data-nexo-create>'+icon('nuevo')+'<span>'+esc(tr('Crear ficha','Create sheet'))+'</span></button>':'')+
+      '<div><span>'+esc(collectionName(collection))+'</span><h2>'+esc(meta.title)+'</h2><p>'+esc(meta.description)+'</p></div>'+
     '</div>'+
     (rows.length
-      ? '<div class="nexoWorkspaceSheetTools"><label class="nexoWorkspaceSearch">'+icon('busqueda')+'<input class="search" data-collection-group-search inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="'+esc(tr('Buscar en este grupo…','Search this group…'))+'"></label><span data-collection-group-count class="muted" style="font-size:11px"></span></div><div class="grid" data-collection-group-grid>'+(group==='supply'?rows.map(supplyCard).join(''):rows.map(sheetCard).join(''))+'</div>'
+      ? '<div class="grid" data-collection-group-grid>'+(group==='supply'?rows.map(supplyCard).join(''):rows.map(sheetCard).join(''))+'</div>'
       : '<div class="nexoCollectionEmpty">'+icon(meta.icon)+'<strong>'+esc(tr('No hay elementos en este grupo','No items in this group'))+'</strong><span>'+esc(meta.description)+'</span></div>');
-  body.querySelector('[data-collection-group-back]').onclick=()=>{activeCollectionGroup='';renderCollectionDetail(root,collection)};
   bindTechnicalCards(body);
-  bindActions(body);
-  const search=body.querySelector('[data-collection-group-search]');
-  const count=body.querySelector('[data-collection-group-count]');
-  if(search)search.addEventListener('input',()=>{
-    const q=String(search.value||'');
+  const applyGroupSearch=q=>{
+    q=String(q||'');
     let visible=0;
     if(group==='supply'){
       body.querySelectorAll('[data-workspace-supply]').forEach(card=>{
@@ -347,8 +371,8 @@ function renderCollectionGroup(root,collection,group){
         if(show)visible++
       })
     }
-    if(count)count.textContent=q.trim()?visible+' / '+rows.length:''
-  })
+  };
+  syncLibraryToolbar(root,{search:{onInput:applyGroupSearch}})
 }
 
 function collectionCard(row){
@@ -433,20 +457,18 @@ function renderCollectionDetail(root,collection){
   const total=groups.final.length+groups.preparation.length+groups.supply.length;
   body.innerHTML=
     '<div class="nexoCollectionDetailHead">'+
-      '<button type="button" class="nexoWorkspaceBtn nexoCollectionBack" data-collection-back>← '+esc(tr('Colecciones','Collections'))+'</button>'+
       '<div><span>'+esc(tr('Colección','Collection'))+'</span><h2>'+esc(collectionName(collection))+'</h2><p>'+esc(collectionDescription(collection)||tr('Colección de fichas técnicas.','Technical sheet collection.'))+'</p></div>'+
-      (canCreate()?'<button type="button" class="nexoWorkspaceBtn" data-nexo-create>'+icon('nuevo')+'<span>'+esc(tr('Crear ficha','Create sheet'))+'</span></button>':'')+
     '</div>'+
     (total
       ? '<div class="nexoCollectionGroups">'+collectionGroupCard('final',groups.final)+collectionGroupCard('preparation',groups.preparation)+collectionGroupCard('supply',groups.supply)+'</div>'
       : '<div class="nexoCollectionEmpty">'+icon('ficha-tecnica')+'<strong>'+esc(tr('Esta colección todavía no tiene fichas','This collection has no sheets yet'))+'</strong><span>'+esc(tr('Crea una ficha para comenzar a organizar esta colección.','Create a sheet to start organizing this collection.'))+'</span></div>');
-  body.querySelector('[data-collection-back]').onclick=()=>{activeCollectionId='';activeCollectionGroup='';renderCollections(root)};
+  syncLibraryToolbar(root);
   body.querySelectorAll('[data-collection-group]').forEach(card=>card.onclick=()=>{
     activeCollectionGroup=String(card.dataset.collectionGroup||'');
     renderCollectionDetail(root,collection)
   });
-  bindActions(body)
 }
+
 
 function renderCollections(root){
   const body=root.querySelector('[data-nexo-workspace-body]');
@@ -458,22 +480,19 @@ function renderCollections(root){
     activeCollectionId=''
   }
   body.innerHTML=
-    '<div class="nexoCollectionsToolbar"><div><span>'+esc(tr('Biblioteca','Library'))+'</span><h2>'+esc(tr('Colecciones','Collections'))+'</h2><p>'+esc(tr('Agrupa fichas técnicas sin duplicarlas.','Group technical sheets without duplicating them.'))+'</p></div>'+
-      (canCreate()?'<button type="button" class="nexoWorkspaceBtn primary" data-create-collection>'+icon('nuevo')+'<span>'+esc(tr('Nueva colección','New collection'))+'</span></button>':'')+
-    '</div>'+
+    '<div class="nexoCollectionsToolbar"><div><span>'+esc(tr('Biblioteca','Library'))+'</span><h2>'+esc(tr('Colecciones','Collections'))+'</h2><p>'+esc(tr('Agrupa fichas técnicas sin duplicarlas.','Group technical sheets without duplicating them.'))+'</p></div></div>'+
     (rows.length
       ? '<div class="nexoCollectionsGrid">'+rows.map(collectionCard).join('')+'</div>'
       : '<div class="nexoCollectionEmpty">'+icon('coleccion')+'<strong>'+esc(tr('Todavía no hay colecciones','No collections yet'))+'</strong><span>'+esc(tr('Crea una colección para organizar las fichas de este Workspace.','Create a collection to organize this Workspace\'s sheets.'))+'</span></div>');
-  body.querySelector('[data-create-collection]')?.addEventListener('click',()=>openCollectionCreate(root));
   body.querySelectorAll('[data-nexo-collection]').forEach(card=>card.onclick=()=>{
     activeCollectionId=String(card.dataset.nexoCollection||'');
     activeCollectionGroup='';
     renderCollections(root)
-  })
+  });
+  syncLibraryToolbar(root)
 }
 
 function renderBody(root){
-  root.querySelectorAll('[data-nexo-tab]').forEach(btn=>btn.classList.toggle('active',btn.dataset.nexoTab===activeTab));
   if(activeTab==='sheets')renderSheets(root);else renderCollections(root);
 }
 
@@ -493,19 +512,13 @@ function enhanceRoot(){
 
   const header=document.createElement('div');
   header.className='nexoWorkspaceLibraryHead';
-  header.innerHTML='<div><div class="nexoWorkspaceEyebrow">'+esc(context().workspaceName||tr('Mi espacio','My space'))+'</div><h1>'+esc(tr('Fichas Técnicas Dinámicas','Dynamic Technical Sheets'))+'</h1><p>'+esc(tr('Trabaja con el motor completo de platos, preparaciones y productos.','Use the full dishes, preparations and products engine.'))+'</p></div>'+actionButtons();
-
-  const nav=document.createElement('div');
-  nav.className='nexoWorkspaceTabs';
-  nav.innerHTML='<button type="button" data-nexo-tab="collections">'+icon('coleccion')+'<span>'+esc(tr('Colecciones','Collections'))+'</span></button><button type="button" data-nexo-tab="sheets">'+icon('ficha-tecnica')+'<span>'+esc(tr('Fichas técnicas','Technical sheets'))+'</span></button>';
+  header.innerHTML='<div><div class="nexoWorkspaceEyebrow">'+esc(context().workspaceName||tr('Mi espacio','My space'))+'</div><h1>'+esc(tr('Fichas Técnicas Dinámicas','Dynamic Technical Sheets'))+'</h1><p>'+esc(tr('Trabaja con el motor completo de platos, preparaciones y productos.','Use the full dishes, preparations and products engine.'))+'</p></div>';
 
   const body=document.createElement('div');
   body.className='nexoWorkspaceLibraryBody';
   body.dataset.nexoWorkspaceBody='1';
 
-  root.prepend(header,nav,body);
-  root.querySelectorAll('[data-nexo-tab]').forEach(btn=>btn.onclick=()=>{activeTab=btn.dataset.nexoTab;if(activeTab!=='collections'){activeCollectionId='';activeCollectionGroup=''}renderBody(root)});
-  bindActions(header);
+  root.prepend(header,body);
   renderBody(root);
 }
 
