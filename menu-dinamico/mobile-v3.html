@@ -223,10 +223,10 @@ window.NEXO_TOOLBAR_API=Object.freeze({
 function syncToolstrip(){
   const recipe=currentRecipe();
   const insideTechnicalSheet=!!recipe;
-  setToolState(back,!!S.modal||S.route.length>0,false);
+  setToolState(back,!!S.modal||S.route.length>0||!!contextualBackHandler,false);
   setToolState(legendBtn,true,S.modal?.kind==='legend');
   setToolState(calcBtn,true,S.modal?.kind==='calculator');
-  setToolState(timerBtn,insideTechnicalSheet,S.modal?.kind==='timers');
+  setToolState(timerBtn,true,S.modal?.kind==='timers');
   setToolState(commentBtn,insideTechnicalSheet&&S.workspaceMode,S.modal?.kind==='comment')
 }
 function setTheme(v,notify=true){
