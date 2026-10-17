@@ -2,7 +2,7 @@
 if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
 
 const ACCESS_REVISION='fichas-workspace-context-20261007-40';
-const ENGINE_REVISION='canonical-library-boot-20261017-93';
+const ENGINE_REVISION='canonical-library-boot-20261017-94';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
 const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261014-12';
@@ -971,6 +971,80 @@ async function savePhotoFromEngine(payload={}){
   return image;
 }
 
+async function uploadCreatedSheetPhoto(file,target,photoIntent='replace',photoIndex=0){
+  if(!file||typeof file.arrayBuffer!=='function')return null;
+  const entityType=String(target?.entityType||'');
+  const entityId=String(target?.entityId||'');
+  if(!entityType||!entityId)throw new Error('CREATED_MEDIA_TARGET_MISSING');
+  const fileName=String(file.name||'foto.jpg');
+  const mimeType=String(file.type||'image/jpeg');
+  const sizeInBytes=Number(file.size||0);
+  const ticket=await api('photo.upload-url',{
+    input:{entityType,entityId,fileName,mimeType,sizeInBytes,photoIntent,photoIndex}
+  });
+  const uploadUrl=String(ticket?.uploadUrl||'');
+  if(!uploadUrl)throw new Error('PHOTO_UPLOAD_URL_MISSING');
+  const response=await fetch(uploadUrl,{method:'PUT',headers:{'Content-Type':mimeType},body:file});
+  let body={};
+  try{body=await response.json()}catch(_){}
+  if(!response.ok)throw new Error(String(body?.message||body?.error||('PHOTO_UPLOAD_HTTP_'+response.status)));
+  const fileId=String(body?.file?.id||body?.file?._id||body?.id||body?._id||'');
+  if(!fileId)throw new Error('PHOTO_UPLOAD_FILE_ID_MISSING');
+  return api('photo.commit',{
+    input:{
+      entityType:ticket?.entityType||entityType,
+      entityId:ticket?.entityId||entityId,
+      fileId,
+      photoIntent:ticket?.photoIntent||photoIntent,
+      photoIndex:Number(ticket?.photoIndex??photoIndex)
+    }
+  })
+}
+
+function collectCreatedSheetMedia(draft,createdByLocal,out=[]){
+  if(!draft||typeof draft!=='object')return out;
+  const ownTarget=createdByLocal.get(String(draft.id||''));
+  if(draft.kind==='supply'){
+    const photos=Array.isArray(draft.supplyPhotos)?draft.supplyPhotos.filter(row=>row?.file):[];
+    photos.sort((a,b)=>Number(Boolean(b.primary))-Number(Boolean(a.primary)));
+    photos.forEach((photo,index)=>{
+      if(ownTarget)out.push({file:photo.file,target:ownTarget,intent:index===0?'replace':'add',index:index===0?0:index})
+    });
+    for(const relation of Array.isArray(draft.supplyProcesses)?draft.supplyProcesses:[]){
+      const target=createdByLocal.get(String(relation?.id||''));
+      if(target&&relation?.imageFile)out.push({file:relation.imageFile,target,intent:'replace',index:0})
+    }
+  }else if(ownTarget&&draft.photoFile){
+    out.push({file:draft.photoFile,target:ownTarget,intent:'replace',index:0})
+  }
+  for(const component of Array.isArray(draft.components)?draft.components:[]){
+    if(component?.childDraft)collectCreatedSheetMedia(component.childDraft,createdByLocal,out)
+  }
+  return out
+}
+
+async function createTechnicalSheetFromEngine(payload={}){
+  const requestId=String(payload.requestId||'');
+  const draft=payload.draft&&typeof payload.draft==='object'?payload.draft:null;
+  if(!draft)throw new Error('SHEET_CREATE_DRAFT_MISSING');
+  const result=await api('sheet.create',{input:{draft}},180000);
+  const created=Array.isArray(result?.created)?result.created:[];
+  const createdByLocal=new Map(created.map(row=>[String(row?.localId||''),row]));
+  const media=collectCreatedSheetMedia(draft,createdByLocal,[]);
+  for(let index=0;index<media.length;index+=1){
+    const item=media[index];
+    await uploadCreatedSheetPhoto(item.file,item.target,item.intent,item.index)
+  }
+  await pushEngineData();
+  postToEngine('NEXO_DM_CREATE_TECHNICAL_SHEET_RESULT',{
+    ok:true,
+    requestId,
+    result,
+    mediaCount:media.length
+  });
+  return result
+}
+
 async function deletePhotoFromEngine(payload={}){
   const requestId=String(payload.requestId||'');
   const entityType=String(payload.entityType||'ingredient');
@@ -1050,6 +1124,16 @@ function handleEngineMessage(event){
         ok:false,
         requestId,
         error:String(error?.message||error||'COLLECTION_CREATE_FAILED')
+      });
+    });
+    return;
+  }
+  if(message.type==='NEXO_DM_CREATE_TECHNICAL_SHEET'){
+    createTechnicalSheetFromEngine(payload).catch(error=>{
+      postToEngine('NEXO_DM_CREATE_TECHNICAL_SHEET_RESULT',{
+        ok:false,
+        requestId:payload.requestId,
+        error:String(error?.message||error||'SHEET_CREATE_FAILED')
       });
     });
     return;
