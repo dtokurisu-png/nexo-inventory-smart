@@ -100,7 +100,7 @@ function collectionDescription(row){return String(row?.description||'')}
 function workspaceTrailMarkup(parts=[]){
   const items=[String(context().workspaceName||tr('Mi espacio','My space')),...parts.filter(Boolean).map(String)];
   return items.map((label,index)=>
-    (index?'<span class="nexoWorkspaceTrailSep" aria-hidden="true">›</span>':'')+
+    (index?'<span class="nexoWorkspaceTrailSep'+(index===items.length-1?' current':'')+'" aria-hidden="true"></span>':'')+
     '<span class="nexoWorkspaceTrailItem">'+esc(label)+'</span>'
   ).join('')
 }
