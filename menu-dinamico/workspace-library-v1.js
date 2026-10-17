@@ -10,6 +10,7 @@ let activeTab='collections';
 let activeCollectionId='';
 let activeCollectionGroup='';
 const pendingCollectionRequests=new Map();
+const pendingSheetCreateRequests=new Map();
 
 const data=()=>window.__NEXO_DM_DATA__||{recipes:[],ingredients:[],collections:[],collectionItems:[],context:{},capabilities:{}};
 const lang=()=>document.documentElement.lang==='en'?'en':'es';
@@ -765,9 +766,27 @@ function sheetEditorShell(options={}){
           '</div>'+
         '</section>'+
       '</main>'+
+      '<footer class="nexoSheetEditorFooter">'+
+        '<div class="nexoSheetEditorSaveState" data-sheet-editor-status aria-live="polite"></div>'+
+        '<div class="nexoSheetEditorFooterActions">'+
+          '<button type="button" class="nexoWorkspaceBtn" data-sheet-editor-cancel>'+esc(tr('Cancelar','Cancel'))+'</button>'+
+          '<button type="button" class="nexoWorkspaceBtn primary" data-sheet-editor-create>'+esc(String(options.createLabel||tr('Crear ficha','Create sheet')))+'</button>'+
+        '</div>'+
+      '</footer>'+
     '</div>';
   document.body.appendChild(el);
   return el
+}
+function requestTechnicalSheetCreate(draft){
+  const requestId='sheet_create_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  return new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{
+      pendingSheetCreateRequests.delete(requestId);
+      reject(new Error(tr('La creación de la ficha tardó demasiado.','Sheet creation timed out.')))
+    },180000);
+    pendingSheetCreateRequests.set(requestId,{resolve,reject,timer});
+    parent.postMessage({type:'NEXO_DM_CREATE_TECHNICAL_SHEET',payload:{requestId,draft}},'*')
+  })
 }
 function sheetEditorTemplate(options={}){
   const parentState=options.parentState||null;
@@ -1268,22 +1287,45 @@ function sheetEditorTemplate(options={}){
     existingPicker.hidden=true;
     if(kind==='preparation'){
       openNestedSheetEditor('preparation',{
+        sheetType:'preparation',
+        recipeType:'PREPARATION',
+        sourceCollection:'DMRecipes',
+        collectionId:state.collectionId,
+        createLabel:tr('Crear preparación','Create preparation'),
         ariaLabel:tr('Crear preparación','Create preparation'),
         eyebrow:tr('Nueva preparación','New preparation'),
         heading:tr('Crear preparación','Create preparation'),
         photoLabel:tr('Foto de la preparación','Preparation photo'),
         titlePlaceholder:tr('Nombre de la preparación','Preparation name'),
-        descriptionPlaceholder:tr('Describe brevemente esta preparación.','Briefly describe this preparation.')
+        descriptionPlaceholder:tr('Describe brevemente esta preparación.','Briefly describe this preparation.'),
+        onComplete:child=>{
+          state.components.push({
+            id:sheetEditorId('component'),source:'new-preparation',targetIngredientId:'',targetRecipeId:'',
+            name:String(child?.title||tr('Preparación','Preparation')),quantity:'',unit:'',childDraft:child
+          });
+          renderIngredientList()
+        }
       });
       return
     }
     openNestedSheetEditor('supply',{
+      sheetType:'supply',
+      sourceCollection:'DMIngredients',
+      collectionId:state.collectionId,
+      createLabel:tr('Crear insumo','Create supply'),
       ariaLabel:tr('Crear insumo','Create supply'),
       eyebrow:tr('Nuevo insumo','New supply'),
       heading:tr('Crear insumo','Create supply'),
       photoLabel:tr('Foto del insumo','Supply photo'),
       titlePlaceholder:tr('Nombre del insumo','Supply name'),
-      descriptionPlaceholder:tr('Describe brevemente este insumo.','Briefly describe this supply.')
+      descriptionPlaceholder:tr('Describe brevemente este insumo.','Briefly describe this supply.'),
+      onComplete:child=>{
+        state.components.push({
+          id:sheetEditorId('component'),source:'new',targetIngredientId:'',targetRecipeId:'',
+          name:String(child?.title||tr('Insumo','Supply')),quantity:'',unit:'',childDraft:child
+        });
+        renderIngredientList()
+      }
     })
   }
 
@@ -1710,6 +1752,78 @@ function sheetEditorTemplate(options={}){
   document.addEventListener('keydown',onEditorKeydown);
   state.cleanups.push(()=>document.removeEventListener('keydown',onEditorKeydown));
 
+  function editorPlainText(html){
+    const box=document.createElement('div');
+    box.innerHTML=String(html||'');
+    return String(box.textContent||'').replace(/\u200b/g,'').replace(/[ \t]+\n/g,'\n').trim()
+  }
+  function serializeEditorState(){
+    syncStepHtmlFromDom();
+    const pendingDraft=String(editor.innerHTML||'').trim();
+    const steps=state.steps.map(step=>({id:step.id,html:step.html,text:editorPlainText(step.html)}));
+    if(pendingDraft&&editorPlainText(pendingDraft))steps.push({id:sheetEditorId('mop-pending'),html:pendingDraft,text:editorPlainText(pendingDraft)});
+    return {
+      id:state.id,
+      kind:state.kind,
+      sheetType:state.sheetType,
+      recipeType:state.recipeType,
+      sourceCollection:state.sourceCollection,
+      collectionId:state.collectionId,
+      collectionGroup:state.collectionGroup,
+      title:String(state.title||'').trim(),
+      description:String(state.description||'').trim(),
+      photoFile:state.photoFile||null,
+      supplyPhotos:(state.supplyPhotos||[]).map(photo=>({id:photo.id,file:photo.file||null,primary:photo.id===state.primaryPhotoId})),
+      defaultQuantity:String(state.defaultQuantity||'').trim(),
+      defaultUnit:String(state.defaultUnit||'').trim(),
+      supplyMode:state.supplyMode,
+      supplyProcesses:(state.supplyProcesses||[]).map(row=>({
+        id:row.id,source:row.source,processId:row.processId||'',name:String(row.name||'').trim(),
+        description:String(row.description||'').trim(),imageFile:row.imageFile||null
+      })),
+      components:(state.components||[]).map(row=>({
+        id:row.id,source:row.source,targetIngredientId:row.targetIngredientId||'',targetRecipeId:row.targetRecipeId||'',
+        name:String(row.name||'').trim(),quantity:String(row.quantity||'').trim(),unit:String(row.unit||'').trim(),
+        childDraft:row.childDraft||null
+      })),
+      steps
+    }
+  }
+  const cancelButton=layer.querySelector('[data-sheet-editor-cancel]');
+  const createButton=layer.querySelector('[data-sheet-editor-create]');
+  const createStatus=layer.querySelector('[data-sheet-editor-status]');
+  cancelButton.onclick=()=>sheetEditorClose(state,'cancel-button');
+  createButton.onclick=async()=>{
+    if(activeSheetEditor!==state||createButton.disabled)return;
+    const draft=serializeEditorState();
+    if(!draft.title){
+      createStatus.textContent=tr('Escribe el nombre antes de crear la ficha.','Enter a name before creating the sheet.');
+      title.focus();
+      return
+    }
+    if(isSupplyEditor&&draft.supplyMode==='PROCESSABLE'&&!draft.supplyProcesses.length){
+      createStatus.textContent=tr('Un insumo procesable necesita al menos un proceso.','A processable supply needs at least one process.');
+      return
+    }
+    if(state.parentId){
+      sheetEditorComplete(state,draft);
+      return
+    }
+    createButton.disabled=true;
+    cancelButton.disabled=true;
+    createStatus.textContent=tr('Creando ficha…','Creating sheet…');
+    try{
+      const result=await requestTechnicalSheetCreate(draft);
+      createStatus.textContent=tr('Ficha creada correctamente.','Sheet created successfully.');
+      sheetEditorClose(state,'created');
+      if(result?.data)window.__NEXO_DM_DATA__=result.data;
+      parent.postMessage({type:'DM_LOAD_MENU_DATA',payload:{requestId:'refresh_'+Date.now()}},'*')
+    }catch(error){
+      createStatus.textContent=String(error?.message||error||tr('No se pudo crear la ficha.','Could not create the sheet.'));
+      createButton.disabled=false;
+      cancelButton.disabled=false
+    }
+  };
   layer.querySelector('[data-sheet-editor-close]').onclick=()=>sheetEditorClose(state,'close-button');
   layer.addEventListener('mousedown',e=>{
     if(e.target===layer){sheetEditorClose(state,'backdrop');return}
@@ -1751,6 +1865,7 @@ function openSheetEditorForType(type){
       sourceCollection:'DMRecipes',
       collectionId:ctx.collectionId,
       collectionGroup:ctx.collectionGroup,
+      createLabel:tr('Crear producto final','Create final product'),
       ariaLabel:tr('Crear producto final','Create final product'),
       eyebrow:tr('Producto final','Final product'),
       heading:tr('Crear ficha técnica','Create technical sheet'),
@@ -1766,6 +1881,7 @@ function openSheetEditorForType(type){
       sourceCollection:'DMRecipes',
       collectionId:ctx.collectionId,
       collectionGroup:ctx.collectionGroup,
+      createLabel:tr('Crear preparación','Create preparation'),
       ariaLabel:tr('Crear preparación','Create preparation'),
       eyebrow:tr('Preparación','Preparation'),
       heading:tr('Crear ficha técnica','Create technical sheet'),
@@ -1781,6 +1897,7 @@ function openSheetEditorForType(type){
       sourceCollection:'DMIngredients',
       collectionId:ctx.collectionId,
       collectionGroup:ctx.collectionGroup,
+      createLabel:tr('Crear insumo','Create supply'),
       ariaLabel:tr('Crear insumo','Create supply'),
       eyebrow:tr('Insumo','Supply'),
       heading:tr('Crear ficha técnica','Create technical sheet'),
@@ -1859,6 +1976,16 @@ window.addEventListener('message',e=>{
     pendingCollectionRequests.delete(requestId);
     if(m.type==='NEXO_DM_COLLECTION_CREATED'&&p.ok!==false)wait.resolve(p);
     else wait.reject(new Error(String(p.error||tr('No se pudo crear la colección.','Could not create collection.'))));
+    return
+  }
+  if(m?.type==='NEXO_DM_CREATE_TECHNICAL_SHEET_RESULT'){
+    const requestId=String(p.requestId||'');
+    const wait=pendingSheetCreateRequests.get(requestId);
+    if(!wait)return;
+    clearTimeout(wait.timer);
+    pendingSheetCreateRequests.delete(requestId);
+    if(p.ok!==false)wait.resolve(p);
+    else wait.reject(new Error(String(p.error||tr('No se pudo crear la ficha.','Could not create the sheet.'))));
     return
   }
   if(m?.type==='MENU_DATA_LOADED')setTimeout(enhanceRoot,0);
