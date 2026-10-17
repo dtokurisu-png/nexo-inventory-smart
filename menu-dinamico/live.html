@@ -36,7 +36,7 @@ async function installFeatures(d){
   addCss(doc,'nexo-workflow-style','./recipe-workflow-v1.css?v=20261006-clear-progress-3');
   if(nexoMode){
     addCss(doc,'nexo-workspace-library-style','./workspace-library-v1.css?v=20261017-sheet-type-27');
-    await addJs(doc,'nexo-workspace-library','./workspace-library-v1.js?v=20261017-context-toolbar-43');
+    await addJs(doc,'nexo-workspace-library','./workspace-library-v1.js?v=20261017-context-toolbar-44');
   }
   await addJs(doc,'nexo-taxonomy-core-v3','./taxonomy-core-v3.js?v=20261014-taxonomy-home-guard-9');
   // El evento se envía después de instalar ambos listeners: una sola ruta de arranque.
@@ -48,7 +48,7 @@ async function installFeatures(d){
   const auxiliary=[
     ['nexo-photo-system-v1','./photo-system-v1.js?v=20261009-photo-stability-delete-5'],
     ['nexo-unit-semantics','./unit-semantics-v1.js?v=20261001-theme-unified-1'],
-    ['nexo-workflow','./recipe-workflow-v1.js?v=20261017-context-toolbar-8'],
+    ['nexo-workflow','./recipe-workflow-v1.js?v=20261017-context-toolbar-9'],
     ['nexo-navigation','./navigation-client-v1.js?v=20260924-3'],
     ['nexo-paragraph-reader','./paragraph-reader-v1.js?v=20261009-reader-noselect-3']
   ];
