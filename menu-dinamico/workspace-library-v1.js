@@ -483,7 +483,6 @@ function renderCollections(root){
     activeCollectionId=''
   }
   body.innerHTML=
-    '<div class="nexoCollectionsToolbar"><div><span>'+esc(tr('Biblioteca','Library'))+'</span><h2>'+esc(tr('Colecciones','Collections'))+'</h2><p>'+esc(tr('Agrupa fichas técnicas sin duplicarlas.','Group technical sheets without duplicating them.'))+'</p></div></div>'+
     (rows.length
       ? '<div class="nexoCollectionsGrid">'+rows.map(collectionCard).join('')+'</div>'
       : '<div class="nexoCollectionEmpty">'+icon('coleccion')+'<strong>'+esc(tr('Todavía no hay colecciones','No collections yet'))+'</strong><span>'+esc(tr('Crea una colección para organizar las fichas de este Workspace.','Create a collection to organize this Workspace\'s sheets.'))+'</span></div>');
@@ -514,8 +513,8 @@ function enhanceRoot(){
   if(intro)intro.remove();
 
   const header=document.createElement('div');
-  header.className='nexoWorkspaceLibraryHead';
-  header.innerHTML='<div><div class="nexoWorkspaceEyebrow">'+esc(context().workspaceName||tr('Mi espacio','My space'))+'</div><h1>'+esc(tr('Fichas Técnicas Dinámicas','Dynamic Technical Sheets'))+'</h1><p>'+esc(tr('Trabaja con el motor completo de platos, preparaciones y productos.','Use the full dishes, preparations and products engine.'))+'</p></div>';
+  header.className='nexoWorkspaceLibraryHead nexoWorkspaceLibraryHeadCompact';
+  header.innerHTML='<div class="nexoWorkspaceEyebrow">'+esc(context().workspaceName||tr('Mi espacio','My space'))+'</div>';
 
   const body=document.createElement('div');
   body.className='nexoWorkspaceLibraryBody';
