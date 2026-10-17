@@ -95,7 +95,7 @@ function mount(){
     productNavigation:[
       {key:'base',label:'Fuentes'},
       {key:'canon',label:'Canon'},
-      {key:'agents',label:'Agentes',disabled:true}
+      {key:'agents',label:'Agentes'}
     ],
     productActive:activeSurface,
     contextControls:[
@@ -108,7 +108,7 @@ function mount(){
     profile:{displayName:'Mi Espacio',email:'',locale:language,photoImage:null},
     roleLabel:'Nexo Group',
     onHome:()=>{requestSurface('canvas');return false},
-    onProductNav:key=>{if(key==='base'||key==='canon')requestSurface(key);return false},
+    onProductNav:key=>{if(['base','canon','agents'].includes(key))requestSurface(key);return false},
     onContextAction:(key,value)=>{if(key==='profile')saveProfile(value).catch(e=>alert('No se pudo cambiar el perfil: '+e.message));return false},
     onPersonal:()=>{location.assign((freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'')+'/blank-8');return false},
     onDevelopment:()=>{location.assign((freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'')||'/');return false},
