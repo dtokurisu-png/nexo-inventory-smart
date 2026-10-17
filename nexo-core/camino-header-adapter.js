@@ -14,6 +14,10 @@ const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/';
 const PROFILE_LABELS={WRITER:'Editorial',TEACHER:'Académico',CREATOR:'Desarrollo de contenido'};
 const PROFILE_TYPES=['WRITER','TEACHER','CREATOR'];
+const NEXO_UI_SESSION_BRIDGE_KEY='nexoUiSession:mi-espacio';
+const NEXO_RETURN_AFTER_AUTH_KEY='nexoReturnAfterAuth:v1';
+const CAMINO_BRANCH_REVISION='dfe7a9b3d46d0cdc835928930bc37151e86f78a8';
+const CAMINO_BRANCH_ID='main';
 let projectId='nova-vision';
 let profileType='WRITER';
 let profileLabel='Editorial';
@@ -38,14 +42,50 @@ async function ensureRuntimes(){
   try{await window.NEXO_THEME_RUNTIME?.ready}catch(_){}
   if(!window.NEXO_GLOBAL_HEADER)await loadScript('nexo-global-header-runtime-script',HEADER_RUNTIME)
 }
+function sessionBridge(){
+  try{
+    const raw=sessionStorage.getItem(NEXO_UI_SESSION_BRIDGE_KEY);
+    if(!raw)return null;
+    const row=JSON.parse(raw);
+    if(!row?.token)return null;
+    const exp=row.expiresAt?new Date(row.expiresAt).getTime():0;
+    if(exp&&exp<=Date.now()){sessionStorage.removeItem(NEXO_UI_SESSION_BRIDGE_KEY);return null}
+    return row
+  }catch(_){return null}
+}
+function requireNexoSession(){
+  try{sessionStorage.setItem(NEXO_RETURN_AFTER_AUTH_KEY,location.href)}catch(_){}
+  const target=(freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'')+'/blank-8';
+  location.assign(target);
+}
+function branchUrl(endpoint){
+  const sep=endpoint.includes('?')?'&':'?';
+  return API+endpoint+sep+'siteRevision='+encodeURIComponent(CAMINO_BRANCH_REVISION)+'&branchId='+encodeURIComponent(CAMINO_BRANCH_ID)
+}
 async function api(endpoint,opt={}){
+  const session=sessionBridge();
   const o={method:opt.method||'GET',headers:{Accept:'application/json'},credentials:'same-origin',cache:'no-store'};
+  if(session?.token)o.headers.Authorization='Bearer '+session.token;
   if(opt.body!==undefined){o.headers['Content-Type']='application/json';o.body=JSON.stringify(opt.body)}
-  const r=await fetch(API+endpoint,o);const raw=await r.text();let d={};
+  const r=await fetch(branchUrl(endpoint),o);const raw=await r.text();let d={};
   try{d=raw?JSON.parse(raw):{}}catch(_){}
-  if(!r.ok||d.ok===false)throw Error(d.error||('HTTP '+r.status));
+  const code=d?.error||'';
+  if(code==='AUTH_REQUIRED'||code==='SESSION_EXPIRED'){
+    try{sessionStorage.removeItem(NEXO_UI_SESSION_BRIDGE_KEY)}catch(_){}
+    if(opt.requireAuth!==false)requireNexoSession();
+    throw Error('AUTH_REDIRECT');
+  }
+  if(!r.ok||d.ok===false)throw Error(code||('HTTP '+r.status));
   return d
 }
+window.NEXO_CAMINO_AUTH={
+  hasSession:()=>!!sessionBridge(),
+  getToken:()=>sessionBridge()?.token||'',
+  require:requireNexoSession,
+  request:api,
+  revision:CAMINO_BRANCH_REVISION,
+  branchId:CAMINO_BRANCH_ID
+};
 function position(){
   const banner=document.getElementById('WIX_ADS'),rect=banner?.getBoundingClientRect();
   const top=rect&&rect.width>0&&rect.height>0?Math.max(0,Math.ceil(rect.bottom)):0;
@@ -68,6 +108,7 @@ function requestSurface(surface){
 }
 async function saveProfile(next){
   if(!PROFILE_TYPES.includes(next)||next===profileType)return;
+  if(!sessionBridge()){requireNexoSession();return}
   await api('caminoLore',{method:'POST',body:{action:'canon.saveprofile',projectId,profileType:next,profileLabel:PROFILE_LABELS[next]}});
   profileType=next;profileLabel=PROFILE_LABELS[next];
   window.dispatchEvent(new CustomEvent('camino:profile-changed',{detail:{projectId,profileType,label:profileLabel}}));
@@ -123,10 +164,10 @@ function mount(){
 async function bootstrap(){
   await ensureRuntimes();
   try{
-    const h=await api('caminoHealth');projectId=String(h.projectId||h.data?.projectId||projectId)
+    const h=await api('caminoHealth',{requireAuth:false});projectId=String(h.projectId||h.data?.projectId||projectId)
   }catch(_){}
   try{
-    const p=await api('caminoLore?canonEngine=profiles&projectId='+encodeURIComponent(projectId));
+    const p=await api('caminoLore?canonEngine=profiles&projectId='+encodeURIComponent(projectId),{requireAuth:false});
     const row=p.data?.profile||null;
     if(PROFILE_TYPES.includes(row?.profileType))profileType=row.profileType;
     profileLabel=PROFILE_LABELS[profileType]||row?.profileLabel||'Editorial'
