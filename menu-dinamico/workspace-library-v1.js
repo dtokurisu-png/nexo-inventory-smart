@@ -26,10 +26,13 @@ function canImport(){return context().type==='workspace'&&capabilities().canShar
 function canCreate(){return capabilities().canEdit===true}
 function toolbar(){return window.NEXO_TOOLBAR_API||null}
 function libraryToolbarActions(root,extra={}){
-  const actions=[
-    {id:'collections',icon:'coleccion',label:tr('Colecciones','Collections'),active:activeTab==='collections',onClick:()=>{activeTab='collections';activeCollectionId='';activeCollectionGroup='';renderBody(root)}},
-    {id:'sheets',icon:'ficha-tecnica',label:tr('Fichas técnicas','Technical sheets'),active:activeTab==='sheets',onClick:()=>{activeTab='sheets';activeCollectionId='';activeCollectionGroup='';renderBody(root)}}
-  ];
+  const actions=[];
+  if(!activeCollectionId){
+    actions.push(
+      {id:'collections',icon:'coleccion',label:tr('Colecciones','Collections'),active:activeTab==='collections',onClick:()=>{activeTab='collections';activeCollectionId='';activeCollectionGroup='';renderBody(root)}},
+      {id:'sheets',icon:'ficha-tecnica',label:tr('Fichas técnicas','Technical sheets'),active:activeTab==='sheets',onClick:()=>{activeTab='sheets';activeCollectionId='';activeCollectionGroup='';renderBody(root)}}
+    )
+  }
   if(activeTab==='collections'&&!activeCollectionId&&canCreate()){
     actions.push({id:'new-collection',icon:'nuevo',label:tr('Nueva colección','New collection'),onClick:()=>openCollectionCreate(root)})
   }
