@@ -14,6 +14,29 @@ function accessError(code){return new Error('No se pudo completar el acceso ('+A
 function loginVisible(visible){const r=document.getElementById('nxo-app');if(r)r.style.display=visible?'none':'';document.body.classList.toggle('nxo-lock',!visible)}
 function retryAccess(){const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));location.replace(u.href)}
 let sessionToken='',personal=null,workspace=null,workspaceTab='tools',workspaceMembers=null,workspaceRoles=null,workspaceToolConfig=null,workspaceRecipeComments=null,workspacePendingNotes=null;
+const NEXO_UI_SESSION_BRIDGE_KEY='nexoUiSession:mi-espacio';
+const NEXO_RETURN_AFTER_AUTH_KEY='nexoReturnAfterAuth:v1';
+function publishUiSessionBridge(ex){
+  try{
+    sessionStorage.setItem(NEXO_UI_SESSION_BRIDGE_KEY,JSON.stringify({
+      token:sessionToken||'',
+      expiresAt:ex?.expiresAt||'',
+      appKey:'mi-espacio',
+      storedAt:Date.now()
+    }));
+  }catch(_){}
+}
+function consumeAuthReturn(){
+  try{
+    const target=sessionStorage.getItem(NEXO_RETURN_AFTER_AUTH_KEY)||'';
+    if(!target)return false;
+    const u=new URL(target,location.origin);
+    if(u.origin!==location.origin)return false;
+    sessionStorage.removeItem(NEXO_RETURN_AFTER_AUTH_KEY);
+    location.replace(u.href);
+    return true;
+  }catch(_){return false}
+}
 let sharedHeaderState=null,sharedHeaderAbort=null;
 let workspaceNotificationPollTimer=null,workspaceNotificationPollInFlight=false,workspaceNotificationPollWorkspaceId='',workspaceNotificationSignature='',workspaceNotificationVisibilityBound=false;
 const NEXO_THEME_KEY='nexoTheme:v1';
@@ -1624,8 +1647,10 @@ async function start(){
   const ex=await api('exchange',{bootToken:b});
   sessionToken=ex.sessionToken||'';
   if(!sessionToken)throw accessError('NO_SESSION_TOKEN');
+  publishUiSessionBridge(ex);
   accessStage='BOOTSTRAP';
   personal=await api('bootstrap');
+  if(consumeAuthReturn())return;
   await ensureGlobalHeaderRuntime();
   await refreshSharedHeaderState('');
   applyLanguage(personal?.profile?.locale||new URLSearchParams(location.search).get('nxoLang')||storedLanguage(),true);
