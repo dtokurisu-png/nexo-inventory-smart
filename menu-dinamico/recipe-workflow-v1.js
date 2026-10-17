@@ -15,7 +15,7 @@ function recipeState(id){const all=loadProgress();all[id]||={mise:{},mop:{}};all
 function setProgress(id,kind,key,val){const{all,state}=recipeState(id);state[kind][key]=!!val;saveProgress(all)}
 function completedCount(id){const{state}=recipeState(id);return Object.values(state.mise||{}).filter(Boolean).length+Object.values(state.mop||{}).filter(Boolean).length}
 function clearRecipeProgress(id){const all=loadProgress();delete all[id];saveProgress(all);view.querySelectorAll('.recipeView .miseCheck,.recipeView .mopCheck').forEach(check=>check.setAttribute('aria-checked','false'));view.querySelectorAll('.recipeView .row.is-mise-done').forEach(row=>row.classList.remove('is-mise-done'));view.querySelectorAll('.recipeView .mopStep.is-mop-done').forEach(step=>step.classList.remove('is-mop-done'));syncRecipeToolbar(currentRecipe())}
-function updateProgressResetButton(id){const b=view.querySelector('.recipeView .nexoProgressReset');if(!b)return;const n=completedCount(id);b.disabled=n===0;b.textContent=n?tr(`Limpiar progreso (${n})`,`Clear progress (${n})`):tr('Limpiar progreso','Clear progress');b.setAttribute('aria-label',b.textContent)}
+function updateProgressResetButton(id){const recipe=currentRecipe();if(recipe&&String(recipe._id)===String(id))syncRecipeToolbar(recipe)}
 function installProgressReset(recipe){view.querySelector('.recipeView .nexoProgressTools')?.remove();syncRecipeToolbar(recipe)}
 function currentRecipe(){
   const rv=view.querySelector('.recipeView');if(!rv)return null;
