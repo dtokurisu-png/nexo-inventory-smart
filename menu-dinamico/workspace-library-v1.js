@@ -752,6 +752,11 @@ function sheetEditorTemplate(options={}){
   const state={
     id:editorId,
     kind:String(options.kind||'technical-sheet'),
+    sheetType:String(options.sheetType||''),
+    recipeType:String(options.recipeType||''),
+    sourceCollection:String(options.sourceCollection||''),
+    collectionId:String(options.collectionId||activeCollectionId||''),
+    collectionGroup:String(options.collectionGroup||activeCollectionGroup||''),
     parentId:parentState?.id||'',
     layer,
     onComplete:typeof options.onComplete==='function'?options.onComplete:null,
@@ -779,6 +784,10 @@ function sheetEditorTemplate(options={}){
     positioningMopPlus:false,
     openUnitComponentId:''
   };
+  layer.dataset.sheetType=state.sheetType;
+  layer.dataset.recipeType=state.recipeType;
+  layer.dataset.sourceCollection=state.sourceCollection;
+  layer.dataset.collectionId=state.collectionId;
   sheetEditorStack.push(state);
   syncSheetEditorStack();
 
@@ -1696,9 +1705,100 @@ function sheetEditorTemplate(options={}){
   });
   return state
 }
+function closeSheetTypeChooser(){
+  document.getElementById('nexoSheetTypeChooserLayer')?.remove()
+}
+function sheetCreateContext(){
+  return {
+    collectionId:String(activeCollectionId||''),
+    collectionGroup:String(activeCollectionGroup||'')
+  }
+}
+function openSheetEditorForType(type){
+  const kind=String(type||'').toLowerCase();
+  const ctx=sheetCreateContext();
+  closeSheetTypeChooser();
+  if(kind==='final'){
+    return sheetEditorTemplate({
+      kind:'technical-sheet',
+      sheetType:'final',
+      recipeType:'DISH',
+      sourceCollection:'DMRecipes',
+      collectionId:ctx.collectionId,
+      collectionGroup:ctx.collectionGroup,
+      ariaLabel:tr('Crear producto final','Create final product'),
+      eyebrow:tr('Producto final','Final product'),
+      heading:tr('Crear ficha técnica','Create technical sheet'),
+      photoLabel:tr('Foto del producto final','Final product photo'),
+      titlePlaceholder:tr('Nombre del producto final','Final product name')
+    })
+  }
+  if(kind==='preparation'){
+    return sheetEditorTemplate({
+      kind:'preparation',
+      sheetType:'preparation',
+      recipeType:'PREPARATION',
+      sourceCollection:'DMRecipes',
+      collectionId:ctx.collectionId,
+      collectionGroup:ctx.collectionGroup,
+      ariaLabel:tr('Crear preparación','Create preparation'),
+      eyebrow:tr('Preparación','Preparation'),
+      heading:tr('Crear ficha técnica','Create technical sheet'),
+      photoLabel:tr('Foto de la preparación','Preparation photo'),
+      titlePlaceholder:tr('Nombre de la preparación','Preparation name')
+    })
+  }
+  if(kind==='supply'){
+    return sheetEditorTemplate({
+      kind:'supply',
+      sheetType:'supply',
+      recipeType:'',
+      sourceCollection:'DMIngredients',
+      collectionId:ctx.collectionId,
+      collectionGroup:ctx.collectionGroup,
+      ariaLabel:tr('Crear insumo','Create supply'),
+      eyebrow:tr('Insumo','Supply'),
+      heading:tr('Crear ficha técnica','Create technical sheet'),
+      photoLabel:tr('Fotos del insumo','Supply photos'),
+      titlePlaceholder:tr('Nombre del insumo','Supply name'),
+      descriptionPlaceholder:tr('Describe brevemente este insumo.','Briefly describe this supply.')
+    })
+  }
+  return null
+}
+function openSheetTypeChooser(){
+  if(!canCreate())return;
+  closeSheetTypeChooser();
+  const layer=document.createElement('div');
+  layer.id='nexoSheetTypeChooserLayer';
+  layer.innerHTML=
+    '<div class="nexoSheetTypeChooser" role="dialog" aria-modal="true" aria-label="'+esc(tr('Tipo de ficha técnica','Technical sheet type'))+'">'+
+      '<header><div><span>'+esc(tr('Nueva ficha técnica','New technical sheet'))+'</span><strong>'+esc(tr('¿Qué deseas crear?','What do you want to create?'))+'</strong></div><button type="button" data-sheet-type-close aria-label="'+esc(tr('Cerrar','Close'))+'">×</button></header>'+
+      '<div class="nexoSheetTypeChoices" role="radiogroup" aria-label="'+esc(tr('Tipo de ficha','Sheet type'))+'">'+
+        '<button type="button" class="final" data-sheet-type="final">'+
+          '<span class="nexoSheetTypeIcon">'+icon('platos')+'</span>'+
+          '<span><strong>'+esc(tr('Producto final','Final product'))+'</strong><small>'+esc(tr('Producto terminado listo para servicio.','Finished product ready for service.'))+'</small></span>'+
+        '</button>'+
+        '<button type="button" class="preparation" data-sheet-type="preparation">'+
+          '<span class="nexoSheetTypeIcon">'+icon('preparaciones')+'</span>'+
+          '<span><strong>'+esc(tr('Preparación','Preparation'))+'</strong><small>'+esc(tr('Subreceta o elaboración reutilizable.','Reusable subrecipe or preparation.'))+'</small></span>'+
+        '</button>'+
+        '<button type="button" class="supply" data-sheet-type="supply">'+
+          '<span class="nexoSheetTypeIcon">'+icon('productos')+'</span>'+
+          '<span><strong>'+esc(tr('Insumo','Supply'))+'</strong><small>'+esc(tr('Ingrediente o producto base.','Ingredient or base product.'))+'</small></span>'+
+        '</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(layer);
+  layer.querySelector('[data-sheet-type-close]').onclick=closeSheetTypeChooser;
+  layer.querySelectorAll('[data-sheet-type]').forEach(button=>button.onclick=()=>openSheetEditorForType(button.dataset.sheetType));
+  layer.addEventListener('mousedown',e=>{if(e.target===layer)closeSheetTypeChooser()});
+  const onKey=e=>{if(e.key==='Escape'){closeSheetTypeChooser();document.removeEventListener('keydown',onKey)}};
+  document.addEventListener('keydown',onKey);
+}
 function openCreateFlow(){
   if(!canCreate())return;
-  sheetEditorTemplate()
+  openSheetTypeChooser()
 }
 
 window.NEXO_FICHAS_NESTED_EDITOR=Object.freeze({
