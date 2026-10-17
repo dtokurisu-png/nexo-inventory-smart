@@ -136,3 +136,16 @@
   .nexoSheetTypeChoices>button{min-height:0;grid-template-columns:48px minmax(0,1fr);align-items:center;padding:14px}
   .nexoSheetTypeIcon{width:42px;height:42px}
 }
+
+.nexoWorkspaceLibraryHeadCompact{
+  display:block;
+  padding-bottom:4px;
+}
+.nexoWorkspaceLibraryHeadCompact .nexoWorkspaceEyebrow{
+  margin:0;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.04em;
+  text-transform:none;
+  color:var(--nxo-text-secondary);
+}
