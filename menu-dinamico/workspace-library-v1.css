@@ -208,3 +208,60 @@
 
 .nexoWorkspaceBreadcrumb,
 .nexoCollectionDetailHeadCompact{display:none!important}
+
+/* Fichas workspace trail = same visual language as recipe .crumbs */
+.nexoWorkspaceLibraryHead.nexoWorkspaceLibraryHeadCompact{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:6px!important;
+  margin:0 0 13px!important;
+  padding:0!important;
+  min-height:0!important;
+  width:auto!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+  white-space:nowrap!important;
+}
+.nexoWorkspaceLibraryHeadCompact .nexoWorkspaceTrailItem{
+  display:inline!important;
+  max-width:none!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+  font-size:13px!important;
+  line-height:1.2!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+  color:var(--accent)!important;
+  font-weight:800!important;
+}
+.nexoWorkspaceLibraryHeadCompact .nexoWorkspaceTrailItem:last-child{
+  color:var(--muted)!important;
+  font-weight:400!important;
+}
+.nexoWorkspaceLibraryHeadCompact .nexoWorkspaceTrailSep{
+  display:inline!important;
+  flex:none!important;
+  margin:0!important;
+  color:var(--muted)!important;
+  font-size:13px!important;
+  font-weight:400!important;
+  line-height:1!important;
+}
+@media(max-width:700px){
+  .nexoWorkspaceLibraryHead.nexoWorkspaceLibraryHeadCompact{
+    gap:5px!important;
+    margin-bottom:10px!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+  }
+  .nexoWorkspaceLibraryHead.nexoWorkspaceLibraryHeadCompact::-webkit-scrollbar{display:none!important}
+  .nexoWorkspaceLibraryHeadCompact .nexoWorkspaceTrailItem,
+  .nexoWorkspaceLibraryHeadCompact .nexoWorkspaceTrailSep{
+    font-size:11px!important;
+  }
+}
