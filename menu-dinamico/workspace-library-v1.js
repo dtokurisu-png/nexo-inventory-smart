@@ -97,6 +97,13 @@ function isOlhicoryCollection(row){
     corpus.includes('menu dinamico')
 }
 function collectionDescription(row){return String(row?.description||'')}
+function workspaceBreadcrumb(parts=[]){
+  const items=[String(context().workspaceName||tr('Mi espacio','My space')),...parts.filter(Boolean).map(String)];
+  return '<div class="nexoWorkspaceBreadcrumb">'+items.map((label,index)=>
+    (index?'<span class="nexoWorkspaceBreadcrumbSep" aria-hidden="true">›</span>':'')+
+    '<span class="nexoWorkspaceBreadcrumbItem">'+esc(label)+'</span>'
+  ).join('')+'</div>'
+}
 function activeCollectionItems(){
   const rows=data().collectionItems||data().technicalSheetCollectionItems||data().collectionMemberships||[];
   return (Array.isArray(rows)?rows:[]).filter(row=>row&&row.active!==false)
@@ -347,8 +354,8 @@ function renderCollectionGroup(root,collection,group){
   const rows=groups[group]||[];
   const meta=collectionGroupMeta(group);
   body.innerHTML=
-    '<div class="nexoCollectionDetailHead">'+
-      '<div><span>'+esc(collectionName(collection))+'</span><h2>'+esc(meta.title)+'</h2><p>'+esc(meta.description)+'</p></div>'+
+    '<div class="nexoCollectionDetailHead nexoCollectionDetailHeadCompact">'+
+      workspaceBreadcrumb([collectionName(collection),meta.title])+
     '</div>'+
     (rows.length
       ? '<div class="grid" data-collection-group-grid>'+(group==='supply'?rows.map(supplyCard).join(''):rows.map(sheetCard).join(''))+'</div>'
@@ -459,8 +466,8 @@ function renderCollectionDetail(root,collection){
   const groups=collectionGroupsFor(collection);
   const total=groups.final.length+groups.preparation.length+groups.supply.length;
   body.innerHTML=
-    '<div class="nexoCollectionDetailHead">'+
-      '<div><span>'+esc(tr('Colección','Collection'))+'</span><h2>'+esc(collectionName(collection))+'</h2><p>'+esc(collectionDescription(collection)||tr('Colección de fichas técnicas.','Technical sheet collection.'))+'</p></div>'+
+    '<div class="nexoCollectionDetailHead nexoCollectionDetailHeadCompact">'+
+      workspaceBreadcrumb([collectionName(collection)])+
     '</div>'+
     (total
       ? '<div class="nexoCollectionGroups">'+collectionGroupCard('final',groups.final)+collectionGroupCard('preparation',groups.preparation)+collectionGroupCard('supply',groups.supply)+'</div>'
@@ -514,7 +521,7 @@ function enhanceRoot(){
 
   const header=document.createElement('div');
   header.className='nexoWorkspaceLibraryHead nexoWorkspaceLibraryHeadCompact';
-  header.innerHTML='<div class="nexoWorkspaceEyebrow">'+esc(context().workspaceName||tr('Mi espacio','My space'))+'</div>';
+  header.innerHTML=workspaceBreadcrumb([]);
 
   const body=document.createElement('div');
   body.className='nexoWorkspaceLibraryBody';
