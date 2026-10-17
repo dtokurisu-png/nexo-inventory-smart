@@ -265,3 +265,30 @@
     font-size:11px!important;
   }
 }
+
+/* Directional breadcrumb arrows */
+.nexoWorkspaceLibraryHeadCompact .nexoWorkspaceTrailSep{
+  width:0!important;
+  height:0!important;
+  margin:0 2px!important;
+  border-top:5px solid transparent!important;
+  border-bottom:5px solid transparent!important;
+  border-left:8px solid var(--nxo-text-muted)!important;
+  color:transparent!important;
+  font-size:0!important;
+  line-height:0!important;
+  filter:none!important;
+}
+.nexoWorkspaceLibraryHeadCompact .nexoWorkspaceTrailSep.current{
+  border-left-color:var(--nxo-accent)!important;
+  filter:
+    drop-shadow(0 0 2px color-mix(in srgb,var(--nxo-accent) 78%,transparent))
+    drop-shadow(0 0 5px color-mix(in srgb,var(--nxo-accent) 48%,transparent))!important;
+}
+@media(max-width:700px){
+  .nexoWorkspaceLibraryHeadCompact .nexoWorkspaceTrailSep{
+    border-top-width:4px!important;
+    border-bottom-width:4px!important;
+    border-left-width:7px!important;
+  }
+}
