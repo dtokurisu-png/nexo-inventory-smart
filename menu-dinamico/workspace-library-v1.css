@@ -171,3 +171,40 @@
   .nexoWorkspaceBreadcrumbItem{max-width:40vw}
   .nexoWorkspaceBreadcrumbSep{font-size:13px}
 }
+
+.nexoWorkspaceLibraryHeadCompact{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  min-height:24px;
+  padding:0 0 8px!important;
+  margin:0!important;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.nexoWorkspaceTrailItem{
+  min-width:0;
+  max-width:min(360px,36vw);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+  font-weight:850;
+  color:var(--nxo-text-secondary);
+}
+.nexoWorkspaceTrailItem:last-child{color:var(--nxo-text-primary)}
+.nexoWorkspaceTrailSep{
+  flex:0 0 auto;
+  color:var(--nxo-accent);
+  font-size:14px;
+  font-weight:950;
+  line-height:1;
+}
+@media(max-width:700px){
+  .nexoWorkspaceLibraryHeadCompact{gap:5px!important}
+  .nexoWorkspaceTrailItem{max-width:40vw;font-size:10px}
+  .nexoWorkspaceTrailSep{font-size:12px}
+}
+
+.nexoWorkspaceBreadcrumb,
+.nexoCollectionDetailHeadCompact{display:none!important}
