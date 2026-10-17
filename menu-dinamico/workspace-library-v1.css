@@ -77,3 +77,62 @@
 .nexoSupplyModeIndicator .nexoWorkspaceIcon{width:16px;height:16px}
 .nexoSupplyModeIndicator.processable{box-shadow:0 0 0 2px var(--nxo-accent-soft),0 4px 12px var(--nxo-shadow)}
 .nexoSupplyModeIndicator.consumable{opacity:.92}
+
+
+#nexoSheetTypeChooserLayer{
+  position:fixed;inset:0;z-index:2147483646;background:var(--nxo-overlay);
+  display:grid;place-items:center;padding:16px
+}
+.nexoSheetTypeChooser{
+  width:min(760px,calc(100vw - 32px));background:var(--nxo-surface-raised);
+  border:1px solid var(--nxo-border-strong);border-radius:20px;
+  box-shadow:0 24px 70px var(--nxo-shadow);overflow:hidden
+}
+.nexoSheetTypeChooser>header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:15px 17px;border-bottom:1px solid var(--nxo-border)
+}
+.nexoSheetTypeChooser>header>div{display:grid;gap:2px}
+.nexoSheetTypeChooser>header span{
+  font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--nxo-accent)
+}
+.nexoSheetTypeChooser>header strong{font-size:18px}
+.nexoSheetTypeChooser>header button{
+  width:36px;height:36px;border:1px solid var(--nxo-border);border-radius:10px;
+  background:var(--nxo-button-secondary-bg);color:var(--nxo-button-secondary-text);
+  font-size:22px;cursor:pointer
+}
+.nexoSheetTypeChoices{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:18px
+}
+.nexoSheetTypeChoices>button{
+  --sheetTypeColor:var(--nxo-accent);
+  position:relative;min-height:170px;border:1px solid var(--nxo-border);
+  border-radius:16px;background:var(--nxo-surface);color:var(--nxo-text-primary);
+  padding:18px 16px;display:grid;align-content:start;justify-items:start;gap:14px;
+  text-align:left;cursor:pointer;transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease,background .14s ease
+}
+.nexoSheetTypeChoices>button.final{--sheetTypeColor:var(--nxo-taxonomy-dish)}
+.nexoSheetTypeChoices>button.preparation{--sheetTypeColor:var(--nxo-taxonomy-preparation)}
+.nexoSheetTypeChoices>button.supply{--sheetTypeColor:var(--nxo-taxonomy-product)}
+.nexoSheetTypeChoices>button:after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:var(--sheetTypeColor);
+  border-radius:0 0 16px 16px
+}
+.nexoSheetTypeChoices>button:hover,.nexoSheetTypeChoices>button:focus-visible{
+  outline:none;transform:translateY(-2px);border-color:var(--sheetTypeColor);
+  box-shadow:0 14px 28px var(--nxo-shadow);background:var(--nxo-surface-raised)
+}
+.nexoSheetTypeIcon{
+  width:46px;height:46px;border:1px solid var(--nxo-border);border-radius:13px;
+  display:grid;place-items:center;background:var(--nxo-background-alt)
+}
+.nexoSheetTypeIcon img{width:26px;height:26px;display:block;object-fit:contain}
+.nexoSheetTypeChoices>button>span:last-child{display:grid;gap:6px}
+.nexoSheetTypeChoices>button strong{font-size:16px}
+.nexoSheetTypeChoices>button small{font-size:11px;line-height:1.45;color:var(--nxo-text-muted)}
+@media(max-width:700px){
+  .nexoSheetTypeChoices{grid-template-columns:1fr;padding:12px}
+  .nexoSheetTypeChoices>button{min-height:0;grid-template-columns:48px minmax(0,1fr);align-items:center;padding:14px}
+  .nexoSheetTypeIcon{width:42px;height:42px}
+}
