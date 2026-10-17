@@ -97,12 +97,17 @@ function isOlhicoryCollection(row){
     corpus.includes('menu dinamico')
 }
 function collectionDescription(row){return String(row?.description||'')}
-function workspaceBreadcrumb(parts=[]){
+function workspaceTrailMarkup(parts=[]){
   const items=[String(context().workspaceName||tr('Mi espacio','My space')),...parts.filter(Boolean).map(String)];
-  return '<div class="nexoWorkspaceBreadcrumb">'+items.map((label,index)=>
-    (index?'<span class="nexoWorkspaceBreadcrumbSep" aria-hidden="true">›</span>':'')+
-    '<span class="nexoWorkspaceBreadcrumbItem">'+esc(label)+'</span>'
-  ).join('')+'</div>'
+  return items.map((label,index)=>
+    (index?'<span class="nexoWorkspaceTrailSep" aria-hidden="true">›</span>':'')+
+    '<span class="nexoWorkspaceTrailItem">'+esc(label)+'</span>'
+  ).join('')
+}
+function syncWorkspaceTrail(root,parts=[]){
+  const header=root?.querySelector?.('.nexoWorkspaceLibraryHead');
+  if(!header)return;
+  header.innerHTML=workspaceTrailMarkup(parts)
 }
 function activeCollectionItems(){
   const rows=data().collectionItems||data().technicalSheetCollectionItems||data().collectionMemberships||[];
@@ -271,6 +276,7 @@ function emptyState(){
 function renderSheets(root){
   const body=root.querySelector('[data-nexo-workspace-body]');
   if(!body)return;
+  syncWorkspaceTrail(root,[]);
   const recipes=activeRecipes();
   const supplies=activeProducts().slice().sort((a,b)=>String(text(a,'nameEn','nameEs')||'').localeCompare(String(text(b,'nameEn','nameEs')||''),'es'));
   const total=recipes.length+supplies.length;
@@ -353,10 +359,8 @@ function renderCollectionGroup(root,collection,group){
   const groups=collectionGroupsFor(collection);
   const rows=groups[group]||[];
   const meta=collectionGroupMeta(group);
+  syncWorkspaceTrail(root,[collectionName(collection),meta.title]);
   body.innerHTML=
-    '<div class="nexoCollectionDetailHead nexoCollectionDetailHeadCompact">'+
-      workspaceBreadcrumb([collectionName(collection),meta.title])+
-    '</div>'+
     (rows.length
       ? '<div class="grid" data-collection-group-grid>'+(group==='supply'?rows.map(supplyCard).join(''):rows.map(sheetCard).join(''))+'</div>'
       : '<div class="nexoCollectionEmpty">'+icon(meta.icon)+'<strong>'+esc(tr('No hay elementos en este grupo','No items in this group'))+'</strong><span>'+esc(meta.description)+'</span></div>');
@@ -465,10 +469,8 @@ function renderCollectionDetail(root,collection){
   }
   const groups=collectionGroupsFor(collection);
   const total=groups.final.length+groups.preparation.length+groups.supply.length;
+  syncWorkspaceTrail(root,[collectionName(collection)]);
   body.innerHTML=
-    '<div class="nexoCollectionDetailHead nexoCollectionDetailHeadCompact">'+
-      workspaceBreadcrumb([collectionName(collection)])+
-    '</div>'+
     (total
       ? '<div class="nexoCollectionGroups">'+collectionGroupCard('final',groups.final)+collectionGroupCard('preparation',groups.preparation)+collectionGroupCard('supply',groups.supply)+'</div>'
       : '<div class="nexoCollectionEmpty">'+icon('ficha-tecnica')+'<strong>'+esc(tr('Esta colección todavía no tiene fichas','This collection has no sheets yet'))+'</strong><span>'+esc(tr('Crea una ficha para comenzar a organizar esta colección.','Create a sheet to start organizing this collection.'))+'</span></div>');
@@ -489,6 +491,7 @@ function renderCollections(root){
     if(selected){renderCollectionDetail(root,selected);return}
     activeCollectionId=''
   }
+  syncWorkspaceTrail(root,[]);
   body.innerHTML=
     (rows.length
       ? '<div class="nexoCollectionsGrid">'+rows.map(collectionCard).join('')+'</div>'
@@ -521,7 +524,7 @@ function enhanceRoot(){
 
   const header=document.createElement('div');
   header.className='nexoWorkspaceLibraryHead nexoWorkspaceLibraryHeadCompact';
-  header.innerHTML=workspaceBreadcrumb([]);
+  header.innerHTML=workspaceTrailMarkup([]);
 
   const body=document.createElement('div');
   body.className='nexoWorkspaceLibraryBody';
