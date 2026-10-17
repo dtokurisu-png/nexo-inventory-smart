@@ -149,3 +149,25 @@
   text-transform:none;
   color:var(--nxo-text-secondary);
 }
+
+
+.nexoWorkspaceBreadcrumb{
+  display:flex;align-items:center;gap:7px;min-width:0;
+  color:var(--nxo-text-secondary);font-size:12px;font-weight:850;line-height:1.2
+}
+.nexoWorkspaceBreadcrumbItem{
+  min-width:0;max-width:min(340px,34vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.nexoWorkspaceBreadcrumbItem:last-child{color:var(--nxo-text-primary)}
+.nexoWorkspaceBreadcrumbSep{
+  flex:0 0 auto;color:var(--nxo-accent);font-size:15px;font-weight:950;line-height:1
+}
+.nexoCollectionDetailHeadCompact{
+  display:block!important;grid-template-columns:none!important;padding:0 0 10px!important
+}
+.nexoCollectionDetailHeadCompact .nexoWorkspaceBreadcrumb{margin:0}
+@media(max-width:700px){
+  .nexoWorkspaceBreadcrumb{gap:5px;font-size:10px}
+  .nexoWorkspaceBreadcrumbItem{max-width:40vw}
+  .nexoWorkspaceBreadcrumbSep{font-size:13px}
+}
