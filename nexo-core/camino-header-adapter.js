@@ -8,7 +8,7 @@ const p=decodeURIComponent(location.pathname).replace(/\/+$/,'');
 if(p!==PATH)return;
 
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
-const HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-16';
+const HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-17';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/';
@@ -23,6 +23,21 @@ let activeProjectLabel='';
 let profileType='WRITER';
 let profileLabel='Editorial';
 let activeSurface='canvas';
+let headerNavigation={personal:{name:'Mi espacio',tools:[]},workspaces:[]};
+const HEADER_TOOL_CATALOG=[
+  ['learning-core','Nexo Learning Core'],
+  ['gear-library','Biblioteca de engranaje'],
+  ['inventory-smart','Inventario Smart'],
+  ['dynamic-specs','Fichas Técnicas Dinámicas'],
+  ['work-center','Centro de Trabajo'],
+  ['schedules','Horarios'],
+  ['task-lists','Listas de tareas'],
+  ['multichannel-notifications','Notificaciones multicanal'],
+  ['numa-assistant','Numa'],
+  ['maria-editorial','María'],
+  ['camino-editorial-agents','Agentes de Camino Editorial']
+];
+
 
 function storedTheme(){try{return localStorage.getItem('nexoTheme:v1')==='night'?'night':'day'}catch(_){return'night'}}
 function storedLanguage(){try{return String(localStorage.getItem('nexoLanguage:v1')||'es').toLowerCase().startsWith('en')?'en':'es'}catch(_){return'es'}}
@@ -94,6 +109,71 @@ function position(){
   document.documentElement.style.setProperty('--ce-header-offset',top+'px');
   document.documentElement.style.setProperty('--ce-header-h','0px')
 }
+
+function developmentFunctionUrl(functionName){
+  const name=String(functionName||'').replace(/^\/+|\/+$/g,'');
+  return apiBase+'/_functions/'+name
+}
+async function developmentInstallOptions(toolKey){
+  const response=await fetch(developmentFunctionUrl('nexoDevelopmentInstall'),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'same-origin',
+    cache:'no-store',
+    body:JSON.stringify({action:'options',toolKey})
+  });
+  const payload=await response.json().catch(()=>null);
+  if(!response.ok||!payload?.ok||!payload?.data)throw new Error(payload?.error||'INSTALL_OPTIONS_FAILED');
+  return payload.data
+}
+async function hydrateHeaderNavigation(){
+  const results=await Promise.allSettled(HEADER_TOOL_CATALOG.map(async ([toolKey,label])=>{
+    const options=await developmentInstallOptions(toolKey);
+    return {toolKey,label,options}
+  }));
+  const workspaces=new Map();
+  const personalTools=[];
+  for(const result of results){
+    if(result.status!=='fulfilled')continue;
+    const {toolKey,label,options}=result.value;
+    const routePath=String(options?.routePath||'').trim();
+    const destinations=Array.isArray(options?.destinations)?options.destinations:[];
+    for(const destination of destinations){
+      const type=String(destination?.type||'').toLowerCase();
+      if(type==='workspace'){
+        const id=String(destination?.id||'').trim();
+        if(!id)continue;
+        if(!workspaces.has(id))workspaces.set(id,{
+          workspaceId:id,
+          name:String(destination?.name||'Workspace'),
+          tools:[]
+        });
+        if(destination?.canOpen===true&&routePath){
+          const ws=workspaces.get(id);
+          if(!ws.tools.some(t=>t.toolKey===toolKey))ws.tools.push({
+            toolKey,
+            name:label,
+            nameEs:label,
+            routePath,
+            status:'ACTIVE'
+          })
+        }
+      }else if(type==='personal'&&destination?.canOpen===true&&routePath){
+        if(!personalTools.some(t=>t.toolKey===toolKey))personalTools.push({
+          toolKey,
+          name:label,
+          nameEs:label,
+          routePath,
+          status:'ACTIVE'
+        })
+      }
+    }
+  }
+  headerNavigation={
+    personal:{name:'Mi espacio',tools:personalTools},
+    workspaces:[...workspaces.values()].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es',{sensitivity:'base'}))
+  }
+}
 function accountAction(action){
   const u=new URL((freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'')+'/blank-8',location.origin);
   if(action==='settings')u.searchParams.set('nxoProfile','settings');
@@ -116,14 +196,24 @@ async function saveProfile(next){
   mount()
 }
 function mount(){
-  // The Wix master header is the single canonical site header.
-  // Camino must not mount a second full-page header over it.
-  const legacy=document.getElementById('nxo-global-header-runtime-host');
-  if(legacy)legacy.remove();
+  if(!window.NEXO_GLOBAL_HEADER){position();return}
+  const theme=window.NEXO_THEME_RUNTIME?.getTheme?.()||storedTheme();
+  const language=storedLanguage();
+  window.NEXO_GLOBAL_HEADER.mount(document.body,{
+    variant:'camino',
+    theme,
+    language,
+    active:'',
+    navigation:headerNavigation,
+    contextLabel:'Camino Editorial',
+    onWorkspace:()=>true,
+    onTool:()=>true
+  });
   position()
 }
 async function bootstrap(){
   await ensureRuntimes();
+  try{await hydrateHeaderNavigation()}catch(_){}
   try{
     const h=await api('caminoHealth',{requireAuth:false});projectId=String(h.projectId||h.data?.projectId||projectId)
   }catch(_){}
