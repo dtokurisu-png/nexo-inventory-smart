@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261018-17';
+const VERSION='20261018-18';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -443,23 +443,88 @@ function workspaceFlyoutMarkup(ws,lang='es'){
   return out
 }
 
-function findNativeWixHeader(){
-  const headers=[...document.querySelectorAll('header')];
-  return headers.find(el=>!el.classList.contains('ngh-bar')&&!el.closest('#'+ID))||null
-}
-function nativeHeaderButton(header){
-  if(!header)return null;
-  const nodes=[...header.querySelectorAll('button,a,[role="button"]')];
+function findNativeSpaceTrigger(){
   const norm=v=>String(v||'').replace(/\s+/g,' ').trim().toLowerCase();
+  const nodes=[...document.querySelectorAll('button,a,[role="button"],[tabindex]')];
   return nodes.find(el=>{
-    const t=norm(el.innerText||el.textContent||el.getAttribute('aria-label'));
-    return t.includes('mi espacio')||t.includes('my space')
+    if(el.closest('#'+ID))return false;
+    const r=el.getBoundingClientRect?.();
+    if(!r||r.width<20||r.height<15)return false;
+    const style=getComputedStyle(el);
+    if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;
+    const t=norm(el.innerText||el.textContent||el.getAttribute('aria-label')||el.getAttribute('title'));
+    return t==='mi espacio'||t.startsWith('mi espacio ')||t==='my space'||t.startsWith('my space ')
   })||null
 }
+
+const GLOBAL_TOOL_CATALOG=[
+  ['learning-core','Nexo Learning Core'],
+  ['gear-library','Biblioteca de engranaje'],
+  ['inventory-smart','Inventario Smart'],
+  ['dynamic-specs','Fichas Técnicas Dinámicas'],
+  ['work-center','Centro de Trabajo'],
+  ['schedules','Horarios'],
+  ['task-lists','Listas de tareas'],
+  ['multichannel-notifications','Notificaciones multicanal'],
+  ['numa-assistant','Numa'],
+  ['maria-editorial','María'],
+  ['camino-editorial-agents','Agentes de Camino Editorial']
+];
+let navigationRecoveryPromise=null;
+function developmentFunctionUrl(functionName){
+  const name=String(functionName||'').replace(/^\/+|\/+$/g,'');
+  const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
+  const firstSegment=location.pathname.split('/').filter(Boolean)[0]||'';
+  return (freeSite&&firstSegment?'/'+firstSegment:'')+'/_functions/'+name
+}
+async function recoverNavigation(){
+  if(navigationRecoveryPromise)return navigationRecoveryPromise;
+  navigationRecoveryPromise=(async()=>{
+    const rows=await Promise.allSettled(GLOBAL_TOOL_CATALOG.map(async ([toolKey,label])=>{
+      const response=await fetch(developmentFunctionUrl('nexoDevelopmentInstall'),{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials:'same-origin',
+        cache:'no-store',
+        body:JSON.stringify({action:'options',toolKey})
+      });
+      const payload=await response.json().catch(()=>null);
+      if(!response.ok||!payload?.ok||!payload?.data)throw new Error(payload?.error||'OPTIONS_FAILED');
+      return {toolKey,label,options:payload.data}
+    }));
+    const workspaces=new Map(),personalTools=[];
+    for(const row of rows){
+      if(row.status!=='fulfilled')continue;
+      const {toolKey,label,options}=row.value;
+      const routePath=String(options?.routePath||'').trim();
+      for(const destination of (Array.isArray(options?.destinations)?options.destinations:[])){
+        const type=String(destination?.type||'').toLowerCase();
+        if(type==='workspace'){
+          const id=String(destination?.id||'').trim();
+          if(!id)continue;
+          if(!workspaces.has(id))workspaces.set(id,{workspaceId:id,name:String(destination?.name||'Workspace'),tools:[]});
+          if(destination?.canOpen===true&&routePath){
+            const ws=workspaces.get(id);
+            if(!ws.tools.some(t=>t.toolKey===toolKey))ws.tools.push({toolKey,name:label,nameEs:label,routePath,status:'ACTIVE'})
+          }
+        }else if(type==='personal'&&destination?.canOpen===true&&routePath){
+          if(!personalTools.some(t=>t.toolKey===toolKey))personalTools.push({toolKey,name:label,nameEs:label,routePath,status:'ACTIVE'})
+        }
+      }
+    }
+    return {
+      personal:{name:'Mi espacio',tools:personalTools},
+      workspaces:[...workspaces.values()].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es',{sensitivity:'base'}))
+    }
+  })().finally(()=>{setTimeout(()=>{navigationRecoveryPromise=null},15000)});
+  return navigationRecoveryPromise
+}
+function navigationNeedsRecovery(nav){
+  return !Array.isArray(nav?.workspaces)||nav.workspaces.length===0
+}
 function enhanceNativeHeader(opts={}){
-  const header=findNativeWixHeader();
-  const trigger=nativeHeaderButton(header);
-  if(!header||!trigger)return false;
+  const trigger=findNativeSpaceTrigger();
+  if(!trigger)return false;
 
   if(typeof window.__nexoNativeHeaderCleanup==='function'){
     try{window.__nexoNativeHeaderCleanup()}catch(_){}
@@ -565,6 +630,13 @@ function enhanceNativeHeader(opts={}){
   return true
 }
 function mount(container,opts={}){
+  if(navigationNeedsRecovery(opts.navigation)){
+    recoverNavigation().then(nav=>{
+      if(Array.isArray(nav?.workspaces)&&nav.workspaces.length){
+        mount(container,{...opts,navigation:nav,__recoveredNavigation:true})
+      }
+    }).catch(()=>{})
+  }
   if(enhanceNativeHeader(opts))return {native:true,height:0};
   const h=host();
   const nav=opts.navigation||{};
