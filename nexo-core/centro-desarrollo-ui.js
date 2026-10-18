@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-connected-panels-75';
+const VERSION='20261018-back-visible-76';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -630,6 +630,9 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
   box-sizing:border-box;
   color:var(--nxo-text-primary)
 }
+#nxo-dev-tool-detail .nxo-dev-detail-return-bar{display:flex!important;align-items:center;justify-content:flex-start;position:relative;z-index:20;padding:4px 4px 10px}
+#nxo-dev-tool-detail .nxo-dev-detail-return-bar .nxo-dev-detail-back{display:inline-flex!important;visibility:visible!important;opacity:1!important;position:relative!important;align-items:center;justify-content:center;gap:10px;width:auto!important;min-width:178px;height:42px;padding:0 14px!important;border:1px solid #284886;border-radius:10px;background:#284886;color:#fff;font:800 13px system-ui,sans-serif;cursor:pointer}
+#nxo-dev-tool-detail .nxo-dev-detail-return-bar .nxo-dev-detail-back span{font-size:22px;line-height:1}
 .nxo-dev-detail-scroll{
   height:100%;
   overflow-y:auto;
@@ -1483,10 +1486,12 @@ function ensureToolDetailView(){
   view.id='nxo-dev-tool-detail';
   view.hidden=true;
   view.innerHTML=
-    '<div class="nxo-dev-detail-scroll">'+
-      '<button type="button" class="nxo-dev-detail-back" id="nxo-dev-detail-back" aria-label="Volver al catálogo" title="Volver">'+
-        '<img src="'+iconUrl('volver')+'" alt="">'+
+    '<div class="nxo-dev-detail-return-bar">'+
+      '<button type="button" class="nxo-dev-detail-back" id="nxo-dev-detail-back" aria-label="Volver al catálogo">'+
+        '<span aria-hidden="true">←</span> Volver al catálogo'+
       '</button>'+
+    '</div>'+
+    '<div class="nxo-dev-detail-scroll">'+
       '<div id="nxo-dev-detail-content"></div>'+
     '</div>';
   app.appendChild(view);
