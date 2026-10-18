@@ -1,9 +1,23 @@
 (function(){
 'use strict';
-const ADAPTER_VERSION='20261018-header-loader-cleanup-1';
+const ADAPTER_VERSION='20261018-header-loader-cleanup-2';
 if(window.__nexoCaminoHeaderAdapter&&window.__nexoCaminoHeaderAdapterVersion===ADAPTER_VERSION)return;
+try{window.__nexoCaminoHeaderAdapterRuntime?.destroy?.()}catch(_){}
+const adapterAbort=new AbortController();
+let positionTimer=0;
+const adapterRuntime={
+  version:ADAPTER_VERSION,
+  destroy(){
+    try{adapterAbort.abort()}catch(_){}
+    if(positionTimer){clearInterval(positionTimer);positionTimer=0}
+    window.__nexoCaminoHeaderAdapter=false;
+    window.__nexoCaminoHeaderAdapterVersion='';
+    if(window.__nexoCaminoHeaderAdapterRuntime===adapterRuntime)window.__nexoCaminoHeaderAdapterRuntime=null
+  }
+};
 window.__nexoCaminoHeaderAdapter=true;
 window.__nexoCaminoHeaderAdapterVersion=ADAPTER_VERSION;
+window.__nexoCaminoHeaderAdapterRuntime=adapterRuntime;
 
 const PATH='/my-site-1/blank-6';
 const p=decodeURIComponent(location.pathname).replace(/\/+$/,'');
@@ -245,16 +259,16 @@ async function bootstrap(){
     }catch(_){}
   }
   mount();position();
-  window.addEventListener('resize',position);
-  setInterval(position,1000);
-  window.addEventListener('camino:surface-changed',e=>{activeSurface=e.detail?.surface||'canvas';mount()});
+  window.addEventListener('resize',position,{signal:adapterAbort.signal});
+  positionTimer=setInterval(position,1000);
+  window.addEventListener('camino:surface-changed',e=>{activeSurface=e.detail?.surface||'canvas';mount()},{signal:adapterAbort.signal});
   window.addEventListener('camino:active-project-changed',e=>{
     const d=e.detail||{};
     if(d.projectId)projectId=String(d.projectId);
     activeProjectLabel=String(d.title||'').trim();
     if(PROFILE_TYPES.includes(d.profileType)){profileType=d.profileType;profileLabel=PROFILE_LABELS[profileType]||profileLabel}
     mount()
-  });
+  },{signal:adapterAbort.signal});
 }
 bootstrap().catch(error=>console.error('[Camino shared header]',error));
 })();
