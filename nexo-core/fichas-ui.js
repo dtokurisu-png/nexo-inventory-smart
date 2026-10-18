@@ -926,7 +926,7 @@ async function savePhotoFromEngine(payload={}){
   }
 
   const ticket=await api('photo.upload-url',{
-    input:{entityType,entityId,fileName,mimeType,sizeInBytes,photoIntent,photoIndex}
+    input:{entityType,entityId,fileName,mimeType,sizeInBytes,photoIntent,photoIndex,workspaceId:requestedWorkspaceId}
   });
   const uploadUrl=String(ticket?.uploadUrl||'');
   if(!uploadUrl)throw new Error('PHOTO_UPLOAD_URL_MISSING');
@@ -959,7 +959,8 @@ async function savePhotoFromEngine(payload={}){
       entityId:ticket?.entityId||entityId,
       fileId,
       photoIntent:ticket?.photoIntent||photoIntent,
-      photoIndex:Number(ticket?.photoIndex??photoIndex)
+      photoIndex:Number(ticket?.photoIndex??photoIndex),
+      workspaceId:requestedWorkspaceId
     }
   });
   const image=saved?.image;
@@ -1089,7 +1090,7 @@ async function deletePhotoFromEngine(payload={}){
   const photoId=String(payload.photoId||'');
 
   const saved=await api('photo.delete',{
-    input:{entityType,entityId,photoIndex,photoId}
+    input:{entityType,entityId,photoIndex,photoId,workspaceId:requestedWorkspaceId}
   });
 
   postToEngine('DM_PHOTO_DELETED',{
