@@ -1806,7 +1806,10 @@ function sheetEditorTemplate(options={}){
       description:String(state.description||'').trim(),
       photoFile:state.photoFile||null,
       removeExistingPhoto:state.removeExistingPhoto===true,
-      existingImages:(state.supplyPhotos||[]).filter(photo=>photo.existing&&photo.image).map(photo=>photo.image),
+      existingImages:[...(state.supplyPhotos||[])]
+        .filter(photo=>photo.existing&&photo.image)
+        .sort((a,b)=>Number(b.id===state.primaryPhotoId)-Number(a.id===state.primaryPhotoId))
+        .map(photo=>photo.image),
       supplyPhotos:(state.supplyPhotos||[]).map(photo=>({id:photo.id,file:photo.file||null,primary:photo.id===state.primaryPhotoId})),
       defaultQuantity:String(state.defaultQuantity||'').trim(),
       defaultUnit:String(state.defaultUnit||'').trim(),
@@ -1934,7 +1937,7 @@ function openEditSupply(entityId){
   const processes=(data().supplyProcesses||data().preparations||[]).filter(row=>String(row.supplyId||row.ingredientId||'')===String(supply._id)).sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)).map(row=>({
     id:String(row._id),
     entityId:String(row._id),
-    source:'existing',
+    source:'new',
     processId:String(row.processId||''),
     name:text(row,'nameEn','nameEs')||'',
     description:text(row,'descriptionEn','descriptionEs')||'',
