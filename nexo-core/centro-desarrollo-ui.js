@@ -278,6 +278,8 @@ function ensureStyle(){
   const style=document.createElement('style');
   style.id='nxo-dev-center-css';
   style.textContent=`
+#nxo-dev-header,#nxo-shared-header{display:none!important}
+
 /* DEVELOPMENT CENTER · Canonical visual contract
    Values come only from Nexo theme-runtime semantic variables. */
 #nxo-dev-header{
@@ -1232,64 +1234,6 @@ function syncQuickTheme(){
   const value=document.querySelector('#nxo-dev-theme-row strong');
   if(image)image.src=iconUrl(current==='night'?'modo-oscuro':'modo-claro');
   if(value)value.textContent=current==='night'?'Oscuro':'Claro'
-}
-
-function ensureHeader(){
-  let header=document.getElementById('nxo-dev-header');
-  if(header)return header;
-
-  header=document.createElement('header');
-  header.id='nxo-dev-header';
-  header.innerHTML=
-    '<button type="button" class="nxo-dev-brand" id="nxo-dev-brand-home" aria-label="Nexo Group · Mi espacio">'+
-      '<span class="nxo-dev-mark"><img src="'+NEXO_LOGO+'" alt="Nexo Group"></span>'+
-      '<span class="nxo-dev-brand-copy"><strong>Nexo Group</strong><small>Centro de desarrollo</small></span>'+
-    '</button>'+
-    '<nav class="nxo-dev-nav" aria-label="Navegación principal">'+
-      '<button type="button" class="nxo-dev-nav-button active" aria-current="page">Centro de desarrollo</button>'+
-    '</nav>'+
-    '<div class="nxo-dev-utils">'+
-      '<div class="nxo-dev-quick-wrap">'+
-        '<button type="button" class="nxo-dev-quick-button" id="nxo-dev-quick-button" aria-label="Ajustes rápidos" aria-expanded="false">'+
-          '<img src="'+iconUrl('ajustes-rapidos')+'" alt="">'+
-        '</button>'+
-        '<div class="nxo-dev-quick-menu" id="nxo-dev-quick-menu">'+
-          '<div class="nxo-dev-quick-title">Ajustes rápidos</div>'+
-          '<button type="button" class="nxo-dev-quick-row" id="nxo-dev-theme-row">'+
-            '<span class="nxo-dev-quick-label"><img alt=""><span>Apariencia</span></span><strong>Claro</strong>'+
-          '</button>'+
-        '</div>'+
-      '</div>'+
-    '</div>';
-
-  document.body.prepend(header);
-
-  const quickButton=header.querySelector('#nxo-dev-quick-button');
-  const menu=header.querySelector('#nxo-dev-quick-menu');
-  quickButton.addEventListener('click',event=>{
-    event.stopPropagation();
-    const open=menu.classList.toggle('open');
-    quickButton.setAttribute('aria-expanded',open?'true':'false')
-  });
-  header.querySelector('#nxo-dev-theme-row').addEventListener('click',event=>{
-    event.stopPropagation();
-    if(window.NEXO_THEME_RUNTIME){
-      window.NEXO_THEME_RUNTIME.toggleTheme({persist:true,notify:true})
-    }
-    menu.classList.remove('open');
-    quickButton.setAttribute('aria-expanded','false');
-    syncQuickTheme()
-  });
-  header.querySelector('#nxo-dev-brand-home').addEventListener('click',goMySpace);
-  quickMenuOutsideHandler=event=>{
-    if(!header.contains(event.target)){
-      menu.classList.remove('open');
-      quickButton.setAttribute('aria-expanded','false')
-    }
-  };
-  document.addEventListener('click',quickMenuOutsideHandler,{signal:runtimeAbort.signal});
-  syncQuickTheme();
-  return header
 }
 
 function ensureDevelopmentTaxonomyStyle(){
