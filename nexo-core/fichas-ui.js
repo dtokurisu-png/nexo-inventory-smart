@@ -568,7 +568,14 @@ function mountRoot(){
 }
 window.addEventListener('resize',syncFichasFrameGeometry,{passive:true});
 function loading(text='Preparando '+workspaceToolName+'…'){
-  mountRoot().innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:'+UI_THEME.background+';color:'+UI_THEME.textPrimary+';font:600 14px Inter,Arial,sans-serif"><div style="text-align:center"><div style="width:34px;height:34px;border:3px solid '+UI_THEME.border+';border-top-color:'+UI_THEME.accent+';border-radius:50%;margin:0 auto 14px;animation:nxspin .8s linear infinite"></div><strong>'+esc(text)+'</strong><style>@keyframes nxspin{to{transform:rotate(360deg)}}</style></div></div>';
+  const root=mountRoot();
+  root.style.top='0';
+  root.style.right='0';
+  root.style.bottom='0';
+  root.style.left='0';
+  root.style.zIndex='2147483646';
+  root.style.background=UI_THEME.background;
+  root.innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;background:'+UI_THEME.background+';color:'+UI_THEME.textPrimary+';font:600 14px Inter,Arial,sans-serif;overflow:hidden"><div style="display:grid;place-items:center;gap:14px;min-width:260px;max-width:min(420px,calc(100vw - 40px));padding:28px 32px;border:1px solid '+UI_THEME.border+';border-radius:18px;background:'+UI_THEME.surfaceRaised+';box-shadow:0 18px 50px rgba(0,0,0,.18);text-align:center"><div style="width:34px;height:34px;border:3px solid '+UI_THEME.border+';border-top-color:'+UI_THEME.accent+';border-radius:50%;animation:nxspin .8s linear infinite"></div><strong>'+esc(text)+'</strong><style>@keyframes nxspin{to{transform:rotate(360deg)}}</style></div></div>';
 }
 function showError(error){
   const message=String(error?.message||error||'Error desconocido');
@@ -1213,12 +1220,14 @@ function handleEngineMessage(event){
 }
 function mountEngine(){
   const root=mountRoot();
+  syncFichasFrameGeometry();
+  root.style.zIndex='2147483000';
   root.innerHTML='';
   frame=document.createElement('iframe');
   frame.id='nexo-dm-engine';
   frame.src=ENGINE+'&nxoLang='+encodeURIComponent(workspaceLanguage)+'&nxoTheme='+encodeURIComponent(workspaceTheme);
   frame.title=workspaceToolName;
-  frame.allow='camera; notifications';
+  frame.allow='camera';
   frame.style.cssText='display:block;width:100%;height:100%;border:0;background:'+UI_THEME.background+';';
   frame.addEventListener('load',()=>{
     postToEngine('NEXO_WORKSPACE_CONTEXT',{workspaceMode:true,workspaceLabel,toolName:workspaceToolName,toolDescription:workspaceToolDescription,theme:workspaceTheme,language:workspaceLanguage});
