@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const ADAPTER_VERSION='20261018-header-recovery-5';
+const ADAPTER_VERSION='20261018-header-prueba-6';
 if(window.__nexoCaminoHeaderAdapter&&window.__nexoCaminoHeaderAdapterVersion===ADAPTER_VERSION)return;
 try{window.__nexoCaminoHeaderAdapterRuntime?.destroy?.()}catch(_){}
 const adapterAbort=new AbortController();
@@ -24,7 +24,7 @@ const p=decodeURIComponent(location.pathname).replace(/\/+$/,'');
 if(p!==PATH)return;
 
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
-const HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-21';
+const HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-23';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/';
@@ -81,7 +81,7 @@ async function ensureRuntimes(){
   if(!window.NEXO_THEME_RUNTIME)await loadScript('nexo-theme-runtime',THEME_RUNTIME);
   try{await window.NEXO_THEME_RUNTIME?.ready}catch(_){}
 
-  const expected='20261018-21';
+  const expected='20261018-23';
   if(window.NEXO_GLOBAL_HEADER?.version!==expected){
     try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
     try{window.NEXO_GLOBAL_HEADER?.unmount?.()}catch(_){}
