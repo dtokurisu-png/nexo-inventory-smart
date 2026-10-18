@@ -1770,6 +1770,7 @@ function sheetEditorTemplate(options={}){
       sourceCollection:state.sourceCollection,
       collectionId:state.collectionId,
       collectionGroup:state.collectionGroup,
+      workspaceId:context().type==='workspace'?String(context().workspaceId||context().id||''):'',
       title:String(state.title||'').trim(),
       description:String(state.description||'').trim(),
       photoFile:state.photoFile||null,
