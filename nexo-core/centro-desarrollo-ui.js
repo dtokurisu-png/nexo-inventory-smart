@@ -17,7 +17,7 @@ window.__nexoDevelopmentCenterStage0Version=VERSION;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
-const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-23';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-24';
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
@@ -123,7 +123,7 @@ function goBack(){
 function goMySpace(){location.assign('/my-site-1/blank-8')}
 
 function ensureGlobalHeaderRuntime(){
-  const expected='20261018-23';
+  const expected='20261018-24';
   if(window.NEXO_GLOBAL_HEADER?.version===expected)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
 
   try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
@@ -1385,7 +1385,7 @@ function bindFeatureInterception(){
   window.__nexoDevFeatureClickHandler=function(event){
     const card=event.target?.closest?.('[data-nxo-dev-card="1"]');
     if(!card)return;
-    if(event.target?.closest?.('#nxo-shared-header,#nxo-dev-preview'))return;
+    if(event.target?.closest?.('#nexo-global-header-runtime-host,#nxo-dev-preview'))return;
 
     const tool=toolForCard(card);
     if(!tool)return;
@@ -2493,12 +2493,7 @@ function ensureDevelopmentApp(){
     grid.appendChild(slot)
   });
 
-  const header=document.getElementById('nxo-shared-header');
-  if(header&&header.parentElement){
-    header.insertAdjacentElement('afterend',app)
-  }else{
-    document.body.prepend(app)
-  }
+  document.body.prepend(app)
 
   bindDevelopmentTree();
   return app
