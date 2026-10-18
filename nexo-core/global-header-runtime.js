@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261018-19';
+const VERSION='20261018-18';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -76,12 +76,8 @@ function ensureStyle(){
 }
 #${ID}[data-native="true"]{position:static!important;inset:auto!important;height:0!important;pointer-events:none!important}
 #${ID}[data-native="true"] .ngh-menu,#${ID}[data-native="true"] #nxo-header-flyout-root{pointer-events:auto}
-#${ID}[data-native="true"] #ngh-space{display:none;position:fixed;z-index:2147483645;width:310px;max-width:calc(100vw - 20px);max-height:min(72vh,620px);overflow:auto;padding:10px;border:1px solid var(--ngh-panel-border);border-top:0;border-radius:0 0 14px 14px;background:var(--ngh-surface);color:var(--ngh-panel-text);box-shadow:0 18px 50px var(--ngh-shadow)}
+#${ID}[data-native="true"] #ngh-space{display:none;position:fixed;z-index:2147483645;width:310px;max-width:calc(100vw - 20px);max-height:min(72vh,620px);overflow:auto;padding:10px;border:1px solid var(--ngh-panel-border);border-radius:14px;background:var(--ngh-surface);color:var(--ngh-panel-text);box-shadow:0 18px 50px var(--ngh-shadow)}
 #${ID}[data-native="true"] #ngh-space.open{display:grid;gap:5px}
-#${ID}[data-native="true"] #ngh-space.connected-right{border-bottom-right-radius:0}
-#${ID}[data-native="true"] #nxo-header-flyout-root{border-radius:0 14px 14px 0;margin:0;box-shadow:10px 18px 42px var(--ngh-shadow)}
-#${ID}[data-native="true"] #nxo-header-flyout-root.extend-below{border-bottom-left-radius:14px}
-#${ID}[data-native="true"] #nxo-header-flyout-root:not(.extend-below){border-bottom-left-radius:0}
 #${ID}[data-variant="camino"]{
   --ngh-bg:#06130F;
   --ngh-border:#21483C;
@@ -553,47 +549,23 @@ function enhanceNativeHeader(opts={}){
   let flyoutTimer=null,activeWorkspaceId='';
 
   const clearTimer=()=>{if(flyoutTimer){clearTimeout(flyoutTimer);flyoutTimer=null}};
-  const closeFlyout=()=>{clearTimer();activeWorkspaceId='';flyout.classList.remove('open','extend-below');menu.classList.remove('connected-right');flyout.innerHTML='';h.querySelectorAll('.ngh-workspace.flyout-open').forEach(x=>x.classList.remove('flyout-open'));h.querySelectorAll('[data-workspace-tools][aria-expanded="true"]').forEach(x=>x.setAttribute('aria-expanded','false'))};
+  const closeFlyout=()=>{clearTimer();activeWorkspaceId='';flyout.classList.remove('open');flyout.innerHTML='';h.querySelectorAll('.ngh-workspace.flyout-open').forEach(x=>x.classList.remove('flyout-open'));h.querySelectorAll('[data-workspace-tools][aria-expanded="true"]').forEach(x=>x.setAttribute('aria-expanded','false'))};
   const closeAll=()=>{closeFlyout();menu.classList.remove('open')};
   const positionMenu=()=>{
     const r=trigger.getBoundingClientRect();
     const width=Math.min(310,Math.max(240,window.innerWidth-20));
     let left=Math.min(Math.max(10,r.left),Math.max(10,window.innerWidth-width-10));
-    let headerBottom=r.bottom;
-    let node=trigger;
-    for(let depth=0;depth<8&&node;depth++,node=node.parentElement){
-      const nr=node.getBoundingClientRect?.();
-      if(!nr||nr.width<window.innerWidth*.45)continue;
-      if(nr.top<=r.top&&nr.bottom>=r.bottom&&nr.height<=180)headerBottom=Math.max(headerBottom,nr.bottom)
-    }
     menu.style.left=Math.round(left)+'px';
-    menu.style.top=Math.round(headerBottom)+'px';
+    menu.style.top=Math.round(r.bottom+8)+'px';
     menu.style.width=Math.round(width)+'px'
   };
   const positionFlyout=row=>{
     const rr=row.getBoundingClientRect(),mr=menu.getBoundingClientRect();
     const width=Math.min(286,Math.max(220,window.innerWidth-20));
-    let left=mr.right-1;
-    let side='right';
-    if(left+width>window.innerWidth-10){left=Math.max(10,mr.left-width+1);side='left'}
-    let top=Math.round(rr.top);
-    flyout.style.left=Math.round(left)+'px';
-    flyout.style.top=top+'px';
-    flyout.style.width=Math.round(width)+'px';
-    flyout.style.borderRadius=side==='right'?'0 14px 14px 0':'14px 0 0 14px';
-    requestAnimationFrame(()=>{
-      const fr=flyout.getBoundingClientRect(),main=menu.getBoundingClientRect();
-      const extendsBelow=fr.bottom>main.bottom+1;
-      flyout.classList.toggle('extend-below',extendsBelow);
-      menu.classList.toggle('connected-right',side==='right'&&extendsBelow);
-      if(side==='right'){
-        flyout.style.borderTopLeftRadius='0px';
-        flyout.style.borderBottomLeftRadius=extendsBelow?'14px':'0px'
-      }else{
-        flyout.style.borderTopRightRadius='0px';
-        flyout.style.borderBottomRightRadius=extendsBelow?'14px':'0px'
-      }
-    })
+    let left=mr.right+8;
+    if(left+width>window.innerWidth-10)left=Math.max(10,mr.left-width-8);
+    let top=Math.min(Math.max(10,rr.top),Math.max(10,window.innerHeight-360));
+    flyout.style.left=Math.round(left)+'px';flyout.style.top=Math.round(top)+'px';flyout.style.width=Math.round(width)+'px'
   };
   const bindFlyoutTools=()=>flyout.querySelectorAll('[data-flyout-tool]').forEach(b=>b.addEventListener('click',e=>{
     e.preventDefault();e.stopPropagation();
@@ -642,21 +614,15 @@ function enhanceNativeHeader(opts={}){
   }));
 
   const onTrigger=e=>{e.preventDefault();e.stopPropagation();const open=!menu.classList.contains('open');closeAll();if(open){positionMenu();menu.classList.add('open')}};
-  const onOutsidePointer=e=>{if(!menu.classList.contains('open')&&!flyout.classList.contains('open'))return;if(!h.contains(e.target)&&!trigger.contains(e.target))closeAll()};
-  const onOutsideFocus=e=>{if(!menu.classList.contains('open')&&!flyout.classList.contains('open'))return;if(!h.contains(e.target)&&!trigger.contains(e.target))closeAll()};
-  const onKey=e=>{if(e.key==='Escape')closeAll()};
-  const onResize=()=>{if(menu.classList.contains('open')){positionMenu();if(activeWorkspaceId){const row=h.querySelector('[data-workspace-row="'+CSS.escape(activeWorkspaceId)+'"]');if(row)positionFlyout(row)}}};
+  const onDoc=e=>{if(!h.contains(e.target)&&!trigger.contains(e.target))closeAll()};
+  const onResize=()=>{if(menu.classList.contains('open'))positionMenu()};
   trigger.addEventListener('click',onTrigger,true);
-  document.addEventListener('pointerdown',onOutsidePointer,true);
-  document.addEventListener('focusin',onOutsideFocus,true);
-  document.addEventListener('keydown',onKey,true);
+  document.addEventListener('click',onDoc,true);
   window.addEventListener('resize',onResize);
 
   window.__nexoNativeHeaderCleanup=()=>{
     trigger.removeEventListener('click',onTrigger,true);
-    document.removeEventListener('pointerdown',onOutsidePointer,true);
-    document.removeEventListener('focusin',onOutsideFocus,true);
-    document.removeEventListener('keydown',onKey,true);
+    document.removeEventListener('click',onDoc,true);
     window.removeEventListener('resize',onResize);
     if(h.isConnected)h.remove()
   };
