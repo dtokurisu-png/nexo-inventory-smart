@@ -1288,7 +1288,7 @@ function sheetEditorTemplate(options={}){
     if(kind==='preparation'){
       openNestedSheetEditor('preparation',{
         sheetType:'preparation',
-        recipeType:'PREPARATION',
+        recipeType:'SUBRECIPE',
         sourceCollection:'DMRecipes',
         collectionId:state.collectionId,
         createLabel:tr('Crear preparación','Create preparation'),
@@ -1877,7 +1877,7 @@ function openSheetEditorForType(type){
     return sheetEditorTemplate({
       kind:'preparation',
       sheetType:'preparation',
-      recipeType:'PREPARATION',
+      recipeType:'SUBRECIPE',
       sourceCollection:'DMRecipes',
       collectionId:ctx.collectionId,
       collectionGroup:ctx.collectionGroup,
