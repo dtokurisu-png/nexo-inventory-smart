@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-header-navigation-69';
+const VERSION='20261018-header-loader-cleanup-71';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
