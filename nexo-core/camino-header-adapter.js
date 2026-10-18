@@ -8,7 +8,7 @@ const p=decodeURIComponent(location.pathname).replace(/\/+$/,'');
 if(p!==PATH)return;
 
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
-const HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-18';
+const HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-20';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/';
@@ -46,17 +46,34 @@ function projectName(id){const known={'nova-vision':'Nova Visión','tu-sombra-es
 function loadScript(id,src){
   return new Promise((resolve,reject)=>{
     if(id&&document.getElementById(id)){
-      const s=document.getElementById(id);
-      if((id==='nexo-global-header-runtime-script'&&window.NEXO_GLOBAL_HEADER)||(id==='nexo-theme-runtime'&&window.NEXO_THEME_RUNTIME)){resolve();return}
-      s.addEventListener('load',resolve,{once:true});s.addEventListener('error',reject,{once:true});return
+      const existing=document.getElementById(id);
+      if(id==='nexo-theme-runtime'&&window.NEXO_THEME_RUNTIME){resolve();return}
+      existing.addEventListener('load',resolve,{once:true});
+      existing.addEventListener('error',reject,{once:true});
+      return
     }
-    const s=document.createElement('script');if(id)s.id=id;s.src=src;s.defer=true;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)
+    const script=document.createElement('script');
+    if(id)script.id=id;
+    script.src=src;
+    script.defer=true;
+    script.onload=resolve;
+    script.onerror=reject;
+    document.head.appendChild(script)
   })
 }
 async function ensureRuntimes(){
   if(!window.NEXO_THEME_RUNTIME)await loadScript('nexo-theme-runtime',THEME_RUNTIME);
   try{await window.NEXO_THEME_RUNTIME?.ready}catch(_){}
-  if(!window.NEXO_GLOBAL_HEADER)await loadScript('nexo-global-header-runtime-script',HEADER_RUNTIME)
+
+  const expected='20261018-20';
+  if(window.NEXO_GLOBAL_HEADER?.version!==expected){
+    try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
+    try{window.NEXO_GLOBAL_HEADER?.unmount?.()}catch(_){}
+    document.getElementById('nexo-global-header-runtime-script')?.remove();
+    try{delete window.NEXO_GLOBAL_HEADER}catch(_){window.NEXO_GLOBAL_HEADER=null}
+    await loadScript('nexo-global-header-runtime-script',HEADER_RUNTIME);
+    if(window.NEXO_GLOBAL_HEADER?.version!==expected)throw new Error('GLOBAL_HEADER_VERSION_MISMATCH')
+  }
 }
 function sessionBridge(){
   try{
