@@ -1,9 +1,9 @@
 (function(){
-const APP_VERSION='20261018-connected-panels-3';
+const APP_VERSION='20261018-connected-active-4';
 if(window.__nexoSchedulesApp&&window.__nexoSchedulesVersion===APP_VERSION)return;
 window.__nexoSchedulesApp=true;window.__nexoSchedulesVersion=APP_VERSION;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-tools-split-20261007-90';
-const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-26-stable';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-27-stable';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
@@ -19,7 +19,7 @@ const iconUrl=name=>NEXO_ICON_BASE+encodeURIComponent(String(name||''))+'.png';
 function iconTag(name,label='',extraClass=''){return '<img class="nxo-icon-img'+(extraClass?' '+esc(extraClass):'')+'" src="'+esc(iconUrl(name))+'" alt="'+esc(label)+'" loading="lazy" decoding="async">'}
 function addCss(){if(document.getElementById('nxo-css'))return;const l=document.createElement('link');l.id='nxo-css';l.rel='stylesheet';l.href=CSS;document.head.appendChild(l)}
 function ensureGlobalHeaderRuntime(){
-  const expected='20261018-26-stable';
+  const expected='20261018-27-stable';
   if(window.NEXO_GLOBAL_HEADER?.version===expected)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
   try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
   try{window.NEXO_GLOBAL_HEADER?.unmount?.()}catch(_){}
