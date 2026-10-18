@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-back-visible-76';
+const VERSION='20261018-viewport-anchored-77';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1224,6 +1224,14 @@ html[data-nxo-theme="day"] .nxo-dev-action-surface img{
   .nxo-dev-mark img{width:29px;height:29px}
   .nxo-dev-product-icon{max-width:58px!important;max-height:58px!important}
 }
+/* Centro de desarrollo: una sola superficie entre el header visible y el viewport. */
+#nxo-dev-app{position:fixed!important;inset:var(--nexo-global-header-height,68px) 0 0 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important;z-index:1!important}
+#nxo-dev-app .nxo-dev-owned-shell{height:100%!important;max-height:100%!important;min-height:0!important;overflow:hidden!important}
+#nxo-dev-app #nxo-dev-tool-detail{height:100%!important;max-height:100%!important;min-height:0!important;display:flex;flex-direction:column;overflow:hidden;padding-top:12px!important;padding-bottom:12px!important}
+#nxo-dev-app #nxo-dev-tool-detail[hidden]{display:none!important}
+#nxo-dev-app #nxo-dev-tool-detail .nxo-dev-detail-return-bar{flex:0 0 auto;z-index:2}
+#nxo-dev-app #nxo-dev-tool-detail .nxo-dev-detail-scroll{flex:1 1 auto;height:auto!important;min-height:0;overflow-y:auto}
+@media(min-width:900px){#nxo-dev-app .nxo-dev-owned-shell{overflow:hidden!important}}
 `;
   document.head.appendChild(style)
 }
