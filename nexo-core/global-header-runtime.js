@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261018-15';
+const VERSION='20261018-16';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -365,7 +365,24 @@ function ensureStyle(){
 `
   document.head.appendChild(s)
 }
-function host(){ensureStyle();ensureOutlineDefs();let h=document.getElementById(ID);if(!h){h=document.createElement('div');h.id=ID;document.body.appendChild(h)}return h}
+function removeLegacyHeaders(){
+  ['nxo-shared-header','nxo-dev-header'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.id!==ID)el.remove()
+  })
+}
+function host(){
+  removeLegacyHeaders();
+  ensureStyle();
+  ensureOutlineDefs();
+  let h=document.getElementById(ID);
+  if(!h){
+    h=document.createElement('div');
+    h.id=ID;
+    document.body.appendChild(h)
+  }
+  return h
+}
 function closeMenus(h,except=''){h.querySelectorAll('.ngh-menu,.ngh-pop').forEach(x=>{if(x.id!==except)x.classList.remove('open')});h.querySelectorAll('[aria-expanded="true"]').forEach(x=>{const target=x.dataset.menuTarget;if(target!==except)x.setAttribute('aria-expanded','false')})}
 function toggle(h,id,button){const menu=h.querySelector('#'+id);if(!menu)return;const open=!menu.classList.contains('open');closeMenus(h,open?id:'');menu.classList.toggle('open',open);button?.setAttribute('aria-expanded',open?'true':'false')}
 function findTool(nav,key,workspaceId=''){if(workspaceId){const ws=(nav?.workspaces||[]).find(x=>String(x.workspaceId)===String(workspaceId));return (ws?.tools||[]).find(x=>String(x.toolKey)===String(key))||null}return (nav?.personal?.tools||[]).find(x=>String(x.toolKey)===String(key))||null}
