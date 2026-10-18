@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-header-prueba-75';
+const VERSION='20261018-plan-png-originals-73';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -61,15 +61,15 @@ const PLAN_MEMBERSHIP=Object.freeze({
   numa:['business','learning'],maria:['learning'],'camino-agents':['learning']
 });
 const PLAN_INFO=Object.freeze({
-  business:{label:'Business',icon:'♧'},
-  learning:{label:'Learning',icon:'✦'},
-  complete:{label:'Completo',icon:'◆'}
+  business:{label:'Business',image:'https://static.wixstatic.com/media/8b64a8_42dfdc35ea464cc58b4e281dd03c5c03~mv2.png'},
+  learning:{label:'Learning',image:'https://static.wixstatic.com/media/8b64a8_b7f0f3db134e4a7f9ac418e3763b71bb~mv2.png'},
+  complete:{label:'Completo',image:'https://static.wixstatic.com/media/8b64a8_728c309f3c8f44fb997498c4c51c3cd3~mv2.png'}
 });
 function toolPlanIcons(tool){
   const primary=PLAN_MEMBERSHIP[tool.key]||[];
   const plans=[...primary,'complete'];
   return '<span class="nxo-dev-plan-icons" role="group" aria-label="Planes incluidos: '+plans.map(k=>PLAN_INFO[k].label).join(', ')+'">'+
-    plans.map(k=>'<span class="nxo-dev-plan-icon nxo-dev-plan-'+k+'" title="Incluido en '+PLAN_INFO[k].label+'" aria-label="'+PLAN_INFO[k].label+'">'+PLAN_INFO[k].icon+'</span>').join('')+
+    plans.map(k=>'<span class="nxo-dev-plan-icon nxo-dev-plan-'+k+'" title="Incluido en '+PLAN_INFO[k].label+'" aria-label="'+PLAN_INFO[k].label+'">'+'<img src="'+PLAN_INFO[k].image+'" alt="" loading="lazy" decoding="async" />'+'</span>').join('')+
     '</span>'
 }
 let scheduled=false,observer=null;
@@ -685,10 +685,7 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
   color:var(--nxo-accent)
 }
 .nxo-dev-plan-icons{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:100%}
-.nxo-dev-plan-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:0 0 44px;border-radius:10px;border:1px solid #244a8f;background:#244a8f;box-shadow:0 2px 6px rgba(0,0,0,.12);color:#fff}
-.nxo-dev-plan-icon svg{display:block;width:30px;height:30px;flex:0 0 30px;color:#fff;stroke:#fff;stroke-width:2.3;filter:drop-shadow(0 0 .35px #fff)}
-.nxo-dev-plan-business,.nxo-dev-plan-learning,.nxo-dev-plan-complete{color:#fff}
-.nxo-dev-plan-card{margin:0 0 5px;align-self:flex-start}
+.nxo-dev-plan-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:0 0 44px;background:transparent;border:0;border-radius:0;box-shadow:none;padding:0;line-height:1}\n.nxo-dev-plan-icon img{display:block;width:100%;height:100%;object-fit:contain;border:0;background:transparent}\n.nxo-dev-plan-card{margin:0 0 5px;align-self:flex-start}
 .nxo-dev-detail-title-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .nxo-dev-detail-title-line .nxo-dev-plan-icons{flex-shrink:0}
 .nxo-dev-detail-title{
