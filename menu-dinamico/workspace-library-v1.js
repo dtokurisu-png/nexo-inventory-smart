@@ -788,6 +788,17 @@ function requestTechnicalSheetCreate(draft){
     parent.postMessage({type:'NEXO_DM_CREATE_TECHNICAL_SHEET',payload:{requestId,draft}},'*')
   })
 }
+function requestTechnicalSheetUpdate(draft){
+  const requestId='sheet_update_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  return new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{
+      pendingSheetCreateRequests.delete(requestId);
+      reject(new Error(tr('La edición de la ficha tardó demasiado.','Sheet update timed out.')))
+    },180000);
+    pendingSheetCreateRequests.set(requestId,{resolve,reject,timer});
+    parent.postMessage({type:'NEXO_DM_UPDATE_TECHNICAL_SHEET',payload:{requestId,draft}},'*')
+  })
+}
 function sheetEditorTemplate(options={}){
   const parentState=options.parentState||null;
   if(parentState&&parentState!==sheetEditorTop())return null;
@@ -795,6 +806,8 @@ function sheetEditorTemplate(options={}){
   const layer=sheetEditorShell({...options,layerId:'nexoSheetEditorLayer_'+editorId});
   const state={
     id:editorId,
+    mode:options.mode==='edit'?'edit':'create',
+    entityId:String(options.entityId||''),
     kind:String(options.kind||'technical-sheet'),
     sheetType:String(options.sheetType||''),
     recipeType:String(options.recipeType||''),
@@ -807,18 +820,25 @@ function sheetEditorTemplate(options={}){
     onClose:typeof options.onClose==='function'?options.onClose:null,
     cleanups:[],
     resumeFocus:null,
-    title:'',
-    description:'',
+    title:String(options.initialTitle||''),
+    description:String(options.initialDescription||''),
     photoFile:null,
-    photoUrl:'',
-    supplyPhotos:[],
-    primaryPhotoId:'',
-    defaultQuantity:'',
-    defaultUnit:'',
-    supplyMode:'CONSUMABLE',
-    supplyProcesses:[],
-    components:[],
-    steps:[],
+    photoUrl:String(options.initialPhotoUrl||''),
+    removeExistingPhoto:false,
+    supplyPhotos:Array.isArray(options.initialSupplyPhotos)?options.initialSupplyPhotos.map((photo,index)=>({
+      id:String(photo.id||('existing-photo-'+index)),
+      file:null,
+      url:String(photo.url||''),
+      image:photo.image||null,
+      existing:true
+    })):[],
+    primaryPhotoId:String(options.initialPrimaryPhotoId||''),
+    defaultQuantity:options.initialDefaultQuantity==null?'':String(options.initialDefaultQuantity),
+    defaultUnit:String(options.initialDefaultUnit||''),
+    supplyMode:String(options.initialSupplyMode||'CONSUMABLE')==='PROCESSABLE'?'PROCESSABLE':'CONSUMABLE',
+    supplyProcesses:Array.isArray(options.initialSupplyProcesses)?options.initialSupplyProcesses.map(row=>({...row})):[],
+    components:Array.isArray(options.initialComponents)?options.initialComponents.map(row=>({...row})):[],
+    steps:Array.isArray(options.initialSteps)?options.initialSteps.map(row=>({...row})):[],
     mopHistory:[],
     mopHistoryIndex:-1,
     restoringMopHistory:false,
@@ -878,11 +898,18 @@ function sheetEditorTemplate(options={}){
   layer.appendChild(unitPicker);
   const editorCanvas=layer.querySelector('.nexoSheetEditorCanvas');
   const isSupplyEditor=state.kind==='supply';
+  title.value=state.title;
+  description.value=state.description;
   if(isSupplyEditor){
     compositionSection.hidden=true;
     mopSection.hidden=true;
     supplySection.hidden=false;
-    supplyPhotoGallery.hidden=false
+    supplyPhotoGallery.hidden=false;
+    supplyQuantity.value=state.defaultQuantity;
+    supplyUnit.value=state.defaultUnit;
+  }else if(state.photoUrl){
+    photoPreview.innerHTML='<img src="'+esc(state.photoUrl)+'" alt="">';
+    photoRemove.hidden=false;
   }
 
   const componentById=id=>state.components.find(row=>row.id===id);
@@ -1629,6 +1656,7 @@ function sheetEditorTemplate(options={}){
     if(!/^image\/(jpeg|png|webp)$/i.test(String(file.type||'')))return;
     if(state.photoUrl)try{URL.revokeObjectURL(state.photoUrl)}catch(_){}
     state.photoFile=file;
+    state.removeExistingPhoto=false;
     state.photoUrl=URL.createObjectURL(file);
     photoPreview.innerHTML='<img src="'+esc(state.photoUrl)+'" alt="">';
     photoRemove.hidden=false
@@ -1638,6 +1666,7 @@ function sheetEditorTemplate(options={}){
     if(state.photoUrl)try{URL.revokeObjectURL(state.photoUrl)}catch(_){}
     state.photoFile=null;
     state.photoUrl='';
+    state.removeExistingPhoto=true;
     photoInput.value='';
     photoPreview.innerHTML='<div>'+icon('ficha-tecnica')+'<span>'+esc(tr('Foto del producto','Product photo'))+'</span></div>';
     photoRemove.hidden=true
@@ -1675,7 +1704,7 @@ function sheetEditorTemplate(options={}){
     };
     renderSupplyPhotos();
     renderSupplyProcessList();
-    setSupplyMode('CONSUMABLE')
+    setSupplyMode(state.supplyMode)
   }
 
   supplyTrigger.onclick=()=>toggleCompositionMenu('ingredient');
@@ -1764,6 +1793,8 @@ function sheetEditorTemplate(options={}){
     if(pendingDraft&&editorPlainText(pendingDraft))steps.push({id:sheetEditorId('mop-pending'),html:pendingDraft,text:editorPlainText(pendingDraft)});
     return {
       id:state.id,
+      mode:state.mode,
+      entityId:state.entityId,
       kind:state.kind,
       sheetType:state.sheetType,
       recipeType:state.recipeType,
@@ -1774,16 +1805,18 @@ function sheetEditorTemplate(options={}){
       title:String(state.title||'').trim(),
       description:String(state.description||'').trim(),
       photoFile:state.photoFile||null,
+      removeExistingPhoto:state.removeExistingPhoto===true,
+      existingImages:(state.supplyPhotos||[]).filter(photo=>photo.existing&&photo.image).map(photo=>photo.image),
       supplyPhotos:(state.supplyPhotos||[]).map(photo=>({id:photo.id,file:photo.file||null,primary:photo.id===state.primaryPhotoId})),
       defaultQuantity:String(state.defaultQuantity||'').trim(),
       defaultUnit:String(state.defaultUnit||'').trim(),
       supplyMode:state.supplyMode,
       supplyProcesses:(state.supplyProcesses||[]).map(row=>({
-        id:row.id,source:row.source,processId:row.processId||'',name:String(row.name||'').trim(),
+        id:row.id,entityId:row.entityId||'',source:row.source,processId:row.processId||'',name:String(row.name||'').trim(),
         description:String(row.description||'').trim(),imageFile:row.imageFile||null
       })),
       components:(state.components||[]).map(row=>({
-        id:row.id,source:row.source,targetIngredientId:row.targetIngredientId||'',targetRecipeId:row.targetRecipeId||'',
+        id:row.id,entityId:row.entityId||'',source:row.source,targetIngredientId:row.targetIngredientId||'',targetRecipeId:row.targetRecipeId||'',
         name:String(row.name||'').trim(),quantity:String(row.quantity||'').trim(),unit:String(row.unit||'').trim(),
         childDraft:row.childDraft||null
       })),
@@ -1812,11 +1845,12 @@ function sheetEditorTemplate(options={}){
     }
     createButton.disabled=true;
     cancelButton.disabled=true;
-    createStatus.textContent=tr('Creando ficha…','Creating sheet…');
+    const editing=state.mode==='edit';
+    createStatus.textContent=editing?tr('Guardando cambios…','Saving changes…'):tr('Creando ficha…','Creating sheet…');
     try{
-      const result=await requestTechnicalSheetCreate(draft);
-      createStatus.textContent=tr('Ficha creada correctamente.','Sheet created successfully.');
-      sheetEditorClose(state,'created');
+      const result=editing?await requestTechnicalSheetUpdate(draft):await requestTechnicalSheetCreate(draft);
+      createStatus.textContent=editing?tr('Cambios guardados correctamente.','Changes saved successfully.'):tr('Ficha creada correctamente.','Sheet created successfully.');
+      sheetEditorClose(state,editing?'updated':'created');
       if(result?.data)window.__NEXO_DM_DATA__=result.data;
       parent.postMessage({type:'DM_LOAD_MENU_DATA',payload:{requestId:'refresh_'+Date.now()}},'*')
     }catch(error){
@@ -1845,6 +1879,99 @@ function sheetEditorTemplate(options={}){
   });
   return state
 }
+
+function editorMethodSteps(method){
+  return String(method||'').split(/\r?\n/).map(line=>String(line||'').replace(/^\s*\d+\.\s*/,'').trim()).filter(Boolean).map((text,index)=>({
+    id:'existing-step-'+index,
+    html:esc(text)
+  }))
+}
+function editCollectionId(entity){
+  return String(entity?.collectionId||activeCollectionId||'')
+}
+function openEditRecipe(entityId){
+  const recipe=activeRecipes().find(row=>String(row._id)===String(entityId||''));
+  if(!recipe||recipe.editable!==true)return null;
+  const sections=(data().sections||[]).filter(row=>String(row.recipeId)===String(recipe._id));
+  const sectionIds=new Set(sections.map(row=>String(row._id)));
+  const components=(data().components||[]).filter(row=>String(row.recipeId)===String(recipe._id)||sectionIds.has(String(row.sectionId))).sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)).map(row=>({
+    id:String(row._id),
+    entityId:String(row._id),
+    source:row.targetRecipeId?'preparation':'ingredient',
+    targetIngredientId:String(row.targetIngredientId||''),
+    targetRecipeId:String(row.targetRecipeId||''),
+    name:text(row,'displayEn','displayEs')||'',
+    quantity:row.quantity==null?'':String(row.quantity),
+    unit:text(row,'unitEn','unitEs')||''
+  }));
+  const isDish=String(recipe.recipeType||'').toUpperCase()==='DISH';
+  return sheetEditorTemplate({
+    mode:'edit',
+    entityId:String(recipe._id),
+    kind:isDish?'technical-sheet':'preparation',
+    sheetType:isDish?'final':'preparation',
+    recipeType:isDish?'DISH':'SUBRECIPE',
+    sourceCollection:'DMRecipes',
+    collectionId:editCollectionId(recipe),
+    collectionGroup:activeCollectionGroup,
+    createLabel:tr('Guardar cambios','Save changes'),
+    ariaLabel:tr('Editar ficha técnica','Edit technical sheet'),
+    eyebrow:isDish?tr('Producto final','Final product'):tr('Preparación','Preparation'),
+    heading:tr('Editar ficha técnica','Edit technical sheet'),
+    photoLabel:isDish?tr('Foto del producto final','Final product photo'):tr('Foto de la preparación','Preparation photo'),
+    titlePlaceholder:isDish?tr('Nombre del producto final','Final product name'):tr('Nombre de la preparación','Preparation name'),
+    initialTitle:text(recipe,'titleEn','titleEs')||'',
+    initialDescription:text(recipe,'notesEn','notesEs')||'',
+    initialPhotoUrl:img(recipe.heroImage),
+    initialComponents:components,
+    initialSteps:editorMethodSteps(text(recipe,'methodEn','methodEs'))
+  })
+}
+function openEditSupply(entityId){
+  const supply=activeProducts().find(row=>String(row._id)===String(entityId||''));
+  if(!supply||supply.editable!==true)return null;
+  const photos=Array.isArray(supply.images)?supply.images.filter(Boolean):[];
+  const processes=(data().supplyProcesses||data().preparations||[]).filter(row=>String(row.supplyId||row.ingredientId||'')===String(supply._id)).sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)).map(row=>({
+    id:String(row._id),
+    entityId:String(row._id),
+    source:'existing',
+    processId:String(row.processId||''),
+    name:text(row,'nameEn','nameEs')||'',
+    description:text(row,'descriptionEn','descriptionEs')||'',
+    imageFile:null,
+    imageUrl:img(row.image)
+  }));
+  return sheetEditorTemplate({
+    mode:'edit',
+    entityId:String(supply._id),
+    kind:'supply',
+    sheetType:'supply',
+    recipeType:'',
+    sourceCollection:'DMIngredients',
+    collectionId:editCollectionId(supply),
+    collectionGroup:activeCollectionGroup,
+    createLabel:tr('Guardar cambios','Save changes'),
+    ariaLabel:tr('Editar insumo','Edit supply'),
+    eyebrow:tr('Insumo','Supply'),
+    heading:tr('Editar ficha técnica','Edit technical sheet'),
+    photoLabel:tr('Fotos del insumo','Supply photos'),
+    titlePlaceholder:tr('Nombre del insumo','Supply name'),
+    descriptionPlaceholder:tr('Describe brevemente este insumo.','Briefly describe this supply.'),
+    initialTitle:text(supply,'nameEn','nameEs')||'',
+    initialDescription:text(supply,'descriptionEn','descriptionEs')||'',
+    initialSupplyPhotos:photos.map((image,index)=>({id:String(image?.id||image?._id||('existing-'+index)),url:img(image),image})),
+    initialPrimaryPhotoId:String(photos[0]?.id||photos[0]?._id||(photos.length?'existing-0':'')),
+    initialDefaultQuantity:supply.defaultQuantity,
+    initialDefaultUnit:supply.defaultUnit||'',
+    initialSupplyMode:supplyModeFor(supply),
+    initialSupplyProcesses:processes
+  })
+}
+window.NEXO_FICHAS_EDITOR=Object.freeze({
+  openEditRecipe,
+  openEditSupply
+});
+
 function closeSheetTypeChooser(){
   document.getElementById('nexoSheetTypeChooserLayer')?.remove()
 }
@@ -1979,7 +2106,7 @@ window.addEventListener('message',e=>{
     else wait.reject(new Error(String(p.error||tr('No se pudo crear la colección.','Could not create collection.'))));
     return
   }
-  if(m?.type==='NEXO_DM_CREATE_TECHNICAL_SHEET_RESULT'){
+  if(m?.type==='NEXO_DM_CREATE_TECHNICAL_SHEET_RESULT'||m?.type==='NEXO_DM_UPDATE_TECHNICAL_SHEET_RESULT'){
     const requestId=String(p.requestId||'');
     const wait=pendingSheetCreateRequests.get(requestId);
     if(!wait)return;
