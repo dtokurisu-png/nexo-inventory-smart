@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261014-13';
+const VERSION='20261018-14';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -263,6 +263,77 @@ function ensureStyle(){
 #${ID} .ngh-setting-label{display:flex;align-items:center;gap:8px;min-width:0}
 #${ID} .ngh-setting-value{min-width:34px;padding:3px 7px;border:1px solid var(--ngh-panel-border);border-radius:999px;color:var(--ngh-panel-muted);font-size:9px;text-align:center}
 #${ID} .ngh-empty{padding:12px 10px;color:var(--ngh-panel-muted);font-size:10px}
+
+/* Unified global-header controls: contexts, language, theme and account use the same
+   interaction language as the main navigation buttons. */
+#${ID} .ngh-utils,
+#${ID} .ngh-contexts,
+#${ID} .ngh-desktop-settings{align-self:stretch;align-items:stretch}
+#${ID} .ngh-context{align-items:stretch}
+#${ID} .ngh-context-btn,
+#${ID} .ngh-direct-setting,
+#${ID} .ngh-icon-btn,
+#${ID} .ngh-account{
+  position:relative;
+  height:100%;
+  min-height:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  color:var(--ngh-muted)
+}
+#${ID} .ngh-context-btn{min-width:108px;padding:8px 9px}
+#${ID} .ngh-direct-setting{padding:0 9px}
+#${ID} .ngh-account{padding:5px 7px}
+#${ID} .ngh-icon-btn{width:40px}
+#${ID} .ngh-context-btn:after,
+#${ID} .ngh-direct-setting:after,
+#${ID} .ngh-icon-btn:after,
+#${ID} .ngh-account:after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:3px;
+  border-radius:3px 3px 0 0;
+  background:transparent
+}
+#${ID} .ngh-context-btn:not(.static):hover,
+#${ID} .ngh-context-btn:not(.static):focus-visible,
+#${ID} .ngh-context-btn[aria-expanded="true"],
+#${ID} .ngh-direct-setting:hover,
+#${ID} .ngh-direct-setting:focus-visible,
+#${ID} .ngh-icon-btn:hover,
+#${ID} .ngh-icon-btn:focus-visible,
+#${ID} .ngh-icon-btn[aria-expanded="true"],
+#${ID} .ngh-account:hover,
+#${ID} .ngh-account:focus-visible,
+#${ID} .ngh-account[aria-expanded="true"]{
+  outline:none;
+  background:transparent;
+  border-color:transparent;
+  color:var(--ngh-text)
+}
+#${ID} .ngh-context-btn:not(.static):hover:after,
+#${ID} .ngh-context-btn:not(.static):focus-visible:after,
+#${ID} .ngh-context-btn[aria-expanded="true"]:after,
+#${ID} .ngh-direct-setting:hover:after,
+#${ID} .ngh-direct-setting:focus-visible:after,
+#${ID} .ngh-icon-btn:hover:after,
+#${ID} .ngh-icon-btn:focus-visible:after,
+#${ID} .ngh-icon-btn[aria-expanded="true"]:after,
+#${ID} .ngh-account:hover:after,
+#${ID} .ngh-account:focus-visible:after,
+#${ID} .ngh-account[aria-expanded="true"]:after{background:var(--ngh-interaction)}
+#${ID} .ngh-context-btn.static{color:var(--ngh-text)}
+#${ID} .ngh-context-btn.static:after{background:color-mix(in srgb,var(--ngh-active) 35%,transparent)}
+#${ID} .ngh-context-btn span{opacity:.64}
+#${ID} .ngh-context-btn strong,
+#${ID} .ngh-direct-setting strong{color:inherit}
+#${ID} .ngh-account .ngh-user strong{color:inherit}
+#${ID} .ngh-account[aria-expanded="true"] .ngh-role,
+#${ID} .ngh-account:hover .ngh-role{border-color:var(--ngh-interaction);color:var(--ngh-active)}
+
 @media(max-width:760px){
   #${ID}{height:${HEIGHT}px}
   #${ID} .ngh-bar{padding:0 10px;gap:8px}
