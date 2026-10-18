@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-plan-identifiers-68';
+const VERSION='20261018-header-navigation-69';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1863,6 +1863,90 @@ async function developmentInstallApi(action,payload={}){
   }
   return data.data
 }
+async function hydrateDevelopmentHeaderNavigation(){
+  if(!developmentSession)return;
+  const current=developmentSession.navigation||{};
+  const currentSpaces=Array.isArray(current.workspaces)?current.workspaces:[];
+  if(currentSpaces.length)return;
+
+  const defs=TOOL_DEFS.filter(tool=>tool?.cmsKey);
+  const results=await Promise.allSettled(defs.map(async tool=>{
+    const options=await developmentInstallApi('options',{toolKey:tool.cmsKey});
+    return {tool,options}
+  }));
+
+  const workspaces=new Map();
+  const personalTools=[];
+  const personalSeen=new Set();
+
+  for(const result of results){
+    if(result.status!=='fulfilled')continue;
+    const {tool,options}=result.value||{};
+    if(!tool||!options)continue;
+    const routePath=String(options.routePath||tool.routePath||'').trim();
+    const destinations=Array.isArray(options.destinations)?options.destinations:[];
+
+    for(const destination of destinations){
+      const type=String(destination?.type||'').toLowerCase();
+      if(type==='workspace'){
+        const id=String(destination?.id||'').trim();
+        if(!id)continue;
+        if(!workspaces.has(id)){
+          workspaces.set(id,{
+            workspaceId:id,
+            name:String(destination?.name||'Workspace'),
+            description:'',
+            logoImage:null,
+            roleKey:'',
+            tools:[]
+          })
+        }
+        if(destination?.canOpen===true&&routePath){
+          const ws=workspaces.get(id);
+          if(!ws.tools.some(x=>String(x.toolKey)===String(tool.cmsKey))){
+            ws.tools.push({
+              toolKey:tool.cmsKey,
+              name:tool.title||options.nameEs||tool.cmsKey,
+              nameEs:tool.title||options.nameEs||tool.cmsKey,
+              descriptionEs:tool.summary||'',
+              routePath,
+              status:'ACTIVE'
+            })
+          }
+        }
+      }else if(type==='personal'&&destination?.canOpen===true&&routePath){
+        if(!personalSeen.has(tool.cmsKey)){
+          personalSeen.add(tool.cmsKey);
+          personalTools.push({
+            toolKey:tool.cmsKey,
+            name:tool.title||options.nameEs||tool.cmsKey,
+            nameEs:tool.title||options.nameEs||tool.cmsKey,
+            descriptionEs:tool.summary||'',
+            routePath,
+            status:'ACTIVE'
+          })
+        }
+      }
+    }
+  }
+
+  const recoveredSpaces=[...workspaces.values()].sort((a,b)=>
+    String(a.name||'').localeCompare(String(b.name||''),'es',{sensitivity:'base'})
+  );
+
+  if(!recoveredSpaces.length&&!personalTools.length)return;
+
+  developmentSession.navigation={
+    personal:{
+      ...(current.personal||{}),
+      tools:Array.isArray(current.personal?.tools)&&current.personal.tools.length
+        ? current.personal.tools
+        : personalTools
+    },
+    workspaces:recoveredSpaces
+  };
+  developmentSession.navigationRecoveredFromInstallOptions=true
+}
 async function developmentAcquisitionApi(action,input={}){
   const response=await fetch(developmentFunctionUrl('nexoDevelopmentAcquisition'),{
     method:'POST',
@@ -2574,6 +2658,8 @@ async function start(){
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
 
   try{await loadDevelopmentSession()}catch(_){developmentSession=null}
+  if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
+  try{await hydrateDevelopmentHeaderNavigation()}catch(_){}
   if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
   mountDevelopmentHeader();
   ensureDevelopmentApp();
