@@ -166,12 +166,14 @@ async function bootstrap(){
   try{
     const h=await api('caminoHealth',{requireAuth:false});projectId=String(h.projectId||h.data?.projectId||projectId)
   }catch(_){}
-  try{
-    const p=await api('caminoLore?canonEngine=profiles&projectId='+encodeURIComponent(projectId),{requireAuth:false});
-    const row=p.data?.profile||null;
-    if(PROFILE_TYPES.includes(row?.profileType))profileType=row.profileType;
-    profileLabel=PROFILE_LABELS[profileType]||row?.profileLabel||'Editorial'
-  }catch(_){}
+  if(sessionBridge()){
+    try{
+      const p=await api('caminoLore?canonEngine=profiles&projectId='+encodeURIComponent(projectId),{requireAuth:false});
+      const row=p.data?.profile||null;
+      if(PROFILE_TYPES.includes(row?.profileType))profileType=row.profileType;
+      profileLabel=PROFILE_LABELS[profileType]||row?.profileLabel||'Editorial'
+    }catch(_){}
+  }
   mount();position();
   window.addEventListener('resize',position);
   setInterval(position,1000);
