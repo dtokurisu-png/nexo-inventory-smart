@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261018-18';
+const VERSION='20261018-20';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
