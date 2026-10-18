@@ -1,4 +1,10 @@
 {
-  "version": 0,
-  "note": "No active unlock. Generate a fresh signed proof only after explicit owner authorization."
+  "version": 1,
+  "scopes": [
+    "centro-visual"
+  ],
+  "issuedAt": "2026-10-18T08:30:06Z",
+  "expiresAt": "2026-10-18T09:30:06Z",
+  "nonce": "3ddb9ed600d4b4f27c789056fa59e486",
+  "signature": "flIXXNnQTX7Eg+6eLLzrTbiQwTcoWJFFCDv7+Gsx3JXXlz2SSFXkCltu/i1NHyw25lTcSTXdCo2hW8PSdEZWDw=="
 }
