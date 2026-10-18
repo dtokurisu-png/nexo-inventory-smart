@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-plan-library-modal-81';
+const VERSION='20261018-dev-bg-loading-fix-82';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -123,7 +123,7 @@ function goBack(){
 function goMySpace(){location.assign('/my-site-1/blank-8')}
 
 function ensureGlobalHeaderRuntime(){
-  const expected='20261018-27-stable';
+  const expected='20261018-28-global-outside-close';
   if(window.NEXO_GLOBAL_HEADER?.version===expected)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
 
   try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
@@ -1138,12 +1138,12 @@ function ensureStyle(){
   style.textContent=`
 #nxo-dev-header,#nxo-shared-header{display:none!important}
 
-#nxo-dev-background-root{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:#0c1224}
+#nxo-dev-background-root{position:fixed;inset:0;z-index:2147482900;pointer-events:none;overflow:hidden;background:#0c1224}
 #nxo-dev-background-root #nxo-organic-canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;pointer-events:none;z-index:1}
 #nxo-dev-background-root #nxo-theme-film{position:fixed;inset:0;z-index:2;pointer-events:none;transition:background .22s ease}
 html[data-nxo-theme="day"] #nxo-dev-background-root #nxo-theme-film{background:rgba(248,246,239,.42);-webkit-backdrop-filter:blur(.35px);backdrop-filter:blur(.35px)}
 html[data-nxo-theme="night"] #nxo-dev-background-root #nxo-theme-film{background:rgba(5,8,14,.30)}
-#nxo-dev-loading{position:fixed;inset:0;z-index:2147482999;min-height:100dvh;display:grid;place-items:center;padding:22px;text-align:center;color:var(--nxo-text-primary);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:transparent}
+#nxo-dev-loading{position:fixed;inset:0;z-index:2147483100;min-height:100dvh;display:grid;place-items:center;padding:22px;text-align:center;color:var(--nxo-text-primary);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:transparent}
 #nxo-dev-loading[hidden]{display:none!important}
 #nxo-dev-loading .nxo-spinner{width:42px;height:42px;border:3px solid rgba(184,197,216,.18);border-top-color:var(--nxo-accent);border-radius:50%;animation:nxodevspin .78s linear infinite;margin:0 auto 13px}
 #nxo-dev-loading strong{display:block;font-size:14px}
@@ -3497,32 +3497,40 @@ async function start(){
   ensureStyle();
   ensureDevelopmentTaxonomyStyle();
   showDevelopmentLoading();
-  await Promise.all([ensureThemeRuntime(),ensureGlobalHeaderRuntime()]);
-  if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
-  await window.NEXO_THEME_RUNTIME?.ready;
-  if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
+  try{
+    await Promise.all([ensureThemeRuntime(),ensureGlobalHeaderRuntime()]);
+    if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
+    await window.NEXO_THEME_RUNTIME?.ready;
+    if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
 
-  try{await loadDevelopmentSession()}catch(_){developmentSession=null}
-  if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
-  try{await hydrateDevelopmentHeaderNavigation()}catch(_){}
-  if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
-  mountDevelopmentHeader();
-  syncDevelopmentViewport();
-  ensureDevelopmentApp();
-  applyRequestedDevelopmentView();
-  ensurePreviewPanel();
-  bindPreviewDelegation();
-  bindFeatureInterception();
-  refresh();
-  hideDevelopmentLoading();
+    try{await loadDevelopmentSession()}catch(_){developmentSession=null}
+    if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
+    try{await hydrateDevelopmentHeaderNavigation()}catch(_){}
+    if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
+    mountDevelopmentHeader();
+    syncDevelopmentViewport();
+    ensureDevelopmentApp();
+    applyRequestedDevelopmentView();
+    ensurePreviewPanel();
+    bindPreviewDelegation();
+    bindFeatureInterception();
+    refresh();
+    hideDevelopmentLoading();
 
-  window.addEventListener('resize',syncDevelopmentViewport,{signal:runtimeAbort.signal});
-  window.addEventListener('nexo-theme-change',()=>{mountDevelopmentHeader();syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
-  window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
+    window.addEventListener('resize',syncDevelopmentViewport,{signal:runtimeAbort.signal});
+    window.addEventListener('nexo-theme-change',()=>{mountDevelopmentHeader();syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
+    window.addEventListener('nexo-theme-ready',()=>{syncQuickTheme();schedule()},{signal:runtimeAbort.signal});
 
-  observer=new MutationObserver(schedule);
-  const target=document.getElementById('nxo-dev-app')||document.body;
-  observer.observe(target,{subtree:true,childList:true,characterData:true})
+    observer=new MutationObserver(schedule);
+    const target=document.getElementById('nxo-dev-app')||document.body;
+    observer.observe(target,{subtree:true,childList:true,characterData:true})
+  }catch(error){
+    const loading=document.getElementById('nxo-dev-loading');
+    if(loading){
+      loading.innerHTML='<div><strong>No se pudo abrir Centro de desarrollo</strong><p class="nxo-muted">'+escapeHtml(error?.message||String(error))+'</p></div>'
+    }
+    throw error
+  }
 }
 
 if(document.readyState==='loading'){
