@@ -1,5 +1,5 @@
 (function(){
-const APP_VERSION='20261018-connected-active-9';
+const APP_VERSION='20261018-header28-align-10';
 if(window.__nexoMiEspacioApp&&window.__nexoMiEspacioVersion===APP_VERSION)return;
 window.__nexoMiEspacioApp=true;
 window.__nexoMiEspacioVersion=APP_VERSION;
