@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-plan-svg-icons-70';
+const VERSION='20261018-header-navigation-69';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -17,7 +17,7 @@ window.__nexoDevelopmentCenterStage0Version=VERSION;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
-const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-19';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-18';
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
@@ -61,9 +61,9 @@ const PLAN_MEMBERSHIP=Object.freeze({
   numa:['business','learning'],maria:['learning'],'camino-agents':['learning']
 });
 const PLAN_INFO=Object.freeze({
-  business:{label:'Business',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2"/></svg>'},
-  learning:{label:'Learning',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 9 10-5 10 5-10 5L2 9Z"/><path d="M6 11v5c3.5 3 8.5 3 12 0v-5M22 9v7"/></svg>'},
-  complete:{label:'Completo',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 8 5 4 5-8 5 8 5-4-2 12H4L2 8ZM4 17h16"/></svg>'}
+  business:{label:'Business',icon:'♧'},
+  learning:{label:'Learning',icon:'✦'},
+  complete:{label:'Completo',icon:'◆'}
 });
 function toolPlanIcons(tool){
   const primary=PLAN_MEMBERSHIP[tool.key]||[];
@@ -676,8 +676,7 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
 }
 .nxo-dev-plan-icons{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:100%}
 .nxo-dev-plan-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;flex:0 0 22px;border-radius:7px;border:1px solid var(--nxo-border);background:var(--nxo-surface-glass);color:var(--nxo-text-primary);font-size:15px;font-weight:800;line-height:1}
-.nxo-dev-plan-icon svg{width:16px;height:16px;display:block}
-.nxo-dev-plan-business{color:#368ecb}.nxo-dev-plan-learning{color:#8c71d9}.nxo-dev-plan-complete{color:#b8bcc6}
+.nxo-dev-plan-business{color:#368ecb}.nxo-dev-plan-learning{color:#8c71d9}.nxo-dev-plan-complete{color:#c28a36}
 .nxo-dev-plan-card{margin:0 0 5px;align-self:flex-start}
 .nxo-dev-detail-title-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .nxo-dev-detail-title-line .nxo-dev-plan-icons{flex-shrink:0}
