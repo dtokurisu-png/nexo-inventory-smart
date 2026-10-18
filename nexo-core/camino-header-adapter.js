@@ -1,7 +1,9 @@
 (function(){
 'use strict';
-if(window.__nexoCaminoHeaderAdapter)return;
+const ADAPTER_VERSION='20261018-header-loader-cleanup-1';
+if(window.__nexoCaminoHeaderAdapter&&window.__nexoCaminoHeaderAdapterVersion===ADAPTER_VERSION)return;
 window.__nexoCaminoHeaderAdapter=true;
+window.__nexoCaminoHeaderAdapterVersion=ADAPTER_VERSION;
 
 const PATH='/my-site-1/blank-6';
 const p=decodeURIComponent(location.pathname).replace(/\/+$/,'');
