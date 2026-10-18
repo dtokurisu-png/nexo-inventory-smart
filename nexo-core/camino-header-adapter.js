@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const ADAPTER_VERSION='20261018-connected-active-10';
+const ADAPTER_VERSION='20261018-header28-align-11';
 if(window.__nexoCaminoHeaderAdapter&&window.__nexoCaminoHeaderAdapterVersion===ADAPTER_VERSION)return;
 try{window.__nexoCaminoHeaderAdapterRuntime?.destroy?.()}catch(_){}
 const adapterAbort=new AbortController();
