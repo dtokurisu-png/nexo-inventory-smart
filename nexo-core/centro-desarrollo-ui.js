@@ -17,7 +17,7 @@ window.__nexoDevelopmentCenterStage0Version=VERSION;
 
 const THEME_KEY='nexoTheme:v1';
 const THEME_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-v3-1';
-const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-18';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-20';
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
@@ -123,21 +123,29 @@ function goBack(){
 function goMySpace(){location.assign('/my-site-1/blank-8')}
 
 function ensureGlobalHeaderRuntime(){
-  if(window.NEXO_GLOBAL_HEADER)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
+  const expected='20261018-20';
+  if(window.NEXO_GLOBAL_HEADER?.version===expected)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
+
+  try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
+  try{window.NEXO_GLOBAL_HEADER?.unmount?.()}catch(_){}
+  const stale=document.getElementById('nexo-global-header-runtime-script');
+  if(stale)stale.remove();
+  try{delete window.NEXO_GLOBAL_HEADER}catch(_){window.NEXO_GLOBAL_HEADER=null}
+
   return new Promise((resolve,reject)=>{
-    let script=document.getElementById('nexo-global-header-runtime-script');
-    if(!script){
-      script=document.createElement('script');
-      script.id='nexo-global-header-runtime-script';
-      script.src=GLOBAL_HEADER_RUNTIME;
-      script.defer=true;
-      script.onload=()=>resolve(window.NEXO_GLOBAL_HEADER);
-      script.onerror=reject;
-      document.head.appendChild(script)
-    }else{
-      script.addEventListener('load',()=>resolve(window.NEXO_GLOBAL_HEADER),{once:true});
-      script.addEventListener('error',reject,{once:true})
-    }
+    const script=document.createElement('script');
+    script.id='nexo-global-header-runtime-script';
+    script.src=GLOBAL_HEADER_RUNTIME;
+    script.defer=true;
+    script.onload=()=>{
+      if(window.NEXO_GLOBAL_HEADER?.version!==expected){
+        reject(new Error('GLOBAL_HEADER_VERSION_MISMATCH'));
+        return
+      }
+      resolve(window.NEXO_GLOBAL_HEADER)
+    };
+    script.onerror=reject;
+    document.head.appendChild(script)
   })
 }
 
