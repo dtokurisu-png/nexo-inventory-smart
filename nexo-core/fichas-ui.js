@@ -1030,12 +1030,13 @@ function collectCreatedSheetMedia(draft,createdByLocal,out=[]){
   return out
 }
 
-async function createTechnicalSheetFromEngine(payload={}){
+async function saveTechnicalSheetFromEngine(payload={},mode='create'){
   const requestId=String(payload.requestId||'');
   const draft=payload.draft&&typeof payload.draft==='object'?payload.draft:null;
-  if(!draft)throw new Error('SHEET_CREATE_DRAFT_MISSING');
+  if(!draft)throw new Error(mode==='update'?'SHEET_UPDATE_DRAFT_MISSING':'SHEET_CREATE_DRAFT_MISSING');
 
-  const result=await api('sheet.create',{input:{draft}},180000);
+  const action=mode==='update'?'sheet.update':'sheet.create';
+  const result=await api(action,{input:{draft}},180000);
   const created=Array.isArray(result?.created)?result.created:[];
   const createdByLocal=new Map(created.map(row=>[String(row?.localId||''),row]));
   const media=collectCreatedSheetMedia(draft,createdByLocal,[]);
@@ -1056,7 +1057,8 @@ async function createTechnicalSheetFromEngine(payload={}){
   }
 
   await pushEngineData();
-  postToEngine('NEXO_DM_CREATE_TECHNICAL_SHEET_RESULT',{
+  const resultType=mode==='update'?'NEXO_DM_UPDATE_TECHNICAL_SHEET_RESULT':'NEXO_DM_CREATE_TECHNICAL_SHEET_RESULT';
+  postToEngine(resultType,{
     ok:true,
     requestId,
     result:{
@@ -1069,6 +1071,14 @@ async function createTechnicalSheetFromEngine(payload={}){
     mediaErrorCount:mediaErrors.length
   });
   return {...result,mediaCount:media.length,mediaErrorCount:mediaErrors.length,mediaErrors}
+}
+
+async function createTechnicalSheetFromEngine(payload={}){
+  return saveTechnicalSheetFromEngine(payload,'create')
+}
+
+async function updateTechnicalSheetFromEngine(payload={}){
+  return saveTechnicalSheetFromEngine(payload,'update')
 }
 
 async function deletePhotoFromEngine(payload={}){
@@ -1160,6 +1170,16 @@ function handleEngineMessage(event){
         ok:false,
         requestId:payload.requestId,
         error:String(error?.message||error||'SHEET_CREATE_FAILED')
+      });
+    });
+    return;
+  }
+  if(message.type==='NEXO_DM_UPDATE_TECHNICAL_SHEET'){
+    updateTechnicalSheetFromEngine(payload).catch(error=>{
+      postToEngine('NEXO_DM_UPDATE_TECHNICAL_SHEET_RESULT',{
+        ok:false,
+        requestId:payload.requestId,
+        error:String(error?.message||error||'SHEET_UPDATE_FAILED')
       });
     });
     return;
