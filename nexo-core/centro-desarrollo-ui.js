@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-background-layer-83';
+const VERSION='20261018-background-between-84';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1138,7 +1138,7 @@ function ensureStyle(){
   style.textContent=`
 #nxo-dev-header,#nxo-shared-header{display:none!important}
 
-#nxo-dev-background-root{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:#0c1224}
+#nxo-dev-background-root{position:fixed;inset:0;z-index:2147482000;pointer-events:none;overflow:hidden;background:#0c1224}
 #nxo-dev-background-root #nxo-organic-canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;pointer-events:none;z-index:1}
 #nxo-dev-background-root #nxo-theme-film{position:fixed;inset:0;z-index:2;pointer-events:none;transition:background .22s ease}
 html[data-nxo-theme="day"] #nxo-dev-background-root #nxo-theme-film{background:rgba(248,246,239,.42);-webkit-backdrop-filter:blur(.35px);backdrop-filter:blur(.35px)}
@@ -1267,7 +1267,7 @@ html[data-nxo-theme="night"] .nxo-dev-quick-row:focus-visible strong{
 }
 #nxo-dev-app{
   position:relative!important;
-  z-index:1!important;
+  z-index:2147482001!important;
   min-height:calc(100vh - var(--nexo-global-header-height,68px))!important;
   width:100%!important;
   box-sizing:border-box!important;
@@ -2092,7 +2092,7 @@ html[data-nxo-theme="day"] .nxo-dev-action-surface img{
   .nxo-dev-product-icon{max-width:58px!important;max-height:58px!important}
 }
 /* Centro: el viewport empieza en el borde INFERIOR medido del header. */
-#nxo-dev-app{position:fixed!important;top:var(--nxo-dev-header-bottom,68px)!important;right:0!important;bottom:0!important;left:0!important;width:100%!important;height:auto!important;min-height:0!important;overflow:hidden!important;z-index:1!important}
+#nxo-dev-app{position:fixed!important;top:var(--nxo-dev-header-bottom,68px)!important;right:0!important;bottom:0!important;left:0!important;width:100%!important;height:auto!important;min-height:0!important;overflow:hidden!important;z-index:2147482001!important}
 #nxo-dev-app .nxo-dev-owned-shell{height:100%!important;max-height:100%!important;min-height:0!important;padding-bottom:12px!important;overflow:hidden!important}
 #nxo-dev-app .nxo-dev-owned-catalog-frame{position:relative!important;left:auto!important;right:auto!important;width:100%!important;max-width:100%!important;min-height:0!important;flex:1 1 auto!important;margin:0!important}
 #nxo-dev-app .nxo-dev-owned-catalog-scroll{width:100%!important;height:100%!important;min-height:0!important}
