@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261013-67';
+const VERSION='20261018-plan-identifiers-68';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -54,6 +54,24 @@ const TOOL_DEFS=[
   {key:'maria',cmsKey:'maria-editorial',kind:'addon',parent:'Camino Editorial',icon:'guia',title:'María',summary:'Add-on editorial de lectura, transcripción y apoyo para Camino Editorial.',status:'planned',names:['maria','maría','asistente maria','asistente maría']},
   {key:'camino-agents',cmsKey:'camino-editorial-agents',kind:'addon',parent:'Camino Editorial',icon:'comentarios',title:'Agentes de Camino Editorial',summary:'Add-ons editoriales especializados que se definirán y comercializarán individualmente.',status:'planned',names:['agentes de camino editorial','agentes editoriales','camino editorial agents']}
 ]
+const PLAN_MEMBERSHIP=Object.freeze({
+  learning:['learning'],library:['learning'],inventory:['business'],technical:['business'],
+  'camino-editorial':['learning'],r96:['business'],work:['business'],
+  schedules:['business'],tasks:['business'],'multichannel-notifications':['business','learning'],
+  numa:['business','learning'],maria:['learning'],'camino-agents':['learning']
+});
+const PLAN_INFO=Object.freeze({
+  business:{label:'Business',icon:'♧'},
+  learning:{label:'Learning',icon:'✦'},
+  complete:{label:'Completo',icon:'◆'}
+});
+function toolPlanIcons(tool){
+  const primary=PLAN_MEMBERSHIP[tool.key]||[];
+  const plans=[...primary,'complete'];
+  return '<span class="nxo-dev-plan-icons" role="group" aria-label="Planes incluidos: '+plans.map(k=>PLAN_INFO[k].label).join(', ')+'">'+
+    plans.map(k=>'<span class="nxo-dev-plan-icon nxo-dev-plan-'+k+'" title="Incluido en '+PLAN_INFO[k].label+'" aria-label="'+PLAN_INFO[k].label+'">'+PLAN_INFO[k].icon+'</span>').join('')+
+    '</span>'
+}
 let scheduled=false,observer=null;
 let quickMenuOutsideHandler=null;
 let developmentSessionToken='';
@@ -656,6 +674,12 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
   text-transform:uppercase;
   color:var(--nxo-accent)
 }
+.nxo-dev-plan-icons{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:100%}
+.nxo-dev-plan-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;flex:0 0 22px;border-radius:7px;border:1px solid var(--nxo-border);background:var(--nxo-surface-glass);color:var(--nxo-text-primary);font-size:15px;font-weight:800;line-height:1}
+.nxo-dev-plan-business{color:#368ecb}.nxo-dev-plan-learning{color:#8c71d9}.nxo-dev-plan-complete{color:#c28a36}
+.nxo-dev-plan-card{margin:0 0 5px;align-self:flex-start}
+.nxo-dev-detail-title-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.nxo-dev-detail-title-line .nxo-dev-plan-icons{flex-shrink:0}
 .nxo-dev-detail-title{
   margin:0;
   font-size:clamp(26px,4vw,40px);
@@ -2243,7 +2267,9 @@ function renderToolDetail(tool,data){
       '<div class="nxo-dev-detail-icon-wrap"><img class="nxo-dev-detail-icon" src="'+iconUrl(tool.icon)+'" alt=""></div>'+
       '<div class="nxo-dev-detail-heading">'+
         '<div class="nxo-dev-detail-eyebrow">Ficha de producto</div>'+
+        '<div class="nxo-dev-detail-title-line">'+
         '<h2 class="nxo-dev-detail-title">'+escapeHtml(tool.title||data?.nameEs)+'</h2>'+
+        toolPlanIcons(tool)+'</div>'+
         '<div class="nxo-dev-detail-meta">'+chips+'</div>'+
       '</div>'+
     '</div>'+
@@ -2423,6 +2449,7 @@ function ensureDevelopmentApp(){
         '<span data-nxo-dev-icon-slot="1"><img class="nxo-dev-product-icon" src="'+iconUrl(tool.icon)+'" alt="" aria-hidden="true"></span>'+
         '<h2 data-nxo-dev-tool-title="'+tool.key+'">'+escapeHtml(tool.title)+'</h2>'+
       '</div>'+
+      '<div class="nxo-dev-plan-card">'+toolPlanIcons(tool)+'</div>'+
       '<p data-nxo-dev-description="1">'+escapeHtml(tool.summary)+'</p>'+
       (tool.status==='planned'
         ? '<button type="button" class="nxo-dev-action nxo-dev-action-surface" disabled aria-disabled="true">Próximamente</button>'
