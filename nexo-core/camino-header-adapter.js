@@ -81,7 +81,7 @@ async function ensureRuntimes(){
   if(!window.NEXO_THEME_RUNTIME)await loadScript('nexo-theme-runtime',THEME_RUNTIME);
   try{await window.NEXO_THEME_RUNTIME?.ready}catch(_){}
 
-  const expected='20261018-27-stable';
+  const expected='20261018-28-global-outside-close';
   if(window.NEXO_GLOBAL_HEADER?.version!==expected){
     try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
     try{window.NEXO_GLOBAL_HEADER?.unmount?.()}catch(_){}
