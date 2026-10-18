@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-detail-back-card-icons-74';
+const VERSION='20261018-plan-png-originals-73';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -686,13 +686,6 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-action{
 }
 .nxo-dev-plan-icons{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:100%}
 .nxo-dev-plan-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:0 0 44px;background:transparent;border:0;border-radius:0;box-shadow:none;padding:0;line-height:1}\n.nxo-dev-plan-icon img{display:block;width:100%;height:100%;object-fit:contain;border:0;background:transparent}\n.nxo-dev-plan-card{margin:0 0 5px;align-self:flex-start}
-
-#nxo-dev-tool-detail .nxo-dev-detail-back{width:auto;min-width:172px;height:42px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:0 14px;font-weight:800;font-size:13px;white-space:nowrap;background:var(--nxo-surface-glass)}
-#nxo-dev-tool-detail .nxo-dev-back-arrow{font-size:23px;line-height:1;font-weight:800}
-.nxo-dev-title-row .nxo-dev-plan-card{display:inline-flex;align-items:center;flex:0 0 auto;margin:0 0 0 6px;align-self:center}
-.nxo-dev-title-row .nxo-dev-plan-icons{display:inline-flex;flex-wrap:nowrap;gap:3px;max-width:none}
-.nxo-dev-title-row .nxo-dev-plan-icon{width:24px;height:24px;flex:0 0 24px}
-.nxo-dev-title-row .nxo-dev-plan-icon img{width:24px;height:24px}
 .nxo-dev-detail-title-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .nxo-dev-detail-title-line .nxo-dev-plan-icons{flex-shrink:0}
 .nxo-dev-detail-title{
@@ -1492,7 +1485,7 @@ function ensureToolDetailView(){
   view.innerHTML=
     '<div class="nxo-dev-detail-scroll">'+
       '<button type="button" class="nxo-dev-detail-back" id="nxo-dev-detail-back" aria-label="Volver al catálogo" title="Volver">'+
-        '<span class="nxo-dev-back-arrow" aria-hidden="true">←</span><span>Volver al catálogo</span>'+
+        '<img src="'+iconUrl('volver')+'" alt="">'+
       '</button>'+
       '<div id="nxo-dev-detail-content"></div>'+
     '</div>';
@@ -2489,8 +2482,8 @@ function ensureDevelopmentApp(){
       '<div class="nxo-dev-title-row">'+
         '<span data-nxo-dev-icon-slot="1"><img class="nxo-dev-product-icon" src="'+iconUrl(tool.icon)+'" alt="" aria-hidden="true"></span>'+
         '<h2 data-nxo-dev-tool-title="'+tool.key+'">'+escapeHtml(tool.title)+'</h2>'+
-        '<div class="nxo-dev-plan-card">'+toolPlanIcons(tool)+'</div>'+
       '</div>'+
+      '<div class="nxo-dev-plan-card">'+toolPlanIcons(tool)+'</div>'+
       '<p data-nxo-dev-description="1">'+escapeHtml(tool.summary)+'</p>'+
       (tool.status==='planned'
         ? '<button type="button" class="nxo-dev-action nxo-dev-action-surface" disabled aria-disabled="true">Próximamente</button>'
