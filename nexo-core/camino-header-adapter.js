@@ -19,6 +19,7 @@ const NEXO_RETURN_AFTER_AUTH_KEY='nexoReturnAfterAuth:v1';
 const CAMINO_BRANCH_REVISION='36f0f2054b5e4bd1dcaf532a43823abfd08942cc';
 const CAMINO_BRANCH_ID='main';
 let projectId='nova-vision';
+let activeProjectLabel='';
 let profileType='WRITER';
 let profileLabel='Editorial';
 let activeSurface='canvas';
@@ -140,7 +141,7 @@ function mount(){
     ],
     productActive:activeSurface,
     contextControls:[
-      {key:'project',label:'Proyecto',value:projectName(projectId)},
+      {key:'project',label:'Proyecto',value:activeProjectLabel||projectName(projectId)},
       {key:'profile',label:'Perfil',value:profileLabel,options:PROFILE_TYPES.map(key=>({value:key,label:PROFILE_LABELS[key],active:key===profileType}))}
     ],
     theme,language,active:'',
@@ -178,6 +179,13 @@ async function bootstrap(){
   window.addEventListener('resize',position);
   setInterval(position,1000);
   window.addEventListener('camino:surface-changed',e=>{activeSurface=e.detail?.surface||'canvas';mount()});
+  window.addEventListener('camino:active-project-changed',e=>{
+    const d=e.detail||{};
+    if(d.projectId)projectId=String(d.projectId);
+    activeProjectLabel=String(d.title||'').trim();
+    if(PROFILE_TYPES.includes(d.profileType)){profileType=d.profileType;profileLabel=PROFILE_LABELS[profileType]||profileLabel}
+    mount()
+  });
 }
 bootstrap().catch(error=>console.error('[Camino shared header]',error));
 })();
