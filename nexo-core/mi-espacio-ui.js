@@ -1,5 +1,8 @@
 (function(){
-if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
+const APP_VERSION='20261018-header-loader-cleanup-1';
+if(window.__nexoMiEspacioApp&&window.__nexoMiEspacioVersion===APP_VERSION)return;
+window.__nexoMiEspacioApp=true;
+window.__nexoMiEspacioVersion=APP_VERSION;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261014-global-runtime-1';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-20';
