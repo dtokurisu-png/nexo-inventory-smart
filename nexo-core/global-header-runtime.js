@@ -210,7 +210,7 @@ function ensureStyle(){
 #${ID} #nxo-header-flyout-root .ngh-flyout-head small{display:block;margin-top:2px;color:var(--ngh-panel-muted);font-size:8px}
 #${ID} #nxo-header-flyout-root .ngh-item{min-height:38px}
 @media(max-width:760px){#${ID} #nxo-header-flyout-root{left:10px!important;right:10px!important;width:auto!important;max-width:none!important}}
-#${ID} .ngh-utils{position:relative;margin-left:auto;display:flex;align-items:center;gap:7px}#${ID} .ngh-utils{position:relative;margin-left:auto;display:flex;align-items:center;gap:7px}
+#${ID} .ngh-utils{position:relative;margin-left:auto;display:flex;align-items:center;gap:7px}
 #${ID} .ngh-desktop-settings{display:flex;align-items:center;gap:7px}
 #${ID} .ngh-mobile-settings{display:none;position:relative}
 #${ID} .ngh-direct-setting{
@@ -412,7 +412,7 @@ function workspaceFlyoutMarkup(ws,lang='es'){
   out+=tools.map(t=>'<button class="ngh-item" data-flyout-tool="'+esc(t.toolKey||'')+'" data-ws="'+esc(ws?.workspaceId||'')+'"><img class="ngh-icon" src="'+icon(toolIconKey(t))+'" alt=""><span>'+esc(t.workspaceName||t.name||t.nameEs||t.nameEn||t.toolKey||'Herramienta')+'</span></button>').join('');
   return out
 }
-function mount(container,opts={}){function mount(container,opts={}){
+function mount(container,opts={}){
   const h=host();
   const nav=opts.navigation||{};
   const profile=opts.profile||{};
