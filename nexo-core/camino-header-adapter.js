@@ -92,7 +92,7 @@ function position(){
   const top=rect&&rect.width>0&&rect.height>0?Math.max(0,Math.ceil(rect.bottom)):0;
   document.documentElement.style.setProperty('--nexo-global-header-top',top+'px');
   document.documentElement.style.setProperty('--ce-header-offset',top+'px');
-  document.documentElement.style.setProperty('--ce-header-h',(window.NEXO_GLOBAL_HEADER?.height||68)+'px')
+  document.documentElement.style.setProperty('--ce-header-h','0px')
 }
 function accountAction(action){
   const u=new URL((freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'')+'/blank-8',location.origin);
@@ -115,51 +115,11 @@ async function saveProfile(next){
   window.dispatchEvent(new CustomEvent('camino:profile-changed',{detail:{projectId,profileType,label:profileLabel}}));
   mount()
 }
-function navSeed(){
-  return {
-    personal:{
-      name:'Mi espacio',
-      tools:[
-        {toolKey:'mi-espacio',name:'Abrir Mi espacio',routePath:(freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'')+'/blank-8',scope:'personal'}
-      ]
-    },
-    workspaces:[]
-  }
-}
 function mount(){
-  if(!window.NEXO_GLOBAL_HEADER)return;
-  const theme=window.NEXO_THEME_RUNTIME?.getTheme?.()||storedTheme();
-  const language=storedLanguage();
-  const navigation=navSeed();
-  window.NEXO_GLOBAL_HEADER.mount(document.body,{
-    variant:'camino',
-    brand:{mark:'C',title:'Camino Editorial',subtitle:'Nexo Group'},
-    productNavigation:[
-      {key:'base',label:'Fuentes'},
-      {key:'canon',label:'Canon'},
-      {key:'agents',label:'Agentes'}
-    ],
-    productActive:activeSurface,
-    contextControls:[
-      {key:'project',label:'Proyecto',value:activeProjectLabel||projectName(projectId)},
-      {key:'profile',label:'Perfil',value:profileLabel,options:PROFILE_TYPES.map(key=>({value:key,label:PROFILE_LABELS[key],active:key===profileType}))}
-    ],
-    theme,language,active:'',
-    contextLabel:'Camino Editorial',
-    navigation,
-    profile:{displayName:'Mi Espacio',email:'',locale:language,photoImage:null},
-    roleLabel:'Nexo Group',
-    onHome:()=>{requestSurface('canvas');return false},
-    onProductNav:key=>{if(['base','canon','agents'].includes(key))requestSurface(key);return false},
-    onContextAction:(key,value)=>{if(key==='profile')saveProfile(value).catch(e=>alert('No se pudo cambiar el perfil: '+e.message));return false},
-    onPersonal:()=>{location.assign((freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'')+'/blank-8');return false},
-    onDevelopment:()=>{location.assign((freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'')||'/');return false},
-    onTheme:()=>{window.NEXO_THEME_RUNTIME?.toggleTheme?.({persist:true,notify:true});requestAnimationFrame(mount)},
-    onLanguage:()=>{const next=storedLanguage()==='en'?'es':'en';try{localStorage.setItem('nexoLanguage:v1',next)}catch(_){};document.documentElement.lang=next;mount()},
-    onProfileSettings:()=>accountAction('settings'),
-    onSwitchAccount:()=>accountAction('switch'),
-    onLogout:()=>accountAction('logout')
-  });
+  // The Wix master header is the single canonical site header.
+  // Camino must not mount a second full-page header over it.
+  const legacy=document.getElementById('nxo-global-header-runtime-host');
+  if(legacy)legacy.remove();
   position()
 }
 async function bootstrap(){
