@@ -1,6 +1,9 @@
 (function(){
-if(window.__nexoSchedulesApp)return;window.__nexoSchedulesApp=true;
+const APP_VERSION='20261018-single-header-1';
+if(window.__nexoSchedulesApp&&window.__nexoSchedulesVersion===APP_VERSION)return;
+window.__nexoSchedulesApp=true;window.__nexoSchedulesVersion=APP_VERSION;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=workspace-tools-split-20261007-90';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-24';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
@@ -15,6 +18,42 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 const iconUrl=name=>NEXO_ICON_BASE+encodeURIComponent(String(name||''))+'.png';
 function iconTag(name,label='',extraClass=''){return '<img class="nxo-icon-img'+(extraClass?' '+esc(extraClass):'')+'" src="'+esc(iconUrl(name))+'" alt="'+esc(label)+'" loading="lazy" decoding="async">'}
 function addCss(){if(document.getElementById('nxo-css'))return;const l=document.createElement('link');l.id='nxo-css';l.rel='stylesheet';l.href=CSS;document.head.appendChild(l)}
+function ensureGlobalHeaderRuntime(){
+  const expected='20261018-24';
+  if(window.NEXO_GLOBAL_HEADER?.version===expected)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
+  try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
+  try{window.NEXO_GLOBAL_HEADER?.unmount?.()}catch(_){}
+  document.getElementById('nexo-global-header-runtime-script')?.remove();
+  try{delete window.NEXO_GLOBAL_HEADER}catch(_){window.NEXO_GLOBAL_HEADER=null}
+  return new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.id='nexo-global-header-runtime-script';
+    script.src=GLOBAL_HEADER_RUNTIME;
+    script.defer=true;
+    script.onload=()=>window.NEXO_GLOBAL_HEADER?.version===expected?resolve(window.NEXO_GLOBAL_HEADER):reject(new Error('GLOBAL_HEADER_VERSION_MISMATCH'));
+    script.onerror=reject;
+    document.head.appendChild(script)
+  })
+}
+function mountSchedulesHeader(){
+  const ws=workspace?.workspace||{};
+  const tools=Array.isArray(workspace?.tools)?workspace.tools:[];
+  const navigation={personal:{name:ui('Mi espacio','My space'),tools:[]},workspaces:ws.id?[{workspaceId:ws.id,name:ws.name||ui('Espacio de trabajo','Workspace'),tools}]:[]};
+  window.NEXO_GLOBAL_HEADER?.mount?.(document.body,{
+    active:'tool',
+    theme:new URLSearchParams(location.search).get('nxoTheme')==='night'?'night':'day',
+    language:currentLanguage(),
+    contextLabel:ui('Horarios','Schedule'),
+    navigation,
+    roleKey:String(workspace?.membership?.roleKey||'member').toLowerCase(),
+    roleLabel:String(workspace?.role?.name||workspace?.membership?.roleKey||ui('Miembro','Member')),
+    onHome:()=>{location.assign(backTarget());return false},
+    onPersonal:()=>{location.assign(backTarget());return false},
+    onWorkspace:()=>{location.assign(backTarget());return false},
+    onDevelopment:()=>false
+  })
+}
+
 function root(){addCss();document.body.classList.add('nxo-lock');let r=document.getElementById('nxo-app');if(!r){r=document.createElement('div');r.id='nxo-app';r.className='nxo-app';r.dataset.theme=(new URLSearchParams(location.search).get('nxoTheme')==='night'?'night':'day');document.body.appendChild(r)}return r}
 function html(v){root().innerHTML=v}
 function accessError(code){return new Error('No se pudo abrir Horarios ('+accessStage+' / '+code+').')}
@@ -32,7 +71,7 @@ async function api(action,payload={}){
 function stripBoot(){try{const u=new URL(location.href);['nxm','nxme','nxms','nxav'].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state||{},'',u.pathname+u.search+u.hash)}catch(_){}}
 async function waitBoot(){let previous='',deadline=Date.now()+30000;while(Date.now()<deadline){const q=new URLSearchParams(location.search),t=q.get('nxm'),e=q.get('nxme'),state=q.get('nxms')||'WAITING_PAGE';if(state!==previous){previous=state;accessStage=state;deadline=Date.now()+(state==='LOGIN'?310000:30000)}if(e)throw accessError(e);if(t&&(state==='READY'||state==='WAITING_PAGE'))return t;await new Promise(r=>setTimeout(r,100))}throw accessError('PAGE_TIMEOUT')}
 function backTarget(){try{const u=new URL(location.href),raw=u.searchParams.get('nxoBack')||'';if(raw){const b=new URL(raw,location.href);if(b.origin===location.origin)return b.href}}catch(_){}const base=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';return location.origin+base+'/blank-8'}
-function renderAppShell(){const ws=workspace?.workspace||{};html('<div class="nxo-shell"><header class="nxo-topbar nxo-workspace-nav"><div class="nxo-nav-brand"><span class="nxo-nav-mark"><img src="'+esc(NEXO_LOGO)+'" alt="Nexo Group"></span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(ui('Horarios','Schedule'))+'</small></span></div><div class="nxo-nav-primary-utils"><button type="button" class="nxo-btn" id="nxo-schedule-back">← '+esc(ui('Volver','Back'))+'</button></div></header><main class="nxo-main"><div class="nxo-workspace-header"><div><div class="nxo-eyebrow">'+esc(ui('Herramienta del espacio de trabajo','Workspace tool'))+'</div><h2>'+esc(ui('Horarios','Schedule'))+'</h2><p>'+esc(ws.name||ui('Espacio de trabajo','Workspace'))+'</p></div></div>'+renderTodayScheduleShell()+renderScheduleShell()+'</main></div>');document.getElementById('nxo-schedule-back')?.addEventListener('click',()=>location.assign(backTarget()));loadTodaySchedule();loadSchedule()}
+function renderAppShell(){const ws=workspace?.workspace||{};html('<div class="nxo-shell"><main class="nxo-main"><div class="nxo-workspace-header"><div><div class="nxo-eyebrow">'+esc(ui('Herramienta del espacio de trabajo','Workspace tool'))+'</div><h2>'+esc(ui('Horarios','Schedule'))+'</h2><p>'+esc(ws.name||ui('Espacio de trabajo','Workspace'))+'</p></div><div><button type="button" class="nxo-btn" id="nxo-schedule-back">← '+esc(ui('Volver','Back'))+'</button></div></div>'+renderTodayScheduleShell()+renderScheduleShell()+'</main></div>');document.getElementById('nxo-schedule-back')?.addEventListener('click',()=>location.assign(backTarget()));loadTodaySchedule();loadSchedule()}
 function renderTodayScheduleShell(){
   return '<section class="nxo-section nxo-today-shift-section"><div id="nxo-today-shift-zone"><div class="nxo-today-shift-card is-loading"><div><span class="nxo-today-shift-eyebrow">'+esc(ui('Jornada de hoy','Today\'s shift'))+'</span><strong>'+esc(ui('Cargando tu jornada…','Loading your shift…'))+'</strong></div></div></div></section>'
 }
@@ -407,6 +446,8 @@ async function start(){
   const tool=(workspace?.tools||[]).find(t=>String(t.toolKey||'')==='schedules');
   if(!tool)throw new Error(ui('Horarios no está instalado o no tienes acceso a esta herramienta en este espacio de trabajo.','Schedule is not installed or you do not have access to this tool in this Workspace.'));
   document.title=ui('Horarios · Nexo','Schedule · Nexo');
+  await ensureGlobalHeaderRuntime();
+  mountSchedulesHeader();
   renderAppShell()
  }catch(e){errorView(e)}
 }
