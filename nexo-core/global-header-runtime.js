@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261018-23';
+const VERSION='20261018-24';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -151,12 +151,6 @@ function ensureStyle(){
   --ngh-role:#74E8C4
 }
 #${ID},#${ID} *{box-sizing:border-box}
-#${ID} .ngh-test-center{
-  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  z-index:2147483646;padding:4px 10px;border-radius:6px;
-  background:#ff00d4;color:#fff;font:900 12px/1 monospace;letter-spacing:.8px;
-  pointer-events:none
-}
 #${ID} .ngh-bar{
   height:100%;padding:0 22px;display:flex;align-items:center;gap:22px;
   background:var(--ngh-bg);color:var(--ngh-text);
@@ -379,9 +373,16 @@ function ensureStyle(){
   document.head.appendChild(s)
 }
 function removeLegacyHeaders(){
-  ['nxo-shared-header','nxo-dev-header'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el&&el.id!==ID)el.remove()
+  const selectors=[
+    '#nxo-shared-header',
+    '#nxo-dev-header',
+    'body>header.nxo-topbar',
+    '#nxo-app>header.nxo-topbar',
+    '.nxo-shell>header.nxo-topbar',
+    'header[data-nexo-legacy-header="1"]'
+  ];
+  document.querySelectorAll(selectors.join(',')).forEach(el=>{
+    if(!el.closest('#'+ID))el.remove()
   })
 }
 function ensureLegacyHeaderGuard(){
@@ -692,7 +693,7 @@ function mount(container,opts={}){
   const customNav=productNavMarkup(opts.productNavigation,opts.productActive);
   const globalNav=opts.hideGlobalNavigation?'':('<div class="ngh-group"><button class="ngh-nav-btn '+(active==='personal'||active==='workspace'||active==='tool'?'active':'')+'" data-personal data-menu-target="ngh-space" aria-expanded="false">'+iconMarkup('home')+'<span>'+(lang==='en'?'My space':'Mi espacio')+'</span><span>⌄</span></button><div class="ngh-menu" id="ngh-space">'+menuMarkup(nav)+'</div></div>'+
     '<button class="ngh-nav-btn '+(active==='development'?'active':'')+'" data-development>'+iconMarkup('desarrollo')+'<span>'+(lang==='en'?'Development Center':'Centro de desarrollo')+'</span></button>');
-  h.innerHTML='<header class="ngh-bar"><span class="ngh-test-center">PRUEBA</span>'+
+  h.innerHTML='<header class="ngh-bar">'+
     brandMarkup+
     '<nav class="ngh-nav">'+customNav+globalNav+'</nav>'+
     '<div class="ngh-utils">'+contextMarkup(opts.contextControls)+'<div class="ngh-desktop-settings"><button class="ngh-direct-setting" data-language>'+iconMarkup('idioma')+'<strong>'+lang.toUpperCase()+'</strong></button><button class="ngh-direct-setting" data-theme>'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<strong>'+(theme==='night'?'Dark':'Light')+'</strong></button></div><div class="ngh-mobile-settings"><button class="ngh-icon-btn" data-settings data-menu-target="ngh-settings" aria-expanded="false">'+iconMarkup('ajustes-rapidos')+'</button><div class="ngh-pop" id="ngh-settings"><button class="ngh-setting-row" data-language><span class="ngh-setting-label">'+iconMarkup('idioma')+'<span>'+(lang==='en'?'Language':'Idioma')+'</span></span><strong class="ngh-setting-value">'+lang.toUpperCase()+'</strong></button><button class="ngh-setting-row" data-theme><span class="ngh-setting-label">'+iconMarkup(theme==='night'?'modo-oscuro':'modo-claro','ngh-theme-icon')+'<span>'+(lang==='en'?'Appearance':'Apariencia')+'</span></span><strong class="ngh-setting-value">'+(theme==='night'?'Dark':'Light')+'</strong></button></div></div>'+
