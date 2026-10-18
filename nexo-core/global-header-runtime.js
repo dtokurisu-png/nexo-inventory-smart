@@ -371,8 +371,17 @@ function removeLegacyHeaders(){
     if(el&&el.id!==ID)el.remove()
   })
 }
+function ensureLegacyHeaderGuard(){
+  if(window.__nexoGlobalHeaderLegacyObserver)return;
+  const observer=new MutationObserver(()=>{
+    removeLegacyHeaders()
+  });
+  observer.observe(document.body,{childList:true,subtree:true});
+  window.__nexoGlobalHeaderLegacyObserver=observer
+}
 function host(){
   removeLegacyHeaders();
+  ensureLegacyHeaderGuard();
   ensureStyle();
   ensureOutlineDefs();
   let h=document.getElementById(ID);
