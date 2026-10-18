@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261018-14';
+const VERSION='20261018-15';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -198,10 +198,19 @@ function ensureStyle(){
 #${ID} .ngh-divider{height:1px;background:var(--ngh-panel-border);margin:3px 5px}
 #${ID} .ngh-item{width:100%;min-height:36px;border:0;border-radius:9px;background:transparent;color:inherit;display:flex;align-items:center;gap:8px;padding:8px 9px;text-align:left;cursor:pointer;font-size:10px;font-weight:760}
 #${ID} .ngh-item:hover,#${ID} .ngh-item:focus-visible{outline:none;background:var(--nxo-accent-soft,var(--ngh-surface2));color:var(--ngh-panel-text)}
-#${ID} .ngh-item.child{padding-left:34px}
-#${ID} .ngh-workspace{padding:5px;border:1px solid transparent;border-radius:11px}
-#${ID} .ngh-workspace:hover{border-color:var(--ngh-panel-border)}
-#${ID} .ngh-utils{position:relative;margin-left:auto;display:flex;align-items:center;gap:7px}
+#${ID} .ngh-workspace{position:relative;display:flex;align-items:center;gap:4px;padding:4px;border:1px solid transparent;border-radius:11px}
+#${ID} .ngh-workspace:hover,#${ID} .ngh-workspace.flyout-open{border-color:var(--ngh-panel-border);background:color-mix(in srgb,var(--ngh-surface2) 55%,transparent)}
+#${ID} .ngh-workspace>.ngh-item{flex:1;min-width:0}
+#${ID} .ngh-workspace-tools{width:30px;height:34px;flex:0 0 30px;border:0;border-radius:8px;background:transparent;color:var(--ngh-panel-muted);display:grid;place-items:center;cursor:pointer;font-size:18px;line-height:1}
+#${ID} .ngh-workspace-tools:hover,#${ID} .ngh-workspace-tools:focus-visible,#${ID} .ngh-workspace-tools[aria-expanded="true"]{outline:none;background:var(--nxo-accent-soft,var(--ngh-surface2));color:var(--ngh-panel-text)}
+#${ID} #nxo-header-flyout-root{display:none;position:fixed;z-index:2147483642;width:286px;max-width:calc(100vw - 20px);max-height:min(68vh,560px);overflow:auto;padding:9px;border:1px solid var(--ngh-panel-border);border-radius:14px;background:var(--ngh-surface);color:var(--ngh-panel-text);box-shadow:0 18px 50px var(--ngh-shadow)}
+#${ID} #nxo-header-flyout-root.open{display:grid;gap:5px}
+#${ID} #nxo-header-flyout-root .ngh-flyout-head{padding:7px 9px 6px;border-bottom:1px solid var(--ngh-panel-border);margin-bottom:2px}
+#${ID} #nxo-header-flyout-root .ngh-flyout-head strong{display:block;font-size:11px}
+#${ID} #nxo-header-flyout-root .ngh-flyout-head small{display:block;margin-top:2px;color:var(--ngh-panel-muted);font-size:8px}
+#${ID} #nxo-header-flyout-root .ngh-item{min-height:38px}
+@media(max-width:760px){#${ID} #nxo-header-flyout-root{left:10px!important;right:10px!important;width:auto!important;max-width:none!important}}
+#${ID} .ngh-utils{position:relative;margin-left:auto;display:flex;align-items:center;gap:7px}#${ID} .ngh-utils{position:relative;margin-left:auto;display:flex;align-items:center;gap:7px}
 #${ID} .ngh-desktop-settings{display:flex;align-items:center;gap:7px}
 #${ID} .ngh-mobile-settings{display:none;position:relative}
 #${ID} .ngh-direct-setting{
@@ -378,15 +387,32 @@ function contextMarkup(items){
     '</div>'
   }).join('')+'</div>'
 }
-function menuMarkup(nav){
+function menuMarkup(nav,lang='es'){
   const direct=Array.isArray(nav?.personal?.tools)?nav.personal.tools:[];
   const spaces=Array.isArray(nav?.workspaces)?nav.workspaces:[];
+  const en=String(lang||'').toLowerCase().startsWith('en');
   let out='';
-  if(direct.length){out+='<div class="ngh-title">Accesos directos</div>'+direct.map(t=>'<button class="ngh-item" data-tool="'+esc(t.toolKey||'')+'" data-ws=""><img class="ngh-icon" src="'+icon(toolIconKey(t))+'" alt=""><span>'+esc(t.name||t.nameEs||t.toolKey||'Herramienta')+'</span></button>').join('')}
-  if(spaces.length){if(out)out+='<div class="ngh-divider"></div>';out+='<div class="ngh-title">Workspaces</div>';for(const ws of spaces){out+='<div class="ngh-workspace"><button class="ngh-item" data-workspace="'+esc(ws.workspaceId||'')+'"><img class="ngh-icon" src="'+icon('workspace')+'" alt=""><strong>'+esc(ws.name||'Workspace')+'</strong></button>'+(Array.isArray(ws.tools)?ws.tools:[]).map(t=>'<button class="ngh-item child" data-tool="'+esc(t.toolKey||'')+'" data-ws="'+esc(ws.workspaceId||'')+'"><img class="ngh-icon" src="'+icon(toolIconKey(t))+'" alt=""><span>'+esc(t.name||t.nameEs||t.toolKey||'Herramienta')+'</span></button>').join('')+'</div>'}}
-  return out||'<div class="ngh-empty">Sin accesos disponibles</div>'
+  if(direct.length){out+='<div class="ngh-title">'+(en?'Direct access':'Accesos directos')+'</div>'+direct.map(t=>'<button class="ngh-item" data-tool="'+esc(t.toolKey||'')+'" data-ws=""><img class="ngh-icon" src="'+icon(toolIconKey(t))+'" alt=""><span>'+esc(t.name||t.nameEs||t.toolKey||'Herramienta')+'</span></button>').join('')}
+  if(spaces.length){
+    if(out)out+='<div class="ngh-divider"></div>';
+    out+='<div class="ngh-title">'+(en?'Workspaces':'Espacios de trabajo')+'</div>';
+    for(const ws of spaces){
+      const id=esc(ws.workspaceId||'');
+      const label=esc(ws.name||'Workspace');
+      out+='<div class="ngh-workspace" data-workspace-row="'+id+'"><button class="ngh-item" data-workspace="'+id+'"><img class="ngh-icon" src="'+icon('workspace')+'" alt=""><strong>'+label+'</strong></button><button type="button" class="ngh-workspace-tools" data-workspace-tools="'+id+'" aria-haspopup="true" aria-expanded="false" aria-label="'+esc((en?'Tools for ':'Herramientas de ')+(ws.name||'Workspace'))+'">›</button></div>';
+    }
+  }
+  return out||'<div class="ngh-empty">'+(en?'No access available':'Sin accesos disponibles')+'</div>'
 }
-function mount(container,opts={}){
+function workspaceFlyoutMarkup(ws,lang='es'){
+  const en=String(lang||'').toLowerCase().startsWith('en');
+  const tools=Array.isArray(ws?.tools)?ws.tools:[];
+  let out='<div class="ngh-flyout-head"><strong>'+esc(ws?.name||'Workspace')+'</strong><small>'+(en?'Tools and applications':'Herramientas y aplicaciones')+'</small></div>';
+  if(!tools.length)return out+'<div class="ngh-empty">'+(en?'No tools available':'Sin herramientas disponibles')+'</div>';
+  out+=tools.map(t=>'<button class="ngh-item" data-flyout-tool="'+esc(t.toolKey||'')+'" data-ws="'+esc(ws?.workspaceId||'')+'"><img class="ngh-icon" src="'+icon(toolIconKey(t))+'" alt=""><span>'+esc(t.workspaceName||t.name||t.nameEs||t.nameEn||t.toolKey||'Herramienta')+'</span></button>').join('');
+  return out
+}
+function mount(container,opts={}){function mount(container,opts={}){
   const h=host();
   const nav=opts.navigation||{};
   const profile=opts.profile||{};
@@ -425,8 +451,51 @@ function mount(container,opts={}){
   h.querySelector('[data-profile]')?.addEventListener('click',e=>call('onProfileSettings',e));
   h.querySelector('[data-switch]')?.addEventListener('click',e=>call('onSwitchAccount',e));
   h.querySelector('[data-logout]')?.addEventListener('click',e=>call('onLogout',e));
-  h.querySelectorAll('[data-workspace]').forEach(b=>b.addEventListener('click',e=>{const ws=(nav.workspaces||[]).find(x=>String(x.workspaceId)===String(b.dataset.workspace));if(call('onWorkspace',ws,e)!==false&&ws?.workspaceId){const u=new URL(location.href);u.searchParams.set('nxoWorkspace',ws.workspaceId);location.assign(u.href)}}));
-  h.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',e=>{const ws=(nav.workspaces||[]).find(x=>String(x.workspaceId)===String(b.dataset.ws));const tool=findTool(nav,b.dataset.tool,b.dataset.ws);if(call('onTool',tool,ws,e)!==false)fallbackTool(tool,ws)}));
+  const spaceMenu=h.querySelector('#ngh-space');
+  let flyout=h.querySelector('#nxo-header-flyout-root');
+  if(!flyout){flyout=document.createElement('div');flyout.id='nxo-header-flyout-root';flyout.setAttribute('role','menu');h.appendChild(flyout)}
+  let flyoutTimer=null,activeWorkspaceId='';
+  const clearFlyoutTimer=()=>{if(flyoutTimer){clearTimeout(flyoutTimer);flyoutTimer=null}};
+  const closeWorkspaceFlyout=()=>{clearFlyoutTimer();activeWorkspaceId='';flyout.classList.remove('open');flyout.innerHTML='';h.querySelectorAll('.ngh-workspace.flyout-open').forEach(x=>x.classList.remove('flyout-open'));h.querySelectorAll('[data-workspace-tools][aria-expanded="true"]').forEach(x=>x.setAttribute('aria-expanded','false'))};
+  const positionWorkspaceFlyout=row=>{
+    const rr=row.getBoundingClientRect(),mr=spaceMenu?.getBoundingClientRect();
+    const width=Math.min(286,Math.max(220,window.innerWidth-20));
+    let left=(mr?.right||rr.right)+8;
+    if(left+width>window.innerWidth-10)left=Math.max(10,(mr?.left||rr.left)-width-8);
+    let top=rr.top;
+    const maxTop=Math.max(10,window.innerHeight-Math.min(flyout.scrollHeight||360,560)-10);
+    top=Math.min(Math.max(10,top),maxTop);
+    flyout.style.left=Math.round(left)+'px';flyout.style.top=Math.round(top)+'px'
+  };
+  const bindFlyoutTools=()=>flyout.querySelectorAll('[data-flyout-tool]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const ws=(nav.workspaces||[]).find(x=>String(x.workspaceId)===String(b.dataset.ws));const tool=findTool(nav,b.dataset.flyoutTool,b.dataset.ws);closeWorkspaceFlyout();closeMenus(h,'');if(call('onTool',tool,ws,e)!==false)fallbackTool(tool,ws)}));
+  const openWorkspaceFlyout=(id,row)=>{
+    clearFlyoutTimer();
+    const ws=(nav.workspaces||[]).find(x=>String(x.workspaceId)===String(id));
+    if(!ws)return;
+    activeWorkspaceId=String(id);
+    h.querySelectorAll('.ngh-workspace.flyout-open').forEach(x=>x.classList.remove('flyout-open'));
+    h.querySelectorAll('[data-workspace-tools][aria-expanded="true"]').forEach(x=>x.setAttribute('aria-expanded','false'));
+    row?.classList.add('flyout-open');row?.querySelector('[data-workspace-tools]')?.setAttribute('aria-expanded','true');
+    flyout.innerHTML=workspaceFlyoutMarkup(ws,lang);
+    flyout.classList.add('open');
+    positionWorkspaceFlyout(row);
+    bindFlyoutTools()
+  };
+  const scheduleFlyoutClose=()=>{clearFlyoutTimer();flyoutTimer=setTimeout(closeWorkspaceFlyout,180)};
+  flyout.addEventListener('mouseenter',clearFlyoutTimer);
+  flyout.addEventListener('mouseleave',scheduleFlyoutClose);
+  h.querySelectorAll('[data-workspace-row]').forEach(row=>{
+    const id=row.dataset.workspaceRow||'';
+    row.addEventListener('mouseenter',()=>{if(window.matchMedia?.('(hover:hover) and (pointer:fine)').matches)openWorkspaceFlyout(id,row)});
+    row.addEventListener('mouseleave',()=>{if(window.matchMedia?.('(hover:hover) and (pointer:fine)').matches)scheduleFlyoutClose()});
+    row.addEventListener('focusin',()=>openWorkspaceFlyout(id,row));
+    row.addEventListener('focusout',e=>{if(!row.contains(e.relatedTarget)&&!flyout.contains(e.relatedTarget))scheduleFlyoutClose()})
+  });
+  h.querySelectorAll('[data-workspace-tools]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const row=b.closest('[data-workspace-row]');const id=b.dataset.workspaceTools||'';if(activeWorkspaceId===String(id)&&flyout.classList.contains('open'))closeWorkspaceFlyout();else openWorkspaceFlyout(id,row)}));
+  h.querySelectorAll('[data-workspace]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();closeWorkspaceFlyout();const ws=(nav.workspaces||[]).find(x=>String(x.workspaceId)===String(b.dataset.workspace));if(call('onWorkspace',ws,e)!==false&&ws?.workspaceId){const u=new URL(location.href);u.searchParams.set('nxoWorkspace',ws.workspaceId);location.assign(u.href)}}));
+  h.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();closeWorkspaceFlyout();const ws=(nav.workspaces||[]).find(x=>String(x.workspaceId)===String(b.dataset.ws));const tool=findTool(nav,b.dataset.tool,b.dataset.ws);if(call('onTool',tool,ws,e)!==false)fallbackTool(tool,ws)}));
+  h.querySelector('[data-personal]')?.addEventListener('click',()=>{if(!spaceMenu?.classList.contains('open'))closeWorkspaceFlyout()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeWorkspaceFlyout()});
   document.addEventListener('click',()=>closeMenus(h,''),{once:true});
   document.documentElement.style.setProperty('--nexo-global-header-height',HEIGHT+'px');
   return h
