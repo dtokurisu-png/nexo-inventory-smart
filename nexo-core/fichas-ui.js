@@ -1027,22 +1027,41 @@ async function createTechnicalSheetFromEngine(payload={}){
   const requestId=String(payload.requestId||'');
   const draft=payload.draft&&typeof payload.draft==='object'?payload.draft:null;
   if(!draft)throw new Error('SHEET_CREATE_DRAFT_MISSING');
+
   const result=await api('sheet.create',{input:{draft}},180000);
   const created=Array.isArray(result?.created)?result.created:[];
   const createdByLocal=new Map(created.map(row=>[String(row?.localId||''),row]));
   const media=collectCreatedSheetMedia(draft,createdByLocal,[]);
+  const mediaErrors=[];
+
   for(let index=0;index<media.length;index+=1){
     const item=media[index];
-    await uploadCreatedSheetPhoto(item.file,item.target,item.intent,item.index)
+    try{
+      await uploadCreatedSheetPhoto(item.file,item.target,item.intent,item.index)
+    }catch(error){
+      mediaErrors.push({
+        index,
+        entityType:String(item?.target?.entityType||''),
+        entityId:String(item?.target?.entityId||''),
+        error:String(error?.message||error||'PHOTO_UPLOAD_FAILED')
+      })
+    }
   }
+
   await pushEngineData();
   postToEngine('NEXO_DM_CREATE_TECHNICAL_SHEET_RESULT',{
     ok:true,
     requestId,
-    result,
-    mediaCount:media.length
+    result:{
+      ...result,
+      mediaCount:media.length,
+      mediaErrorCount:mediaErrors.length,
+      mediaErrors
+    },
+    mediaCount:media.length,
+    mediaErrorCount:mediaErrors.length
   });
-  return result
+  return {...result,mediaCount:media.length,mediaErrorCount:mediaErrors.length,mediaErrors}
 }
 
 async function deletePhotoFromEngine(payload={}){
