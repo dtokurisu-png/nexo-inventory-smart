@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-dev-bg-loading-fix-82';
+const VERSION='20261018-background-layer-83';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1138,7 +1138,7 @@ function ensureStyle(){
   style.textContent=`
 #nxo-dev-header,#nxo-shared-header{display:none!important}
 
-#nxo-dev-background-root{position:fixed;inset:0;z-index:2147482900;pointer-events:none;overflow:hidden;background:#0c1224}
+#nxo-dev-background-root{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:#0c1224}
 #nxo-dev-background-root #nxo-organic-canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;pointer-events:none;z-index:1}
 #nxo-dev-background-root #nxo-theme-film{position:fixed;inset:0;z-index:2;pointer-events:none;transition:background .22s ease}
 html[data-nxo-theme="day"] #nxo-dev-background-root #nxo-theme-film{background:rgba(248,246,239,.42);-webkit-backdrop-filter:blur(.35px);backdrop-filter:blur(.35px)}
