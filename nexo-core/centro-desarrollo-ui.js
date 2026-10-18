@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-dev-bg-loading-80';
+const VERSION='20261018-plan-library-modal-81';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -55,7 +55,7 @@ const TOOL_DEFS=[
   {key:'camino-agents',cmsKey:'camino-editorial-agents',kind:'addon',parent:'Camino Editorial',icon:'comentarios',title:'Agentes de Camino Editorial',summary:'Add-ons editoriales especializados que se definirán y comercializarán individualmente.',status:'planned',names:['agentes de camino editorial','agentes editoriales','camino editorial agents']}
 ]
 const PLAN_MEMBERSHIP=Object.freeze({
-  learning:['learning'],library:['learning'],inventory:['business'],technical:['business'],
+  learning:['learning'],library:['business'],inventory:['business'],technical:['business'],
   'camino-editorial':['learning'],r96:['business'],work:['business'],
   schedules:['business'],tasks:['business'],'multichannel-notifications':['business','learning'],
   numa:['business','learning'],maria:['learning'],'camino-agents':['learning']
@@ -2100,6 +2100,14 @@ html[data-nxo-theme="day"] .nxo-dev-action-surface img{
 #nxo-dev-app #nxo-dev-tool-detail[hidden]{display:none!important}
 #nxo-dev-app #nxo-dev-tool-detail .nxo-dev-detail-return-bar{flex:0 0 auto;z-index:2}
 #nxo-dev-app #nxo-dev-tool-detail .nxo-dev-detail-scroll{flex:1 1 auto;height:auto!important;min-height:0;overflow-y:auto}
+
+/* Centro — ficha emergente independiente y catálogo visible detrás. */
+#nxo-dev-app #nxo-dev-tool-detail{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;z-index:100!important;background:rgba(13,26,56,.40)!important;backdrop-filter:blur(12px) saturate(115%)!important;-webkit-backdrop-filter:blur(12px) saturate(115%)!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;box-sizing:border-box!important;overflow:hidden!important}
+#nxo-dev-app #nxo-dev-tool-detail[hidden]{display:none!important}
+#nxo-dev-app #nxo-dev-tool-detail .nxo-dev-detail-modal-panel{position:relative;display:flex;flex-direction:column;min-height:0;width:min(1050px,100%);max-height:100%;overflow:hidden;border:1px solid rgba(255,255,255,.65);border-radius:20px;background:color-mix(in srgb,var(--nxo-background) 84%,transparent);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 24px 65px rgba(8,22,48,.30);padding:50px 18px 18px;box-sizing:border-box}
+#nxo-dev-app #nxo-dev-tool-detail .nxo-dev-detail-modal-close{position:absolute;z-index:5;top:10px;right:12px;width:38px;height:38px;border-radius:10px;background:#314d87;color:#fff;border:1px solid rgba(255,255,255,.65);font-size:30px;line-height:1;cursor:pointer}
+#nxo-dev-app #nxo-dev-tool-detail .nxo-dev-detail-scroll{flex:1 1 auto;min-height:0;height:auto!important;overflow-y:auto;padding:0 5px 18px}
+@media(max-width:760px){#nxo-dev-app #nxo-dev-tool-detail{padding:10px!important}#nxo-dev-app #nxo-dev-tool-detail .nxo-dev-detail-modal-panel{padding:50px 10px 10px;border-radius:14px}}
 `;
   document.head.appendChild(style)
 }
@@ -2361,18 +2369,18 @@ function ensureToolDetailView(){
   view=document.createElement('section');
   view.id='nxo-dev-tool-detail';
   view.hidden=true;
+  view.setAttribute('role','dialog');
+  view.setAttribute('aria-modal','true');
+  view.setAttribute('aria-label','Características de la herramienta');
   view.innerHTML=
-    '<div class="nxo-dev-detail-return-bar">'+
-      '<button type="button" class="nxo-dev-detail-back" id="nxo-dev-detail-back" aria-label="Volver al catálogo">'+
-        '<span aria-hidden="true">←</span> Volver al catálogo'+
-      '</button>'+
-    '</div>'+
-    '<div class="nxo-dev-detail-scroll">'+
-      '<div id="nxo-dev-detail-content"></div>'+
+    '<div class="nxo-dev-detail-modal-panel">'+
+      '<button type="button" class="nxo-dev-detail-modal-close" id="nxo-dev-detail-close" aria-label="Cerrar características" title="Cerrar">×</button>'+
+      '<div class="nxo-dev-detail-scroll"><div id="nxo-dev-detail-content"></div></div>'+
     '</div>';
   app.appendChild(view);
-
-  view.querySelector('#nxo-dev-detail-back')?.addEventListener('click',closeToolDetail,{signal:runtimeAbort.signal});
+  view.querySelector('#nxo-dev-detail-close')?.addEventListener('click',()=>closeToolDetail(),{signal:runtimeAbort.signal});
+  view.addEventListener('click',e=>{if(e.target===view)closeToolDetail()},{signal:runtimeAbort.signal});
+  view.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeToolDetail()}},{signal:runtimeAbort.signal});
   return view
 }
 
@@ -3211,9 +3219,9 @@ async function openToolDetail(tool,trigger){
   const view=ensureToolDetailView();
   const content=view.querySelector('#nxo-dev-detail-content');
 
-  armToolDetailHistory();
-  if(shell)shell.hidden=true;
+  captureDevelopmentCatalogScroll();
   view.hidden=false;
+  view.querySelector('#nxo-dev-detail-close')?.focus({preventScroll:true});
   content.innerHTML='<div class="nxo-dev-detail-loading">Cargando ficha de herramienta…</div>';
   view.querySelector('.nxo-dev-detail-scroll')?.scrollTo({top:0,behavior:'auto'});
 
@@ -3240,12 +3248,7 @@ async function openToolDetail(tool,trigger){
   }
 }
 
-function closeToolDetail({fromHistory=false}={}){
-  if(!fromHistory&&detailHistoryArmed&&history.state?.nxoDevDetail===true){
-    history.back();
-    return
-  }
-
+function closeToolDetail(){
   detailHistoryArmed=false;
   installState=null;
   installBusy=false;
