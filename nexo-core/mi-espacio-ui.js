@@ -1,11 +1,11 @@
 (function(){
-const APP_VERSION='20261018-header-prueba-5';
+const APP_VERSION='20261018-single-header-6';
 if(window.__nexoMiEspacioApp&&window.__nexoMiEspacioVersion===APP_VERSION)return;
 window.__nexoMiEspacioApp=true;
 window.__nexoMiEspacioVersion=APP_VERSION;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261014-global-runtime-1';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
-const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-23';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-24';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -115,7 +115,7 @@ function ensureCurrentCssLink(id,url){
   return link;
 }
 function ensureGlobalHeaderRuntime(){
-  const expected='20261018-23';
+  const expected='20261018-24';
   if(window.NEXO_GLOBAL_HEADER?.version===expected)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
 
   try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
@@ -1449,46 +1449,6 @@ function roleName(roleKey,role){
   return role?.nameEs||({owner:'Propietario',developer:'Desarrollador',admin:'Administrador',manager:'Manager',collaborator:'Colaborador',viewer:'Consulta'}[roleKey]||roleKey||'Miembro')
 }
 function hasPerm(key){const list=workspace?.role?.permissions||workspace?.membership?.permissions||[];return Array.isArray(list)&&list.includes(key)}
-function topbar(mode){
-  const isWorkspace=mode==='workspace';
-  const state=sharedHeaderState||{};
-  const name=personal?.profile?.displayName||state?.profile?.displayName||ui('Usuario Nexo','Nexo user');
-  const email=String(personal?.profile?.email||state?.profile?.email||'').trim();
-  const wsName=workspace?.workspace?.name||state?.context?.name||ui('Espacio de trabajo','Workspace');
-  const role=isWorkspace?roleName(workspace?.membership?.roleKey,workspace?.role):(state?.roleLabel||ui('Cuenta personal','Personal account'));
-  const roleKey=isWorkspace?String(workspace?.membership?.roleKey||state?.roleKey||'viewer').toLowerCase():String(state?.roleKey||'personal').toLowerCase();
-  const perms=workspace?.role?.permissions||[];
-  const canAdmin=isWorkspace&&(workspace?.membership?.roleKey==='owner'||perms.some(x=>['workspace.manage','members.manage','tools.configure'].includes(x)));
-  const contextLabel=isWorkspace?wsName:ui('Mi espacio','My space');
-
-  const notification=canAdmin
-    ?'<div class="nxo-notification-wrap">'+
-       '<button type="button" class="nxo-notification-button" id="nxo-notification-button" aria-label="'+esc(ui('Notificaciones','Notifications'))+'" aria-expanded="false">'+
-         '<span class="nxo-notification-icon" aria-hidden="true">'+iconTag('notificaciones')+'</span>'+
-         '<span class="nxo-notification-badge" id="nxo-notification-badge" hidden>0</span>'+
-       '</button>'+
-       '<div class="nxo-notification-menu" id="nxo-notification-menu">'+
-         '<div id="nxo-recipe-comment-notifications"><div class="nxo-notification-head"><strong>'+esc(ui('Notificaciones','Notifications'))+'</strong></div><div class="nxo-notification-empty">'+esc(ui('Cargando avisos…','Loading notifications…'))+'</div></div>'+
-       '</div>'+
-     '</div>'
-    :'';
-
-  if(!window.NEXO_SHARED_HEADER){
-    return '<header class="nxo-topbar nxo-workspace-nav"><div class="nxo-nav-brand"><span class="nxo-nav-mark"><img src="'+esc(NEXO_LOGO)+'" alt="Nexo Group"></span><span class="nxo-nav-brand-copy"><strong>Nexo Group</strong><small>'+esc(contextLabel)+'</small></span></div></header>'
-  }
-
-  return window.NEXO_SHARED_HEADER.markup({
-    active:isWorkspace?'workspace':'personal',
-    theme:document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),
-    language:currentLanguage(),
-    contextLabel,
-    navigation:state?.navigation||{},
-    profile:{displayName:name,email,photoImage:personal?.profile?.photoImage||state?.profile?.photoImage||null},
-    roleKey,
-    roleLabel:role,
-    notificationHtml:notification
-  })
-}
 function bindTopbar(mode){
   const isWorkspace=mode==='workspace';
   applyTheme(document.getElementById('nxo-app')?.dataset?.theme||storedTheme(),false);
