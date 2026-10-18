@@ -71,6 +71,16 @@ function syncRecipeToolbar(recipe){
   const api=window.NEXO_TOOLBAR_API;
   if(!api||!recipe)return;
   const actions=[];
+  const D=data();
+  const canEdit=recipe.editable===true||D?.capabilities?.canEdit===true;
+  if(canEdit){
+    actions.push({
+      id:'edit-sheet',
+      icon:'editar-imagen',
+      label:tr('Editar','Edit'),
+      onClick:()=>window.NEXO_FICHAS_EDITOR?.openEditRecipe?.(recipe._id)
+    })
+  }
   if(isPreparation(recipe)){
     actions.push({
       id:'batches',
