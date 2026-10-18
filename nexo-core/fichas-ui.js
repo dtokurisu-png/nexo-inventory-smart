@@ -1,5 +1,8 @@
 (function(){
-if(window.__nexoFichasApp)return;window.__nexoFichasApp=true;
+const APP_VERSION='20261018-header-loader-cleanup-1';
+if(window.__nexoFichasApp&&window.__nexoFichasVersion===APP_VERSION)return;
+window.__nexoFichasApp=true;
+window.__nexoFichasVersion=APP_VERSION;
 
 const ACCESS_REVISION='fichas-workspace-context-20261007-40';
 const ENGINE_REVISION='canonical-library-boot-20261018-102';
