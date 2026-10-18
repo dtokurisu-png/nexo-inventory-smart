@@ -1894,7 +1894,7 @@ function editCollectionId(entity){
 }
 function openEditRecipe(entityId){
   const recipe=activeRecipes().find(row=>String(row._id)===String(entityId||''));
-  if(!recipe||recipe.editable!==true)return null;
+  if(!recipe||(recipe.editable!==true&&!canCreate()))return null;
   const sections=(data().sections||[]).filter(row=>String(row.recipeId)===String(recipe._id));
   const sectionIds=new Set(sections.map(row=>String(row._id)));
   const components=(data().components||[]).filter(row=>String(row.recipeId)===String(recipe._id)||sectionIds.has(String(row.sectionId))).sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)).map(row=>({
@@ -1932,7 +1932,7 @@ function openEditRecipe(entityId){
 }
 function openEditSupply(entityId){
   const supply=activeProducts().find(row=>String(row._id)===String(entityId||''));
-  if(!supply||supply.editable!==true)return null;
+  if(!supply||(supply.editable!==true&&!canCreate()))return null;
   const photos=Array.isArray(supply.images)?supply.images.filter(Boolean):[];
   const processes=(data().supplyProcesses||data().preparations||[]).filter(row=>String(row.supplyId||row.ingredientId||'')===String(supply._id)).sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)).map(row=>({
     id:String(row._id),
