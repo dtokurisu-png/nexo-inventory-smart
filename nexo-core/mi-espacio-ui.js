@@ -5,7 +5,7 @@ window.__nexoMiEspacioApp=true;
 window.__nexoMiEspacioVersion=APP_VERSION;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261014-global-runtime-1';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
-const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-27-stable';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-28-global-outside-close';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
