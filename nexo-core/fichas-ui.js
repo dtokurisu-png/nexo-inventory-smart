@@ -75,7 +75,7 @@ function ensureThemeRuntime(){
   });
 }
 function ensureGlobalHeaderRuntime(){
-  const expected='20261018-27-stable';
+  const expected='20261018-28-global-outside-close';
   if(window.NEXO_GLOBAL_HEADER?.version===expected)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
 
   try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
