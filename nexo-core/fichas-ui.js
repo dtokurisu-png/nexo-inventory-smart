@@ -1,5 +1,5 @@
 (function(){
-const APP_VERSION='20261018-restore-yellow-7';
+const APP_VERSION='20261018-connected-panels-8';
 if(window.__nexoFichasApp&&window.__nexoFichasVersion===APP_VERSION)return;
 window.__nexoFichasApp=true;
 window.__nexoFichasVersion=APP_VERSION;
@@ -8,7 +8,7 @@ const ACCESS_REVISION='fichas-workspace-context-20261007-40';
 const ENGINE_REVISION='canonical-library-boot-20261018-102';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
 const THEME_RUNTIME_URL='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/theme-runtime.js?v=20261001-theme-runtime-2';
-const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-25';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-26-stable';
 const freeSite=/\.(wixstudio|wixsite)\.com$/i.test(location.hostname);
 const apiBase=freeSite?'/'+location.pathname.split('/').filter(Boolean)[0]:'';
 const API=apiBase+'/_functions/nexoFichasUi';
@@ -75,7 +75,7 @@ function ensureThemeRuntime(){
   });
 }
 function ensureGlobalHeaderRuntime(){
-  const expected='20261018-25';
+  const expected='20261018-26-stable';
   if(window.NEXO_GLOBAL_HEADER?.version===expected)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
 
   try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
