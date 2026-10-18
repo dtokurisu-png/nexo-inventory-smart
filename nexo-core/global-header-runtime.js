@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const VERSION='20261018-27-stable';
+const VERSION='20261018-28-global-outside-close';
 const HEIGHT=68;
 const ID='nexo-global-header-runtime-host';
 const STYLE_ID='nexo-global-header-runtime-css';
@@ -658,6 +658,7 @@ function enhanceNativeHeader(opts={}){
   const onResize=()=>{if(menu.classList.contains('open')){positionMenu();if(activeWorkspaceId){const row=h.querySelector('[data-workspace-row="'+CSS.escape(activeWorkspaceId)+'"]');if(row)positionFlyout(row)}}};
   trigger.addEventListener('click',onTrigger,true);
   document.addEventListener('pointerdown',onOutsidePointer,true);
+  document.addEventListener('click',onOutsidePointer,true);
   document.addEventListener('focusin',onOutsideFocus,true);
   document.addEventListener('keydown',onKey,true);
   window.addEventListener('resize',onResize);
@@ -665,6 +666,7 @@ function enhanceNativeHeader(opts={}){
   window.__nexoNativeHeaderCleanup=()=>{
     trigger.removeEventListener('click',onTrigger,true);
     document.removeEventListener('pointerdown',onOutsidePointer,true);
+    document.removeEventListener('click',onOutsidePointer,true);
     document.removeEventListener('focusin',onOutsideFocus,true);
     document.removeEventListener('keydown',onKey,true);
     window.removeEventListener('resize',onResize);
@@ -806,6 +808,7 @@ function mount(container,opts={}){
     }
   };
   document.addEventListener('pointerdown',outside,{capture:true,signal:fallbackAbort.signal});
+  document.addEventListener('click',outside,{capture:true,signal:fallbackAbort.signal});
   document.addEventListener('focusin',outside,{capture:true,signal:fallbackAbort.signal});
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){closeWorkspaceFlyout();closeMenus(h,'')}
