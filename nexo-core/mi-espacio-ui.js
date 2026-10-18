@@ -2,7 +2,7 @@
 if(window.__nexoMiEspacioApp)return;window.__nexoMiEspacioApp=true;
 const CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/mi-espacio-ui.css?v=20261014-global-runtime-1';
 const NUMA_CSS='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/numa/presence.css?v=20261011-nma-canonical-7';
-const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-18';
+const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/global-header-runtime.js?v=20261018-20';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const NEXO_PENDING_PIN='https://dtokurisu-png.github.io/nexo-inventory-smart/nexo-core/assets/recurso-5.svg?v=night-gold-accent-system-20260930-42';
 const ACCESS_REVISION='workspace-access-cleanup-20261001-4';
@@ -112,21 +112,29 @@ function ensureCurrentCssLink(id,url){
   return link;
 }
 function ensureGlobalHeaderRuntime(){
-  if(window.NEXO_GLOBAL_HEADER)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
+  const expected='20261018-20';
+  if(window.NEXO_GLOBAL_HEADER?.version===expected)return Promise.resolve(window.NEXO_GLOBAL_HEADER);
+
+  try{window.__nexoNativeHeaderCleanup?.()}catch(_){}
+  try{window.NEXO_GLOBAL_HEADER?.unmount?.()}catch(_){}
+  const stale=document.getElementById('nexo-global-header-runtime-script');
+  if(stale)stale.remove();
+  try{delete window.NEXO_GLOBAL_HEADER}catch(_){window.NEXO_GLOBAL_HEADER=null}
+
   return new Promise((resolve,reject)=>{
-    let script=document.getElementById('nexo-global-header-runtime-script');
-    if(!script){
-      script=document.createElement('script');
-      script.id='nexo-global-header-runtime-script';
-      script.src=GLOBAL_HEADER_RUNTIME;
-      script.defer=true;
-      script.onload=()=>resolve(window.NEXO_GLOBAL_HEADER);
-      script.onerror=reject;
-      document.head.appendChild(script)
-    }else{
-      script.addEventListener('load',()=>resolve(window.NEXO_GLOBAL_HEADER),{once:true});
-      script.addEventListener('error',reject,{once:true})
-    }
+    const script=document.createElement('script');
+    script.id='nexo-global-header-runtime-script';
+    script.src=GLOBAL_HEADER_RUNTIME;
+    script.defer=true;
+    script.onload=()=>{
+      if(window.NEXO_GLOBAL_HEADER?.version!==expected){
+        reject(new Error('GLOBAL_HEADER_VERSION_MISMATCH'));
+        return
+      }
+      resolve(window.NEXO_GLOBAL_HEADER)
+    };
+    script.onerror=reject;
+    document.head.appendChild(script)
   })
 }
 function addCss(){
