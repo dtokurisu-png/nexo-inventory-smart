@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261019-price-visible-97';
+const VERSION='20261019-install-flow-98';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -26,7 +26,7 @@ const TOOL_DEFS=[
   {key:'library',cmsKey:'gear-library',kind:'environment',icon:'guia',title:'Biblioteca de engranaje',summary:'Recursos, conocimiento y materiales reutilizables de Nexo.',names:['biblioteca de engranaje']},
   {key:'inventory',cmsKey:'inventory-smart',kind:'environment',icon:'productos',title:'Inventario Smart',summary:'Entorno operativo de inventario, productos y materiales.',names:['inventario smart']},
   {key:'technical',cmsKey:'dynamic-specs',kind:'environment',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Entorno canónico de fichas, recetas y preparaciones. Recetarios Dinámicos forma parte de este mismo producto.',names:['fichas tecnicas dinamicas','dynamic technical sheets','recetarios dinamicos','menus dinamicos','menu dinamico']},
-  {key:'camino-editorial',kind:'environment',localOnly:true,routePath:'/blank-6',icon:'guia',title:'Camino Editorial',summary:'Entorno editorial completo para manuscritos, canon, análisis y producción.',names:['camino editorial'],localDetail:{
+  {key:'camino-editorial',cmsKey:'camino-editorial',kind:'environment',routePath:'/blank-6',icon:'guia',title:'Camino Editorial',summary:'Entorno editorial completo para manuscritos, canon, análisis y producción.',names:['camino editorial'],localDetail:{
     nameEs:'Camino Editorial',status:'ACTIVE',scopeModes:['personal'],category:'Editorial',integrationMode:'independent-environment',
     detailDescriptionEs:'Entorno editorial independiente de Nexo para manuscritos, canon, análisis, dictado y flujos de producción.',
     capabilitiesEs:['Manuscritos y capítulos','Canon editorial','Análisis y asistencia editorial','Flujos propios de publicación'],
@@ -2691,10 +2691,12 @@ async function developmentReviewsApi(action,toolKey,input={}){
 }
 
 async function developmentInstallApi(action,payload={}){
+  const headers={'Content-Type':'application/json'};
+  if(developmentSessionToken)headers.Authorization='Bearer '+developmentSessionToken;
   const response=await fetch(developmentFunctionUrl('nexoDevelopmentInstall'),{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'same-origin',
+    headers,
+    cache:'no-store',
     body:JSON.stringify({action,...payload})
   });
   const data=await response.json().catch(()=>null);
@@ -2917,6 +2919,8 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
     action='<button type="button" class="nxo-dev-install-primary" id="nxo-dev-install-primary" '+(installBusy?'disabled':'')+'>'+
       (installBusy?'Activando…':(freeActivation?'Activar acceso gratis':'Instalar aquí'))+
     '</button>'
+  }else{
+    action='<button type="button" class="nxo-dev-install-primary" id="nxo-dev-install-locked">Instalar herramienta</button>';
   }
 
   const acquisitionOptions=Array.isArray(selected?.acquisitionOptions)?selected.acquisitionOptions:[];
@@ -2979,6 +2983,18 @@ function renderInstallZone(tool,options,selectedKey='',message='',messageType=''
     },{signal:runtimeAbort.signal})
   });
 
+  zone.querySelector('#nxo-dev-install-locked')?.addEventListener('click',()=>{
+    const plans=document.getElementById('nxo-dev-detail-plans-button');
+    if(!plans)return;
+    if(!document.getElementById('nxo-install-plan-flash-style')){
+      const st=document.createElement('style');st.id='nxo-install-plan-flash-style';
+      st.textContent='@keyframes nxoInstallPlanFlash{0%,100%{box-shadow:0 0 0 transparent;transform:scale(1)}25%,75%{box-shadow:0 0 0 5px rgba(156,76,203,.45);transform:scale(1.06)}}.nxo-install-flash{animation:nxoInstallPlanFlash .75s ease 2}';
+      document.head.appendChild(st);
+    }
+    plans.classList.remove('nxo-install-flash');void plans.offsetWidth;plans.classList.add('nxo-install-flash');
+    plans.scrollIntoView({behavior:'smooth',block:'center'});
+    plans.addEventListener('animationend',()=>plans.classList.remove('nxo-install-flash'),{once:true});
+  },{signal:runtimeAbort.signal});
   zone.querySelector('#nxo-dev-install-primary')?.addEventListener('click',async()=>{
     if(installBusy||!installState)return;
     const destination=destinations.find(x=>destinationKey(x)===installState.selectedKey);
@@ -3301,9 +3317,10 @@ function renderToolDetail(tool,data){
     detailMedia(data?.media)+
     '<section class="nxo-dev-install-card"><div class="nxo-dev-install-head"><div><h3>Instalación</h3><p>'+escapeHtml(detailInstallDescription(tool,data))+'</p></div></div></section>'+
     detailAcquisitionCard(tool)+
-    '<div id="nxo-dev-install-zone" hidden></div>'+
+    ''+
     '<div class="nxo-dev-detail-grid">'+leftHtml+rightHtml+'</div>'+
-    '<div id="nxo-dev-reviews-zone"></div>';
+    '<div id="nxo-dev-reviews-zone"></div>'+ 
+    '<div id="nxo-dev-install-zone" class="nxo-dev-install-last"><section class="nxo-dev-install-card"><h3>Instalar herramienta</h3><p>Consultando acceso y destinos…</p></section></div>';
   const response=content.querySelector('#nxo-dev-acquisition-response');
   content.querySelector('#nxo-dev-detail-plans-button')?.addEventListener('click',()=>{
     const labels=[...(PLAN_MEMBERSHIP[tool.key]||[]),'complete'].map(k=>PLAN_INFO[k]?.label).filter(Boolean);
@@ -3352,6 +3369,7 @@ async function openToolDetail(tool,trigger){
       if(reviewsZone)reviewsZone.innerHTML='';
     }else{
       loadReviewsZone(tool,requestId)
+      loadInstallOptions(tool,requestId)
     }
   }catch(error){
     if(requestId!==detailRequestId||view.hidden)return;
