@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-pricing-window-92';
+const VERSION='20261018-plans-foil-wonder-93';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -3174,25 +3174,71 @@ function detailInstallDescription(tool,data){
   return 'Podrás elegir dónde instalarla cuando la herramienta esté disponible para tu cuenta.';
 }
 function showPlanComparison(){
- let d=document.getElementById('nxo-plans-window');
- if(!d){d=document.createElement('div');d.id='nxo-plans-window';document.body.appendChild(d)}
- const plans=[['business','Business','19.99','16.00','192',['Inventario Smart','Fichas Técnicas Dinámicas','Biblioteca de engranaje']],['learning','Learning','19.99','16.00','192',['Learning Core','Cursos incluidos según catálogo','Camino Editorial']],['complete','Completo','29.99','24.00','288',['Todo Business','Todo Learning','Add-ons opcionales']]];
- d.style.cssText='position:fixed;inset:0;z-index:2147483646;background:rgba(8,14,34,.76);backdrop-filter:blur(14px);display:grid;place-items:center;padding:15px;box-sizing:border-box;color:#17243c';
- d.innerHTML='<section style="width:min(1040px,100%);max-height:94vh;overflow:auto;border-radius:24px;padding:24px;background:linear-gradient(145deg,#f9f5ff,#e7ecff);box-shadow:0 28px 90px #090e2690;box-sizing:border-box">'+
- '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-size:11px;letter-spacing:2px;color:#8c39bc">NEXO GROUP</div><h2 style="margin:6px 0">Elige tu plan</h2><p style="font-size:12px">Herramientas para aprender, trabajar y emprender.</p></div><button id="nxo-close-plans" style="background:#314d87;color:white;border:0;border-radius:9px;padding:11px;cursor:pointer">Cerrar ×</button></div>'+
- '<div style="text-align:center;margin:16px"><button data-cycle="month" aria-pressed="true">Mensual</button> <button data-cycle="year" aria-pressed="false">Anual · ahorra ~20%</button></div>'+
- '<div id="nxo-plan-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">'+plans.map(p=>'<article style="min-width:0;border:1px solid #c9c1df;border-radius:19px;padding:18px;background:#ffffffb5;display:flex;flex-direction:column;gap:12px"><img src="'+PLAN_INFO[p[0]].image+'" style="width:57px;height:57px;object-fit:contain" alt="Icono '+p[1]+'"><h3 style="margin:0">'+p[1]+'</h3><div data-plan-amount="'+p[0]+'" style="font-size:26px;font-weight:800">$'+p[2]+' / mes</div><small data-plan-bill="'+p[0]+'">Facturación mensual</small><ul style="flex:1;margin:0;padding-left:18px;font-size:12px;line-height:1.9">'+p[5].map(x=>'<li>'+x+'</li>').join('')+'</ul><button type="button" disabled style="padding:10px;border-radius:10px;border:1px solid #ddd">Contratación próximamente</button></article>').join('')+'</div>'+
- '<section id="nxo-owner-plan-private" hidden style="margin-top:14px;padding:13px;border:1px solid #a058c7;border-radius:13px"><b>Owner · $0</b><p style="font-size:12px">Acceso de pruebas, exclusivo del propietario y sin cobros.</p></section>'+
- '<p style="font-size:11px;text-align:center;margin:18px 0 0">Precios propuestos en USD. Contratación pendiente de publicar planes comerciales en Wix.</p></section>';
- d.hidden=false;d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
- d.querySelector('#nxo-close-plans').onclick=()=>d.remove();
- d.onclick=e=>{if(e.target===d)d.remove()};
- d.querySelectorAll('[data-cycle]').forEach(btn=>btn.onclick=()=>{
-  const annual=btn.dataset.cycle==='year';
-  d.querySelectorAll('[data-cycle]').forEach(v=>v.setAttribute('aria-pressed',String(v===btn)));
-  plans.forEach(p=>{d.querySelector('[data-plan-amount="'+p[0]+'"]').textContent='$'+(annual?p[3]:p[2])+' / mes';d.querySelector('[data-plan-bill="'+p[0]+'"]').textContent=annual?'Pago anual $'+p[4]:'Facturación mensual'});
+ const existing=document.getElementById('nxo-plans-window');
+ if(existing)existing.remove();
+ const d=document.createElement('div');d.id='nxo-plans-window';document.body.appendChild(d);
+ const styles=document.getElementById('nxo-plans-window-styles')||document.createElement('style');
+ styles.id='nxo-plans-window-styles';
+ styles.textContent=[
+ '#nxo-plans-window{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:15px;background:rgba(7,12,32,.78);backdrop-filter:blur(14px);color:#16203e;box-sizing:border-box}',
+ '#nxo-plans-window .nxo-pw-panel{width:min(1080px,100%);max-height:94vh;overflow:auto;box-sizing:border-box;border-radius:25px;padding:26px;background:linear-gradient(145deg,#f9f7ff,#eaefff);box-shadow:0 28px 90px #03091b88}',
+ '#nxo-plans-window .nxo-pw-heading{display:flex;justify-content:space-between;gap:15px;align-items:start}',
+ '#nxo-plans-window .nxo-pw-heading h2{font-size:26px;margin:5px 0}',
+ '#nxo-plans-window .nxo-pw-heading p{font-size:12px;margin:0;color:#59647d}',
+ '#nxo-plans-window .nxo-pw-close{background:#314d87;color:white;border:0;border-radius:10px;padding:10px 14px;cursor:pointer}',
+ '#nxo-plans-window .nxo-pw-switch{margin:22px auto;display:flex;width:fit-content;gap:2px;padding:5px;border-radius:24px;background:#d4d9eb;border:1px solid #c0c8dc}',
+ '#nxo-plans-window .nxo-pw-switch button{min-width:115px;border:0;border-radius:20px;padding:11px 18px;background:transparent;font-weight:700;color:#40506a;cursor:pointer}',
+ '#nxo-plans-window .nxo-pw-switch button[aria-pressed=true]{background:#314d87;color:#fff;box-shadow:0 3px 13px #24396944}',
+ '#nxo-plans-window .nxo-pw-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;perspective:1200px}',
+ '#nxo-plans-window .nxo-pw-card{position:relative;min-width:0;display:flex;flex-direction:column;padding:19px 17px;border-radius:19px;border:1px solid #a8bcdd;background:linear-gradient(150deg,#e1efff,#f8fbff);box-shadow:0 12px 30px #101c3820;transition:transform .52s,box-shadow .35s;transform-style:preserve-3d}',
+ '#nxo-plans-window .nxo-pw-card.learning{border-color:#b99ee4;background:linear-gradient(150deg,#f0e4ff,#fcfaff)}',
+ '#nxo-plans-window .nxo-pw-card.complete{border:2px solid #c992e7;background:linear-gradient(125deg,#f5ddff,#fff6e2,#e6e6ff,#fff0fa);box-shadow:0 0 25px #af5aff65,0 14px 42px #101c382d;overflow:hidden}',
+ '#nxo-plans-window .nxo-pw-card.complete:before{content:"";position:absolute;inset:-80%;background:linear-gradient(110deg,transparent 44%,#ffffff7f 49%,transparent 54%);transform:translateX(-30%) rotate(12deg);animation:nxoFoil 7s ease-in-out infinite;pointer-events:none}',
+ '@keyframes nxoFoil{0%,25%{transform:translateX(-38%) rotate(12deg)}70%,100%{transform:translateX(38%) rotate(12deg)}}',
+ '#nxo-plans-window .nxo-pw-card.flipping{transform:rotateY(90deg)}',
+ '#nxo-plans-window .nxo-pw-card>*{position:relative}',
+ '#nxo-plans-window .nxo-pw-card img{width:58px;height:58px;object-fit:contain}',
+ '#nxo-plans-window .nxo-pw-card h3{margin:9px 0 5px;font-size:21px}',
+ '#nxo-plans-window .nxo-pw-card .nxo-pw-desc{font-size:12px;line-height:1.5;color:#465373;min-height:54px;margin:0}',
+ '#nxo-plans-window .nxo-pw-price{font-size:27px;font-weight:850;margin:9px 0 0}',
+ '#nxo-plans-window .nxo-pw-period{font-size:12px;font-weight:500}',
+ '#nxo-plans-window .nxo-pw-bill{font-size:11px;color:#566078;min-height:32px;margin:3px 0 9px}',
+ '#nxo-plans-window .nxo-pw-card ul{padding:0;list-style:none;display:grid;gap:9px;margin:0 0 18px;flex:1}',
+ '#nxo-plans-window .nxo-pw-card li{font-size:12px;line-height:1.4;padding-left:18px;position:relative}',
+ '#nxo-plans-window .nxo-pw-card li:before{content:"✓";position:absolute;left:0;color:#7556ba;font-weight:800}',
+ '#nxo-plans-window .nxo-pw-card .nxo-pw-action{padding:11px;border:1px solid #b5bad2;border-radius:11px;background:#ffffff96;color:#4d5474;font-size:12px}',
+ '#nxo-plans-window .nxo-pw-owner{display:grid;gap:8px;margin-top:17px;padding:15px;border:1px solid #aa77d4;border-radius:15px;background:linear-gradient(120deg,#f2e2ff,#e8f2ff)}',
+ '#nxo-plans-window .nxo-pw-owner[hidden]{display:none!important}',
+ '#nxo-plans-window .nxo-pw-note{margin:16px 0 0;text-align:center;color:#657086;font-size:11px}',
+ '@media(max-width:740px){#nxo-plans-window{padding:8px}#nxo-plans-window .nxo-pw-panel{padding:20px 12px}#nxo-plans-window .nxo-pw-grid{grid-template-columns:minmax(0,1fr)}#nxo-plans-window .nxo-pw-card .nxo-pw-desc{min-height:0}}',
+ '@media(prefers-reduced-motion:reduce){#nxo-plans-window .nxo-pw-card{transition:none}#nxo-plans-window .nxo-pw-card.complete:before{animation:none}}'
+ ].join(' ');
+ if(!styles.isConnected)document.head.appendChild(styles);
+ const plans=[
+ {key:'business',name:'Business',month:'19.99',year:'192',description:'Administración y operación para negocios y equipos.',benefits:['Herramientas Business incluidas en el catálogo','Instalación personal o en Workspace según herramienta','Integraciones Business disponibles','Actualizaciones de herramientas incluidas','Soporte técnico estándar','Add-ons premium sujetos a contratación adicional']},
+ {key:'learning',name:'Learning',month:'19.99',year:'192',description:'Aprendizaje personalizado para objetivos reales.',benefits:['Herramientas Learning incluidas en el catálogo','Learning Core como biblioteca de cursos','Cursos y rutas incluidos según habilitación','Progreso y evaluaciones por alumno','Actualizaciones de contenidos incluidos','Soporte técnico estándar']},
+ {key:'complete',name:'Completo',month:'29.99',year:'288',description:'Business y Learning reunidos en un ecosistema.',benefits:['Todas las herramientas base Business y Learning','Acceso a Learning Core y cursos habilitados','Integraciones incluidas de ambos ecosistemas','Mi espacio y Workspaces compatibles','Actualizaciones de herramientas incluidas','Soporte técnico estándar','Add-ons premium separados según uso']}
+ ];
+ d.innerHTML='<section class="nxo-pw-panel"><div class="nxo-pw-heading"><div><small>NEXO GROUP</small><h2>Planes para crear, aprender y crecer</h2><p>Elige tu modalidad de facturación.</p></div><button type="button" class="nxo-pw-close">Cerrar ×</button></div>'+
+ '<div class="nxo-pw-switch" role="group" aria-label="Modalidad de pago"><button data-mode="month" aria-pressed="true">Mensual</button><button data-mode="year" aria-pressed="false">Anual</button></div>'+
+ '<div class="nxo-pw-grid">'+plans.map(p=>'<article class="nxo-pw-card '+p.key+'" data-plan="'+p.key+'"><img src="'+PLAN_INFO[p.key].image+'" alt="Icono '+p.name+'"><h3>'+p.name+'</h3><p class="nxo-pw-desc">'+p.description+'</p><div class="nxo-pw-price" data-price="'+p.key+'">$'+p.month+' <span class="nxo-pw-period">/ mes</span></div><div class="nxo-pw-bill" data-bill="'+p.key+'">Facturación mensual</div><ul>'+p.benefits.map(v=>'<li>'+v+'</li>').join('')+'</ul><button type="button" class="nxo-pw-action" disabled>Contratación próximamente</button></article>').join('')+'</div>'+
+ '<div class="nxo-pw-owner" id="nxo-owner-plan-private" hidden><strong>Wonder / Owner · $0</strong><span>Acceso de pruebas gratuito y privado, con las herramientas y cursos habilitados para el propietario. No genera facturación.</span></div>'+
+ '<p class="nxo-pw-note">Precios comerciales propuestos en USD. La contratación aún requiere activar los planes reales de Wix Pricing Plans. Los complementos de pago no se incluyen automáticamente.</p></section>';
+ d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+ d.onclick=event=>{if(event.target===d||event.target.closest('.nxo-pw-close'))d.remove()};
+ d.onkeydown=event=>{if(event.key==='Escape')d.remove()};
+ let mode='month';let changing=false;
+ d.querySelectorAll('[data-mode]').forEach(btn=>btn.onclick=()=>{
+  if(changing||mode===btn.dataset.mode)return;changing=true;mode=btn.dataset.mode;
+  d.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode===mode)));
+  const cards=[...d.querySelectorAll('.nxo-pw-card')];cards.forEach(x=>x.classList.add('flipping'));
+  const update=()=>{plans.forEach(p=>{d.querySelector('[data-price="'+p.key+'"]').innerHTML=mode==='year'?'$'+p.year+' <span class="nxo-pw-period">/ año</span>':'$'+p.month+' <span class="nxo-pw-period">/ mes</span>';d.querySelector('[data-bill="'+p.key+'"]').textContent=mode==='year'?'Pago único anual · equivalente a $'+(Number(p.year)/12).toFixed(2)+'/mes':'Facturación mensual'});cards.forEach(x=>x.classList.remove('flipping'));changing=false};
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){update()}else{setTimeout(update,260)}
  });
- fetch(developmentFunctionUrl('nexoLearningAccess'),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.ok?r.json():null).then(x=>{if(x?.ok===true&&x.data?.isOwner===true&&d.isConnected)d.querySelector('#nxo-owner-plan-private').hidden=false}).catch(()=>{});
+ // Role is issued by the authenticated Centro backend, not inferred from a Workspace role.
+ const wonder=developmentSession?.isWonder===true||developmentSession?.roleKey==='wonder';
+ if(wonder)d.querySelector('#nxo-owner-plan-private').hidden=false;
+ d.querySelector('.nxo-pw-close').focus({preventScroll:true});
 }
 
 function detailAcquisitionCard(tool){
