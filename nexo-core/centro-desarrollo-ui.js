@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261019-individual-price-95';
+const VERSION='20261019-price-two-actions-96';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -2282,6 +2282,7 @@ function bindFeatureInterception(){
     event.stopPropagation();
     event.stopImmediatePropagation();
 
+    if(event.target?.closest?.('.nxo-dev-quick-individual')){closePreview(true);showIndividualPrice(tool);return}
     if(event.target?.closest?.('.nxo-dev-quick-plans')){closePreview(true);showPlanComparison();return}
 
     const action=event.target?.closest?.('.nxo-dev-action');
@@ -3248,6 +3249,25 @@ function showPlanComparison(){
  d.querySelector('.nxo-pw-close').focus({preventScroll:true});
 }
 
+function showIndividualPrice(tool){
+ const previous=document.getElementById('nxo-individual-price-modal');if(previous)previous.remove();
+ const modal=document.createElement('div');modal.id='nxo-individual-price-modal';
+ modal.style.cssText='position:fixed;inset:0;z-index:2147483646;background:rgba(8,15,36,.76);backdrop-filter:blur(10px);display:grid;place-items:center;padding:14px;box-sizing:border-box';
+ const price=individualPriceLabel(tool);
+ modal.innerHTML='<section role="dialog" aria-modal="true" aria-label="Precio individual" style="width:min(480px,100%);border-radius:22px;background:var(--nxo-background,#faf8ff);color:var(--nxo-text-primary,#17243f);padding:25px;box-shadow:0 24px 70px #0006;box-sizing:border-box">'+
+ '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 style="margin:0;font-size:20px">Acceso individual</h2><button type="button" data-close-individual style="border:0;border-radius:9px;background:#314d87;color:white;padding:9px 13px;cursor:pointer">Cerrar ×</button></div>'+
+ '<h3 style="margin:18px 0 8px">'+escapeHtml(tool.title)+'</h3><div style="font-size:23px;font-weight:800;color:var(--nxo-text-primary)">'+escapeHtml(price)+'</div>'+
+ '<p style="font-size:12px;line-height:1.6;color:var(--nxo-text-secondary)">Consulta el costo de acceso a esta herramienta por separado. Si utilizarás varias herramientas, compara Business, Learning o Completo para elegir una opción más conveniente.</p>'+
+ (tool.key==='gear-library'?'<p style="font-size:12px">Esta herramienta cuenta con una oferta gratuita registrada.</p>':'<p style="font-size:12px">La oferta individual aún no tiene un precio publicado. No se iniciará ningún cobro.</p>')+
+ '<button type="button" data-individual-plans style="width:100%;border:0;border-radius:11px;padding:12px;background:#314d87;color:#fff;cursor:pointer">Comparar planes mensuales y anuales</button></section>';
+ document.body.appendChild(modal);
+ const close=()=>modal.remove();
+ modal.querySelector('[data-close-individual]').onclick=close;
+ modal.onclick=e=>{if(e.target===modal)close()};
+ modal.onkeydown=e=>{if(e.key==='Escape')close()};
+ modal.querySelector('[data-individual-plans]').onclick=()=>{close();showPlanComparison()};
+ modal.querySelector('[data-close-individual]').focus({preventScroll:true});
+}
 function individualPriceLabel(tool){return tool.key==='gear-library'?'Gratis':'Precio individual por definir'}
 function detailAcquisitionCard(tool){
   const included=PLAN_MEMBERSHIP[tool.key]||[];
@@ -3498,8 +3518,9 @@ function ensureDevelopmentApp(){
         '<div class="nxo-dev-plan-card">'+toolPlanIcons(tool)+'</div>'+
       '</div>'+
       '<p data-nxo-dev-description="1">'+escapeHtml(tool.summary)+'</p>'+ 
-      '<div class="nxo-dev-individual-price" style="font-size:12px;font-weight:700;margin:7px 0;color:var(--nxo-text-primary)">Acceso individual · '+escapeHtml(individualPriceLabel(tool))+'</div>'+ 
-      '<button type="button" class="nxo-dev-quick-plans" style="border:1px solid var(--nxo-border);background:var(--nxo-accent-soft);color:var(--nxo-text-primary);border-radius:9px;padding:8px 12px;margin-bottom:8px;cursor:pointer">Ver planes</button>'+
+      '<div class="nxo-dev-price-actions" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0">'+
+        '<button type="button" class="nxo-dev-quick-individual" style="min-width:0;border:1px solid var(--nxo-border);background:var(--nxo-surface-glass);color:var(--nxo-text-primary);border-radius:9px;padding:9px 7px;cursor:pointer;font-size:11px;font-weight:700">Ver precio individual</button>'+
+        '<button type="button" class="nxo-dev-quick-plans" style="min-width:0;border:1px solid var(--nxo-border);background:var(--nxo-accent-soft);color:var(--nxo-text-primary);border-radius:9px;padding:9px 7px;cursor:pointer;font-size:11px;font-weight:700">Ver planes</button></div>'+
       (tool.status==='planned'
         ? '<button type="button" class="nxo-dev-action nxo-dev-action-surface" disabled aria-disabled="true">Próximamente</button>'
         : '<button type="button" class="nxo-dev-action nxo-dev-action-surface">Ver características</button>');
