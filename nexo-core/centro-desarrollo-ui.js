@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-product-ficha-acquisition-89';
+const VERSION='20261018-aligned-detail-90';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -3196,6 +3196,25 @@ function renderToolDetail(tool,data){
   const compatibility=(Array.isArray(data?.compatibilityEs)?data.compatibilityEs:[]).filter(item=>!/^(workspace|espacio de trabajo)( de nexo)?\.?$/i.test(String(item).trim()));
   const leftHtml=detailList('Capacidades',data?.capabilitiesEs)+detailList('Compatibilidad',compatibility)+detailList('Público recomendado',data?.audienceEs);
   const rightHtml=detailList('Requisitos',data?.requirementsEs)+detailList('Integraciones',data?.integrationsEs)+detailLinks('Documentación',data?.documentation)+detailRelated(data?.relatedProducts);
+  if(!document.getElementById('nxo-dev-detail-layout-fix')){
+    const layout=document.createElement('style');
+    layout.id='nxo-dev-detail-layout-fix';
+    layout.textContent=[
+      '#nxo-dev-app #nxo-dev-detail-content{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-content:start;min-width:0}',
+      '#nxo-dev-app #nxo-dev-detail-content>*{min-width:0;box-sizing:border-box;margin-top:0;margin-bottom:0}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch;grid-auto-flow:row;min-width:0}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid>.nxo-dev-detail-card{margin:0!important;height:100%;min-width:0;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid>.nxo-dev-detail-card h3{min-height:18px}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid>.nxo-dev-detail-card ul{align-content:start}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-card,#nxo-dev-app #nxo-dev-detail-content #nxo-dev-acquisition-card{margin:0;min-width:0;box-sizing:border-box}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-head{margin-bottom:0}',
+      '#nxo-dev-app #nxo-dev-detail-content #nxo-dev-install-zone[hidden]{display:none!important}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-actions{align-items:stretch}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-actions button{flex:1 1 170px;min-height:40px}',
+      '@media(max-width:720px){#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid{grid-template-columns:minmax(0,1fr)}#nxo-dev-app #nxo-dev-detail-content{gap:11px}}'
+    ].join('\\n');
+    document.head.appendChild(layout);
+  }
   content.innerHTML=
     '<div class="nxo-dev-detail-hero"><div class="nxo-dev-detail-icon-wrap"><img class="nxo-dev-detail-icon" src="'+iconUrl(tool.icon)+'" alt=""></div>'+
       '<div class="nxo-dev-detail-heading"><div class="nxo-dev-detail-eyebrow">Ficha de producto</div>'+
@@ -3206,7 +3225,7 @@ function renderToolDetail(tool,data){
     '<section class="nxo-dev-install-card"><div class="nxo-dev-install-head"><div><h3>Instalación</h3><p>'+escapeHtml(detailInstallDescription(tool,data))+'</p></div></div></section>'+
     detailAcquisitionCard(tool)+
     '<div id="nxo-dev-install-zone" hidden></div>'+
-    '<div class="nxo-dev-detail-grid"><div>'+leftHtml+'</div><aside>'+rightHtml+'</aside></div>'+
+    '<div class="nxo-dev-detail-grid">'+leftHtml+rightHtml+'</div>'+
     '<div id="nxo-dev-reviews-zone"></div>';
   const response=content.querySelector('#nxo-dev-acquisition-response');
   content.querySelector('#nxo-dev-detail-plans-button')?.addEventListener('click',()=>{
