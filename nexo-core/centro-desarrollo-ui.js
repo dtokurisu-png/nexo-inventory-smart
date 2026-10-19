@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-plans-foil-wonder-93';
+const VERSION='20261018-owner-fourth-foil-94';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -3190,13 +3190,18 @@ function showPlanComparison(){
  '#nxo-plans-window .nxo-pw-switch button{min-width:115px;border:0;border-radius:20px;padding:11px 18px;background:transparent;font-weight:700;color:#40506a;cursor:pointer}',
  '#nxo-plans-window .nxo-pw-switch button[aria-pressed=true]{background:#314d87;color:#fff;box-shadow:0 3px 13px #24396944}',
  '#nxo-plans-window .nxo-pw-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;perspective:1200px}',
+ '#nxo-plans-window .nxo-pw-grid.has-owner{grid-template-columns:repeat(4,minmax(0,1fr))}',
  '#nxo-plans-window .nxo-pw-card{position:relative;min-width:0;display:flex;flex-direction:column;padding:19px 17px;border-radius:19px;border:1px solid #a8bcdd;background:linear-gradient(150deg,#e1efff,#f8fbff);box-shadow:0 12px 30px #101c3820;transition:transform .52s,box-shadow .35s;transform-style:preserve-3d}',
  '#nxo-plans-window .nxo-pw-card.learning{border-color:#b99ee4;background:linear-gradient(150deg,#f0e4ff,#fcfaff)}',
  '#nxo-plans-window .nxo-pw-card.complete{border:2px solid #c992e7;background:linear-gradient(125deg,#f5ddff,#fff6e2,#e6e6ff,#fff0fa);box-shadow:0 0 25px #af5aff65,0 14px 42px #101c382d;overflow:hidden}',
- '#nxo-plans-window .nxo-pw-card.complete:before{content:"";position:absolute;inset:-80%;background:linear-gradient(110deg,transparent 44%,#ffffff7f 49%,transparent 54%);transform:translateX(-30%) rotate(12deg);animation:nxoFoil 7s ease-in-out infinite;pointer-events:none}',
- '@keyframes nxoFoil{0%,25%{transform:translateX(-38%) rotate(12deg)}70%,100%{transform:translateX(38%) rotate(12deg)}}',
+ '#nxo-plans-window .nxo-pw-card.complete:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 0%,#fff9 17%,#fbd4ff88 24%,transparent 35%,transparent 100%);background-size:340% 100%;background-position:150% 0;animation:nxoFoil 4.6s linear infinite;pointer-events:none;z-index:1}',
+ '#nxo-plans-window .nxo-pw-card.complete:after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(120deg,#fffd8b25,transparent 30%,#9feeff30 52%,transparent 75%,#f7aaff44);background-size:240% 240%;animation:nxoIridescent 7s ease-in-out infinite alternate;pointer-events:none;z-index:0}',
+ '@keyframes nxoFoil{0%{background-position:150% 0}100%{background-position:-150% 0}}',
+ '@keyframes nxoIridescent{0%{background-position:0% 0%}100%{background-position:100% 100%}}',
  '#nxo-plans-window .nxo-pw-card.flipping{transform:rotateY(90deg)}',
- '#nxo-plans-window .nxo-pw-card>*{position:relative}',
+ '#nxo-plans-window .nxo-pw-card>*{position:relative;z-index:2}',
+ '#nxo-plans-window .nxo-pw-card.owner{border:2px solid #c99d59;background:linear-gradient(145deg,#fff8e5,#e8dcff,#edf6ff);box-shadow:0 14px 35px #94754033}',
+ '#nxo-plans-window .nxo-pw-owner-symbol{display:grid;place-items:center;width:58px;height:58px;border-radius:17px;background:linear-gradient(135deg,#cda05d,#f9e8a8,#b286ce);font-size:29px;color:#46345b}',
  '#nxo-plans-window .nxo-pw-card img{width:58px;height:58px;object-fit:contain}',
  '#nxo-plans-window .nxo-pw-card h3{margin:9px 0 5px;font-size:21px}',
  '#nxo-plans-window .nxo-pw-card .nxo-pw-desc{font-size:12px;line-height:1.5;color:#465373;min-height:54px;margin:0}',
@@ -3210,10 +3215,12 @@ function showPlanComparison(){
  '#nxo-plans-window .nxo-pw-owner{display:grid;gap:8px;margin-top:17px;padding:15px;border:1px solid #aa77d4;border-radius:15px;background:linear-gradient(120deg,#f2e2ff,#e8f2ff)}',
  '#nxo-plans-window .nxo-pw-owner[hidden]{display:none!important}',
  '#nxo-plans-window .nxo-pw-note{margin:16px 0 0;text-align:center;color:#657086;font-size:11px}',
- '@media(max-width:740px){#nxo-plans-window{padding:8px}#nxo-plans-window .nxo-pw-panel{padding:20px 12px}#nxo-plans-window .nxo-pw-grid{grid-template-columns:minmax(0,1fr)}#nxo-plans-window .nxo-pw-card .nxo-pw-desc{min-height:0}}',
- '@media(prefers-reduced-motion:reduce){#nxo-plans-window .nxo-pw-card{transition:none}#nxo-plans-window .nxo-pw-card.complete:before{animation:none}}'
+ '@media(max-width:1060px){#nxo-plans-window .nxo-pw-grid.has-owner{grid-template-columns:repeat(2,minmax(0,1fr))}}',
+ '@media(max-width:740px){#nxo-plans-window{padding:8px}#nxo-plans-window .nxo-pw-panel{padding:20px 12px}#nxo-plans-window .nxo-pw-grid,#nxo-plans-window .nxo-pw-grid.has-owner{grid-template-columns:minmax(0,1fr)}#nxo-plans-window .nxo-pw-card .nxo-pw-desc{min-height:0}}',
+ '@media(prefers-reduced-motion:reduce){#nxo-plans-window .nxo-pw-card{transition:none}#nxo-plans-window .nxo-pw-card.complete:before,#nxo-plans-window .nxo-pw-card.complete:after{animation:none}}'
  ].join(' ');
  if(!styles.isConnected)document.head.appendChild(styles);
+ const wonder=developmentSession?.isWonder===true||developmentSession?.roleKey==='wonder';
  const plans=[
  {key:'business',name:'Business',month:'19.99',year:'192',description:'Administración y operación para negocios y equipos.',benefits:['Herramientas Business incluidas en el catálogo','Instalación personal o en Workspace según herramienta','Integraciones Business disponibles','Actualizaciones de herramientas incluidas','Soporte técnico estándar','Add-ons premium sujetos a contratación adicional']},
  {key:'learning',name:'Learning',month:'19.99',year:'192',description:'Aprendizaje personalizado para objetivos reales.',benefits:['Herramientas Learning incluidas en el catálogo','Learning Core como biblioteca de cursos','Cursos y rutas incluidos según habilitación','Progreso y evaluaciones por alumno','Actualizaciones de contenidos incluidos','Soporte técnico estándar']},
@@ -3221,8 +3228,8 @@ function showPlanComparison(){
  ];
  d.innerHTML='<section class="nxo-pw-panel"><div class="nxo-pw-heading"><div><small>NEXO GROUP</small><h2>Planes para crear, aprender y crecer</h2><p>Elige tu modalidad de facturación.</p></div><button type="button" class="nxo-pw-close">Cerrar ×</button></div>'+
  '<div class="nxo-pw-switch" role="group" aria-label="Modalidad de pago"><button data-mode="month" aria-pressed="true">Mensual</button><button data-mode="year" aria-pressed="false">Anual</button></div>'+
- '<div class="nxo-pw-grid">'+plans.map(p=>'<article class="nxo-pw-card '+p.key+'" data-plan="'+p.key+'"><img src="'+PLAN_INFO[p.key].image+'" alt="Icono '+p.name+'"><h3>'+p.name+'</h3><p class="nxo-pw-desc">'+p.description+'</p><div class="nxo-pw-price" data-price="'+p.key+'">$'+p.month+' <span class="nxo-pw-period">/ mes</span></div><div class="nxo-pw-bill" data-bill="'+p.key+'">Facturación mensual</div><ul>'+p.benefits.map(v=>'<li>'+v+'</li>').join('')+'</ul><button type="button" class="nxo-pw-action" disabled>Contratación próximamente</button></article>').join('')+'</div>'+
- '<div class="nxo-pw-owner" id="nxo-owner-plan-private" hidden><strong>Wonder / Owner · $0</strong><span>Acceso de pruebas gratuito y privado, con las herramientas y cursos habilitados para el propietario. No genera facturación.</span></div>'+
+ '<div class="nxo-pw-grid'+(wonder?' has-owner':'')+'">'+plans.map(p=>'<article class="nxo-pw-card '+p.key+'" data-plan="'+p.key+'"><img src="'+PLAN_INFO[p.key].image+'" alt="Icono '+p.name+'"><h3>'+p.name+'</h3><p class="nxo-pw-desc">'+p.description+'</p><div class="nxo-pw-price" data-price="'+p.key+'">$'+p.month+' <span class="nxo-pw-period">/ mes</span></div><div class="nxo-pw-bill" data-bill="'+p.key+'">Facturación mensual</div><ul>'+p.benefits.map(v=>'<li>'+v+'</li>').join('')+'</ul><button type="button" class="nxo-pw-action" disabled>Contratación próximamente</button></article>').join('')+(wonder?'<article class="nxo-pw-card owner" data-plan="owner"><span class="nxo-pw-owner-symbol" aria-hidden="true">✦</span><h3>Wonder / Owner</h3><p class="nxo-pw-desc">Plan privado para probar Nexo Group sin facturación.</p><div class="nxo-pw-price">$0 <span class="nxo-pw-period">/ siempre</span></div><div class="nxo-pw-bill">Acceso de prueba activo · sin cobros</div><ul><li>Herramientas Business y Learning habilitadas para pruebas</li><li>Learning Core y cursos de prueba</li><li>Integraciones y complementos disponibles en desarrollo</li><li>Mi espacio y Workspaces según permisos</li><li>Pruebas de flujos de adquisición sin pago</li><li>Acceso exclusivo del propietario verificado</li></ul><button type="button" class="nxo-pw-action" disabled>Plan de pruebas activo</button></article>':'')+'</div>'+
+
  '<p class="nxo-pw-note">Precios comerciales propuestos en USD. La contratación aún requiere activar los planes reales de Wix Pricing Plans. Los complementos de pago no se incluyen automáticamente.</p></section>';
  d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
  d.onclick=event=>{if(event.target===d||event.target.closest('.nxo-pw-close'))d.remove()};
@@ -3236,8 +3243,6 @@ function showPlanComparison(){
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){update()}else{setTimeout(update,260)}
  });
  // Role is issued by the authenticated Centro backend, not inferred from a Workspace role.
- const wonder=developmentSession?.isWonder===true||developmentSession?.roleKey==='wonder';
- if(wonder)d.querySelector('#nxo-owner-plan-private').hidden=false;
  d.querySelector('.nxo-pw-close').focus({preventScroll:true});
 }
 
