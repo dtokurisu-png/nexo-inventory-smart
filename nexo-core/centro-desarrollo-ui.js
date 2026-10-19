@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-owner-fourth-foil-94';
+const VERSION='20261019-individual-price-95';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -2282,6 +2282,8 @@ function bindFeatureInterception(){
     event.stopPropagation();
     event.stopImmediatePropagation();
 
+    if(event.target?.closest?.('.nxo-dev-quick-plans')){closePreview(true);showPlanComparison();return}
+
     const action=event.target?.closest?.('.nxo-dev-action');
     if(action&&!action.disabled){
       openToolDetail(tool,action);
@@ -3246,13 +3248,14 @@ function showPlanComparison(){
  d.querySelector('.nxo-pw-close').focus({preventScroll:true});
 }
 
+function individualPriceLabel(tool){return tool.key==='gear-library'?'Gratis':'Precio individual por definir'}
 function detailAcquisitionCard(tool){
   const included=PLAN_MEMBERSHIP[tool.key]||[];
   const planLabels=[...included,'complete'].map(k=>PLAN_INFO[k]?.label).filter(Boolean);
   const planText=planLabels.length?planLabels.join(' o '):'un plan compatible';
   return '<section class="nxo-dev-detail-card" id="nxo-dev-acquisition-card">'+
     '<h3>Cómo adquirirlo</h3>'+
-    '<p style="margin:8px 0;color:var(--nxo-text-secondary);font-size:12px;line-height:1.55">Puedes obtener acceso mediante '+escapeHtml(planText)+' o adquirir esta herramienta individualmente cuando su oferta esté habilitada. Los complementos premium pueden contratarse por separado.</p>'+
+    '<p style="margin:8px 0;color:var(--nxo-text-secondary);font-size:12px;line-height:1.55">Acceso individual: <strong>'+escapeHtml(individualPriceLabel(tool))+'</strong>. Compara este acceso con Business, Learning y Completo, disponibles en modalidad mensual o anual, para escoger la forma más económica de utilizar varias herramientas. Los complementos premium pueden tener costos adicionales.</p>'+
     '<div class="nxo-dev-install-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">'+
       '<button type="button" class="nxo-dev-install-open" id="nxo-dev-detail-plans-button">Ver planes</button>'+
       '<button type="button" class="nxo-dev-install-open" id="nxo-dev-detail-individual-button">Acceso individual</button>'+
@@ -3494,7 +3497,9 @@ function ensureDevelopmentApp(){
         '<h2 data-nxo-dev-tool-title="'+tool.key+'">'+escapeHtml(tool.title)+'</h2>'+
         '<div class="nxo-dev-plan-card">'+toolPlanIcons(tool)+'</div>'+
       '</div>'+
-      '<p data-nxo-dev-description="1">'+escapeHtml(tool.summary)+'</p>'+
+      '<p data-nxo-dev-description="1">'+escapeHtml(tool.summary)+'</p>'+ 
+      '<div class="nxo-dev-individual-price" style="font-size:12px;font-weight:700;margin:7px 0;color:var(--nxo-text-primary)">Acceso individual · '+escapeHtml(individualPriceLabel(tool))+'</div>'+ 
+      '<button type="button" class="nxo-dev-quick-plans" style="border:1px solid var(--nxo-border);background:var(--nxo-accent-soft);color:var(--nxo-text-primary);border-radius:9px;padding:8px 12px;margin-bottom:8px;cursor:pointer">Ver planes</button>'+
       (tool.status==='planned'
         ? '<button type="button" class="nxo-dev-action nxo-dev-action-surface" disabled aria-disabled="true">Próximamente</button>'
         : '<button type="button" class="nxo-dev-action nxo-dev-action-surface">Ver características</button>');
