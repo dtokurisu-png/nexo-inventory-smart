@@ -1,5 +1,5 @@
 (function(){
-const APP_VERSION='20261019-workspace-back-fixed-12';
+const APP_VERSION='20261019-workspace-one-back-13';
 if(window.__nexoMiEspacioApp&&window.__nexoMiEspacioVersion===APP_VERSION)return;
 window.__nexoMiEspacioApp=true;
 window.__nexoMiEspacioVersion=APP_VERSION;
@@ -1907,8 +1907,8 @@ function syncWorkspaceBackControl(visible){
   b.setAttribute('aria-label',ui('Volver a Mi espacio','Back to My space'));
   document.body.appendChild(b);
  }
- b.textContent=ui('← Volver a Mi espacio','← Back to My space');
- b.style.cssText='position:fixed!important;right:24px!important;bottom:25px!important;top:auto!important;left:auto!important;display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;justify-content:center!important;z-index:2147483000!important;min-height:49px!important;padding:11px 18px!important;border:1px solid #e3e9fb!important;border-radius:13px!important;background:#324f91!important;color:#fff!important;box-shadow:0 12px 35px rgba(19,38,81,.36)!important;font:700 13px system-ui,sans-serif!important;cursor:pointer!important;pointer-events:auto!important';
+ b.textContent=ui('← Volver','← Back');
+ b.style.cssText='position:fixed!important;left:24px!important;top:76px!important;right:auto!important;bottom:auto!important;display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;justify-content:center!important;z-index:2147483000!important;min-height:49px!important;padding:11px 18px!important;border:1px solid #e3e9fb!important;border-radius:13px!important;background:#324f91!important;color:#fff!important;box-shadow:0 12px 35px rgba(19,38,81,.36)!important;font:700 13px system-ui,sans-serif!important;cursor:pointer!important;pointer-events:auto!important';
  b.onclick=()=>returnPersonal();
 }
 function renderWorkspace(){
@@ -1926,10 +1926,9 @@ function renderWorkspace(){
   else if(workspaceTab==='members')body='<div id="nxo-members-zone"><div class="nxo-empty">'+esc(ui('Cargando miembros…','Loading members…'))+'</div></div>';
   else if(workspaceTab==='settings')body='<div id="nxo-settings-zone"><div class="nxo-empty">'+esc(ui('Cargando configuración…','Loading settings…'))+'</div></div>';
   else body=renderAccess(role);
-  html('<div class="nxo-shell"><main class="nxo-main"><div class="nxo-workspace-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap"><div><div class="nxo-eyebrow">'+esc(ui('Espacio de trabajo','Workspace'))+'</div><h2>'+esc(ws.name||ui('Espacio de trabajo','Workspace'))+'</h2><p>'+esc(ws.description||'')+'</p></div><button type="button" id="nxo-workspace-back" aria-label="Volver a Mi espacio" style="display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;min-height:41px;padding:9px 16px;border:1px solid var(--nxo-border,#8d9bb3);border-radius:11px;background:var(--nxo-surface-glass,rgba(255,255,255,.14));color:var(--nxo-text-primary,inherit);font:inherit;font-weight:700;cursor:pointer">← '+ui('Volver a Mi espacio','Back to My space')+'</button></div><div class="nxo-tabs">'+tabs.join('')+'</div>'+body+'</main></div>');
+  html('<div class="nxo-shell"><main class="nxo-main"><div class="nxo-workspace-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap"><div><div class="nxo-eyebrow">'+esc(ui('Espacio de trabajo','Workspace'))+'</div><h2>'+esc(ws.name||ui('Espacio de trabajo','Workspace'))+'</h2><p>'+esc(ws.description||'')+'</p></div></div><div class="nxo-tabs">'+tabs.join('')+'</div>'+body+'</main></div>');
   bindTopbar('workspace');
   syncWorkspaceBackControl(true);
-  document.getElementById('nxo-workspace-back')?.addEventListener('click',()=>returnPersonal());
   document.querySelectorAll('[data-wtab]').forEach(b=>b.onclick=()=>{workspaceTab=b.dataset.wtab;renderWorkspace()});
   bindTools();
   if(canAdmin){
