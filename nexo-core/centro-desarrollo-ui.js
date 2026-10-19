@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-aligned-detail-90';
+const VERSION='20261018-pricing-window-92';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -3173,7 +3173,28 @@ function detailInstallDescription(tool,data){
   if(scopes.includes('workspace')&&scopes.includes('personal'))return 'Puedes instalarla en Mi espacio o en un Workspace existente, según cómo vayas a utilizarla.';
   return 'Podrás elegir dónde instalarla cuando la herramienta esté disponible para tu cuenta.';
 }
-function showPlanComparison(){const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;z-index:2147483646;background:#172038e8;padding:5%;overflow:auto';d.innerHTML='<div style="background:#f4f2fc;padding:25px;border-radius:20px"><button id="nxo-close-plans">Cerrar</button><h2>Planes Nexo Group</h2><p>Mensual / Anual</p><div style="display:flex;gap:15px;flex-wrap:wrap">'+['Business: $19.99 / $192 año','Learning: $19.99 / $192 año','Completo: $29.99 / $288 año'].map(x=>'<div style="padding:20px;border:1px solid #777;border-radius:15px;flex:1">'+x+'</div>').join('')+'</div><p>Contratación próximamente. Owner $0, privado.</p></div>';document.body.appendChild(d);d.querySelector('#nxo-close-plans').onclick=()=>d.remove()}
+function showPlanComparison(){
+ let d=document.getElementById('nxo-plans-window');
+ if(!d){d=document.createElement('div');d.id='nxo-plans-window';document.body.appendChild(d)}
+ const plans=[['business','Business','19.99','16.00','192',['Inventario Smart','Fichas Técnicas Dinámicas','Biblioteca de engranaje']],['learning','Learning','19.99','16.00','192',['Learning Core','Cursos incluidos según catálogo','Camino Editorial']],['complete','Completo','29.99','24.00','288',['Todo Business','Todo Learning','Add-ons opcionales']]];
+ d.style.cssText='position:fixed;inset:0;z-index:2147483646;background:rgba(8,14,34,.76);backdrop-filter:blur(14px);display:grid;place-items:center;padding:15px;box-sizing:border-box;color:#17243c';
+ d.innerHTML='<section style="width:min(1040px,100%);max-height:94vh;overflow:auto;border-radius:24px;padding:24px;background:linear-gradient(145deg,#f9f5ff,#e7ecff);box-shadow:0 28px 90px #090e2690;box-sizing:border-box">'+
+ '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-size:11px;letter-spacing:2px;color:#8c39bc">NEXO GROUP</div><h2 style="margin:6px 0">Elige tu plan</h2><p style="font-size:12px">Herramientas para aprender, trabajar y emprender.</p></div><button id="nxo-close-plans" style="background:#314d87;color:white;border:0;border-radius:9px;padding:11px;cursor:pointer">Cerrar ×</button></div>'+
+ '<div style="text-align:center;margin:16px"><button data-cycle="month" aria-pressed="true">Mensual</button> <button data-cycle="year" aria-pressed="false">Anual · ahorra ~20%</button></div>'+
+ '<div id="nxo-plan-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">'+plans.map(p=>'<article style="min-width:0;border:1px solid #c9c1df;border-radius:19px;padding:18px;background:#ffffffb5;display:flex;flex-direction:column;gap:12px"><img src="'+PLAN_INFO[p[0]].image+'" style="width:57px;height:57px;object-fit:contain" alt="Icono '+p[1]+'"><h3 style="margin:0">'+p[1]+'</h3><div data-plan-amount="'+p[0]+'" style="font-size:26px;font-weight:800">$'+p[2]+' / mes</div><small data-plan-bill="'+p[0]+'">Facturación mensual</small><ul style="flex:1;margin:0;padding-left:18px;font-size:12px;line-height:1.9">'+p[5].map(x=>'<li>'+x+'</li>').join('')+'</ul><button type="button" disabled style="padding:10px;border-radius:10px;border:1px solid #ddd">Contratación próximamente</button></article>').join('')+'</div>'+
+ '<section id="nxo-owner-plan-private" hidden style="margin-top:14px;padding:13px;border:1px solid #a058c7;border-radius:13px"><b>Owner · $0</b><p style="font-size:12px">Acceso de pruebas, exclusivo del propietario y sin cobros.</p></section>'+
+ '<p style="font-size:11px;text-align:center;margin:18px 0 0">Precios propuestos en USD. Contratación pendiente de publicar planes comerciales en Wix.</p></section>';
+ d.hidden=false;d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+ d.querySelector('#nxo-close-plans').onclick=()=>d.remove();
+ d.onclick=e=>{if(e.target===d)d.remove()};
+ d.querySelectorAll('[data-cycle]').forEach(btn=>btn.onclick=()=>{
+  const annual=btn.dataset.cycle==='year';
+  d.querySelectorAll('[data-cycle]').forEach(v=>v.setAttribute('aria-pressed',String(v===btn)));
+  plans.forEach(p=>{d.querySelector('[data-plan-amount="'+p[0]+'"]').textContent='$'+(annual?p[3]:p[2])+' / mes';d.querySelector('[data-plan-bill="'+p[0]+'"]').textContent=annual?'Pago anual $'+p[4]:'Facturación mensual'});
+ });
+ fetch(developmentFunctionUrl('nexoLearningAccess'),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.ok?r.json():null).then(x=>{if(x?.ok===true&&x.data?.isOwner===true&&d.isConnected)d.querySelector('#nxo-owner-plan-private').hidden=false}).catch(()=>{});
+}
+
 function detailAcquisitionCard(tool){
   const included=PLAN_MEMBERSHIP[tool.key]||[];
   const planLabels=[...included,'complete'].map(k=>PLAN_INFO[k]?.label).filter(Boolean);
