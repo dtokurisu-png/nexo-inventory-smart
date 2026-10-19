@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-owner-test-88';
+const VERSION='20261018-product-ficha-acquisition-89';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -3165,46 +3165,67 @@ async function loadReviewsZone(tool,requestId){
   }
 }
 
+function detailInstallDescription(tool,data){
+  const scopes=Array.isArray(data?.scopeModes)?data.scopeModes.map(x=>String(x).toLowerCase()):[];
+  if(tool.kind==='course')return 'Este curso se adquiere individualmente en el Centro de Desarrollo y aparece dentro de Learning Core en Mi espacio. Los cursos no generan aplicaciones adicionales.';
+  if(scopes.includes('workspace')&&!scopes.includes('personal'))return 'Se instala en un Workspace existente de Mi espacio, para que el equipo tenga acceso fácil a la herramienta desde ese espacio de trabajo.';
+  if(scopes.includes('personal')&&!scopes.includes('workspace'))return 'Se instala en Mi espacio para acceder fácilmente a la herramienta desde tu entorno personal.';
+  if(scopes.includes('workspace')&&scopes.includes('personal'))return 'Puedes instalarla en Mi espacio o en un Workspace existente, según cómo vayas a utilizarla.';
+  return 'Podrás elegir dónde instalarla cuando la herramienta esté disponible para tu cuenta.';
+}
+function detailAcquisitionCard(tool){
+  const included=PLAN_MEMBERSHIP[tool.key]||[];
+  const planLabels=[...included,'complete'].map(k=>PLAN_INFO[k]?.label).filter(Boolean);
+  const planText=planLabels.length?planLabels.join(' o '):'un plan compatible';
+  return '<section class="nxo-dev-detail-card" id="nxo-dev-acquisition-card">'+
+    '<h3>Cómo adquirirlo</h3>'+
+    '<p style="margin:8px 0;color:var(--nxo-text-secondary);font-size:12px;line-height:1.55">Puedes obtener acceso mediante '+escapeHtml(planText)+' o adquirir esta herramienta individualmente cuando su oferta esté habilitada. Los complementos premium pueden contratarse por separado.</p>'+
+    '<div class="nxo-dev-install-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">'+
+      '<button type="button" class="nxo-dev-install-open" id="nxo-dev-detail-plans-button">Ver planes</button>'+
+      '<button type="button" class="nxo-dev-install-open" id="nxo-dev-detail-individual-button">Acceso individual</button>'+
+      '<button type="button" class="nxo-dev-install-open" id="nxo-dev-detail-destinations-button">Consultar mi instalación</button>'+
+    '</div>'+
+    '<div id="nxo-dev-acquisition-response" aria-live="polite" style="margin-top:10px"></div>'+
+  '</section>';
+}
 function renderToolDetail(tool,data){
   const content=document.getElementById('nxo-dev-detail-content');
   if(!content)return;
-
   const scopes=Array.isArray(data?.scopeModes)?data.scopeModes:[];
-  const chips=[
-    '<span class="nxo-dev-detail-chip status">'+escapeHtml(statusLabel(data?.status))+'</span>',
-    ...scopes.map(scope=>'<span class="nxo-dev-detail-chip">'+escapeHtml(scopeLabel(scope))+'</span>')
-  ].join('');
-  const mediaHtml=detailMedia(data?.media);
-  const leftHtml=
-    detailList('Capacidades',data?.capabilitiesEs)+
-    detailList('Compatibilidad',data?.compatibilityEs)+
-    detailList('Público recomendado',data?.audienceEs);
-  const rightHtml=
-    detailCommercial(data?.commercial)+
-    detailList('Requisitos',data?.requirementsEs)+
-    detailList('Integraciones',data?.integrationsEs)+
-    detailLinks('Documentación',data?.documentation)+
-    detailRelated(data?.relatedProducts);
-
+  const chips=['<span class="nxo-dev-detail-chip status">'+escapeHtml(statusLabel(data?.status))+'</span>',...scopes.map(scope=>'<span class="nxo-dev-detail-chip">'+escapeHtml(scopeLabel(scope))+'</span>')].join('');
+  const compatibility=(Array.isArray(data?.compatibilityEs)?data.compatibilityEs:[]).filter(item=>!/^(workspace|espacio de trabajo)( de nexo)?\.?$/i.test(String(item).trim()));
+  const leftHtml=detailList('Capacidades',data?.capabilitiesEs)+detailList('Compatibilidad',compatibility)+detailList('Público recomendado',data?.audienceEs);
+  const rightHtml=detailList('Requisitos',data?.requirementsEs)+detailList('Integraciones',data?.integrationsEs)+detailLinks('Documentación',data?.documentation)+detailRelated(data?.relatedProducts);
   content.innerHTML=
-    '<div class="nxo-dev-detail-hero">'+
-      '<div class="nxo-dev-detail-icon-wrap"><img class="nxo-dev-detail-icon" src="'+iconUrl(tool.icon)+'" alt=""></div>'+
-      '<div class="nxo-dev-detail-heading">'+
-        '<div class="nxo-dev-detail-eyebrow">Ficha de producto</div>'+
-        '<div class="nxo-dev-detail-title-line">'+
-        '<h2 class="nxo-dev-detail-title">'+escapeHtml(tool.title||data?.nameEs)+'</h2>'+
-        toolPlanIcons(tool)+'</div>'+
-        '<div class="nxo-dev-detail-meta">'+chips+'</div>'+
-      '</div>'+
-    '</div>'+
+    '<div class="nxo-dev-detail-hero"><div class="nxo-dev-detail-icon-wrap"><img class="nxo-dev-detail-icon" src="'+iconUrl(tool.icon)+'" alt=""></div>'+
+      '<div class="nxo-dev-detail-heading"><div class="nxo-dev-detail-eyebrow">Ficha de producto</div>'+
+        '<div class="nxo-dev-detail-title-line"><h2 class="nxo-dev-detail-title">'+escapeHtml(tool.title||data?.nameEs)+'</h2>'+toolPlanIcons(tool)+'</div>'+
+        '<div class="nxo-dev-detail-meta">'+chips+'</div></div></div>'+
     '<p class="nxo-dev-detail-description">'+escapeHtml(data?.detailDescriptionEs||data?.descriptionEs||tool.summary)+'</p>'+
-    mediaHtml+
-    '<div id="nxo-dev-install-zone"></div>'+
-    '<div class="nxo-dev-detail-grid">'+
-      '<div>'+leftHtml+'</div>'+
-      '<aside>'+rightHtml+'</aside>'+
-    '</div>'+
-    '<div id="nxo-dev-reviews-zone"></div>'
+    detailMedia(data?.media)+
+    '<section class="nxo-dev-install-card"><div class="nxo-dev-install-head"><div><h3>Instalación</h3><p>'+escapeHtml(detailInstallDescription(tool,data))+'</p></div></div></section>'+
+    detailAcquisitionCard(tool)+
+    '<div id="nxo-dev-install-zone" hidden></div>'+
+    '<div class="nxo-dev-detail-grid"><div>'+leftHtml+'</div><aside>'+rightHtml+'</aside></div>'+
+    '<div id="nxo-dev-reviews-zone"></div>';
+  const response=content.querySelector('#nxo-dev-acquisition-response');
+  content.querySelector('#nxo-dev-detail-plans-button')?.addEventListener('click',()=>{
+    const labels=[...(PLAN_MEMBERSHIP[tool.key]||[]),'complete'].map(k=>PLAN_INFO[k]?.label).filter(Boolean);
+    response.textContent='Planes compatibles: '+(labels.length?labels.join(' · '):'consultar disponibilidad')+'. Las tarifas y el pago estarán disponibles cuando se active el checkout de Wix.';
+  },{signal:runtimeAbort.signal});
+  content.querySelector('#nxo-dev-detail-individual-button')?.addEventListener('click',()=>{
+    response.textContent='Acceso individual a '+tool.title+': oferta pendiente de habilitación. No se realizará ningún cobro desde esta ficha.';
+  },{signal:runtimeAbort.signal});
+  content.querySelector('#nxo-dev-detail-destinations-button')?.addEventListener('click',()=>{
+    const zone=content.querySelector('#nxo-dev-install-zone');
+    if(!zone)return;
+    zone.hidden=false;
+    if(tool.localOnly){
+      zone.textContent='La instalación de este entorno se habilitará cuando esté disponible su paquete de acceso.';
+    }else{
+      loadInstallOptions(tool,detailRequestId);
+    }
+  },{signal:runtimeAbort.signal});
 }
 
 async function openToolDetail(tool,trigger){
@@ -3231,16 +3252,9 @@ async function openToolDetail(tool,trigger){
     if(requestId!==detailRequestId||view.hidden)return;
     renderToolDetail(tool,data);
     if(tool.localOnly){
-      const installZone=document.getElementById('nxo-dev-install-zone');
-      if(installZone){
-        const openUrl=localEnvironmentUrl(tool);
-        installZone.innerHTML='<section class="nxo-dev-install-card"><div class="nxo-dev-install-head"><div><h3>Entorno independiente</h3><p>Este environment ya forma parte del ecosistema Nexo. Su empaquetado comercial e instalación final se conectarán después, sin duplicar su arquitectura propia.</p></div><span class="nxo-dev-install-state">Environment</span></div>'+(openUrl?'<div class="nxo-dev-install-actions"><button type="button" class="nxo-dev-install-open" id="nxo-dev-environment-open">Abrir entorno</button></div>':'')+'</section>';
-        installZone.querySelector('#nxo-dev-environment-open')?.addEventListener('click',()=>location.assign(openUrl),{signal:runtimeAbort.signal})
-      }
       const reviewsZone=document.getElementById('nxo-dev-reviews-zone');
-      if(reviewsZone)reviewsZone.innerHTML=''
+      if(reviewsZone)reviewsZone.innerHTML='';
     }else{
-      loadInstallOptions(tool,requestId);
       loadReviewsZone(tool,requestId)
     }
   }catch(error){
