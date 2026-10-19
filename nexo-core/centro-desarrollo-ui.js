@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-courses-canonical-87';
+const VERSION='20261018-owner-test-88';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -3351,6 +3351,23 @@ function ensureDevelopmentApp(){
     '</div>';
 
   const courseGrid=app.querySelector('#nxo-dev-courses-grid');
+  // Owner test plan is returned only after server-side authentication.
+  const ownerPlanSlot=document.createElement('section');
+  ownerPlanSlot.id='nxo-dev-owner-plan';
+  ownerPlanSlot.hidden=true;
+  ownerPlanSlot.style.cssText='margin:8px 0 16px;padding:14px 18px;border:1px solid rgba(140,130,190,.28);border-radius:16px;background:rgba(140,130,190,.11);';
+  const catalogView=app.querySelector('#nxo-dev-catalog-view');
+  if(catalogView)catalogView.prepend(ownerPlanSlot);
+  fetch(developmentFunctionUrl('nexoLearningAccess'),{
+    method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'
+  }).then(r=>r.ok?r.json():null).then(payload=>{
+    if(!payload?.ok||payload?.data?.isOwner!==true||!ownerPlanSlot.isConnected)return;
+    const courses=Array.isArray(payload.data.courses)?payload.data.courses:[];
+    ownerPlanSlot.hidden=false;
+    ownerPlanSlot.innerHTML='<strong>Plan Nexo Owner · $0</strong>'+
+      '<p style="margin:6px 0 0">Acceso interno de pruebas para el propietario. Business, Learning, Completo, cursos y complementos compatibles; sin facturación.</p>'+
+      '<p style="margin:6px 0 0;font-size:12px">Cursos habilitados: '+escapeHtml(courses.length?courses.join(', '):'ninguno')+'. Learning Core se encuentra en Mi espacio.</p>';
+  }).catch(()=>{});
   const environmentGrid=app.querySelector('#nxo-dev-environments-grid');
   const addonGrid=app.querySelector('#nxo-dev-addons-grid');
 
