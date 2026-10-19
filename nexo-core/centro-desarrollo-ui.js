@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-background-between-84';
+const VERSION='20261018-courses-catalog-85';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -21,7 +21,8 @@ const GLOBAL_HEADER_RUNTIME='https://dtokurisu-png.github.io/nexo-inventory-smar
 const ICON_BASE='https://dtokurisu-png.github.io/nexo-inventory-smart/assets/icons/nexo/';
 const NEXO_LOGO='https://static.wixstatic.com/media/8b64a8_7bd85ca8e1854afc9ae91eab7457c405~mv2.png';
 const TOOL_DEFS=[
-  {key:'learning',cmsKey:'learning-core',kind:'environment',icon:'desarrollo',title:'Nexo Learning Core',summary:'Aprendizaje, rutas, práctica y progreso personal.',names:['nexo learning core','learning core']},
+  {key:'course-english',kind:'course',localOnly:true,icon:'desarrollo',title:'Inglés adaptable',status:'planned',summary:'Inglés personalizado según objetivos sociales, laborales o situaciones concretas. El enfoque se elige dentro del curso.',names:['ingles adaptable','curso de ingles'],localDetail:{nameEs:'Inglés adaptable',status:'PLANNED',scopeModes:['personal'],category:'Curso',detailDescriptionEs:'Un único curso de inglés con itinerarios adaptables al contexto de cada estudiante: conversación social, comunicación profesional o situaciones específicas. No se limita al sector de cocina.',capabilitiesEs:['Diagnóstico del nivel','Objetivos y contexto configurables','Práctica contextualizada','Progreso conservado en Learning Core'],compatibilityEs:['Se accede desde Learning Core después de adquirir el curso'],audienceEs:['Personas que desean aprender inglés para necesidades distintas'],requirementsEs:['Adquisición o habilitación válida del curso'],integrationsEs:['Learning Core: matrícula, progreso y continuidad'],documentation:[],relatedProducts:[]}},
+  {key:'course-excel',kind:'course',localOnly:true,icon:'productos',title:'Excel adaptable',status:'planned',summary:'Curso de Excel con prácticas personalizadas para estudio, tareas laborales y gestión de negocios.',names:['excel adaptable','curso de excel'],localDetail:{nameEs:'Excel adaptable',status:'PLANNED',scopeModes:['personal'],category:'Curso',detailDescriptionEs:'Aprendizaje de Excel ajustado al nivel, objetivos y sector del estudiante: desde fórmulas y organización de datos hasta situaciones de trabajo, administración y negocio.',capabilitiesEs:['Diagnóstico del nivel','Ejercicios ajustados a objetivos reales','Aplicaciones sociales, laborales o académicas','Seguimiento centralizado en Learning Core'],compatibilityEs:['Se accede desde Learning Core después de adquirir el curso'],audienceEs:['Estudiantes, profesionales y emprendedores'],requirementsEs:['Adquisición o habilitación válida del curso'],integrationsEs:['Learning Core: matrícula, progreso y continuidad'],documentation:[],relatedProducts:[]}},
   {key:'library',cmsKey:'gear-library',kind:'environment',icon:'guia',title:'Biblioteca de engranaje',summary:'Recursos, conocimiento y materiales reutilizables de Nexo.',names:['biblioteca de engranaje']},
   {key:'inventory',cmsKey:'inventory-smart',kind:'environment',icon:'productos',title:'Inventario Smart',summary:'Entorno operativo de inventario, productos y materiales.',names:['inventario smart']},
   {key:'technical',cmsKey:'dynamic-specs',kind:'environment',icon:'ficha-tecnica',title:'Fichas Técnicas Dinámicas',summary:'Entorno canónico de fichas, recetas y preparaciones. Recetarios Dinámicos forma parte de este mismo producto.',names:['fichas tecnicas dinamicas','dynamic technical sheets','recetarios dinamicos','menus dinamicos','menu dinamico']},
@@ -55,7 +56,7 @@ const TOOL_DEFS=[
   {key:'camino-agents',cmsKey:'camino-editorial-agents',kind:'addon',parent:'Camino Editorial',icon:'comentarios',title:'Agentes de Camino Editorial',summary:'Add-ons editoriales especializados que se definirán y comercializarán individualmente.',status:'planned',names:['agentes de camino editorial','agentes editoriales','camino editorial agents']}
 ]
 const PLAN_MEMBERSHIP=Object.freeze({
-  learning:['learning'],library:['business'],inventory:['business'],technical:['business'],
+  'course-english':['learning'],'course-excel':['learning'],library:['business'],inventory:['business'],technical:['business'],
   'camino-editorial':['learning'],r96:['business'],work:['business'],
   schedules:['business'],tasks:['business'],'multichannel-notifications':['business','learning'],
   numa:['business','learning'],maria:['learning'],'camino-agents':['learning']
@@ -3360,7 +3361,7 @@ function ensureDevelopmentApp(){
     const card=document.createElement('article');
     card.dataset.nxoDevCard='1';
     card.dataset.nxoDevTool=tool.key;
-    const kindLabel=tool.kind==='addon'?'Add-on'+(tool.parent?' · '+tool.parent:''):'Entorno completo';
+    const kindLabel=tool.kind==='course'?'Curso · Learning Core':tool.kind==='addon'?'Add-on'+(tool.parent?' · '+tool.parent:''):'Entorno completo';
     card.innerHTML=
       '<div class="nxo-dev-kind-badge '+escapeHtml(tool.kind||'environment')+'">'+escapeHtml(kindLabel)+'</div>'+
       '<div class="nxo-dev-title-row">'+
