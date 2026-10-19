@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261018-courses-catalog-85';
+const VERSION='20261018-courses-section-86';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -3339,6 +3339,7 @@ function ensureDevelopmentApp(){
       '<div class="nxo-dev-owned-catalog-frame">'+
         '<div class="nxo-dev-owned-catalog-scroll" id="nxo-dev-owned-catalog-scroll">'+
           '<div class="nxo-dev-catalog-view" id="nxo-dev-catalog-view">'+
+            '<section class="nxo-dev-catalog-group"><div class="nxo-dev-group-head"><div><h2>Cursos personalizables</h2><p>Adquiere cada curso en el Centro de Desarrollo; estúdialo y consulta tu progreso dentro de Learning Core en Mi espacio.</p></div></div><section class="nxo-dev-owned-grid" id="nxo-dev-courses-grid"></section></section>'+ 
             '<section class="nxo-dev-catalog-group"><div class="nxo-dev-group-head"><div><h2>Entornos completos</h2><p>Aplicaciones con página, navegación y contexto propios.</p></div></div><section class="nxo-dev-owned-grid" id="nxo-dev-environments-grid"></section></section>'+
             '<section class="nxo-dev-catalog-group"><div class="nxo-dev-group-head"><div><h2>Add-ons</h2><p>Funciones que amplían un entorno existente o trabajan de forma transversal.</p></div></div><section class="nxo-dev-owned-grid" id="nxo-dev-addons-grid"></section></section>'+
           '</div>'+
@@ -3349,11 +3350,12 @@ function ensureDevelopmentApp(){
       '</div>'+
     '</div>';
 
+  const courseGrid=app.querySelector('#nxo-dev-courses-grid');
   const environmentGrid=app.querySelector('#nxo-dev-environments-grid');
   const addonGrid=app.querySelector('#nxo-dev-addons-grid');
 
   TOOL_DEFS.forEach(tool=>{
-    const grid=tool.kind==='addon'?addonGrid:environmentGrid;
+    const grid=tool.kind==='course'?courseGrid:tool.kind==='addon'?addonGrid:environmentGrid;
     if(!grid)return;
     const slot=document.createElement('div');
     slot.className='nxo-dev-owned-slot';
