@@ -3173,6 +3173,7 @@ function detailInstallDescription(tool,data){
   if(scopes.includes('workspace')&&scopes.includes('personal'))return 'Puedes instalarla en Mi espacio o en un Workspace existente, según cómo vayas a utilizarla.';
   return 'Podrás elegir dónde instalarla cuando la herramienta esté disponible para tu cuenta.';
 }
+function showPlanComparison(){const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;z-index:2147483646;background:#172038e8;padding:5%;overflow:auto';d.innerHTML='<div style="background:#f4f2fc;padding:25px;border-radius:20px"><button id="nxo-close-plans">Cerrar</button><h2>Planes Nexo Group</h2><p>Mensual / Anual</p><div style="display:flex;gap:15px;flex-wrap:wrap">'+['Business: $19.99 / $192 año','Learning: $19.99 / $192 año','Completo: $29.99 / $288 año'].map(x=>'<div style="padding:20px;border:1px solid #777;border-radius:15px;flex:1">'+x+'</div>').join('')+'</div><p>Contratación próximamente. Owner $0, privado.</p></div>';document.body.appendChild(d);d.querySelector('#nxo-close-plans').onclick=()=>d.remove()}
 function detailAcquisitionCard(tool){
   const included=PLAN_MEMBERSHIP[tool.key]||[];
   const planLabels=[...included,'complete'].map(k=>PLAN_INFO[k]?.label).filter(Boolean);
@@ -3230,7 +3231,7 @@ function renderToolDetail(tool,data){
   const response=content.querySelector('#nxo-dev-acquisition-response');
   content.querySelector('#nxo-dev-detail-plans-button')?.addEventListener('click',()=>{
     const labels=[...(PLAN_MEMBERSHIP[tool.key]||[]),'complete'].map(k=>PLAN_INFO[k]?.label).filter(Boolean);
-    response.textContent='Planes compatibles: '+(labels.length?labels.join(' · '):'consultar disponibilidad')+'. Las tarifas y el pago estarán disponibles cuando se active el checkout de Wix.';
+    showPlanComparison();
   },{signal:runtimeAbort.signal});
   content.querySelector('#nxo-dev-detail-individual-button')?.addEventListener('click',()=>{
     response.textContent='Acceso individual a '+tool.title+': oferta pendiente de habilitación. No se realizará ningún cobro desde esta ficha.';
