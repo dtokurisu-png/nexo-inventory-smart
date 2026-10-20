@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261019-install-session-fix-99';
+const VERSION='20261020-single-install-api-100';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -2691,32 +2691,21 @@ async function developmentReviewsApi(action,toolKey,input={}){
 }
 
 async function developmentInstallApi(action,payload={}){
-  if(!developmentSessionToken) {
-    const error=new Error('La sesión del Centro todavía no está preparada. Vuelve a entrar desde Mi espacio.');
+  if(!developmentSessionToken){
+    const error=new Error('La sesión del Centro no está disponible. Regresa a Mi espacio y vuelve a abrir el catálogo.');
     error.code='SESSION_NOT_READY';
     throw error;
   }
   try{
     return await developmentUiApi('install.'+action,payload);
-  }catch(primaryError){
-    if(primaryError?.code!=='INVALID_ACTION')throw primaryError;
-  }
-  // Compatibility fallback for installations on an older backend deployment.
-  const response=await fetch(developmentFunctionUrl('nexoDevelopmentInstall'),{
-    method:'POST',
-    headers:{'Content-Type':'application/json',Authorization:'Bearer '+developmentSessionToken},
-    cache:'no-store',
-    body:JSON.stringify({action,sessionToken:developmentSessionToken,...payload})
-  });
-  const data=await response.json().catch(()=>null);
-  if(!response.ok||!data?.ok){
-    const error=new Error(data?.error==='AUTH_REQUIRED'
-      ? 'El instalador del servidor no reconoce esta sesión. Es necesario desplegar la actualización del backend.'
-      : data?.error||'No se pudo completar la instalación.');
-    error.code=data?.error||'INSTALL_FAILED';
+  }catch(error){
+    if(error?.code==='INVALID_ACTION'){
+      const unavailable=new Error('El servicio publicado todavía no incluye la instalación. La sesión Wonder sigue activa; la función del servidor necesita actualizarse.');
+      unavailable.code='INSTALL_ACTION_NOT_PUBLISHED';
+      throw unavailable;
+    }
     throw error;
   }
-  return data.data;
 }
 async function hydrateDevelopmentHeaderNavigation(){
   if(!developmentSession)return;
