@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261021-clean-legacy-installer-103';
+const VERSION='20261021-clean-legacy-installer-104';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -1628,146 +1628,9 @@ html[data-nxo-theme] #nxo-dev-app [data-nxo-dev-card="1"] .nxo-dev-title-row .nx
   color:var(--nxo-text-secondary);font-size:13px
 }
 .nxo-dev-detail-error{color:var(--nxo-danger)}
-.nxo-dev-install-card{
-  margin:0 0 18px;
-  padding:16px;
-  border:1px solid var(--nxo-border);
-  border-radius:18px;
-  background:var(--nxo-surface-glass);
-  box-shadow:0 12px 30px var(--nxo-shadow)
-}
-.nxo-dev-install-head{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:16px;
-  margin-bottom:12px
-}
-.nxo-dev-install-head h3{
-  margin:0 0 4px;
-  font-size:14px;
-  color:var(--nxo-text-primary)
-}
-.nxo-dev-install-head p{
-  margin:0;
-  color:var(--nxo-text-muted);
-  font-size:11px;
-  line-height:1.45
-}
-.nxo-dev-install-state{
-  min-height:24px;
-  display:inline-flex;
-  align-items:center;
-  padding:4px 9px;
-  border:1px solid var(--nxo-border);
-  border-radius:999px;
-  color:var(--nxo-text-secondary);
-  background:var(--nxo-accent-soft);
-  font-size:9px;
-  font-weight:800;
-  white-space:nowrap
-}
-.nxo-dev-install-destinations{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-  gap:8px;
-  margin:12px 0
-}
-.nxo-dev-install-destination{
-  appearance:none;
-  min-height:58px;
-  padding:10px 12px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  text-align:left;
-  border:1px solid var(--nxo-border);
-  border-radius:13px;
-  background:var(--nxo-surface-raised);
-  color:var(--nxo-text-primary);
-  cursor:pointer;
-  transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease
-}
-.nxo-dev-install-destination:hover:not(:disabled),
-.nxo-dev-install-destination:focus-visible:not(:disabled){
-  outline:none;
-  transform:translateY(-1px);
-  border-color:var(--nxo-interaction);
-  box-shadow:0 0 0 2px var(--nxo-focus-ring)
-}
-.nxo-dev-install-destination.selected{
-  border-color:var(--nxo-accent);
-  box-shadow:0 0 0 2px var(--nxo-focus-ring)
-}
-.nxo-dev-install-destination:disabled{
-  cursor:not-allowed;
-  opacity:.46
-}
-.nxo-dev-install-destination strong{
-  display:block;
-  font-size:11px;
-  line-height:1.25
-}
-.nxo-dev-install-destination small{
-  display:block;
-  margin-top:3px;
-  color:var(--nxo-text-muted);
-  font-size:9px;
-  line-height:1.3
-}
-.nxo-dev-install-badge{
-  flex:0 0 auto;
-  font-size:8px;
-  font-weight:850;
-  text-transform:uppercase;
-  letter-spacing:.05em;
-  color:var(--nxo-accent)
-}
-.nxo-dev-install-actions{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:center;
-  gap:8px;
-  margin-top:12px
-}
-.nxo-dev-install-primary,
-.nxo-dev-install-open{
-  appearance:none;
-  min-height:36px;
-  padding:0 14px;
-  border:1px solid var(--nxo-header-border);
-  border-radius:10px;
-  background:var(--nxo-header-background);
-  color:var(--nxo-header-text);
-  font:800 11px/1 Inter,system-ui,sans-serif;
-  cursor:pointer
-}
-.nxo-dev-install-primary:hover:not(:disabled),
-.nxo-dev-install-primary:focus-visible:not(:disabled),
-.nxo-dev-install-open:hover,
-.nxo-dev-install-open:focus-visible{
-  outline:none;
-  background:var(--nxo-interaction);
-  border-color:var(--nxo-interaction);
-  color:var(--nxo-interaction-contrast)
-}
-.nxo-dev-install-primary:disabled{
-  cursor:wait;
-  opacity:.58
-}
-.nxo-dev-install-message{
-  color:var(--nxo-text-secondary);
-  font-size:10px;
-  line-height:1.45
-}
-.nxo-dev-install-message.success{color:var(--nxo-positive)}
-.nxo-dev-install-message.error{color:var(--nxo-danger)}
-.nxo-dev-install-unavailable{
-  color:var(--nxo-text-muted);
-  font-size:11px;
-  line-height:1.5
-}
+.nxo-dev-acquisition-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+.nxo-dev-acquisition-button{appearance:none;min-height:36px;padding:0 14px;border:1px solid var(--nxo-header-border);border-radius:10px;background:var(--nxo-header-background);color:var(--nxo-header-text);font:800 11px/1 Inter,system-ui,sans-serif;cursor:pointer}
+.nxo-dev-acquisition-button:hover,.nxo-dev-acquisition-button:focus-visible{outline:none;background:var(--nxo-interaction);border-color:var(--nxo-interaction);color:var(--nxo-interaction-contrast)}
 
 @media(max-width:760px){
   #nxo-dev-tool-detail{
@@ -2855,9 +2718,9 @@ function detailAcquisitionCard(tool){
   return '<section class="nxo-dev-detail-card" id="nxo-dev-acquisition-card">'+
     '<h3>Cómo adquirirlo</h3>'+
     '<p style="margin:8px 0;color:var(--nxo-text-secondary);font-size:12px;line-height:1.55">Acceso individual: <strong>'+escapeHtml(individualPriceLabel(tool))+'</strong>. Compara este acceso con Business, Learning y Completo, disponibles en modalidad mensual o anual, para escoger la forma más económica de utilizar varias herramientas. Los complementos premium pueden tener costos adicionales.</p>'+
-    '<div class="nxo-dev-install-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">'+
-      '<button type="button" class="nxo-dev-install-open" id="nxo-dev-detail-plans-button">Ver planes</button>'+
-      '<button type="button" class="nxo-dev-install-open" id="nxo-dev-detail-individual-button">Acceso individual</button>'+
+    '<div class="nxo-dev-acquisition-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">'+
+      '<button type="button" class="nxo-dev-acquisition-button" id="nxo-dev-detail-plans-button">Ver planes</button>'+
+      '<button type="button" class="nxo-dev-acquisition-button" id="nxo-dev-detail-individual-button">Acceso individual</button>'+
 
     '</div>'+
     '<div id="nxo-dev-acquisition-response" aria-live="polite" style="margin-top:10px"></div>'+
@@ -2882,8 +2745,8 @@ function renderToolDetail(tool,data){
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid>.nxo-dev-detail-card h3{min-height:18px}',
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid>.nxo-dev-detail-card ul{align-content:start}',
       '#nxo-dev-app #nxo-dev-detail-content #nxo-dev-acquisition-card{margin:0;min-width:0;box-sizing:border-box}',
-      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-actions{align-items:stretch}',
-      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-actions button{flex:1 1 170px;min-height:40px}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-acquisition-actions{align-items:stretch}',
+      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-acquisition-actions button{flex:1 1 170px;min-height:40px}',
       '@media(max-width:720px){#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid{grid-template-columns:minmax(0,1fr)}#nxo-dev-app #nxo-dev-detail-content{gap:11px}}'
     ].join('\\n');
     document.head.appendChild(layout);
