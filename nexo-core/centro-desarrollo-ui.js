@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261021-clean-legacy-installer-102';
+const VERSION='20261021-clean-legacy-installer-103';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -2667,12 +2667,6 @@ function developmentBaseUrl(){
   const pathname=location.pathname.replace(/\/+$/,'');
   return location.origin+pathname.replace(/\/blank-[^/]+$/,'')
 }
-function requestedWorkspaceId(){
-  try{
-    const q=new URLSearchParams(location.search);
-    return q.get('nxoTargetWorkspace')||q.get('nxoWorkspace')||''
-  }catch(_){return''}
-}
 async function developmentReviewsApi(action,toolKey,input={}){
   const response=await fetch(developmentFunctionUrl('nexoDevelopmentReviews'),{
     method:'POST',
@@ -2779,14 +2773,6 @@ async function loadReviewsZone(tool,requestId){
   }
 }
 
-function detailInstallDescription(tool,data){
-  const scopes=Array.isArray(data?.scopeModes)?data.scopeModes.map(x=>String(x).toLowerCase()):[];
-  if(tool.kind==='course')return 'Este curso se adquiere individualmente en el Centro de Desarrollo y aparece dentro de Learning Core en Mi espacio. Los cursos no generan aplicaciones adicionales.';
-  if(scopes.includes('workspace')&&!scopes.includes('personal'))return 'Se instala en un Workspace existente de Mi espacio, para que el equipo tenga acceso fácil a la herramienta desde ese espacio de trabajo.';
-  if(scopes.includes('personal')&&!scopes.includes('workspace'))return 'Se instala en Mi espacio para acceder fácilmente a la herramienta desde tu entorno personal.';
-  if(scopes.includes('workspace')&&scopes.includes('personal'))return 'Puedes instalarla en Mi espacio o en un Workspace existente, según cómo vayas a utilizarla.';
-  return 'Podrás elegir dónde instalarla cuando la herramienta esté disponible para tu cuenta.';
-}
 function showPlanComparison(){
  const existing=document.getElementById('nxo-plans-window');
  if(existing)existing.remove();
@@ -2895,8 +2881,7 @@ function renderToolDetail(tool,data){
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid>.nxo-dev-detail-card{margin:0!important;height:100%;min-width:0;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch}',
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid>.nxo-dev-detail-card h3{min-height:18px}',
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid>.nxo-dev-detail-card ul{align-content:start}',
-      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-card,#nxo-dev-app #nxo-dev-detail-content #nxo-dev-acquisition-card{margin:0;min-width:0;box-sizing:border-box}',
-      '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-head{margin-bottom:0}',
+      '#nxo-dev-app #nxo-dev-detail-content #nxo-dev-acquisition-card{margin:0;min-width:0;box-sizing:border-box}',
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-actions{align-items:stretch}',
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-actions button{flex:1 1 170px;min-height:40px}',
       '@media(max-width:720px){#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid{grid-template-columns:minmax(0,1fr)}#nxo-dev-app #nxo-dev-detail-content{gap:11px}}'
@@ -2912,10 +2897,8 @@ function renderToolDetail(tool,data){
     detailMedia(data?.media)+
     '<section class="nxo-dev-install-card"><div class="nxo-dev-install-head"><div><h3>Instalación</h3><p>'+escapeHtml(detailInstallDescription(tool,data))+'</p></div></div></section>'+
     detailAcquisitionCard(tool)+
-    ''+
     '<div class="nxo-dev-detail-grid">'+leftHtml+rightHtml+'</div>'+
-    '<div id="nxo-dev-reviews-zone"></div>'+ 
-    '';
+    '<div id="nxo-dev-reviews-zone"></div>';
   const response=content.querySelector('#nxo-dev-acquisition-response');
   content.querySelector('#nxo-dev-detail-plans-button')?.addEventListener('click',()=>{
     const labels=[...(PLAN_MEMBERSHIP[tool.key]||[]),'complete'].map(k=>PLAN_INFO[k]?.label).filter(Boolean);
