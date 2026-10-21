@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261021-clean-legacy-installer-104';
+const VERSION='20261021-clean-legacy-installer-105';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -2758,7 +2758,6 @@ function renderToolDetail(tool,data){
         '<div class="nxo-dev-detail-meta">'+chips+'</div></div></div>'+
     '<p class="nxo-dev-detail-description">'+escapeHtml(data?.detailDescriptionEs||data?.descriptionEs||tool.summary)+'</p>'+
     detailMedia(data?.media)+
-    '<section class="nxo-dev-install-card"><div class="nxo-dev-install-head"><div><h3>Instalación</h3><p>'+escapeHtml(detailInstallDescription(tool,data))+'</p></div></div></section>'+
     detailAcquisitionCard(tool)+
     '<div class="nxo-dev-detail-grid">'+leftHtml+rightHtml+'</div>'+
     '<div id="nxo-dev-reviews-zone"></div>';
