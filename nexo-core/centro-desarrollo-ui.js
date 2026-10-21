@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261021-clean-legacy-installer-101';
+const VERSION='20261021-clean-legacy-installer-102';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -2897,7 +2897,6 @@ function renderToolDetail(tool,data){
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid>.nxo-dev-detail-card ul{align-content:start}',
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-card,#nxo-dev-app #nxo-dev-detail-content #nxo-dev-acquisition-card{margin:0;min-width:0;box-sizing:border-box}',
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-head{margin-bottom:0}',
-      '#nxo-dev-app #nxo-dev-detail-content #nxo-dev-install-zone[hidden]{display:none!important}',
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-actions{align-items:stretch}',
       '#nxo-dev-app #nxo-dev-detail-content .nxo-dev-install-actions button{flex:1 1 170px;min-height:40px}',
       '@media(max-width:720px){#nxo-dev-app #nxo-dev-detail-content .nxo-dev-detail-grid{grid-template-columns:minmax(0,1fr)}#nxo-dev-app #nxo-dev-detail-content{gap:11px}}'
@@ -3238,8 +3237,6 @@ async function start(){
     if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
 
     try{await loadDevelopmentSession()}catch(_){developmentSession=null}
-    if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
-    try{await hydrateDevelopmentHeaderNavigation()}catch(_){}
     if(window.__nexoDevelopmentCenterRuntime!==runtime)return;
     mountDevelopmentHeader();
     syncDevelopmentViewport();
