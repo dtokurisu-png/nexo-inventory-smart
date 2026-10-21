@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-const VERSION='20261021-clean-legacy-installer-105';
+const VERSION='20261021-workspace-shortcuts-106';
 const previousRuntime=window.__nexoDevelopmentCenterRuntime;
 if(previousRuntime&&typeof previousRuntime.destroy==='function'){
   try{previousRuntime.destroy()}catch(_){}
@@ -2726,6 +2726,42 @@ function detailAcquisitionCard(tool){
     '<div id="nxo-dev-acquisition-response" aria-live="polite" style="margin-top:10px"></div>'+
   '</section>';
 }
+async function loadShortcutControls(tool,requestId){
+ const zone=document.getElementById('nxo-dev-shortcuts');
+ if(!zone)return;
+ zone.innerHTML='<p style="font-size:12px">Consultando tus espacios de trabajo…</p>';
+ try{
+  const result=await developmentUiApi('shortcut.targets',{toolKey:tool.cmsKey||tool.key});
+  if(requestId!==detailRequestId||!zone.isConnected)return;
+  const targets=Array.isArray(result?.targets)?result.targets:[];
+  if(!targets.length){zone.innerHTML='<p>No tienes espacios de trabajo con permiso para agregar herramientas.</p>';return}
+  const preferred=new URLSearchParams(location.search).get('nxoTargetWorkspace')||new URLSearchParams(location.search).get('nxoWorkspace')||'';
+  zone.innerHTML='<label for="nxo-shortcut-target" style="display:block;margin-bottom:7px;font-size:12px">Espacio de trabajo</label>'+
+   '<select id="nxo-shortcut-target" style="width:100%;min-height:39px;border-radius:10px;padding:8px;background:var(--nxo-surface-raised);color:var(--nxo-text-primary);border:1px solid var(--nxo-border)">'+
+   targets.map(t=>'<option value="'+escapeHtml(t.id)+'" '+(t.id===preferred?'selected':'')+'>'+escapeHtml(t.name)+'</option>').join('')+'</select>'+
+   '<button type="button" id="nxo-shortcut-enable" class="nxo-dev-acquisition-button" style="margin-top:12px;width:100%">Instalar acceso directo</button>'+
+   '<p id="nxo-shortcut-result" style="font-size:12px;margin-top:9px" aria-live="polite"></p>';
+  const btn=zone.querySelector('#nxo-shortcut-enable'),select=zone.querySelector('#nxo-shortcut-target'),out=zone.querySelector('#nxo-shortcut-result');
+  const refresh=()=>{const target=targets.find(t=>t.id===select.value);btn.textContent=target?.enabled?'Acceso ya habilitado':'Instalar acceso directo';out.textContent=target?.enabled?'Esta herramienta ya figura en el Workspace.':''};
+  select.onchange=refresh;refresh();
+  btn.onclick=async()=>{
+   const target=targets.find(t=>t.id===select.value);
+   if(!target)return;
+   if(!target.entitled){
+    out.textContent='Necesitas un plan, una compra individual o un cupón válido para habilitar este acceso.';
+    const plans=document.getElementById('nxo-dev-detail-plans-button');
+    if(plans){plans.animate([{opacity:1,transform:'scale(1)'},{opacity:.25,transform:'scale(1.07)'},{opacity:1,transform:'scale(1)'}],{duration:480,iterations:3});plans.scrollIntoView({behavior:'smooth',block:'center'})}
+    return;
+   }
+   if(target.enabled){out.textContent='Acceso ya habilitado. Regresa a tu Workspace para abrirlo.';return}
+   btn.disabled=true;out.textContent='Habilitando acceso…';
+   try{await developmentUiApi('shortcut.enable',{input:{toolKey:tool.cmsKey||tool.key,workspaceId:target.id}});target.enabled=true;refresh();out.textContent='Acceso directo habilitado. Ya puedes verlo en '+target.name+'.'}
+   catch(e){out.textContent=e?.code==='INVALID_ACTION'?'El servidor todavía no tiene publicada la acción de accesos directos.':(e?.message||'No se pudo habilitar el acceso.')}
+   finally{btn.disabled=false}
+  };
+ }catch(error){if(requestId!==detailRequestId||!zone.isConnected)return;zone.innerHTML='<p style="font-size:12px">'+escapeHtml(error?.code==='INVALID_ACTION'?'La acción de accesos directos aún no está publicada en el servidor.':error?.message||'No se pudo consultar el acceso.')+'</p>'}
+}
+
 function renderToolDetail(tool,data){
   const content=document.getElementById('nxo-dev-detail-content');
   if(!content)return;
@@ -2760,7 +2796,8 @@ function renderToolDetail(tool,data){
     detailMedia(data?.media)+
     detailAcquisitionCard(tool)+
     '<div class="nxo-dev-detail-grid">'+leftHtml+rightHtml+'</div>'+
-    '<div id="nxo-dev-reviews-zone"></div>';
+    '<div id="nxo-dev-reviews-zone"></div>'+ 
+    (tool.kind!=='course'?'<section id="nxo-dev-shortcuts" class="nxo-dev-detail-card" style="padding:16px"><h3>Acceso directo en Mi espacio</h3><p style="font-size:12px;margin:8px 0">Habilita la tarjeta de esta herramienta en un Workspace. La aplicación permanece en su página original.</p></section>':'');
   const response=content.querySelector('#nxo-dev-acquisition-response');
   content.querySelector('#nxo-dev-detail-plans-button')?.addEventListener('click',()=>{
     const labels=[...(PLAN_MEMBERSHIP[tool.key]||[]),'complete'].map(k=>PLAN_INFO[k]?.label).filter(Boolean);
@@ -2800,7 +2837,7 @@ async function openToolDetail(tool,trigger){
       if(reviewsZone)reviewsZone.innerHTML='';
     }else{
       loadReviewsZone(tool,requestId)
-
+      if(Array.isArray(data?.scopeModes)&&data.scopeModes.includes('workspace'))loadShortcutControls(tool,requestId)
     }
   }catch(error){
     if(requestId!==detailRequestId||view.hidden)return;
