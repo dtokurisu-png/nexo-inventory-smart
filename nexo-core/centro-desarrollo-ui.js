@@ -47,6 +47,7 @@ const TOOL_DEFS=[
     documentation:[],relatedProducts:[]
   }},
   {key:'work',cmsKey:'work-center',kind:'environment',icon:'panel',title:'Centro de Trabajo',summary:'Entorno futuro para tareas, horarios, personal y operación colaborativa.',status:'planned',names:['centro de trabajo','work center']},
+  {key:'storage',cmsKey:'nexo-storage',kind:'environment',icon:'sincronizar',title:'Nexo Storage',summary:'Próxima aplicación para guardar, organizar y recuperar archivos, con sincronización de proyectos y versiones verificables.',status:'planned',names:['nexo storage','almacenamiento','gestor de archivos','respaldos de proyectos']},
 
   {key:'schedules',cmsKey:'schedules',kind:'addon',parent:'Centro de Trabajo',icon:'recordatorio',title:'Horarios',summary:'Add-on operativo para jornadas y horarios semanales con carga desde imagen, análisis y publicación.',names:['horarios','schedule','schedules']},
   {key:'tasks',cmsKey:'task-lists',kind:'addon',parent:'Centro de Trabajo',icon:'checklist',title:'Listas de tareas',summary:'Add-on para listas de tareas, checklists y prep lists en uso personal o Workspace.',status:'planned',names:['listas de tareas','checklist','prep list','prep lists']},
@@ -57,7 +58,7 @@ const TOOL_DEFS=[
 ]
 const PLAN_MEMBERSHIP=Object.freeze({
   'course-english':['learning'],'course-excel':['learning'],library:['business'],inventory:['business'],technical:['business'],
-  'camino-editorial':['learning'],r96:['business'],work:['business'],
+  'camino-editorial':['learning'],r96:['business'],work:['business'],storage:['business','learning'],
   schedules:['business'],tasks:['business'],'multichannel-notifications':['business','learning'],
   numa:['business','learning'],maria:['learning'],'camino-agents':['learning']
 });
