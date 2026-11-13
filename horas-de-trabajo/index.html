@@ -80,6 +80,75 @@ footer{font-size:11px;text-align:center;color:#969da8;line-height:1.6;padding-to
 .provisional-edit .btn{width:fit-content}
 #break-settings-note{min-height:15px}
 @media(max-width:580px){.break-settings-grid{grid-template-columns:1fr}.provisional-controls .btn{flex:1}}
+
+/* Fase 4 · resumen semanal capturable, legible en pantalla móvil */
+.report-view{max-width:940px;margin:0 auto}
+.report-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:end;margin:0 0 17px}
+.report-profile-label{width:min(100%,330px);font-size:12px}
+.report-profile-label select{min-width:0}
+.report-week-navigation{display:flex;gap:6px;align-items:center;white-space:nowrap}
+.report-week-navigation .report-nav{font-size:25px;width:43px;padding:3px 8px}
+.report-current{font-size:12px}
+.report-paper{border-top:1px solid #f3f4f5a8;border-left:1px solid #f3f4f5a8;border-radius:13px 0 0 0;background:linear-gradient(150deg,#ffffff0e,#111215c5);padding:20px 18px 16px}
+.report-header h2{font-size:clamp(20px,4.7vw,28px);margin:10px 0 12px;font-weight:360;letter-spacing:-.035em}
+.report-overline{letter-spacing:.15em;font-size:10px;color:#b6bcc5;font-weight:650}
+.report-overline span{color:#f1f2f5}
+.report-header-bottom{display:flex;justify-content:space-between;gap:9px;font-size:12px;color:#cfd2d7;line-height:1.5;margin-bottom:17px}
+.report-header-bottom span:first-child{font-weight:600;color:#fff}
+.report-scroll{overflow-x:auto}
+.report-table{border-collapse:collapse;width:100%;min-width:0;table-layout:fixed}
+.report-table th,.report-table td{border-bottom:1px solid #e3e6eb29;padding:12px 5px;font-size:clamp(10px,1.4vw,12px);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle}
+.report-table th:first-child,.report-table td:first-child{text-align:left;width:14%}
+.report-table th:nth-child(2),.report-table th:nth-child(3),.report-table th:nth-child(4),.report-table th:nth-child(5){width:13%}
+.report-table th:nth-child(6){width:14%}
+.report-table th:nth-child(7){width:20%}
+.report-table thead th{font-weight:550;color:#d0d4dc;border-bottom:1px solid #ffffff6a}
+.report-table tbody tr:nth-child(even){background:#ffffff07}
+.report-table tbody tr.current-day{background:#ffffff18}
+.report-table .week-day-button{padding:3px 0;background:transparent;border:0;color:inherit;text-align:left;cursor:pointer;font:inherit;text-decoration:underline;text-decoration-color:#ffffff4c;text-underline-offset:3px;white-space:nowrap}
+.report-table .week-day-button:hover{color:#fff;text-decoration-color:#fff}
+.report-table .report-empty{color:#7e858f}
+.report-table .report-estimated{color:#f1d2a8}
+.report-table .report-more{color:#cad1db;font-size:10px;margin-left:1px}
+.report-table tfoot th,.report-table tfoot td{border-bottom:0;border-top:1px solid #ffffffa8;font-weight:700;font-size:clamp(11px,1.6vw,13px);color:#f9fafb;padding-top:16px}
+.report-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:16px 0 4px;border-top:1px solid #ffffff2b}
+.report-metrics>div{display:grid;gap:6px}
+.report-metrics span{color:#b1b6c0;font-size:11px}
+.report-metrics strong{font-size:clamp(14px,2.2vw,17px);font-weight:500;font-variant-numeric:tabular-nums}
+.report-caption,.report-legend{color:#b9bec8;font-size:11px;line-height:1.5;margin:10px 0 0}
+.report-legend{color:#a2a9b3}
+.report-estimated-key{color:#f1d2a8;font-weight:700}
+.report-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 0}
+.report-help{font-size:12px;line-height:1.6;color:#aeb4be}
+.wt-app.report-capture-mode .topbar,.wt-app.report-capture-mode #message,.wt-app.report-capture-mode footer,.wt-app.report-capture-mode .report-title,.wt-app.report-capture-mode .report-toolbar,.wt-app.report-capture-mode #report-open-calendar,.wt-app.report-capture-mode .report-help{display:none}
+.wt-app.report-capture-mode .shell{max-width:980px;padding-top:11px}
+.wt-app.report-capture-mode .report-paper{padding-top:22px}
+.wt-app.report-capture-mode .report-actions{justify-content:flex-end}
+@media(max-width:660px){
+ .report-toolbar{align-items:stretch;flex-direction:column}
+ .report-profile-label{width:100%}
+ .report-week-navigation{justify-content:space-between}
+ .report-paper{padding:15px 7px 12px}
+ .report-table th,.report-table td{padding:10px 2px;font-size:10px;letter-spacing:-.035em}
+ .report-table th:first-child,.report-table td:first-child{width:13%}
+ .report-table th:nth-child(2),.report-table th:nth-child(3),.report-table th:nth-child(4),.report-table th:nth-child(5){width:13%}
+ .report-table th:nth-child(6){width:15%}
+ .report-table th:nth-child(7){width:20%}
+ .report-header{padding:0 5px}
+ .report-header-bottom{font-size:11px;display:grid;gap:2px}
+ .report-metrics{padding-left:4px;padding-right:4px}
+ .report-metrics strong{font-size:14px}
+ .wt-app.report-capture-mode .shell{padding:8px 6px 45px}
+}
+@media(max-width:360px){.report-table th,.report-table td{font-size:9px;padding:9px 1px}.report-paper{padding:13px 4px 11px}.report-metrics strong{font-size:12px}.report-legend{font-size:10px}}
+@media print{
+ .wt-app{background:#18191c!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .topbar,#message,footer,.report-title,.report-toolbar,.report-actions,.report-help{display:none!important}
+ .shell{width:100%;max-width:none;padding:0}
+ .report-paper{padding:15px}
+ .report-scroll{overflow:visible}
+ .view:not(#view-week){display:none!important}
+}
 </style></head><body><div class="wt-app"><div class="ambient" aria-hidden="true"><i class="bubble" style="--x:9%;--dim:28px;--speed:22s;--delay:0s;--drift:9vw"></i><i class="bubble" style="--x:36%;--dim:45px;--speed:29s;--delay:-11s;--drift:-12vw"></i><i class="bubble" style="--x:63%;--dim:62px;--speed:36s;--delay:-22s;--drift:9vw"></i><i class="bubble" style="--x:90%;--dim:79px;--speed:43s;--delay:-33s;--drift:-12vw"></i><i class="bubble" style="--x:17%;--dim:31px;--speed:27s;--delay:0s;--drift:9vw"></i><i class="bubble" style="--x:44%;--dim:48px;--speed:34s;--delay:-11s;--drift:-12vw"></i><i class="bubble" style="--x:71%;--dim:65px;--speed:41s;--delay:-22s;--drift:9vw"></i><i class="bubble" style="--x:98%;--dim:82px;--speed:25s;--delay:-33s;--drift:-12vw"></i><i class="bubble" style="--x:25%;--dim:34px;--speed:32s;--delay:0s;--drift:9vw"></i><i class="bubble" style="--x:52%;--dim:51px;--speed:39s;--delay:-11s;--drift:-12vw"></i><i class="bubble" style="--x:79%;--dim:68px;--speed:23s;--delay:-22s;--drift:9vw"></i><i class="bubble" style="--x:6%;--dim:85px;--speed:30s;--delay:-33s;--drift:-12vw"></i><i class="bubble" style="--x:33%;--dim:37px;--speed:37s;--delay:0s;--drift:9vw"></i><i class="bubble" style="--x:60%;--dim:54px;--speed:44s;--delay:-11s;--drift:-12vw"></i><i class="bubble" style="--x:87%;--dim:71px;--speed:28s;--delay:-22s;--drift:9vw"></i><i class="bubble" style="--x:14%;--dim:88px;--speed:35s;--delay:-33s;--drift:-12vw"></i></div>
 <main class="shell">
 <header class="topbar"><button class="brand" type="button" data-nav="home"><span class="brand-dot"></span>NEXO / HORAS</button><nav class="nav" aria-label="Secciones"><button class="nav-btn" type="button" data-nav="week" title="Resumen semanal" aria-label="Resumen semanal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12M3 6h2M3 12h2M3 18h2"/></svg></button><button class="nav-btn" type="button" data-nav="calendar" title="Calendario" aria-label="Calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></button><button class="nav-btn" type="button" data-nav="settings" title="Ajustes" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m10 2-.5 2.2-2 1-2.1-.7-2 3.4L5 9.5v2.5l-1.6 1.5 2 3.4 2.1-.7 2 1L10 20h4l.5-2.8 2-1 2.1.7 2-3.4L19 12V9.5l1.6-1.6-2-3.4-2.1.7-2-1L14 2z"/></svg></button></nav></header>
@@ -133,7 +202,48 @@ footer{font-size:11px;text-align:center;color:#969da8;line-height:1.6;padding-to
 <section class="view" id="view-calendar" hidden><div class="section-title"><button class="back" type="button" data-nav="home" aria-label="Volver al inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><h1>Calendario</h1></div><div class="panel"><div class="calendar-head"><button class="btn" id="prev-month" type="button" aria-label="Mes anterior">‹</button><h2 id="month-label"></h2><button class="btn" id="next-month" type="button" aria-label="Mes siguiente">›</button></div><div class="calendar" id="calendar"></div></div>
 <div class="panel"><h2 id="selected-label">Jornadas del día</h2><div id="shift-list"></div><div class="actions"><button class="btn primary" id="new-shift" type="button">+ Añadir jornada anterior</button></div>
 <form id="shift-form" hidden><input type="hidden" name="id"><div class="fields"><label>Entrada<input name="startedAt" type="datetime-local" required></label><label>Salida<input name="closedAt" type="datetime-local" required></label><label>Descanso total (minutos)<input name="breakMinutes" type="number" min="0" step="1" value="0" required></label></div><div class="actions"><button class="btn primary" type="submit">Guardar jornada</button><button class="btn" id="cancel-shift" type="button">Cancelar</button></div></form></div></section>
-<section class="view" id="view-week" hidden><div class="section-title"><button class="back" type="button" data-nav="home" aria-label="Volver al inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><h1>Marcas de la semana</h1></div><p class="subtle">Resumen preliminar de jornadas. La tabla ampliada para capturas se implementará en la fase 4.</p><div class="panel table-scroll"><table><thead><tr><th>Día</th><th>Entrada</th><th>Salida</th><th>Horas</th></tr></thead><tbody id="week-rows"></tbody></table><p id="week-total" class="subtle"></p></div></section>
+<section class="view report-view" id="view-week" hidden>
+  <div class="section-title report-title"><button class="back" type="button" data-nav="home" aria-label="Volver al inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><h1>Resumen semanal</h1></div>
+  <div class="report-toolbar" id="report-toolbar">
+    <label class="report-profile-label">Lugar de trabajo
+      <select id="report-profile" aria-label="Lugar de trabajo para el resumen semanal"></select>
+    </label>
+    <div class="report-week-navigation" role="group" aria-label="Elegir semana">
+      <button class="btn report-nav" type="button" id="report-prev-week" aria-label="Semana anterior">‹</button>
+      <button class="btn report-current" type="button" id="report-current-week">Esta semana</button>
+      <button class="btn report-nav" type="button" id="report-next-week" aria-label="Semana siguiente">›</button>
+    </div>
+  </div>
+  <div class="report-paper" id="report-paper">
+    <div class="report-header">
+      <div class="report-overline">NEXO GROUP <span>·</span> REGISTRO DE HORAS</div>
+      <h2>Resumen de la semana</h2>
+      <div class="report-header-bottom">
+        <span id="report-place">Sin lugar seleccionado</span>
+        <span id="report-dates">—</span>
+      </div>
+    </div>
+    <div class="report-scroll">
+      <table class="report-table" aria-label="Jornadas de lunes a domingo, descansos, horas e ingresos estimados">
+        <thead><tr><th scope="col">Día</th><th scope="col">Entr.</th><th scope="col">Break</th><th scope="col">Reg.</th><th scope="col">Salida</th><th scope="col">Horas</th><th scope="col">Neto*</th></tr></thead>
+        <tbody id="week-rows"></tbody>
+        <tfoot><tr><th scope="row">Total</th><td colspan="4"></td><td id="week-total-hours">0h</td><td id="week-total-net">$0.00</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="report-metrics">
+      <div><span>Bruto</span><strong id="week-total-gross">$0.00</strong></div>
+      <div><span>Retención</span><strong id="week-total-tax">$0.00</strong></div>
+      <div><span>Horas extra</span><strong id="week-total-overtime">0h</strong></div>
+    </div>
+    <p id="week-total" class="report-caption" aria-live="polite">Los pagos son estimaciones.</p>
+    <p class="report-legend">* Neto estimado tras retenciones. <span class="report-estimated-key">~</span> marca provisional pendiente. <strong>+</strong> más marcas ese día; tocá el día para consultar o editar. Turnos nocturnos se muestran en el día de entrada.</p>
+  </div>
+  <div class="report-actions">
+    <button class="btn" id="report-capture" type="button" aria-pressed="false">Vista para captura</button>
+    <button class="btn" id="report-open-calendar" type="button">Editar marcas en calendario</button>
+  </div>
+  <p class="report-help">La vista de captura oculta los controles para que puedas tomar una foto de pantalla y enviarla desde tu celular. No modifica ninguna marca.</p>
+</section>
 
 <div id="suggest-backdrop" class="suggest-backdrop" hidden>
   <section class="suggest-dialog" role="dialog" aria-modal="true" aria-labelledby="suggest-title" aria-describedby="suggest-description">
@@ -209,6 +319,7 @@ const MAX_AUTO_AGE_MS=86400000;
 const $=id=>document.getElementById(id);
 const $$=query=>document.querySelectorAll(query);
 let state,selectedProfile='',selectedDay=localDate(new Date()),month=selectedDay.slice(0,7);
+let reportWeekOffset=0,reportCapture=false,lastReportRefreshMinute=-1;
 let capturedMarkAt=null,pendingSuggestion=null,currentView='home',lastHiddenAt=null;
 const CAPTURE_WINDOW_MS=5*60*1000;
 let breakPreferences=readBreakPreferences();
@@ -263,27 +374,108 @@ function renderDashboard(){
  $('home-status').textContent=active?(active.breakStartedAt===null?'Turno en curso':'En descanso')+' · '+active.place:(state.profiles.length?'Sin turno activo':'Configurá un lugar de trabajo en ajustes');
  updateClock()
 }
-function renderWeek(){
- const box=$('week-rows');box.replaceChildren();
- const p=profile(),now=Date.now();
- const monday=new Date();monday.setHours(12,0,0,0);monday.setDate(monday.getDate()-(monday.getDay()+6)%7);
- let total=0;
+
+function weekClock(value){return value==null?'—':new Date(value).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',hour12:false})}
+function detailedHours(milliseconds){
+ const minutes=Math.round(Math.max(0,milliseconds)/60000);
+ return Math.floor(minutes/60)+'h'+(minutes%60?String(minutes%60).padStart(2,'0'):'')
+}
+function buildWeekReport(snapshot,profileId,offset=0,now=Date.now()){
+ const profile=snapshot.profiles.find(x=>x.id===profileId)||null;
+ const start=new Date(now);start.setHours(12,0,0,0);start.setDate(start.getDate()-((start.getDay()+6)%7)+7*offset);
+ const end=new Date(start);end.setDate(start.getDate()+6);
+ const pays=new Map(P.project(snapshot,now).shifts.map(x=>[x.shiftId,x]));
+ const totals={workedMs:0,grossCents:0,taxCents:0,netCents:0,overtimeMs:0,provisional:0};
+ const days=[];
  for(let i=0;i<7;i++){
-   const date=new Date(monday);date.setDate(monday.getDate()+i);
-   const day=localDate(date);
-   const shifts=state.shifts.filter(s=>p&&s.profileId===p.id&&localDate(s.startedAt)===day&&P.weekKey(s.startedAt,p.timeZone,p.weekStartDay)===P.weekKey(now,p.timeZone,p.weekStartDay));
-   const ms=shifts.reduce((n,s)=>n+duration(s),0);total+=ms;
-   const row=document.createElement('tr');
-   const fields=[date.toLocaleDateString('es',{weekday:'short',day:'numeric'}),shifts.length?fmt(Math.min(...shifts.map(s=>s.startedAt))):'—',shifts.length?(shifts.some(s=>s.closedAt===null)?'En curso':fmt(Math.max(...shifts.map(s=>s.closedAt)))):'—',shifts.length?hours(ms):'—'];
-   for(const value of fields){const td=document.createElement('td');td.textContent=value;row.append(td)}
-   box.append(row);
+  const dayDate=new Date(start);dayDate.setDate(start.getDate()+i);
+  const key=localDate(dayDate);
+  const shifts=snapshot.shifts.filter(s=>profile&&s.profileId===profile.id&&localDate(s.startedAt)===key).sort((a,b)=>a.startedAt-b.startedAt);
+  const marks={entry:[],breakStart:[],breakEnd:[],exit:[]};
+  const daily={workedMs:0,grossCents:0,taxCents:0,netCents:0,overtimeMs:0,provisional:0};
+  for(const s of shifts){
+   marks.entry.push({time:s.startedAt});
+   for(const b of s.breaks||[]){
+    marks.breakStart.push({time:b.startAt});
+    marks.breakEnd.push({time:b.endAt,provisional:b.provisional===true});
+    if(b.provisional===true)daily.provisional++
+   }
+   if(s.breakStartedAt!==null)marks.breakStart.push({time:s.breakStartedAt});
+   if(s.closedAt!==null)marks.exit.push({time:s.closedAt});
+   daily.workedMs+=duration(s);
+   const pay=pays.get(s.id);
+   if(pay){
+    daily.grossCents+=pay.grossCents;daily.taxCents+=pay.taxCents;
+    daily.netCents+=pay.netCents;daily.overtimeMs+=pay.overtimeMilliseconds
+   }
+  }
+  for(const kind of Object.keys(daily))totals[kind]+=daily[kind];
+  for(const group of Object.values(marks))group.sort((a,b)=>a.time-b.time);
+  days.push({date:dayDate,key,shifts,marks,totals:daily,isToday:key===localDate(now)})
  }
- $('week-total').textContent='Total de la semana: '+hours(total)
+ return {profile,start,weekEnd:end,days,totals}
+}
+function renderWeek(){
+ const report=buildWeekReport(state,selectedProfile,reportWeekOffset);
+ const selector=$('report-profile');selector.replaceChildren();
+ for(const p of state.profiles){const opt=document.createElement('option');opt.value=p.id;opt.textContent=p.name+' · '+p.place;selector.append(opt)}
+ selector.value=selectedProfile;selector.disabled=!state.profiles.length;
+ $('report-place').textContent=report.profile?report.profile.name+' · '+report.profile.place:'Sin lugar configurado';
+ const compactDate=d=>d.toLocaleDateString('es',{day:'numeric',month:'short'});
+ $('report-dates').textContent=compactDate(report.start)+' – '+compactDate(report.weekEnd)+' '+report.weekEnd.getFullYear();
+ $('report-current-week').disabled=reportWeekOffset===0;
+ $('report-next-week').disabled=reportWeekOffset>=0;
+ const rows=$('week-rows');rows.replaceChildren();
+ function makeCell(text,options={}){
+  const td=document.createElement('td');td.textContent=text;
+  if(options.title)td.title=options.title;
+  if(options.aria)td.setAttribute('aria-label',options.aria);
+  if(options.provisional)td.className='report-estimated';
+  if(options.empty)td.className='report-empty';
+  return td
+ }
+ function markCell(marks){
+  if(!marks.length)return makeCell('—',{empty:true});
+  const first=marks[0],multiple=marks.length>1,provisional=marks.some(x=>x.provisional);
+  return makeCell(weekClock(first.time)+(first.provisional?'~':'')+(multiple?'+':''),
+   {provisional,title:marks.map(x=>weekClock(x.time)+(x.provisional?' (provisional)':'')).join(' · '),
+    aria:'Marcas: '+marks.map(x=>weekClock(x.time)+(x.provisional?' provisional':'')).join(', ')})
+ }
+ for(const day of report.days){
+  const tr=document.createElement('tr');if(day.isToday)tr.className='current-day';
+  const first=document.createElement('td'),b=document.createElement('button');
+  b.type='button';b.className='week-day-button';
+  b.textContent=day.date.toLocaleDateString('es',{weekday:'short',day:'numeric'}).replace('.','');
+  b.setAttribute('aria-label','Ver y editar las marcas del '+day.date.toLocaleDateString('es',{day:'numeric',month:'long',year:'numeric'}));
+  b.onclick=()=>{selectedDay=day.key;month=day.key.slice(0,7);$('shift-form').hidden=true;render();showView('calendar')};
+  first.append(b);if(day.shifts.length>1)first.title=day.shifts.length+' jornadas registradas';
+  tr.append(first);
+  tr.append(markCell(day.marks.entry),markCell(day.marks.breakStart),markCell(day.marks.breakEnd),markCell(day.marks.exit));
+  tr.append(makeCell(day.shifts.length?detailedHours(day.totals.workedMs):'—',{empty:!day.shifts.length,title:'Horas de jornada registradas'}));
+  tr.append(makeCell(day.shifts.length?money(day.totals.netCents):'—',{empty:!day.shifts.length,title:'Neto estimado después de retenciones'}));
+  rows.append(tr)
+ }
+ $('week-total-hours').textContent=detailedHours(report.totals.workedMs);
+ $('week-total-net').textContent=money(report.totals.netCents);
+ $('week-total-gross').textContent=money(report.totals.grossCents);
+ $('week-total-tax').textContent=money(report.totals.taxCents);
+ $('week-total-overtime').textContent=detailedHours(report.totals.overtimeMs);
+ $('week-total').textContent=(report.profile?'Tarifa actual: '+money(report.profile.rateCents)+'/h. ':'Configurá un lugar de trabajo. ')+
+  (report.totals.provisional?report.totals.provisional+' regreso(s) del descanso pendientes de confirmar. ':'')+
+  'Cifras estimadas según las tarifas y reglas de nómina del perfil.'
+}
+function setReportCapture(enabled){
+ reportCapture=Boolean(enabled);
+ const root=$$('.wt-app')[0];
+ if(root)root.classList.toggle('report-capture-mode',reportCapture);
+ $('report-capture').textContent=reportCapture?'Salir de captura':'Vista para captura';
+ $('report-capture').setAttribute('aria-pressed',reportCapture?'true':'false')
 }
 function showView(view){
  currentView=view;
  for(const name of ['home','mark','settings','calendar','week'])$('view-'+name).hidden=name!==view;
- for(const button of $$('[data-nav]'))button.setAttribute('aria-current',button.dataset.nav===view?'page':'false')
+ for(const button of $$('[data-nav]'))button.setAttribute('aria-current',button.dataset.nav===view?'page':'false');
+ if(view!=='week')setReportCapture(false)
 }
 
 
@@ -533,6 +725,12 @@ for(const button of $$('[data-nav]'))button.onclick=()=>{closeSuggestion(false);
 window.addEventListener('storage',onStorageUpdate);
 document.addEventListener('visibilitychange',onReturnToApp);
 
+$('report-profile').onchange=e=>{selectedProfile=e.target.value;render()};
+$('report-prev-week').onclick=()=>{reportWeekOffset--;renderWeek()};
+$('report-next-week').onclick=()=>{if(reportWeekOffset<0){reportWeekOffset++;renderWeek()}};
+$('report-current-week').onclick=()=>{reportWeekOffset=0;renderWeek()};
+$('report-capture').onclick=()=>setReportCapture(!reportCapture);
+$('report-open-calendar').onclick=()=>{selectedDay=localDate(new Date());month=selectedDay.slice(0,7);render();showView('calendar')};
 $('prev-month').onclick=()=>changeMonth(-1);$('next-month').onclick=()=>changeMonth(1);
 function changeMonth(step){const [y,m]=month.split('-').map(Number);const d=new Date(y,m-1+step,1);month=localDate(d).slice(0,7);selectedDay=month+'-01';render()}
 $('new-shift').onclick=()=>{if(!profile()){message('Primero agrega un lugar de trabajo',true);return}const f=$('shift-form');f.reset();f.hidden=false;f.elements.id.value='';f.elements.startedAt.value=selectedDay+'T09:00';f.elements.closedAt.value=selectedDay+'T17:00';f.elements.breakMinutes.value=0;f.scrollIntoView({behavior:'smooth',block:'nearest'})};
@@ -549,7 +747,11 @@ const clockTimer=setInterval(()=>{
   document.removeEventListener('visibilitychange',onReturnToApp);
   return
  }
- updateClock()
+ updateClock();
+ const currentMinute=Math.floor(Date.now()/60000);
+ if(currentView==='week'&&currentMinute!==lastReportRefreshMinute){
+  lastReportRefreshMinute=currentMinute;renderWeek()
+ }
 },1000);
 })();
 </script></body></html>
