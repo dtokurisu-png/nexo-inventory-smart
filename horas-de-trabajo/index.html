@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Horas de trabajo · Nexo Group</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Horas de trabajo · Nexo Group</title><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin><style>
 :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#f7f8fb;color-scheme:dark;--line:rgba(235,240,247,.42)}
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#121316}
 .wt-app{min-height:100dvh;position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 58% 112%,#75767d3b,transparent 63%),linear-gradient(150deg,#08090b 1%,#202124 58%,#37383d 100%);color:#f7f8fb}
@@ -178,6 +178,13 @@ footer{font-size:11px;text-align:center;color:#969da8;line-height:1.6;padding-to
 .geo-map-info{padding:0 16px 9px;color:#c0c6cf;font-size:12px;line-height:1.55}
 .geo-map-stage{width:100%;height:min(54dvh,490px);min-height:235px;background:#30343a;position:relative;touch-action:pan-x pan-y}
 .geo-map-stage .leaflet-container{font-family:system-ui,Arial,sans-serif}
+.geo-map-loader{position:absolute;inset:0;z-index:1100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;background:#262b32ed;color:#f9fcff;padding:20px;text-align:center;pointer-events:none}
+.geo-map-loader strong{font-size:15px;font-weight:600}.geo-map-loader small{font-size:12px;color:#cbd7e0;line-height:1.5;max-width:320px}
+.geo-map-loader-track{height:9px;width:min(84%,310px);border-radius:9px;overflow:hidden;background:#59616b}
+.geo-map-loader-fill{height:100%;width:30%;background:#00dbc2;border-radius:9px;transition:width .2s ease}
+.geo-map-loader:not([data-determinate="true"]) .geo-map-loader-fill{animation:geo-map-pulse 1.4s ease-in-out infinite}
+@keyframes geo-map-pulse{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+@media(prefers-reduced-motion:reduce){.geo-map-loader-fill{animation:none!important;transition:none!important}}
 .geo-map-stage .leaflet-control-attribution{font-size:10px!important;color:#212121!important}
 .geo-map-stage .leaflet-control-attribution a{color:#074a73!important}
 .geo-map-stage .leaflet-control-zoom a{color:#171b23!important}
@@ -350,7 +357,7 @@ footer{font-size:11px;text-align:center;color:#969da8;line-height:1.6;padding-to
  <section class="geo-map-dialog" role="dialog" aria-modal="true" aria-labelledby="geo-map-title" aria-describedby="geo-map-description">
   <div class="geo-map-heading"><h2 id="geo-map-title">Elegir ubicación de trabajo</h2><button id="geo-map-close" type="button" aria-label="Cerrar mapa">×</button></div>
   <p class="geo-map-info" id="geo-map-description">Tocá el mapa para mover el punto. El círculo muestra el radio. Al identificar un lugar, sus coordenadas se consultan una sola vez mediante Photon/komoot y OpenStreetMap, servicios externos. Confirmá antes de guardar.</p>
-  <div id="geo-map-stage" class="geo-map-stage" aria-label="Mapa para escoger el lugar de trabajo"></div>
+  <div id="geo-map-stage" class="geo-map-stage" aria-label="Mapa para escoger el lugar de trabajo"><div class="geo-map-loader" id="geo-map-loader" role="status" aria-live="polite"><strong id="geo-map-load-label">Preparando el mapa…</strong><div class="geo-map-loader-track" role="progressbar" id="geo-map-progress" aria-label="Carga de las calles"><div class="geo-map-loader-fill" id="geo-map-progress-fill"></div></div><small id="geo-map-load-detail">Conectando con el servicio cartográfico</small></div></div>
   <div class="geo-map-result" aria-live="polite"><strong id="geo-map-place">Punto por seleccionar</strong><span id="geo-map-address">Detectá tu posición o tocá el mapa para elegir.</span></div>
   <div class="geo-map-actions">
    <button class="btn" type="button" id="geo-map-detect">Mi ubicación</button>
@@ -531,6 +538,24 @@ function createMapPicker(config){
  if(!panel||!stage)throw Error('Contenedor del mapa no encontrado');
  let map=null,marker=null,circle=null,point=null,radius=805,requestId=0,lastQuery=0,lookupCache=new Map(),openVersion=0,tileProvider='osm',tileFailures=0,tileSuccess=0,tiles=null;
  const title=byId('geo-map-place'),address=byId('geo-map-address'),save=byId('geo-map-save');
+ const loader=byId('geo-map-loader'),loadLabel=byId('geo-map-load-label'),loadDetail=byId('geo-map-load-detail'),progress=byId('geo-map-progress'),fill=byId('geo-map-progress-fill');
+ let tileRequested=0,tileFinished=0,loadingGeneration=0,loadTimeout=null;
+ function loading(label,detail,percentage){
+  loader.hidden=false;loadLabel.textContent=label;loadDetail.textContent=detail;
+  const measurable=Number.isFinite(percentage);
+  loader.dataset.determinate=String(measurable);
+  if(measurable){const value=Math.max(0,Math.min(100,Math.round(percentage)));fill.style.width=value+'%';progress.setAttribute('aria-valuenow',String(value));progress.setAttribute('aria-valuemin','0');progress.setAttribute('aria-valuemax','100')}
+  else{fill.style.width='30%';progress.removeAttribute('aria-valuenow');progress.removeAttribute('aria-valuemin');progress.removeAttribute('aria-valuemax')}
+ }
+ function loadingDone(){if(loadTimeout){clearTimeout(loadTimeout);loadTimeout=null}loader.hidden=true}
+ function loadingTimer(generation){
+  if(loadTimeout)clearTimeout(loadTimeout);
+  loadTimeout=setTimeout(()=>{
+   if(panel.hidden||generation!==loadingGeneration||loader.hidden)return;
+   loading('La carga está tardando','Revisá tu conexión. Si las calles no aparecen, podés cerrar y volver a intentar.',null)
+  },12000)
+ }
+
  const setInfo=(heading,detail)=>{title.textContent=heading;address.textContent=detail};
  function refreshMap(seq){
   if(!map||panel.hidden||seq!==openVersion)return;
@@ -539,22 +564,31 @@ function createMapPicker(config){
  }
  function startTiles(L,provider){
   if(tiles)map.removeLayer(tiles);
-  tileProvider=provider;tileFailures=0;tileSuccess=0;
+  const generation=++loadingGeneration;
+  tileProvider=provider;tileFailures=0;tileSuccess=0;tileRequested=0;tileFinished=0;
+  loading(provider==='osm'?'Cargando calles…':'Probando otro servidor de mapas…','Descargando las imágenes del mapa',null);
+  loadingTimer(generation);
   const osm=provider==='osm';
-  tiles=L.tileLayer(osm?'https://tile.openstreetmap.org/{z}/{x}/{y}.png':'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+  const layer=L.tileLayer(osm?'https://tile.openstreetmap.org/{z}/{x}/{y}.png':'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
    minZoom:2,maxZoom:19,maxNativeZoom:19,attribution:osm?'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>':'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> · © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>'
   });
-  tiles.on('tileload',()=>{tileSuccess++});
-  tiles.on('tileerror',()=>{
-   tileFailures++;
+  tiles=layer;
+  layer.on('tileloadstart',()=>{if(generation!==loadingGeneration)return;tileRequested++;loading('Cargando calles…','Se están descargando las imágenes visibles',tileRequested?tileFinished/tileRequested*100:null)});
+  layer.on('tileload',()=>{if(generation!==loadingGeneration)return;tileSuccess++;tileFinished++;loading('Cargando calles…','Imágenes recibidas: '+tileFinished+' de '+tileRequested,tileRequested?tileFinished/tileRequested*100:null)});
+  layer.on('tileerror',()=>{
+   if(generation!==loadingGeneration)return;
+   tileFailures++;tileFinished++;
    if(tileFailures>=3&&tileSuccess===0){
-    if(tileProvider==='osm'){
-     setInfo(point?'Punto seleccionado':'Cargando calles…','El servidor principal no respondió; probando otro mapa.');
-     startTiles(L,'carto')
-    }else setInfo(point?'Punto seleccionado, sin calles':'No se pudieron cargar las calles','Comprobá la conexión. Podés guardar la ubicación por coordenadas o reabrir el mapa para reintentar.')
-   }
+    if(tileProvider==='osm')startTiles(L,'carto');
+    else{
+     ++loadingGeneration;
+     loading('No se pudieron mostrar las calles','Revisá la conexión. Podés volver a abrir el mapa o guardar las coordenadas.',null);
+     if(loadTimeout){clearTimeout(loadTimeout);loadTimeout=null}
+    }
+   }else loading('Cargando calles…','Algunas imágenes no respondieron; reintentando otras',tileRequested?tileFinished/tileRequested*100:null)
   });
-  tiles.addTo(map)
+  layer.on('load',()=>{if(generation!==loadingGeneration)return;if(tileSuccess)loadingDone()});
+  layer.addTo(map)
  }
  function setPoint(lat,lon,center=true){
   lat=Number(lat);lon=Number(lon);
@@ -609,13 +643,14 @@ function createMapPicker(config){
   const seq=++openVersion;radius=options.radiusMeters||805;point=null;save.disabled=true;
   setInfo('Preparando mapa…','Abrí el mapa con conexión para ver las calles.');
   panel.hidden=false;
+  loading('Preparando el visor…','Conectando con el servicio cartográfico',null);
   try{
    const L=await loadLeaflet(doc,rootNode);if(seq!==openVersion||panel.hidden)return;
    if(!map){
     map=L.map(stage,{zoomControl:true,scrollWheelZoom:false,preferCanvas:true});
-    startTiles(L,'osm');
     map.on('click',e=>{setPoint(e.latlng.lat,e.latlng.lng,false)});
    }
+   startTiles(L,'osm');
    if(point&&coordsValid(point.lat,point.lon))setPoint(point.lat,point.lon,true);
    else if(coordsValid(options.lat,options.lon))setPoint(options.lat,options.lon,true);
    else{
@@ -628,11 +663,12 @@ function createMapPicker(config){
    setTimeout(()=>refreshMap(seq),120);
    setTimeout(()=>refreshMap(seq),450);
    setTimeout(()=>refreshMap(seq),1000);
-   if(tiles&&tileProvider!=='osm')startTiles(L,'osm')
-  }catch(e){if(seq!==openVersion)return;setInfo('Mapa no disponible',e.message+' Podés cerrar y usar las coordenadas.')}
+
+  }catch(e){if(seq!==openVersion)return;loading('No se pudo iniciar el mapa',e.message,null);setInfo('Mapa no disponible',e.message+' Podés cerrar y usar las coordenadas.')}
  }
  function close(){
-  ++openVersion;++requestId;panel.hidden=true;
+  ++openVersion;++requestId;++loadingGeneration;panel.hidden=true;
+  loadingDone();
   if(config.onClose)config.onClose()
  }
  function detect(){
