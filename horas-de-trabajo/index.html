@@ -176,9 +176,11 @@ footer{font-size:11px;text-align:center;color:#969da8;line-height:1.6;padding-to
 .geo-map-heading h2{font-size:19px;font-weight:500;letter-spacing:-.02em;margin:0}
 .geo-map-heading button{border:0;background:transparent;color:#fff;border-radius:7px;padding:5px 9px;font-size:22px}
 .geo-map-info{padding:0 16px 9px;color:#c0c6cf;font-size:12px;line-height:1.55}
-.geo-map-stage{width:100%;height:min(54dvh,490px);min-height:235px;background:#30343a;position:relative;touch-action:pan-x pan-y}
+.geo-map-viewport{position:relative;flex:0 0 auto;width:100%;height:min(54dvh,490px);min-height:235px;isolation:isolate;background:#30343a;overflow:hidden}
+.geo-map-stage{display:block;width:100%;height:100%;min-height:100%;background:#30343a;position:relative;z-index:1;touch-action:pan-x pan-y}
+.geo-map-diagnostic{padding:5px 12px;min-height:28px;flex:0 0 auto;font-size:11px;color:#c7d1d9;background:#24272b;overflow-wrap:anywhere}
 .geo-map-stage .leaflet-container{font-family:system-ui,Arial,sans-serif}
-.geo-map-loader{position:absolute;inset:0;z-index:1100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;background:#262b32ed;color:#f9fcff;padding:20px;text-align:center;pointer-events:none}
+.geo-map-loader{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;background:#262b32ed;color:#f9fcff;padding:20px;text-align:center;pointer-events:none}
 .geo-map-loader strong{font-size:15px;font-weight:600}.geo-map-loader small{font-size:12px;color:#cbd7e0;line-height:1.5;max-width:320px}
 .geo-map-loader-track{height:9px;width:min(84%,310px);border-radius:9px;overflow:hidden;background:#59616b}
 .geo-map-loader-fill{height:100%;width:30%;background:#00dbc2;border-radius:9px;transition:width .2s ease}
@@ -197,7 +199,7 @@ footer{font-size:11px;text-align:center;color:#969da8;line-height:1.6;padding-to
 .geo-map-preview .geo-dot{width:8px;height:8px;flex:0 0 auto;border-radius:50%;background:#8ee3c5;margin-top:5px}
 .geo-map-hint{color:#afb6c2;font-size:12px;margin:9px 0}
 .geo-timezone-note{font-size:12px;color:#bfc7d3}
-@media(max-width:550px){.geo-map-backdrop{padding:6px}.geo-map-dialog{max-height:98dvh}.geo-map-heading{padding:12px 12px 8px}.geo-map-stage{height:49dvh;min-height:220px}.geo-map-info,.geo-map-result{padding-left:12px;padding-right:12px}.geo-map-actions{padding:9px 12px 13px}.geo-map-actions .btn{font-size:12px;padding:9px 5px}}
+@media(max-width:550px){.geo-map-backdrop{padding:6px}.geo-map-dialog{max-height:98dvh}.geo-map-heading{padding:12px 12px 8px}.geo-map-viewport{height:49dvh;min-height:220px}.geo-map-info,.geo-map-result{padding-left:12px;padding-right:12px}.geo-map-actions{padding:9px 12px 13px}.geo-map-actions .btn{font-size:12px;padding:9px 5px}}
 </style></head><body><div class="wt-app"><div class="ambient" aria-hidden="true"><i class="bubble" style="--x:9%;--dim:28px;--speed:22s;--delay:0s;--drift:9vw"></i><i class="bubble" style="--x:36%;--dim:45px;--speed:29s;--delay:-11s;--drift:-12vw"></i><i class="bubble" style="--x:63%;--dim:62px;--speed:36s;--delay:-22s;--drift:9vw"></i><i class="bubble" style="--x:90%;--dim:79px;--speed:43s;--delay:-33s;--drift:-12vw"></i><i class="bubble" style="--x:17%;--dim:31px;--speed:27s;--delay:0s;--drift:9vw"></i><i class="bubble" style="--x:44%;--dim:48px;--speed:34s;--delay:-11s;--drift:-12vw"></i><i class="bubble" style="--x:71%;--dim:65px;--speed:41s;--delay:-22s;--drift:9vw"></i><i class="bubble" style="--x:98%;--dim:82px;--speed:25s;--delay:-33s;--drift:-12vw"></i><i class="bubble" style="--x:25%;--dim:34px;--speed:32s;--delay:0s;--drift:9vw"></i><i class="bubble" style="--x:52%;--dim:51px;--speed:39s;--delay:-11s;--drift:-12vw"></i><i class="bubble" style="--x:79%;--dim:68px;--speed:23s;--delay:-22s;--drift:9vw"></i><i class="bubble" style="--x:6%;--dim:85px;--speed:30s;--delay:-33s;--drift:-12vw"></i><i class="bubble" style="--x:33%;--dim:37px;--speed:37s;--delay:0s;--drift:9vw"></i><i class="bubble" style="--x:60%;--dim:54px;--speed:44s;--delay:-11s;--drift:-12vw"></i><i class="bubble" style="--x:87%;--dim:71px;--speed:28s;--delay:-22s;--drift:9vw"></i><i class="bubble" style="--x:14%;--dim:88px;--speed:35s;--delay:-33s;--drift:-12vw"></i></div>
 <main class="shell">
 <header class="topbar"><button class="brand" type="button" data-nav="home"><span class="brand-dot"></span>NEXO / HORAS</button><nav class="nav" aria-label="Secciones"><button class="nav-btn" type="button" data-nav="week" title="Resumen semanal" aria-label="Resumen semanal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12M3 6h2M3 12h2M3 18h2"/></svg></button><button class="nav-btn" type="button" data-nav="calendar" title="Calendario" aria-label="Calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></button><button class="nav-btn" type="button" data-nav="settings" title="Ajustes" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m10 2-.5 2.2-2 1-2.1-.7-2 3.4L5 9.5v2.5l-1.6 1.5 2 3.4 2.1-.7 2 1L10 20h4l.5-2.8 2-1 2.1.7 2-3.4L19 12V9.5l1.6-1.6-2-3.4-2.1.7-2-1L14 2z"/></svg></button></nav></header>
@@ -357,7 +359,7 @@ footer{font-size:11px;text-align:center;color:#969da8;line-height:1.6;padding-to
  <section class="geo-map-dialog" role="dialog" aria-modal="true" aria-labelledby="geo-map-title" aria-describedby="geo-map-description">
   <div class="geo-map-heading"><h2 id="geo-map-title">Elegir ubicación de trabajo</h2><button id="geo-map-close" type="button" aria-label="Cerrar mapa">×</button></div>
   <p class="geo-map-info" id="geo-map-description">Tocá el mapa para mover el punto. El círculo muestra el radio. Al identificar un lugar, sus coordenadas se consultan una sola vez mediante Photon/komoot y OpenStreetMap, servicios externos. Confirmá antes de guardar.</p>
-  <div id="geo-map-stage" class="geo-map-stage" aria-label="Mapa para escoger el lugar de trabajo"><div class="geo-map-loader" id="geo-map-loader" role="status" aria-live="polite"><strong id="geo-map-load-label">Preparando el mapa…</strong><div class="geo-map-loader-track" role="progressbar" id="geo-map-progress" aria-label="Carga de las calles"><div class="geo-map-loader-fill" id="geo-map-progress-fill"></div></div><small id="geo-map-load-detail">Conectando con el servicio cartográfico</small></div></div>
+  <div class="geo-map-viewport"><div id="geo-map-stage" class="geo-map-stage" aria-label="Mapa para escoger el lugar de trabajo"></div><div class="geo-map-loader" id="geo-map-loader" role="status" aria-live="polite"><strong id="geo-map-load-label">Preparando el mapa…</strong><div class="geo-map-loader-track" role="progressbar" id="geo-map-progress" aria-label="Carga de las calles"><div class="geo-map-loader-fill" id="geo-map-progress-fill"></div></div><small id="geo-map-load-detail">Conectando con el servicio cartográfico</small></div></div><div id="geo-map-diagnostic" class="geo-map-diagnostic" aria-live="polite">Visor listo para iniciar</div>
   <div class="geo-map-result" aria-live="polite"><strong id="geo-map-place">Punto por seleccionar</strong><span id="geo-map-address">Detectá tu posición o tocá el mapa para elegir.</span></div>
   <div class="geo-map-actions">
    <button class="btn" type="button" id="geo-map-detect">Mi ubicación</button>
@@ -538,16 +540,17 @@ function createMapPicker(config){
  if(!panel||!stage)throw Error('Contenedor del mapa no encontrado');
  let map=null,marker=null,circle=null,point=null,radius=805,requestId=0,lastQuery=0,lookupCache=new Map(),openVersion=0,tileProvider='osm',tileFailures=0,tileSuccess=0,tiles=null;
  const title=byId('geo-map-place'),address=byId('geo-map-address'),save=byId('geo-map-save');
- const loader=byId('geo-map-loader'),loadLabel=byId('geo-map-load-label'),loadDetail=byId('geo-map-load-detail'),progress=byId('geo-map-progress'),fill=byId('geo-map-progress-fill');
+ const loader=byId('geo-map-loader'),loadLabel=byId('geo-map-load-label'),loadDetail=byId('geo-map-load-detail'),progress=byId('geo-map-progress'),fill=byId('geo-map-progress-fill'),diagnostic=byId('geo-map-diagnostic');
  let tileRequested=0,tileFinished=0,loadingGeneration=0,loadTimeout=null;
  function loading(label,detail,percentage){
   loader.hidden=false;loadLabel.textContent=label;loadDetail.textContent=detail;
+  diagnostic.textContent=label+' · '+detail;
   const measurable=Number.isFinite(percentage);
   loader.dataset.determinate=String(measurable);
   if(measurable){const value=Math.max(0,Math.min(100,Math.round(percentage)));fill.style.width=value+'%';progress.setAttribute('aria-valuenow',String(value));progress.setAttribute('aria-valuemin','0');progress.setAttribute('aria-valuemax','100')}
   else{fill.style.width='30%';progress.removeAttribute('aria-valuenow');progress.removeAttribute('aria-valuemin');progress.removeAttribute('aria-valuemax')}
  }
- function loadingDone(){if(loadTimeout){clearTimeout(loadTimeout);loadTimeout=null}loader.hidden=true}
+ function loadingDone(){if(loadTimeout){clearTimeout(loadTimeout);loadTimeout=null}loader.hidden=true;diagnostic.textContent='Mapa cargado · '+tileSuccess+' imágenes recibidas'}
  function loadingTimer(generation){
   if(loadTimeout)clearTimeout(loadTimeout);
   loadTimeout=setTimeout(()=>{
@@ -560,6 +563,8 @@ function createMapPicker(config){
  function refreshMap(seq){
   if(!map||panel.hidden||seq!==openVersion)return;
   map.invalidateSize({pan:false});
+  const rect=stage.getBoundingClientRect();
+  if(rect.width<10||rect.height<10){loading('El contenedor no tiene espacio','Dimensiones: '+Math.round(rect.width)+' × '+Math.round(rect.height)+' px',null)}
   if(point)map.panTo([point.lat,point.lon],{animate:false});
  }
  function startTiles(L,provider){
