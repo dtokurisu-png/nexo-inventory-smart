@@ -476,7 +476,7 @@ return Object.freeze({distanceMeters,validZone,emptySession,observe})
    Leaflet 1.9.4 + standard OSM tiles. Map data loads ONLY on explicit user action.
    Photon public demo reverse geocoding only on explicit GPS/Identify click.
    Public demonstration server is limited/no SLA; contract a provider for scale. No history of GPS movements is stored here. */
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.NexoWorkTimeMap=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
+(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.NexoWorkTimeMap=api;})(typeof globalThis!=='undefined'?globalThis:this,function(root){
 'use strict';
 const JS='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
 const CSS='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';
