@@ -480,6 +480,8 @@ return Object.freeze({distanceMeters,validZone,emptySession,observe})
 'use strict';
 const JS='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
 const CSS='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';
+const JS_BACKUP='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+const CSS_BACKUP='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const JS_HASH='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
 const CSS_HASH='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
 let libraryPromise=null;
@@ -502,7 +504,13 @@ function loadLeaflet(doc,container){
   libraryPromise=new Promise((resolve,reject)=>{
    const s=doc.createElement('script');s.src=JS;s.crossOrigin='anonymous';s.integrity=JS_HASH;s.async=true;
    s.onload=()=>root.L?resolve(root.L):reject(Error('Leaflet no está disponible'));
-   s.onerror=()=>reject(Error('No se pudo cargar el mapa desde la red. Podés guardar la zona con las coordenadas manuales.'));
+   s.onerror=()=>{
+    // Some embedded browsers block jsDelivr; retry the same pinned release on another CDN.
+    const backup=doc.createElement('script');backup.src=JS_BACKUP;backup.crossOrigin='anonymous';backup.integrity=JS_HASH;backup.async=true;
+    backup.onload=()=>root.L?resolve(root.L):reject(Error('No se pudo iniciar Leaflet.'));
+    backup.onerror=()=>reject(Error('No se pudo descargar el visor de mapas. Revisá la conexión e intentá otra vez.'));
+    doc.head.append(backup)
+   };
    doc.head.append(s)
   }).catch(e=>{libraryPromise=null;throw e})
  }
@@ -514,15 +522,40 @@ function installStyles(doc,rootNode){
  if(host.querySelector('link[data-nexo-leaflet]'))return;
  const link=doc.createElement('link');link.rel='stylesheet';link.href=CSS;link.crossOrigin='anonymous';
  link.integrity=CSS_HASH;link.setAttribute('data-nexo-leaflet','');
+ link.onerror=()=>{if(host.querySelector('link[data-nexo-leaflet-backup]'))return;const backup=doc.createElement('link');backup.rel='stylesheet';backup.href=CSS_BACKUP;backup.crossOrigin='anonymous';backup.integrity=CSS_HASH;backup.setAttribute('data-nexo-leaflet-backup','');host.append(backup)};
  host.append(link)
 }
 function createMapPicker(config){
  const doc=config.document||document,rootNode=config.root||doc,byId=id=>rootNode.getElementById(id);
  const panel=byId('geo-map-backdrop'),stage=byId('geo-map-stage');
  if(!panel||!stage)throw Error('Contenedor del mapa no encontrado');
- let map=null,marker=null,circle=null,point=null,radius=805,requestId=0,lastQuery=0,lookupCache=new Map(),openVersion=0;
+ let map=null,marker=null,circle=null,point=null,radius=805,requestId=0,lastQuery=0,lookupCache=new Map(),openVersion=0,tileProvider='osm',tileFailures=0,tileSuccess=0,tiles=null;
  const title=byId('geo-map-place'),address=byId('geo-map-address'),save=byId('geo-map-save');
  const setInfo=(heading,detail)=>{title.textContent=heading;address.textContent=detail};
+ function refreshMap(seq){
+  if(!map||panel.hidden||seq!==openVersion)return;
+  map.invalidateSize({pan:false});
+  if(point)map.panTo([point.lat,point.lon],{animate:false});
+ }
+ function startTiles(L,provider){
+  if(tiles)map.removeLayer(tiles);
+  tileProvider=provider;tileFailures=0;tileSuccess=0;
+  const osm=provider==='osm';
+  tiles=L.tileLayer(osm?'https://tile.openstreetmap.org/{z}/{x}/{y}.png':'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+   minZoom:2,maxZoom:19,maxNativeZoom:19,attribution:osm?'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>':'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> · © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>'
+  });
+  tiles.on('tileload',()=>{tileSuccess++});
+  tiles.on('tileerror',()=>{
+   tileFailures++;
+   if(tileFailures>=3&&tileSuccess===0){
+    if(tileProvider==='osm'){
+     setInfo(point?'Punto seleccionado':'Cargando calles…','El servidor principal no respondió; probando otro mapa.');
+     startTiles(L,'carto')
+    }else setInfo(point?'Punto seleccionado, sin calles':'No se pudieron cargar las calles','Comprobá la conexión. Podés guardar la ubicación por coordenadas o reabrir el mapa para reintentar.')
+   }
+  });
+  tiles.addTo(map)
+ }
  function setPoint(lat,lon,center=true){
   lat=Number(lat);lon=Number(lon);
   if(!coordsValid(lat,lon))return false;
@@ -580,9 +613,7 @@ function createMapPicker(config){
    const L=await loadLeaflet(doc,rootNode);if(seq!==openVersion||panel.hidden)return;
    if(!map){
     map=L.map(stage,{zoomControl:true,scrollWheelZoom:false,preferCanvas:true});
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-     minZoom:2,maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
-    }).addTo(map);
+    startTiles(L,'osm');
     map.on('click',e=>{setPoint(e.latlng.lat,e.latlng.lng,false)});
    }
    if(coordsValid(options.lat,options.lon))setPoint(options.lat,options.lon,true);
@@ -591,7 +622,12 @@ function createMapPicker(config){
     if(circle){map.removeLayer(circle);circle=null}
     map.setView([20,0],2);setInfo('Tocá el mapa o pulsá «Mi ubicación»','Todavía no hay un punto seleccionado.')
    }
-   setTimeout(()=>{if(!panel.hidden&&seq===openVersion)map.invalidateSize()},80)
+   // Embedded mobile views often animate the dialog and report a stale map size initially.
+   requestAnimationFrame(()=>refreshMap(seq));
+   setTimeout(()=>refreshMap(seq),120);
+   setTimeout(()=>refreshMap(seq),450);
+   setTimeout(()=>refreshMap(seq),1000);
+   if(tiles&&tileProvider!=='osm')startTiles(L,'osm')
   }catch(e){if(seq!==openVersion)return;setInfo('Mapa no disponible',e.message+' Podés cerrar y usar las coordenadas.')}
  }
  function close(){
