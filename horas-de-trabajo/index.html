@@ -349,7 +349,7 @@ footer{font-size:11px;text-align:center;color:#969da8;line-height:1.6;padding-to
 <div class="geo-map-backdrop" id="geo-map-backdrop" hidden>
  <section class="geo-map-dialog" role="dialog" aria-modal="true" aria-labelledby="geo-map-title" aria-describedby="geo-map-description">
   <div class="geo-map-heading"><h2 id="geo-map-title">Elegir ubicación de trabajo</h2><button id="geo-map-close" type="button" aria-label="Cerrar mapa">×</button></div>
-  <p class="geo-map-info" id="geo-map-description">Tocá el mapa para mover el punto. El círculo muestra el radio. Al identificar un lugar, sus coordenadas se consultan una sola vez mediante OpenStreetMap/Nominatim, un servicio externo. Confirmá antes de guardar.</p>
+  <p class="geo-map-info" id="geo-map-description">Tocá el mapa para mover el punto. El círculo muestra el radio. Al identificar un lugar, sus coordenadas se consultan una sola vez mediante Photon/komoot y OpenStreetMap, servicios externos. Confirmá antes de guardar.</p>
   <div id="geo-map-stage" class="geo-map-stage" aria-label="Mapa para escoger el lugar de trabajo"></div>
   <div class="geo-map-result" aria-live="polite"><strong id="geo-map-place">Punto por seleccionar</strong><span id="geo-map-address">Detectá tu posición o tocá el mapa para elegir.</span></div>
   <div class="geo-map-actions">
@@ -474,9 +474,8 @@ return Object.freeze({distanceMeters,validZone,emptySession,observe})
 </script><script>
 /* Nexo Hours: on-demand interactive map and one-shot reverse lookup.
    Leaflet 1.9.4 + standard OSM tiles. Map data loads ONLY on explicit user action.
-   Nominatim is used only on an explicit GPS/Identify click, never per pan/drag.
-   Its public API is suitable for low-volume tests only; use an approved geocoder
-   for production-scale traffic. No history of GPS movements is stored here. */
+   Photon public demo reverse geocoding only on explicit GPS/Identify click.
+   Public demonstration server is limited/no SLA; contract a provider for scale. No history of GPS movements is stored here. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.NexoWorkTimeMap=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const JS='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
@@ -488,10 +487,10 @@ function coordsValid(lat,lon){return Number.isFinite(lat)&&Math.abs(lat)<=90&&Nu
 function coordinateLabel(lat,lon){return lat.toFixed(5)+', '+lon.toFixed(5)}
 function safeString(v){return String(v||'').trim().slice(0,160)}
 function nameFromReverse(v){
- const a=v?.address||{},full=safeString(v?.display_name);
- const named=safeString(v?.name||a.hotel||a.tourism||a.amenity||a.shop||a.building);
- const local=safeString([a.house_number,a.road||a.pedestrian,a.city||a.town||a.village||a.suburb].filter(Boolean).join(' '));
- return {name:named||local||'Ubicación aproximada',address:full||local||''}
+ const a=v?.features?.[0]?.properties||{},hasData=Object.keys(a).length>0;
+ const main=safeString(a.name||a.street||a.locality||a.city||a.district);
+ const address=safeString([a.housenumber,a.street,a.city||a.locality||a.district,a.state,a.country].filter(Boolean).join(', '));
+ return {name:hasData?(main||'Lugar cercano'):'Ubicación aproximada',address}
 }
 function loadLeaflet(doc,container){
  if(root.L){
@@ -552,10 +551,9 @@ function createMapPicker(config){
   try{
    let found=lookupCache.get(key);
    if(!found){
-    const u=new URL('https://nominatim.openstreetmap.org/reverse');
-    u.searchParams.set('format','jsonv2');u.searchParams.set('lat',String(current.lat));
-    u.searchParams.set('lon',String(current.lon));u.searchParams.set('zoom','18');u.searchParams.set('addressdetails','1');
-    u.searchParams.set('accept-language','es');
+    const u=new URL('https://photon.komoot.io/reverse');
+    u.searchParams.set('lat',String(current.lat));u.searchParams.set('lon',String(current.lon));
+    u.searchParams.set('limit','1');u.searchParams.set('lang','es');
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),9000);
     let response;
