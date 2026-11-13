@@ -616,7 +616,8 @@ function createMapPicker(config){
     startTiles(L,'osm');
     map.on('click',e=>{setPoint(e.latlng.lat,e.latlng.lng,false)});
    }
-   if(coordsValid(options.lat,options.lon))setPoint(options.lat,options.lon,true);
+   if(point&&coordsValid(point.lat,point.lon))setPoint(point.lat,point.lon,true);
+   else if(coordsValid(options.lat,options.lon))setPoint(options.lat,options.lon,true);
    else{
     if(marker){map.removeLayer(marker);marker=null}
     if(circle){map.removeLayer(circle);circle=null}
@@ -636,13 +637,22 @@ function createMapPicker(config){
  }
  function detect(){
   if(!navigator.geolocation){setInfo('GPS no disponible','Este navegador no admite ubicación. Elegí un punto en el mapa.');return}
-  setInfo('Detectando tu posición…','El navegador solicitará permiso. No se guarda el punto hasta que confirmés.');
+  if(!window.isSecureContext){setInfo('Ubicación bloqueada','El navegador exige HTTPS para pedir permiso de ubicación. Abrí la versión segura de la aplicación.');return}
+  if(doc.permissionsPolicy?.allowsFeature&&!doc.permissionsPolicy.allowsFeature('geolocation')){
+   setInfo('Permiso bloqueado por el sitio','El contenedor que muestra la aplicación no permite solicitar ubicación. Abrí la aplicación en una pestaña independiente.');return
+  }
+  setInfo('Solicitando permiso de ubicación…','Si es la primera vez, aceptá la solicitud del navegador. No se guardará el punto sin tu confirmación.');
   navigator.geolocation.getCurrentPosition(pos=>{
    const c=pos.coords;
    if(!setPoint(c.latitude,c.longitude,true))return;
    setInfo('Punto detectado · precisión ±'+Math.round(c.accuracy)+' m','Consultando un nombre cercano (puede no coincidir con el comercio)…');
    lookupPoint()
-  },e=>setInfo('Ubicación no disponible',e.message||'Revisá los permisos GPS o seleccioná en el mapa.'),
+  },e=>{
+   if(e.code===1){
+    const blocked=doc.permissionsPolicy?.allowsFeature&&!doc.permissionsPolicy.allowsFeature('geolocation');
+    setInfo('No se concedió acceso a la ubicación',blocked?'El sitio que contiene la aplicación bloqueó el GPS. Abrí la aplicación directamente en el navegador.':'Si rechazaste el permiso, pulsá «Mi ubicación» para intentarlo otra vez. Si el navegador lo bloqueó de forma permanente, solo sus ajustes pueden volver a habilitarlo.');
+   }else setInfo('No se pudo obtener tu ubicación',e.code===2?'No hay señal de ubicación disponible. Podés escoger el punto manualmente.':'La solicitud tardó demasiado. Intentá de nuevo o seleccioná el punto manualmente.');
+  },
   {enableHighAccuracy:true,maximumAge:0,timeout:20000})
  }
  function confirm(){
@@ -960,8 +970,11 @@ async function openGeoMap(detect=false){
  }
  const hasLat=$('geo-lat').value.trim()!=='',hasLon=$('geo-lon').value.trim()!=='';
  const lat=hasLat?Number($('geo-lat').value):null,lon=hasLon?Number($('geo-lon').value):null;
- await workplaceMap.open({lat,lon,radiusMeters:Number($('geo-radius').value)||805});
- if(detect)workplaceMap.detect()
+ const opening=workplaceMap.open({lat,lon,radiusMeters:Number($('geo-radius').value)||805});
+ // Request GPS directly in the button gesture: awaiting a remote map library first
+ // can lose transient user activation and prevent the browser permission prompt.
+ if(detect)workplaceMap.detect();
+ await opening
 }
 function resumeGeoMonitor(){
  const m=geoMonitor;if(!m||m.paused===false)return;
