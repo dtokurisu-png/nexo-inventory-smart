@@ -648,7 +648,7 @@ function paletteFill(id,selected,onChoice){
  el.replaceChildren();
  for(const color of WORK_TAG_COLORS){
   const btn=document.createElement('button');
-  btn.type='button';btn.style.background=color.rgb.map(x=>x).length?'rgb('+color.rgb.join(',')+')':'#fff';
+  btn.type='button';btn.style.background='rgb('+color.rgb.join(',')+')';
   btn.setAttribute('aria-label',color.name);
   btn.title=color.name;btn.setAttribute('aria-pressed',selected===color.id?'true':'false');
   btn.onclick=()=>onChoice(color.id);
@@ -661,7 +661,7 @@ function renderTagSettings(){
   const current=profile();if(!current)return;
   workTags={...workTags,[current.id]:id};
   try{localStorage.setItem(WORK_TAG_KEY,JSON.stringify(workTags))}catch(_){message('No se pudo guardar el color.',true);return}
-  renderTagSettings();
+  renderTagSettings();renderCalendar();
   message('Color de '+current.place+' guardado.')
  });
  paletteFill('new-profile-tag-palette',pendingNewTagColor,id=>{
