@@ -921,7 +921,8 @@ function restoreGeoMonitor(){
  // An open shift for another workplace should not be monitored silently.
  if(active&&active.profileId!==stored.profileId)return false;
  selectedProfile=stored.profileId;
- const session=stored.session&&typeof stored.session==='object'?{
+ const sameShift=!active||!stored.shiftId||stored.shiftId===active.id;
+ const session=sameShift&&stored.session&&typeof stored.session==='object'?{
   ...G.emptySession(),
   ...stored.session,
   mode:stored.session.mode==='inside'||stored.session.mode==='outside'?stored.session.mode:'unknown'
@@ -929,8 +930,8 @@ function restoreGeoMonitor(){
  geoMonitor={
   profileId:stored.profileId,session,
   paused:true,watchId:null,pollId:null,
-  lastInsideAt:Number.isFinite(stored.lastInsideAt)?stored.lastInsideAt:null,
-  lastSampleAt:Number.isFinite(stored.lastSampleAt)?stored.lastSampleAt:null,
+  lastInsideAt:sameShift&&Number.isFinite(stored.lastInsideAt)?stored.lastInsideAt:null,
+  lastSampleAt:sameShift&&Number.isFinite(stored.lastSampleAt)?stored.lastSampleAt:null,
   restored:true
  };
  scheduleGenericFallback();
@@ -1043,6 +1044,8 @@ function saveGeoFromForm(){
  geoSettings={...geoSettings,[p.id]:zone};
  localStorage.setItem(GEO_SETTINGS_KEY,JSON.stringify(geoSettings));
  geoFormProfile=null;renderGeo();
+ // Applies equally when saved via the form and via the map picker.
+ if(zone.enabled)startGeoMonitor();
  return p
 }
 async function openGeoMap(detect=false){
@@ -1386,8 +1389,7 @@ $('geo-form').onsubmit=event=>{
  event.preventDefault();
  try{
   const p=saveGeoFromForm();
-  if(geoFor(p.id)?.enabled)startGeoMonitor();
-  else geoFeedback('Zona guardada para '+p.name+'. GPS desactivado.')
+  geoFeedback(geoFor(p.id)?.enabled?'Zona guardada. GPS activado mientras esta página esté visible.':'Zona guardada para '+p.name+'. GPS desactivado.')
  }catch(e){geoFeedback(e.message||'No se pudo guardar la zona')}
 };
 $('geo-start').onclick=startGeoMonitor;
