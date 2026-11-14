@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase6-charts-3";
+const APP_VERSION="20261114-phase6-oil-1";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -47,7 +47,9 @@ function startOilScene(rootNode,hostNode){
   maskGradient.setAttribute('y1','0%');
   maskGradient.setAttribute('x2','0%');
   maskGradient.setAttribute('y2','100%');
-  const maskStops=[0,.3,.68,1].map(position=>{
+  // Keep the top third solid while the lower two thirds melt into the neck.
+  // The same SVG mask covers the ellipse's fill AND its stroke outline.
+  const maskStops=[0,.18,.34,.56,.79,1].map(position=>{
    const stop=create('stop','',maskGradient);
    stop.setAttribute('offset',String(position*100)+'%');
    stop.setAttribute('stop-color','#fff');
@@ -57,6 +59,7 @@ function startOilScene(rootNode,hostNode){
   mask.setAttribute('id',maskId);
   mask.setAttribute('maskUnits','userSpaceOnUse');
   mask.setAttribute('maskContentUnits','userSpaceOnUse');
+  mask.setAttribute('mask-type','alpha');
   const maskRect=create('rect','',mask);
   maskRect.setAttribute('fill','url(#'+alphaId+')');
   const neckGradient=create('linearGradient','',defs);
@@ -64,11 +67,11 @@ function startOilScene(rootNode,hostNode){
   neckGradient.setAttribute('id',neckGradientId);
   neckGradient.setAttribute('x1','0%');neckGradient.setAttribute('y1','0%');
   neckGradient.setAttribute('x2','0%');neckGradient.setAttribute('y2','100%');
-  const neckStops=[0,.23,.64,1].map((position,j)=>{
+  const neckStops=[0,.17,.42,.70,.88,1].map((position,j)=>{
    const stop=create('stop','',neckGradient);
    stop.setAttribute('offset',String(position*100)+'%');
    stop.setAttribute('style','stop-color:rgb(var(--nx-fluid-rgb))');
-   stop.setAttribute('stop-opacity',j===0?'0':j===3?'.22':'.29');
+   stop.setAttribute('stop-opacity',String([.025,.13,.30,.31,.15,0][j]));
    return stop
   });
   const bridge=create('path','oil-bridge',bridges);
@@ -139,11 +142,20 @@ function startOilScene(rootNode,hostNode){
    const surfaceY=wave(cx,t);
    const filmY=height*.07+3*Math.sin(cx/Math.max(width,1)*Math.PI*2.5-t*.38);
    const travel=smooth((phase-.185)/.715);
-   const distortion=phase<.18?1.26-.26*born:1+Math.sin(t*3+b.x*20)*.045;
-   // The sphere rises unchanged until it reaches the upper film at ~90%.
-   // Only after contact does it flatten and continue entering that film.
+   // The bead stretches and rolls slightly after its two liquid contact
+   // points finish converging. By mid-flight it becomes round again.
+   const release=smooth((phase-.145)/.175);
+   const afterRelease=smooth((phase-.315)/.16);
+   const wobble=smooth((phase-.315)/.042)*
+    (1-smooth((phase-.56)/.14));
+   const oval=Math.sin((phase-.315)*48+b.x*19)*wobble;
+   const angle=12*Math.sin((phase-.315)*38+b.x*13)*wobble;
+   const distortion=phase<.18?1.26-.26*born:1+Math.sin(t*3+b.x*20)*.032;
+   // Collision happens at ~90%: then, and only then, the upper edge
+   // begins entering the liquid film and fading INCLUDING its outline.
    const fusion=smooth((phase-.90)/.10);
-   const rx=radius*(1+.55*fusion),ry=radius*distortion*(1-.79*fusion);
+   const rx=radius*(1+.13*oval+.55*fusion);
+   const ry=radius*distortion*(1-.12*oval)*(1-.79*fusion);
    const startCY=surfaceY-radius*.5-initialRadius*2.2*born;
    const cy=startCY+(filmY+radius-startCY)*travel-initialRadius*1.31*fusion;
    const opacity=smooth(phase/.045)*(1-smooth((phase-.985)/.015));
@@ -151,61 +163,91 @@ function startOilScene(rootNode,hostNode){
    b.bubble.setAttribute('cy',cy.toFixed(1));
    b.bubble.setAttribute('rx',rx.toFixed(1));
    b.bubble.setAttribute('ry',Math.max(1,ry).toFixed(1));
+   b.bubble.setAttribute('transform','rotate('+angle.toFixed(2)+' '+cx.toFixed(1)+' '+cy.toFixed(1)+')');
    b.bubble.setAttribute('opacity',(opacity*.68).toFixed(3));
-   // SVG alpha mask creates a real zero-opacity seam, while preserving
-   // the original radial fill and soft spherical highlight.
-   const joined=1-smooth((phase-.165)/.075);
-   const topMelt=smooth((phase-.90)/.10);
-   const alpha=[1-topMelt,1-topMelt*.82,1,1-joined];
+   // During attachment, only the upper third stays essentially opaque.
+   // The entire lower outline is masked along with the sphere's fill.
+   // The lower edge regains solidity only as the neck finishes pinching.
+   const joined=1-smooth((phase-.286)/.067);
+   const topMelt=clamp((phase-.900)/.085);
+   const alpha=[
+    1-topMelt,
+    1-topMelt*.96,
+    1-topMelt*.62-joined*.02,
+    1-topMelt*.15-joined*.43,
+    1-joined*.90,
+    1-joined
+   ];
    for(let i=0;i<b.maskStops.length;i++)
-    b.maskStops[i].setAttribute('stop-opacity',alpha[i].toFixed(3));
-   b.maskRect.setAttribute('x',(cx-rx-2).toFixed(2));
-   b.maskRect.setAttribute('y',(cy-ry-2).toFixed(2));
-   b.maskRect.setAttribute('width',(rx*2+4).toFixed(2));
-   b.maskRect.setAttribute('height',(ry*2+4).toFixed(2));
-   // At birth the connector has TWO broad ends and a 10% waist.
-   // Base diameter is 120% of the sphere's diameter. The bubble side
-   // has the sphere's full diameter, unlike the former pointed cone.
-   // After separation the connector retracts into the undulating surface.
-   const retract=smooth((phase-.18)/.16);
-   const neckVisibility=smooth((phase-.012)/.06)*
-    (1-smooth((phase-.29)/.065));
-   const baseY=surfaceY+4;
-   const tip=phase<=.18?cy+ry*.78:
-    surfaceY-initialRadius*1.94*(1-retract);
+    b.maskStops[i].setAttribute('stop-opacity',Math.max(0,alpha[i]).toFixed(3));
+   b.maskRect.setAttribute('x',(cx-rx-4).toFixed(2));
+   b.maskRect.setAttribute('y',(cy-ry-4).toFixed(2));
+   b.maskRect.setAttribute('width',(rx*2+8).toFixed(2));
+   b.maskRect.setAttribute('height',(ry*2+8).toFixed(2));
+
+   // The liquid neck is a connected hourglass, NOT a short cone.
+   // At birth its waist is 110% of the bubble's width, but below
+   // a still-broader base. Stretching progressively thins that waist.
+   // The two upper tips track x = +/- rx*sin(theta) on the bubble's
+   // actual ellipse, from its mid-lower sides down to the bottom pole.
+   const theta=1.15*(1-release);
+   const bottomHalf=Math.max(initialRadius*.55,rx*1.52);
+   const taper=smooth((phase-.07)/.255);
+   const waistHalf=Math.max(.48,radius*(1.10-1.07*taper));
+   const topHalf=Math.max(.60,rx*Math.sin(theta));
+   const attachedTipY=cy+ry*Math.cos(theta);
+   // Recess the base into the liquid deeply enough that no edge or
+   // polygon tip can emerge during the largest surface undulation.
+   const submergedSurface=Math.max(
+    wave(cx-bottomHalf,t),surfaceY,wave(cx+bottomHalf,t));
+   const baseY=submergedSurface+Math.max(36,initialRadius*2.35);
+   // Once the two tips meet, the rounded remnant retracts INTO the wave
+   // while the detached bead rises independently.
+   const tip=attachedTipY+
+    (surfaceY+initialRadius*.25-attachedTipY)*afterRelease;
+   const upperHalf=phase<=.315?topHalf:
+    .60+initialRadius*.055*afterRelease;
    const gap=baseY-tip;
-   const upperHalf=phase<=.18?rx:
-    initialRadius*(1-retract*.94);
-   const bottomHalf=initialRadius*1.20*(.78+.22*born);
-   const waistHalf=Math.max(.8,Math.min(upperHalf,bottomHalf)*(.10+.24*retract));
-   if(neckVisibility>.005&&gap>1){
-    const midY=tip+gap*.53;
+   const neckVisibility=smooth((phase-.008)/.046)*
+    (1-smooth((phase-.388)/.088));
+   if(neckVisibility>.004&&gap>2){
+    const midY=tip+gap*.50;
     const leftBase=cx-bottomHalf,rightBase=cx+bottomHalf;
     const leftTop=cx-upperHalf,rightTop=cx+upperHalf;
     const leftWaist=cx-waistHalf,rightWaist=cx+waistHalf;
-    const path='M '+leftBase.toFixed(2)+' '+baseY.toFixed(2)+
-     ' C '+(cx-bottomHalf*.97).toFixed(2)+' '+(baseY-gap*.23).toFixed(2)+
-     ' '+(cx-waistHalf*1.2).toFixed(2)+' '+(midY+gap*.11).toFixed(2)+
-     ' '+leftWaist.toFixed(2)+' '+midY.toFixed(2)+
-     ' C '+(cx-waistHalf*.8).toFixed(2)+' '+(midY-gap*.12).toFixed(2)+
-     ' '+(cx-upperHalf*.87).toFixed(2)+' '+(tip+gap*.08).toFixed(2)+
-     ' '+leftTop.toFixed(2)+' '+tip.toFixed(2)+
-     ' Q '+cx.toFixed(2)+' '+(tip-gap*.035).toFixed(2)+
-     ' '+rightTop.toFixed(2)+' '+tip.toFixed(2)+
-     ' C '+(cx+upperHalf*.87).toFixed(2)+' '+(tip+gap*.08).toFixed(2)+
-     ' '+(cx+waistHalf*.8).toFixed(2)+' '+(midY-gap*.12).toFixed(2)+
-     ' '+rightWaist.toFixed(2)+' '+midY.toFixed(2)+
-     ' C '+(cx+waistHalf*1.2).toFixed(2)+' '+(midY+gap*.11).toFixed(2)+
-     ' '+(cx+bottomHalf*.97).toFixed(2)+' '+(baseY-gap*.23).toFixed(2)+
-     ' '+rightBase.toFixed(2)+' '+baseY.toFixed(2)+' Z';
+    const fmt=n=>n.toFixed(2);
+    // Outward-bulging lower Béziers blend below the surface;
+    // a convex upper cap closes as the two contact points meet.
+    const path='M '+fmt(leftBase)+' '+fmt(baseY)+
+     ' C '+fmt(cx-bottomHalf*1.24)+' '+fmt(baseY-gap*.14)+
+     ' '+fmt(cx-waistHalf*1.15)+' '+fmt(midY+gap*.14)+
+     ' '+fmt(leftWaist)+' '+fmt(midY)+
+     ' C '+fmt(cx-waistHalf*.96)+' '+fmt(midY-gap*.17)+
+     ' '+fmt(cx-upperHalf*.78)+' '+fmt(tip+gap*.11)+
+     ' '+fmt(leftTop)+' '+fmt(tip)+
+     ' Q '+fmt(cx)+' '+fmt(tip-Math.min(upperHalf*.73,initialRadius*.22))+
+     ' '+fmt(rightTop)+' '+fmt(tip)+
+     ' C '+fmt(cx+upperHalf*.78)+' '+fmt(tip+gap*.11)+
+     ' '+fmt(cx+waistHalf*.96)+' '+fmt(midY-gap*.17)+
+     ' '+fmt(rightWaist)+' '+fmt(midY)+
+     ' C '+fmt(cx+waistHalf*1.15)+' '+fmt(midY+gap*.14)+
+     ' '+fmt(cx+bottomHalf*1.24)+' '+fmt(baseY-gap*.14)+
+     ' '+fmt(rightBase)+' '+fmt(baseY)+' Z';
     b.bridge.setAttribute('d',path);
-    b.bridge.setAttribute('opacity',(neckVisibility*.82).toFixed(3));
+    b.bridge.setAttribute('opacity',(neckVisibility*.90*(1-.3*afterRelease)).toFixed(3));
    }else b.bridge.setAttribute('opacity','0');
-   // While joined, the connector itself is completely transparent
-   // at its top end. Immediately after detachment that end gains the
-   // same translucent material as the wave while contracting downward.
-   b.neckStops[0].setAttribute('stop-opacity',
-    (.26*smooth((phase-.18)/.075)).toFixed(3));
+   // Fade BOTH ends of the connector: into the bulb above and into the
+   // liquid sheet below, with a soft, luminous core between them.
+   const neckAlpha=[
+    .025+.22*afterRelease,
+    .13+.08*afterRelease,
+    .30,
+    .31,
+    .15,
+    0
+   ];
+   for(let i=0;i<b.neckStops.length;i++)
+    b.neckStops[i].setAttribute('stop-opacity',neckAlpha[i].toFixed(3));
   }
   for(const d of down){
    const phase=((t+d.offset)%d.period)/d.period;
