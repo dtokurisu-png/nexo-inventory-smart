@@ -1008,10 +1008,13 @@ function buildWeekReport(snapshot,profileId='all',offset=0,now=Date.now()){
 // The visualization reads the existing payroll projection; it never writes
 // time entries, tax data, or rates. Each workplace keeps its own payroll week.
 const CHART_MONTHS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-function chartEmpty(){return {hours:0,gross:0,tax:0,extra:0}}
+function chartEmpty(){
+ return {hours:0,regularHours:0,extra:0,gross:0,regularGross:0,overtimeGross:0,
+  tax:0,regularTax:0,overtimeTax:0}
+}
 function chartAggregate(rows){
  const value=chartEmpty();
- for(const r of rows){value.hours+=r.hours;value.gross+=r.gross;value.tax+=r.tax;value.extra+=r.extra}
+ for(const r of rows)for(const key of Object.keys(value))value[key]+=r[key]||0;
  return value
 }
 function chartDateAt(year,month,day){return new Date(year,month,day,12,0,0,0)}
@@ -1022,11 +1025,9 @@ function chartWeekBegin(d,firstDay=1){
  return start
 }
 function chartWeeklyProjection(snapshot,now=Date.now()){
- const projected=P.project(snapshot,now);
- const byDay=new Map();
- const byPayrollWeek=new Map();
- // Reconcile every shift with the payroll engine's final rounded cents,
- // while distributing its earnings proportionally across days and weeks.
+ const projected=P.project(snapshot,now),byDay=new Map(),byPayrollWeek=new Map();
+ // Normalize fractions of a shift to its payroll-engine rounded cents.
+ // The normal and overtime components still sum to the exact paid total.
  const rawByShift=new Map();
  for(const seg of projected.segments){
   const row=rawByShift.get(seg.shiftId)||{gross:0,tax:0};
@@ -1040,35 +1041,39 @@ function chartWeeklyProjection(snapshot,now=Date.now()){
   return [id,{gross:raw.gross>0?(paid?.grossCents??0)/raw.gross:1,
    tax:raw.tax>0?(paid?.taxCents??0)/raw.tax:1}]
  }));
- function add(map,key,hours,gross,tax,extra){
-  let row=map.get(key);
-  if(!row){row=chartEmpty();map.set(key,row)}
-  row.hours+=hours;row.gross+=gross;row.tax+=tax;row.extra+=extra
+ function add(map,key,kind,milliseconds,rawGross,seg,coef){
+  let row=map.get(key);if(!row){row=chartEmpty();map.set(key,row)}
+  const h=milliseconds/3600000,gross=rawGross*coef.gross;
+  const tax=rawGross*(seg.taxBasisPoints||0)/10000*coef.tax;
+  row.hours+=h;row.gross+=gross;row.tax+=tax;
+  if(kind==='extra'){
+   row.extra+=h;row.overtimeGross+=gross;row.overtimeTax+=tax
+  }else{
+   row.regularHours+=h;row.regularGross+=gross;row.regularTax+=tax
+  }
  }
- // Projected segments are already split at every workplace-specific
- // overtime boundary and use the rate saved in the original shift.
+ // Payroll segments already honor the original workplace's overtime
+ // threshold, week start, wage and withholding saved with each shift.
  for(const seg of projected.segments){
-  const normal=seg.regularMilliseconds,extra=seg.overtimeMilliseconds;
-  const multiplier=factors.get(seg.shiftId)||{gross:1,tax:1};
-  const gross=(seg.regularPayCentsUnrounded+seg.overtimePayCentsUnrounded)*multiplier.gross;
-  const tax=(seg.regularPayCentsUnrounded+seg.overtimePayCentsUnrounded)*
-   (seg.taxBasisPoints||0)/10000*multiplier.tax;
-  add(byPayrollWeek,seg.profileId+'|'+seg.weekStart,(normal+extra)/3600000,gross,tax,extra/3600000);
-  function allocate(from,to,rate,extraTime){
+  const coef=factors.get(seg.shiftId)||{gross:1,tax:1};
+  for(const [kind,from,to,raw] of [
+   ['regular',seg.startAt,seg.startAt+seg.regularMilliseconds,seg.regularPayCentsUnrounded],
+   ['extra',seg.startAt+seg.regularMilliseconds,seg.endAt,seg.overtimePayCentsUnrounded]
+  ]){
+   if(to<=from)continue;
+   const ms=to-from,rate=raw/ms;
+   add(byPayrollWeek,seg.profileId+'|'+seg.weekStart,kind,ms,raw,seg,coef);
    let cursor=from;
    while(cursor<to){
     const d=new Date(cursor);
     const midnight=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1).getTime();
     const until=Math.min(to,midnight);
     if(until<=cursor)break;
-    const ms=until-cursor,money=ms*rate*multiplier.gross,
-     partTax=ms*rate*(seg.taxBasisPoints||0)/10000*multiplier.tax;
-    add(byDay,seg.profileId+'|'+localDate(cursor),ms/3600000,money,partTax,extraTime?ms/3600000:0);
+    const part=until-cursor;
+    add(byDay,seg.profileId+'|'+localDate(cursor),kind,part,rate*part,seg,coef);
     cursor=until
    }
   }
-  if(normal>0)allocate(seg.startAt,seg.startAt+normal,seg.regularPayCentsUnrounded/normal,false);
-  if(extra>0)allocate(seg.startAt+normal,seg.endAt,seg.overtimePayCentsUnrounded/extra,true)
  }
  return {byDay,byPayrollWeek}
 }
