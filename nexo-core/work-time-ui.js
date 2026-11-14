@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2";
+const APP_VERSION="20261114-phase7-oil-curve-1";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -233,29 +233,24 @@ function startOilScene(rootNode,hostNode){
    const neckVisibility=smooth((phase-.008)/.055)*
     (1-smooth((phase-.392)/.084));
    if(neckVisibility>.004&&gap>.7){
-    // Each lower tip is attached to the sampled visible wave, even as the
-    // latter oscillates and bends. The flare's Bézier controls extend
-    // OUTSIDE the roots instead of curving in beneath the water.
-    const midY=tip+gap*.48;
+    // Preserve the two wave-anchored roots and the elliptical tips.
+    // Use ONE cubic per wall: the former pair introduced a visible
+    // shoulder/belly where two independently curved segments met.
+    // Its first handle flares slightly OUT from the surface, then the
+    // same uninterrupted contour eases inward toward the bubble.
     const leftTop=cx-upperHalf,rightTop=cx+upperHalf;
-    const leftWaist=cx-waistHalf,rightWaist=cx+waistHalf;
-    const leftFlareY=leftY-Math.min(12,gap*.24);
-    const rightFlareY=rightY-Math.min(12,gap*.24);
+    const flare=Math.min(bottomHalf*.18,Math.max(.75,gap*.10));
+    const lowerLift=Math.min(gap*.19,initialRadius*.36);
+    const upperGuide=Math.max(upperHalf,waistHalf*.86);
     const fmt=n=>n.toFixed(2);
     const path='M '+fmt(leftBase)+' '+fmt(leftY)+
-     ' C '+fmt(leftBase-bottomHalf*.24)+' '+fmt(leftFlareY)+
-     ' '+fmt(cx-waistHalf*1.24)+' '+fmt(midY+gap*.17)+
-     ' '+fmt(leftWaist)+' '+fmt(midY)+
-     ' C '+fmt(cx-waistHalf*.98)+' '+fmt(midY-gap*.18)+
-     ' '+fmt(cx-upperHalf*.80)+' '+fmt(tip+gap*.10)+
+     ' C '+fmt(leftBase-flare)+' '+fmt(leftY-lowerLift)+
+     ' '+fmt(cx-upperGuide)+' '+fmt(tip+gap*.40)+
      ' '+fmt(leftTop)+' '+fmt(tip)+
      ' Q '+fmt(cx)+' '+fmt(tip-Math.min(upperHalf*.73,initialRadius*.22))+
      ' '+fmt(rightTop)+' '+fmt(tip)+
-     ' C '+fmt(cx+upperHalf*.80)+' '+fmt(tip+gap*.10)+
-     ' '+fmt(cx+waistHalf*.98)+' '+fmt(midY-gap*.18)+
-     ' '+fmt(rightWaist)+' '+fmt(midY)+
-     ' C '+fmt(cx+waistHalf*1.24)+' '+fmt(midY+gap*.17)+
-     ' '+fmt(rightBase+bottomHalf*.24)+' '+fmt(rightFlareY)+
+     ' C '+fmt(cx+upperGuide)+' '+fmt(tip+gap*.40)+
+     ' '+fmt(rightBase+flare)+' '+fmt(rightY-lowerLift)+
      ' '+fmt(rightBase)+' '+fmt(rightY)+
      surfaceClosure(rightBase,leftBase,t)+
      ' L '+fmt(leftBase)+' '+fmt(leftY)+' Z';
