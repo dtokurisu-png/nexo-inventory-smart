@@ -1025,6 +1025,21 @@ function chartWeeklyProjection(snapshot,now=Date.now()){
  const projected=P.project(snapshot,now);
  const byDay=new Map();
  const byPayrollWeek=new Map();
+ // Reconcile every shift with the payroll engine's final rounded cents,
+ // while distributing its earnings proportionally across days and weeks.
+ const rawByShift=new Map();
+ for(const seg of projected.segments){
+  const row=rawByShift.get(seg.shiftId)||{gross:0,tax:0};
+  const gross=seg.regularPayCentsUnrounded+seg.overtimePayCentsUnrounded;
+  row.gross+=gross;row.tax+=gross*(seg.taxBasisPoints||0)/10000;
+  rawByShift.set(seg.shiftId,row)
+ }
+ const paidByShift=new Map(projected.shifts.map(v=>[v.shiftId,v]));
+ const factors=new Map([...rawByShift].map(([id,raw])=>{
+  const paid=paidByShift.get(id);
+  return [id,{gross:raw.gross>0?(paid?.grossCents??0)/raw.gross:1,
+   tax:raw.tax>0?(paid?.taxCents??0)/raw.tax:1}]
+ }));
  function add(map,key,hours,gross,tax,extra){
   let row=map.get(key);
   if(!row){row=chartEmpty();map.set(key,row)}
@@ -1034,8 +1049,10 @@ function chartWeeklyProjection(snapshot,now=Date.now()){
  // overtime boundary and use the rate saved in the original shift.
  for(const seg of projected.segments){
   const normal=seg.regularMilliseconds,extra=seg.overtimeMilliseconds;
-  const gross=seg.regularPayCentsUnrounded+seg.overtimePayCentsUnrounded;
-  const tax=gross*(seg.taxBasisPoints||0)/10000;
+  const multiplier=factors.get(seg.shiftId)||{gross:1,tax:1};
+  const gross=(seg.regularPayCentsUnrounded+seg.overtimePayCentsUnrounded)*multiplier.gross;
+  const tax=(seg.regularPayCentsUnrounded+seg.overtimePayCentsUnrounded)*
+   (seg.taxBasisPoints||0)/10000*multiplier.tax;
   add(byPayrollWeek,seg.profileId+'|'+seg.weekStart,(normal+extra)/3600000,gross,tax,extra/3600000);
   function allocate(from,to,rate,extraTime){
    let cursor=from;
@@ -1044,7 +1061,8 @@ function chartWeeklyProjection(snapshot,now=Date.now()){
     const midnight=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1).getTime();
     const until=Math.min(to,midnight);
     if(until<=cursor)break;
-    const ms=until-cursor,money=ms*rate,partTax=money*(seg.taxBasisPoints||0)/10000;
+    const ms=until-cursor,money=ms*rate*multiplier.gross,
+     partTax=ms*rate*(seg.taxBasisPoints||0)/10000*multiplier.tax;
     add(byDay,seg.profileId+'|'+localDate(cursor),ms/3600000,money,partTax,extraTime?ms/3600000:0);
     cursor=until
    }
@@ -1148,7 +1166,7 @@ function renderCharts(){
   label.append(dot,txt);legend.append(label)
  }
  const count=model.labels.length,pCount=Math.max(1,model.profiles.length);
- const groupWidth=Math.max(chartMode==='day'?90:chartMode==='year'?86:95,35+pCount*22);
+ const groupWidth=Math.max(chartMode==='day'?290:chartMode==='year'?86:95,35+pCount*22);
  const left=48,right=24,top=24,height=336,bottom=58,plotBottom=height-bottom,plotHeight=plotBottom-top;
  const chartWidth=left+right+groupWidth*count;
  svg.setAttribute('width',chartWidth);
