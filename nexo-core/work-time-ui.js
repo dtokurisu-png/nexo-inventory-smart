@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261113-phase5-map-11";
+const APP_VERSION="20261113-phase5-map-12";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -486,6 +486,7 @@ const KEY='nexo.personal-work-time.prototype.v1';
 const BREAK_SETTINGS_KEY='nexo.personal-work-time.break-settings.v1';
 const GEO_SETTINGS_KEY='nexo.personal-work-time.geo-settings.v1';
 const GEO_PENDING_KEY='nexo.personal-work-time.geo-pending.v1';
+const GEO_MONITOR_KEY='nexo.personal-work-time.geo-session.v1';
 const TONE_SETTINGS_KEY='nexo.personal-work-time.colors.v1';
 const MAX_AUTO_AGE_MS=86400000;
 const $=id=>uiRoot.getElementById(id);
@@ -497,6 +498,7 @@ const CAPTURE_WINDOW_MS=5*60*1000;
 let breakPreferences=readBreakPreferences();
 let geoSettings=readLocalObject(GEO_SETTINGS_KEY),geoPending=readLocalObject(GEO_PENDING_KEY);
 let geoMonitor=null,geoFormProfile=null,workplaceMap=null;
+let geoRecoveryPending=false,geoRecoveryTimer=null;
 function localDate(v){const d=new Date(v);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
 function asInput(t){const d=new Date(t);return localDate(d)+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 function fmt(t){return new Date(t).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}
@@ -824,21 +826,108 @@ function renderGeoPending(){
  const proposal=geoPending[selectedProfile];
  $('geo-pending').hidden=!proposal;
  if(!proposal)return;
- $('geo-pending-label').textContent=proposal.kind==='entry'?'Entrada estimada':'Salida estimada';
- $('geo-pending-time').textContent=fmt(proposal.estimatedAt);
- $('geo-pending-info').textContent=proposal.kind==='entry'?
+ const review=proposal.needsCrossingTime===true;
+ $('geo-pending-label').textContent=review?'Revisar salida de la zona':proposal.kind==='entry'?'Entrada estimada':'Salida estimada';
+ $('geo-pending-time').textContent=review?'Hora por indicar':fmt(proposal.estimatedAt);
+ $('geo-pending-info').textContent=review?
+  'Al regresar estás fuera de la zona. Última vez dentro: '+fmt(proposal.lastInsideAt)+
+  ' · primera comprobación fuera: '+fmt(proposal.firstOutsideAt)+
+  '. La página estaba cerrada y no conoce la hora exacta de salida. Indicá cuándo cruzaste el límite; se restarán '+proposal.marginMinutes+' min antes de registrar.':
+  proposal.kind==='entry'?
   'Permaneciste en la zona el tiempo configurado. Esta propuesta no modifica tu jornada hasta confirmarla.':
   'Nexo detectó tu salida y restó el margen configurado. Revisá la hora antes de registrarla.';
- $('geo-edit-form').hidden=true
+ $('geo-confirm').disabled=review;
+ $('geo-edit').textContent=review?'Indicar hora':'Corregir hora';
+ $('geo-edit-form').hidden=!review;
+ const field=$('geo-edit-time');
+ const label=field.closest('label');
+ if(label&&label.firstChild)label.firstChild.textContent=review?'Hora en que saliste de la zona ':'Hora real ';
+ if(review)field.value='';
+}
+function persistedGeoSession(){
+ const data=readLocalObject(GEO_MONITOR_KEY);
+ if(data.active!==true||typeof data.profileId!=='string')return null;
+ return data
+}
+function persistGeoSession(m){
+ if(!m)return;
+ const record={
+  active:true,
+  profileId:m.profileId,
+  shiftId:E.active(state)?.id||null,
+  session:m.session,
+  lastInsideAt:Number.isFinite(m.lastInsideAt)?m.lastInsideAt:null,
+  lastSampleAt:Number.isFinite(m.lastSampleAt)?m.lastSampleAt:null,
+  savedAt:Date.now()
+ };
+ try{localStorage.setItem(GEO_MONITOR_KEY,JSON.stringify(record))}
+ catch(_){geoFeedback('No se pudo conservar la sesión GPS en este navegador.')}
+}
+function clearGeoRecovery(){
+ geoRecoveryPending=false;
+ if(geoRecoveryTimer!==null){clearTimeout(geoRecoveryTimer);geoRecoveryTimer=null}
+}
+function scheduleGenericFallback(){
+ clearGeoRecovery();
+ if(currentView!=='home'||geoPending[selectedProfile])return;
+ geoRecoveryPending=true;
+ // A missing GPS fix must not block the ordinary manual-mark flow forever.
+ geoRecoveryTimer=setTimeout(()=>{
+  geoRecoveryTimer=null;
+  if(!geoRecoveryPending)return;
+  geoRecoveryPending=false;
+  if(!geoPending[selectedProfile])proposeNextMark()
+ },14000)
 }
 function stopGeoMonitor(reason='Reconocimiento detenido. Tu ubicación ya no se consulta.'){
+ clearGeoRecovery();
  if(geoMonitor){
   if(geoMonitor.watchId!==null)navigator.geolocation.clearWatch(geoMonitor.watchId);
   if(geoMonitor.pollId!==null)clearInterval(geoMonitor.pollId);
   geoMonitor=null
  }
+ localStorage.removeItem(GEO_MONITOR_KEY);
  geoFeedback(reason);
  renderGeo()
+}
+function disposeGeoMonitor(){
+ // Navigation/closing is NOT the user's request to turn recognition off.
+ // Preserve opt-in for the next visible launch; the browser stops observing.
+ if(!geoMonitor)return;
+ if(geoMonitor.watchId!==null)navigator.geolocation.clearWatch(geoMonitor.watchId);
+ if(geoMonitor.pollId!==null)clearInterval(geoMonitor.pollId);
+ persistGeoSession(geoMonitor);
+ geoMonitor=null
+}
+function restoreGeoMonitor(){
+ const stored=persistedGeoSession();
+ if(!stored||geoMonitor)return false;
+ const zone=geoFor(stored.profileId);
+ const prof=state.profiles.find(p=>p.id===stored.profileId);
+ if(!prof||!zone?.enabled||!G.validZone(zone)||!navigator.geolocation){
+  localStorage.removeItem(GEO_MONITOR_KEY);
+  return false
+ }
+ const active=E.active(state);
+ // An open shift for another workplace should not be monitored silently.
+ if(active&&active.profileId!==stored.profileId)return false;
+ selectedProfile=stored.profileId;
+ const session=stored.session&&typeof stored.session==='object'?{
+  ...G.emptySession(),
+  ...stored.session,
+  mode:stored.session.mode==='inside'||stored.session.mode==='outside'?stored.session.mode:'unknown'
+ }:G.emptySession();
+ geoMonitor={
+  profileId:stored.profileId,session,
+  paused:true,watchId:null,pollId:null,
+  lastInsideAt:Number.isFinite(stored.lastInsideAt)?stored.lastInsideAt:null,
+  lastSampleAt:Number.isFinite(stored.lastSampleAt)?stored.lastSampleAt:null,
+  restored:true
+ };
+ scheduleGenericFallback();
+ resumeGeoMonitor();
+ geoFeedback('Comprobando zona de '+(prof.place||prof.name)+' tras volver a abrir la página…');
+ return true
 }
 function geolocationError(error){
  if(!geoMonitor)return;
@@ -847,6 +936,7 @@ function geolocationError(error){
   'No se obtuvo ubicación a tiempo; volveremos a intentar.';
  geoFeedback(reason);
  if(error?.code===1)stopGeoMonitor(reason)
+ else if(geoRecoveryPending){clearGeoRecovery();if(currentView==='home')proposeNextMark()}
 }
 function processGeoPosition(pos,monitor=geoMonitor){
  if(!monitor||monitor!==geoMonitor||document.visibilityState==='hidden')return;
@@ -855,12 +945,58 @@ function processGeoPosition(pos,monitor=geoMonitor){
  const now=Date.now();
  if(!Number.isFinite(pos.timestamp)||now-pos.timestamp>120000)return;
  const p={lat:pos.coords.latitude,lon:pos.coords.longitude,accuracy:pos.coords.accuracy};
- const result=G.observe(monitor.session,zone,p,now);
+ const before=monitor.session;
+ const lastGood=monitor.lastSampleAt;
+ const lastInside=monitor.lastInsideAt;
+ const hadGap=Number.isFinite(lastGood)&&now-lastGood>150000;
+ const result=G.observe(before,zone,p,now);
+ if(result.quality==='imprecisa'||result.quality==='límite'){
+  geoFeedback('GPS '+result.quality+' · esperaremos una lectura confiable.');
+  if(monitor.restored)geoFeedback('Comprobando GPS al regresar · '+result.quality+'.');
+  return
+ }
+ monitor.lastSampleAt=now;
+ // A long interval with the page closed cannot count as verified
+ // residence inside a zone or as two distinct outside samples.
+ if(hadGap&&result.quality==='dentro'&&!before.entryEmitted){
+  result.session={...result.session,enteredAt:now}
+ }
+ if(hadGap&&result.quality==='fuera'&&before.mode==='outside'){
+  result.session={...result.session,exitStartedAt:now,outsideSamples:1}
+ }
  monitor.session=result.session;
+ if(result.quality==='dentro')monitor.lastInsideAt=now;
  const dist=Number.isFinite(result.distanceMeters)?result.distanceMeters+' m del punto':'posición no válida';
- geoFeedback('Reconocimiento '+(result.quality||'sin señal')+' · '+dist+
-  (result.quality==='imprecisa'?' · precisión insuficiente; no se registran marcas.':''));
- if(!result.event)return;
+ geoFeedback('Reconocimiento '+result.quality+' · '+dist);
+ const active=E.active(state);
+ const missedExit=hadGap&&result.quality==='fuera'&&before.mode==='inside'&&
+  Number.isFinite(lastInside)&&active&&active.profileId===monitor.profileId&&
+  active.breakStartedAt===null&&!geoPending[monitor.profileId];
+ if(missedExit){
+  // No observation occurred during the closed-page gap: never invent
+  // the precise crossing time. Require the user to supply it.
+  const candidate={
+   kind:'exit',needsCrossingTime:true,
+   profileId:monitor.profileId,activeShiftId:active.id,
+   lastInsideAt:lastInside,firstOutsideAt:now,createdAt:now,
+   marginMinutes:zone.exitMinutes,source:'gps-resume-review'
+  };
+  geoPending={...geoPending,[monitor.profileId]:candidate};
+  localStorage.setItem(GEO_PENDING_KEY,JSON.stringify(geoPending));
+  monitor.session={...monitor.session,mode:'outside',everInside:true,exitStartedAt:null,outsideSamples:1,exitEmitted:true};
+  selectedProfile=monitor.profileId;
+  closeSuggestion(false);
+  clearGeoRecovery();
+  render();
+  showView('home');
+  message('Estás fuera de la zona laboral. Revisá la hora de salida detectada al regresar.')
+ }else if(monitor.restored){
+  clearGeoRecovery();
+  if(!geoPending[selectedProfile]&&currentView==='home')proposeNextMark();
+ }
+ monitor.restored=false;
+ persistGeoSession(monitor);
+ if(missedExit||!result.event)return;
  const entry=result.event.kind==='entry',observedAt=result.event.observedAt,estimatedAt=result.event.estimatedAt;
  const candidate={kind:result.event.kind,profileId:monitor.profileId,estimatedAt,observedAt,createdAt:now,source:'gps-foreground'};
  if(geoPending[monitor.profileId])return;
@@ -877,7 +1013,7 @@ function processGeoPosition(pos,monitor=geoMonitor){
  localStorage.setItem(GEO_PENDING_KEY,JSON.stringify(geoPending));
  renderGeoPending();
  closeSuggestion(false);
- message((entry?'Entrada':'Salida')+' aproximada detectada. Confirmá o corregí la propuesta GPS.');
+ message((entry?'Entrada':'Salida')+' aproximada detectada. Confirmá o corregí la propuesta GPS.')
 }
 function saveGeoFromForm(){
  const p=profile();if(!p)throw Error('Primero agregá un lugar de trabajo');
@@ -929,9 +1065,13 @@ function resumeGeoMonitor(){
  if(!navigator.geolocation){stopGeoMonitor('Geolocalización no disponible.');return}
  m.paused=false;
  m.watchId=navigator.geolocation.watchPosition(pos=>processGeoPosition(pos,m),geolocationError,
-  {enableHighAccuracy:false,maximumAge:15000,timeout:30000});
+  {enableHighAccuracy:false,maximumAge:0,timeout:30000});
+ // Ask for a fresh fix on return, without relying solely on a cached watch event.
+ navigator.geolocation.getCurrentPosition(pos=>processGeoPosition(pos,m),geolocationError,
+  {enableHighAccuracy:false,maximumAge:0,timeout:25000});
  m.pollId=setInterval(()=>navigator.geolocation.getCurrentPosition(pos=>processGeoPosition(pos,m),geolocationError,
   {enableHighAccuracy:false,maximumAge:0,timeout:20000}),60000);
+ persistGeoSession(m);
  renderGeo()
 }
 function pauseGeoMonitor(){
@@ -939,7 +1079,8 @@ function pauseGeoMonitor(){
  if(m.watchId!==null)navigator.geolocation.clearWatch(m.watchId);
  if(m.pollId!==null)clearInterval(m.pollId);
  m.watchId=null;m.pollId=null;m.paused=true;
- geoFeedback('GPS pausado con la pestaña oculta; no se detectarán entradas ni salidas en segundo plano.');
+ persistGeoSession(m);
+ geoFeedback('GPS pausado con la pestaña oculta; comprobación al volver, sin detección en segundo plano.');
  renderGeo()
 }
 function startGeoMonitor(){
@@ -948,14 +1089,23 @@ function startGeoMonitor(){
  if(!p||!zone?.enabled||!G.validZone(zone)){geoFeedback('Guardá primero un lugar de trabajo con la zona GPS habilitada.');return}
  if(!navigator.geolocation){geoFeedback('Este navegador no admite GPS.');return}
  if(geoMonitor)stopGeoMonitor();
- geoMonitor={profileId:p.id,session:G.emptySession(),paused:true,watchId:null,pollId:null};
- geoFeedback('Solicitando acceso a ubicación para esta sesión...');
+ geoMonitor={profileId:p.id,session:G.emptySession(),paused:true,watchId:null,pollId:null,lastInsideAt:null,lastSampleAt:null,restored:false};
+ geoFeedback('Solicitando GPS. Se reanudará al volver a abrir la página, pero no funciona cerrada.');
+ persistGeoSession(geoMonitor);
  resumeGeoMonitor()
 }
 function confirmGeoCandidate(override){
  const candidate=geoPending[selectedProfile];
  if(!candidate)throw Error('Ya no hay una propuesta GPS pendiente');
- const at=override==null?candidate.estimatedAt:validDate(override),now=Date.now();
+ const review=candidate.needsCrossingTime===true;
+ if(review&&override==null)throw Error('Indicá la hora en que saliste de la zona.');
+ const crossing=review?validDate(override):null;
+ const margin=review?(Number(candidate.marginMinutes)||0)*60000:0;
+ const at=review?crossing-margin:override==null?candidate.estimatedAt:validDate(override),now=Date.now();
+ if(review){
+  if(crossing<candidate.lastInsideAt||crossing>candidate.firstOutsideAt+60000)
+   throw Error('La salida debe estar entre la última posición dentro y la primera comprobación fuera.');
+ }
  if(at>now||now-at>36*3600000)throw Error('La hora propuesta debe estar dentro de las últimas 36 horas, sin ser futura');
  freshState();
  if(!state.profiles.some(p=>p.id===candidate.profileId)||candidate.profileId!==selectedProfile)throw Error('El lugar de trabajo cambió');
@@ -966,6 +1116,8 @@ function confirmGeoCandidate(override){
  }else{
   const shift=E.active(state);
   if(!shift||shift.id!==candidate.activeShiftId||shift.profileId!==candidate.profileId||shift.breakStartedAt!==null)throw Error('La jornada cambió; revisá el registro antes de confirmar');
+  const last=shift.breaks.length?shift.breaks[shift.breaks.length-1].endAt:shift.startedAt;
+  if(at<last)throw Error('La hora calculada con el margen queda antes de la última marca. Ajustá la hora de salida.');
   next=E.transition(state,E.TYPES.END,at)
  }
  delete geoPending[candidate.profileId];
@@ -1132,12 +1284,13 @@ function onStorageUpdate(event){
 }
 function onReturnToApp(){
  if(document.visibilityState==='hidden'){lastHiddenAt=Date.now();pauseGeoMonitor();return}
- if(geoMonitor&&geoMonitor.paused)resumeGeoMonitor();
+ if(geoMonitor&&geoMonitor.paused){scheduleGenericFallback();geoMonitor.restored=true;resumeGeoMonitor()}
+ else if(!geoMonitor)restoreGeoMonitor();
  if(!localStorage.getItem(KEY)){lastHiddenAt=null;return}
  try{
   freshState();
   if(!checkAutoBreak())render();
-  if(lastHiddenAt&&Date.now()-lastHiddenAt>=120000&&currentView==='home'&&$('suggest-backdrop').hidden)proposeNextMark();
+  if(!geoRecoveryPending&&lastHiddenAt&&Date.now()-lastHiddenAt>=120000&&currentView==='home'&&$('suggest-backdrop').hidden)proposeNextMark();
   lastHiddenAt=null
  }catch(e){message('No se pudo recuperar el descanso',true)}
 }
@@ -1220,7 +1373,7 @@ $('geo-form').onsubmit=event=>{
  event.preventDefault();
  try{
   const p=saveGeoFromForm();
-  geoFeedback('Zona guardada para '+p.name+'. El GPS permanece apagado hasta que pulses Iniciar.')
+  geoFeedback('Zona guardada para '+p.name+'. Iniciá el reconocimiento una vez para permitir las comprobaciones al regresar.')
  }catch(e){geoFeedback(e.message||'No se pudo guardar la zona')}
 };
 $('geo-start').onclick=startGeoMonitor;
@@ -1233,7 +1386,7 @@ $('geo-discard').onclick=()=>{
 };
 $('geo-edit').onclick=()=>{
  const c=geoPending[selectedProfile];if(!c)return;
- $('geo-edit-time').value=asInput(c.estimatedAt);
+ $('geo-edit-time').value=c.needsCrossingTime?'':asInput(c.estimatedAt);
  $('geo-edit-form').hidden=false;
  $('geo-edit-time').focus()
 };
@@ -1293,14 +1446,14 @@ function changeMonth(step){const [y,m]=month.split('-').map(Number);const d=new 
 $('new-shift').onclick=()=>{if(!profile()){message('Primero agrega un lugar de trabajo',true);return}const f=$('shift-form');f.reset();f.hidden=false;f.elements.id.value='';f.elements.startedAt.value=selectedDay+'T09:00';f.elements.closedAt.value=selectedDay+'T17:00';f.elements.breakMinutes.value=0;f.scrollIntoView({behavior:'smooth',block:'nearest'})};
 $('cancel-shift').onclick=()=>{$('shift-form').hidden=true};
 $('shift-form').onsubmit=e=>{e.preventDefault();guard(()=>{const f=e.currentTarget,p=profile();if(!p)throw Error('Selecciona un perfil');const start=validDate(f.elements.startedAt.value),end=validDate(f.elements.closedAt.value),mins=Number(f.elements.breakMinutes.value);if(end<=start)throw Error('La salida debe ser posterior a la entrada');if(!Number.isInteger(mins)||mins<0||mins*60000>=end-start)throw Error('Descanso inválido');const existingId=f.elements.id.value,old=state.shifts.find(s=>s.id===existingId);if(existingId&&!old)throw Error('La jornada ya no existe');if(old&&old.closedAt===null)throw Error('Finaliza el turno antes de editarlo');const shift={...(old||profileSnapshot(p)),id:old?.id||('manual-'+Date.now()+'-'+Math.random().toString(36).slice(2)),startedAt:start,closedAt:end,breakStartedAt:null,breaks:mins?[{startAt:end-mins*60000,endAt:end}]:[]};const next={...state,shifts:existingId?state.shifts.map(s=>s.id===existingId?shift:s):[...state.shifts,shift]};if(next.shifts.filter(s=>s.closedAt===null).length>1)throw Error('Solo puede haber un turno activo');save(next);f.hidden=true;selectedDay=localDate(start);month=selectedDay.slice(0,7);render()})};
-try{state=JSON.parse(localStorage.getItem(KEY)||'null')||E.blank();if(state.schemaVersion!==1||!Array.isArray(state.profiles)||!Array.isArray(state.shifts))throw Error('Formato inválido');selectedProfile=E.active(state)?.profileId||state.profiles[0]?.id||'';render();showView('home');checkAutoBreak();proposeNextMark()}
+try{state=JSON.parse(localStorage.getItem(KEY)||'null')||E.blank();if(state.schemaVersion!==1||!Array.isArray(state.profiles)||!Array.isArray(state.shifts))throw Error('Formato inválido');selectedProfile=E.active(state)?.profileId||state.profiles[0]?.id||'';render();showView('home');checkAutoBreak();if(!restoreGeoMonitor())proposeNextMark()}
 catch(err){state=E.blank();render();showView('home');message('No se pudieron cargar los datos locales: '+err.message,true)}
 const breakMonitor=setInterval(()=>{try{checkAutoBreak()}catch(e){message('No se pudo comprobar descanso automático: '+e.message,true)}},15000);
 const clockTimer=setInterval(()=>{
  if(typeof uiRoot!=='undefined'&&!uiRoot.host?.isConnected){
   clearInterval(clockTimer);
   clearInterval(breakMonitor);
-  if(geoMonitor)stopGeoMonitor('GPS detenido al cerrar la aplicación.');
+  if(geoMonitor)disposeGeoMonitor();
   if(workplaceMap)workplaceMap.close();
   window.removeEventListener('storage',onStorageUpdate);
   document.removeEventListener('visibilitychange',onReturnToApp);
