@@ -1449,7 +1449,7 @@ function renderWeek(){
 // Standalone monochrome capture sheet and the PNG share the same canvas.
 // The canvas is rendered from the actual weekly report, never from the app
 // screenshot. Private rates and monetary totals remain excluded.
-const CAPTURE_WIDTH=1120;
+const CAPTURE_WIDTH=760,CAPTURE_SCALE=2;
 function captureReportData(report){
  const showMarks=marks=>marks?.length?
   marks.map(m=>weekClock(m.time)+(m.provisional?' ~':'')):['—'];
@@ -1483,26 +1483,27 @@ function captureReportData(report){
 function paintCaptureSheet(canvas,data){
  const ctx=canvas.getContext('2d');
  if(!ctx)throw Error('El navegador no admite la exportación de imágenes.');
- const W=CAPTURE_WIDTH,M=55,right=W-M;
+ const W=CAPTURE_WIDTH,M=32,right=W-M;
  const columns=[
-  {name:'DÍA',width:125,key:'day'},
-  {name:'LUGAR',width:205,key:'place'},
-  {name:'ENTR.',width:132,key:'entry'},
-  {name:'DESC.',width:132,key:'breakStart'},
-  {name:'REG.',width:132,key:'breakEnd'},
-  {name:'SALIDA',width:132,key:'exit'},
-  {name:'HORAS',width:107,key:'hours'}
+  {name:'DÍA',width:85,key:'day'},
+  {name:'LUGAR',width:145,key:'place'},
+  {name:'ENTR.',width:96,key:'entry'},
+  {name:'DESC.',width:96,key:'breakStart'},
+  {name:'REG.',width:96,key:'breakEnd'},
+  {name:'SALIDA',width:96,key:'exit'},
+  {name:'HORAS',width:82,key:'hours'}
  ];
- // 1065 usable px. All text is truly white on a true black document.
+ // 696 logical px, rendered at 2× for crisp PNG sharing on mobile.
  const rowHeight=row=>Math.max(57,34+
   Math.max(row.entry.length,row.breakStart.length,row.breakEnd.length,row.exit.length)*29);
  const datesHeight=data.periods.length*29;
- const headerY=206+datesHeight,tableY=headerY+32;
+ const headerY=232+datesHeight,tableY=headerY+32;
  const rowsHeight=data.rows.length?
   data.rows.reduce((sum,row)=>sum+rowHeight(row),0):66;
  const footY=tableY+rowsHeight+15;
  const H=Math.max(550,footY+111);
- canvas.width=W;canvas.height=H;
+ canvas.width=W*CAPTURE_SCALE;canvas.height=H*CAPTURE_SCALE;
+ ctx.scale(CAPTURE_SCALE,CAPTURE_SCALE);
  ctx.fillStyle='#000000';ctx.fillRect(0,0,W,H);
  ctx.textBaseline='middle';ctx.fillStyle='#ffffff';
  function draw(text,x,y,size=23,bold=false,align='left'){
@@ -1520,15 +1521,15 @@ function paintCaptureSheet(canvas,data){
  draw('NEXO / HORAS',M,49,23,true);
  rule(77);
  draw(data.heading,M,113,40,true);
- draw(data.profileName,M,151,25);
- draw(data.period,right,151,23,true,'right');
+ draw(data.profileName,M,151,24);
+ draw(data.period,M,180,22,true);
  for(let i=0;i<data.periods.length;i++){
   const p=data.periods[i];
-  clipped(p.label+'  |  '+p.dates,M,188+i*29,W-2*M,19)
+  clipped(p.label+'  |  '+p.dates,M,215+i*29,W-2*M,20)
  }
  rule(headerY);
  let colStart=M;
- for(const col of columns){draw(col.name,colStart+5,headerY+21,20,true);colStart+=col.width}
+ for(const col of columns){draw(col.name,colStart+4,headerY+21,18,true);colStart+=col.width}
  rule(tableY);
  let y=tableY;
  if(!data.rows.length){
@@ -1542,7 +1543,7 @@ function paintCaptureSheet(canvas,data){
    const lines=Array.isArray(row[col.key])?row[col.key]:[row[col.key]];
    const textY=center-(lines.length-1)*14.5;
    for(let i=0;i<lines.length;i++)
-    clipped(lines[i],left+5,textY+i*29,col.width-9,col.key==='day'||col.key==='place'?21:22,col.key==='hours');
+    clipped(lines[i],left+4,textY+i*29,col.width-7,col.key==='day'||col.key==='place'?20:21,col.key==='hours');
    left+=col.width
   }
   y+=h;rule(y)
