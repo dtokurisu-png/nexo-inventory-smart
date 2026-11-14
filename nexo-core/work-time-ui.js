@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-fluid-curves-1";
+const APP_VERSION="20261114-phase7-capture-2-all-recovery-2x";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -166,7 +166,7 @@ function startOilScene(rootNode,hostNode){
    // The bead stretches and rolls slightly after its two liquid contact
    // points finish converging. By mid-flight it becomes round again.
    const release=smooth((phase-.145)/.175);
-   const afterRelease=smooth((phase-.315)/.16);
+   const afterRelease=smooth((phase-.315)/.08);
    const wobble=smooth((phase-.315)/.042)*
     (1-smooth((phase-.56)/.14));
    const oval=Math.sin((phase-.315)*48+b.x*19)*wobble;
@@ -226,12 +226,12 @@ function startOilScene(rootNode,hostNode){
    // with the emerging bead. After pinching, a wide remnant settles back.
    const lift=smooth((phase-.015)/.115);
    const beforeTip=contactY+(attachedTipY-contactY)*lift;
-   // The base and waist retain their original recovery time. Only the
-   // two points detached from the bead retract twice as quickly.
+   // The complete neck recovers twice as fast after detachment;
+   // the two upper tips remain twice as fast as the lower waist.
    const lowerTip=beforeTip+(contactY-initialRadius*.16-beforeTip)*afterRelease;
    const lowerGap=Math.max(0,contactY-lowerTip);
    const waistY=lowerTip+lowerGap*.48;
-   const upperPhase=clamp((phase-.315)/.08);
+   const upperPhase=clamp((phase-.315)/.04);
    const upperRecovery=1-(1-upperPhase)*(1-upperPhase);
    const upperRest=Math.min(initialRadius*.13,Math.max(.25,lowerGap*.10));
    const tip=phase<=.315?lowerTip:
@@ -240,7 +240,7 @@ function startOilScene(rootNode,hostNode){
     .60+initialRadius*.055*afterRelease;
    const gap=Math.max(0,contactY-tip);
    const neckVisibility=smooth((phase-.008)/.055)*
-    (1-smooth((phase-.475)/.035));
+    (1-smooth((phase-.395)/.035));
    if(neckVisibility>.004&&gap>.7){
     // Each lower tip is attached to the sampled visible wave, even as the
     // latter oscillates and bends. The flare's Bézier controls extend
