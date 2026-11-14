@@ -1176,7 +1176,7 @@ function renderCharts(){
  const barHeight=Math.max(6,Math.min(11,44/Math.max(1,places)));
  const barGap=2.5,rowHeight=Math.max(32,places*(barHeight+barGap)+13);
  const chartWidth=Math.max(265,Math.floor(svg.parentElement?.clientWidth||320));
- const left=chartMode==='month'?50:49,right=17,top=chartMode==='month'?47:17,bottom=44;
+ const left=chartMode==='month'?50:49,right=17,top=chartMode==='month'?58:17,bottom=44;
  const plotWidth=chartWidth-left-right,plotHeight=rowHeight*count;
  const chartHeight=top+plotHeight+bottom;
  svg.setAttribute('width',chartWidth);svg.setAttribute('height',chartHeight);
@@ -1208,6 +1208,7 @@ function renderCharts(){
    const key=String(t.hours);if(!grouped.has(key))grouped.set(key,[]);
    grouped.get(key).push(t)
   }
+  let limitLabelIndex=0;
   for(const [hour,group] of grouped){
    const x=axis(Number(hour));
    for(let i=0;i<group.length;i++){
@@ -1218,7 +1219,7 @@ function renderCharts(){
     const p=model.profiles.find(p=>p.id===group[i].id);
     label.textContent='Límite normal de '+(p?.place||'trabajo')+': '+hour+' horas por semana'
    }
-   const limit=createSVG('text',{x:Math.max(left+15,Math.min(chartWidth-right-16,x)),y:top-17,
+   const limit=createSVG('text',{x:Math.max(left+15,Math.min(chartWidth-right-16,x)),y:top-17-(limitLabelIndex++%2)*13,
     'text-anchor':'middle','font-size':10,'font-weight':650,'font-family':'system-ui',fill:'rgba(235,241,246,.88)'});
    limit.textContent=hour+' h';
   }
@@ -1242,7 +1243,8 @@ function renderCharts(){
     value.regularHours.toFixed(2)+' normales + O '+value.extra.toFixed(2)+') · Bruto '+
     money(totalGross)+' ('+money(normalGross)+' + O '+money(totalGross-normalGross)+') · Retención '+
     money(totalTax)+' ('+money(normalTax)+' + O '+money(totalTax-normalTax)+') · Neto '+
-    money(totalGross-totalTax);
+    money(totalGross-totalTax)+' ('+money(normalGross-normalTax)+' + O '+
+    money((totalGross-totalTax)-(normalGross-normalTax))+')';
    const tip=createSVG('title',{},rect);tip.textContent=detail;
    rect.onclick=()=>{selection.textContent=detail;selection.hidden=false};
    rect.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rect.onclick()}}
