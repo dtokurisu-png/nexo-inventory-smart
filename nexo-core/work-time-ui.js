@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-oil-curve-3";
+const APP_VERSION="20261114-phase7-capture-2-oil-rollback";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -212,7 +212,7 @@ function startOilScene(rootNode,hostNode){
    // The two upper tips track x = +/- rx*sin(theta) on the bubble's
    // actual ellipse, from its mid-lower sides down to the bottom pole.
    const theta=1.15*(1-release);
-   const bottomHalf=Math.max(initialRadius*.80,rx*1.58)*1.35;
+   const bottomHalf=Math.max(initialRadius*.80,rx*1.58);
    const taper=smooth((phase-.085)/.265);
    const topHalf=Math.max(.60,rx*Math.sin(theta));
    const attachedTipY=cy+ry*Math.cos(theta);
@@ -233,24 +233,29 @@ function startOilScene(rootNode,hostNode){
    const neckVisibility=smooth((phase-.008)/.055)*
     (1-smooth((phase-.392)/.084));
    if(neckVisibility>.004&&gap>.7){
-    // Preserve the two wave-anchored roots and the elliptical tips.
-    // Use ONE cubic per wall: the former pair introduced a visible
-    // shoulder/belly where two independently curved segments met.
-    // Its first handle flares slightly OUT from the surface, then the
-    // same uninterrupted contour eases inward toward the bubble.
+    // Each lower tip is attached to the sampled visible wave, even as the
+    // latter oscillates and bends. The flare's Bézier controls extend
+    // OUTSIDE the roots instead of curving in beneath the water.
+    const midY=tip+gap*.48;
     const leftTop=cx-upperHalf,rightTop=cx+upperHalf;
-    const flare=Math.max(bottomHalf*.52,Math.min(bottomHalf*.68,gap*.28));
-    const lowerLift=Math.min(gap*.19,initialRadius*.36);
-    const upperOut=Math.max(bottomHalf*.42,upperHalf*.62,waistHalf*.55);
+    const leftWaist=cx-waistHalf,rightWaist=cx+waistHalf;
+    const leftFlareY=leftY-Math.min(12,gap*.24);
+    const rightFlareY=rightY-Math.min(12,gap*.24);
     const fmt=n=>n.toFixed(2);
     const path='M '+fmt(leftBase)+' '+fmt(leftY)+
-     ' C '+fmt(leftBase-flare)+' '+fmt(leftY-lowerLift)+
-     ' '+fmt(leftTop-upperOut)+' '+fmt(tip+gap*.44)+
+     ' C '+fmt(leftBase-bottomHalf*.24)+' '+fmt(leftFlareY)+
+     ' '+fmt(cx-waistHalf*1.24)+' '+fmt(midY+gap*.17)+
+     ' '+fmt(leftWaist)+' '+fmt(midY)+
+     ' C '+fmt(cx-waistHalf*.98)+' '+fmt(midY-gap*.18)+
+     ' '+fmt(cx-upperHalf*.80)+' '+fmt(tip+gap*.10)+
      ' '+fmt(leftTop)+' '+fmt(tip)+
      ' Q '+fmt(cx)+' '+fmt(tip-Math.min(upperHalf*.73,initialRadius*.22))+
      ' '+fmt(rightTop)+' '+fmt(tip)+
-     ' C '+fmt(rightTop+upperOut)+' '+fmt(tip+gap*.44)+
-     ' '+fmt(rightBase+flare)+' '+fmt(rightY-lowerLift)+
+     ' C '+fmt(cx+upperHalf*.80)+' '+fmt(tip+gap*.10)+
+     ' '+fmt(cx+waistHalf*.98)+' '+fmt(midY-gap*.18)+
+     ' '+fmt(rightWaist)+' '+fmt(midY)+
+     ' C '+fmt(cx+waistHalf*1.24)+' '+fmt(midY+gap*.17)+
+     ' '+fmt(rightBase+bottomHalf*.24)+' '+fmt(rightFlareY)+
      ' '+fmt(rightBase)+' '+fmt(rightY)+
      surfaceClosure(rightBase,leftBase,t)+
      ' L '+fmt(leftBase)+' '+fmt(leftY)+' Z';
