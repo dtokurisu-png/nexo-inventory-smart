@@ -743,6 +743,8 @@ function settingsCard(type,p,summary,details){
  main.onclick=()=>{
   if(isProfile)settingsExpandedProfile=expanded?null:p.id;
   else settingsExpandedGeo=expanded?null:p.id;
+  if(profileEditingId!==null)closeProfileEditor();
+  if(geoFormOpen)closeGeoEditor();
   selectedProfile=p.id;render()
  };
  section.append(main,content);
@@ -766,7 +768,7 @@ function renderSettingsCards(){
   }
  }
  $('geo-add').disabled=!state.profiles.length;
- $('profile-form').hidden=profileEditingId===null&&$('profile-form').hidden;
+ $('profile-form').hidden=profileEditingId===null;
  $('geo-form').hidden=!geoFormOpen;
  $('break-settings-form').hidden=!breakEditing
 }
