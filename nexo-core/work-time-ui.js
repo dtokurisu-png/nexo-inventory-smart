@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261113-phase5-map-6";
+const APP_VERSION="20261113-phase5-map-7";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -419,6 +419,7 @@ function renderHomeEarnings(projection,now=Date.now()){
   allocate(seg.shiftId,regularEnd,seg.endAt,seg.overtimePayCentsUnrounded)
  }
  const days=new Map();
+ const shiftProfiles=new Map(state.shifts.map(item=>[item.id,item.profileId]));
  const addDay=(key,cents,ms)=>{
   const value=days.get(key)||{cents:0,ms:0};
   value.cents+=cents;value.ms+=ms;days.set(key,value)
@@ -437,17 +438,23 @@ function renderHomeEarnings(projection,now=Date.now()){
   let remainder=pay.netCents-shares.reduce((n,v)=>n+v.cents,0);
   const ranked=[...shares].sort((a,b)=>b.remainder-a.remainder||a.index-b.index);
   for(let i=0;i<remainder;i++)ranked[i%ranked.length].cents++;
-  for(const share of shares)addDay(share.key,share.cents,share.ms)
+  for(const share of shares)addDay((shiftProfiles.get(pay.shiftId)||'')+'|'+share.key,share.cents,share.ms)
  }
- const todayKey=localDate(now),d=new Date(now);
- d.setHours(12,0,0,0);
- d.setDate(d.getDate()-(d.getDay()+6)%7);
- const monday=localDate(d),today=days.get(todayKey)||{cents:0,ms:0};
- const week=[...days].filter(([key])=>key>=monday&&key<=todayKey).reduce((o,[,v])=>({cents:o.cents+v.cents,ms:o.ms+v.ms}),{cents:0,ms:0});
+ const todayKey=localDate(now),today={cents:0,ms:0},week={cents:0,ms:0};
+ const weekStarts=new Map(state.profiles.map(p=>[p.id,weekStartKeyFor(p,now)]));
+ for(const [compound,value] of days){
+  const separator=compound.lastIndexOf('|');
+  const profileId=compound.slice(0,separator),day=compound.slice(separator+1);
+  if(day===todayKey){today.cents+=value.cents;today.ms+=value.ms}
+  const begin=weekStarts.get(profileId);
+  if(begin&&day>=begin&&day<=todayKey){week.cents+=value.cents;week.ms+=value.ms}
+ }
+ renderWeekClose(now);
  $('home-pay-today').textContent=money(today.cents);
  $('home-hours-today').textContent=hours(today.ms)+' trabajadas';
  $('home-pay-week').textContent=money(week.cents);
- $('home-hours-week').textContent=hours(week.ms)+' trabajadas'
+ $('home-hours-week').textContent=hours(week.ms)+' trabajadas';
+ return days
 }
 
 function render(){
@@ -461,11 +468,16 @@ $('active-info').textContent=a?('En '+a.place+' · '+(a.breakStartedAt===null?'T
 const calc=payroll(),sum=new Map(calc.shifts.map(x=>[x.shiftId,x]));
 const all=state.shifts.filter(s=>s.profileId===selectedProfile),today=Date.now();
 const currentWeek=p?P.weekKey(today,p.timeZone,p.weekStartDay):'';
-const weekly=all.filter(s=>p&&P.weekKey(s.startedAt,p.timeZone,p.weekStartDay)===currentWeek);
 const aggregate=items=>items.reduce((o,s)=>{const pay=sum.get(s.id);o.ms+=duration(s);o.net+=pay?.netCents||0;return o},{ms:0,net:0});
-const w=aggregate(weekly),total=aggregate(all);
+const total=aggregate(all),byDay=renderHomeEarnings(calc,today);
+const begin=p?weekStartKeyFor(p,today):'';
+const w={ms:0,net:0};
+for(const [key,value] of byDay){
+ if(!p||!key.startsWith(p.id+'|'))continue;
+ const day=key.slice(p.id.length+1);
+ if(day>=begin&&day<=localDate(today)){w.ms+=value.ms;w.net+=value.cents}
+}
 $('weekly-hours').textContent=hours(w.ms);$('weekly-pay').textContent=money(w.net);$('total-hours').textContent=hours(total.ms);$('total-pay').textContent=money(total.net);
-renderHomeEarnings(calc,today);
 renderCalendar();renderList(sum);renderDashboard();renderWeek();renderBreakSettings();renderProvisional();renderGeo();
 }
 
