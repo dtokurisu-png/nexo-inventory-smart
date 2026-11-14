@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-oil-rollback";
+const APP_VERSION="20261114-phase7-capture-2-lower-flare-1";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -243,7 +243,7 @@ function startOilScene(rootNode,hostNode){
     const rightFlareY=rightY-Math.min(12,gap*.24);
     const fmt=n=>n.toFixed(2);
     const path='M '+fmt(leftBase)+' '+fmt(leftY)+
-     ' C '+fmt(leftBase-bottomHalf*.24)+' '+fmt(leftFlareY)+
+     ' C '+fmt(leftBase-bottomHalf*.72)+' '+fmt(leftFlareY)+
      ' '+fmt(cx-waistHalf*1.24)+' '+fmt(midY+gap*.17)+
      ' '+fmt(leftWaist)+' '+fmt(midY)+
      ' C '+fmt(cx-waistHalf*.98)+' '+fmt(midY-gap*.18)+
@@ -255,7 +255,7 @@ function startOilScene(rootNode,hostNode){
      ' '+fmt(cx+waistHalf*.98)+' '+fmt(midY-gap*.18)+
      ' '+fmt(rightWaist)+' '+fmt(midY)+
      ' C '+fmt(cx+waistHalf*1.24)+' '+fmt(midY+gap*.17)+
-     ' '+fmt(rightBase+bottomHalf*.24)+' '+fmt(rightFlareY)+
+     ' '+fmt(rightBase+bottomHalf*.72)+' '+fmt(rightFlareY)+
      ' '+fmt(rightBase)+' '+fmt(rightY)+
      surfaceClosure(rightBase,leftBase,t)+
      ' L '+fmt(leftBase)+' '+fmt(leftY)+' Z';
