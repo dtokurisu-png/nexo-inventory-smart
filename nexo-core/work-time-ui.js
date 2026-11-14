@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261113-phase5-map-14";
+const APP_VERSION="20261113-phase5-map-15";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -732,20 +732,42 @@ function workInitials(p){
 function buildWeekReport(snapshot,profileId='all',offset=0,now=Date.now()){
  const selected=snapshot.profiles.find(x=>x.id===profileId)||null;
  const includeAll=!selected;
- const start=new Date(now),weekStart=Number.isInteger(selected?.weekStartDay)?selected.weekStartDay:1;
- start.setHours(12,0,0,0);
- start.setDate(start.getDate()-((start.getDay()-weekStart+7)%7)+7*offset);
- const end=new Date(start);end.setDate(start.getDate()+6);
+ // A multi-workplace report is a coordinated cycle, not a Monday–Sunday
+ // calendar week. Its reference is the latest starting weekday in a
+ // Monday-based week (e.g. Saturday before the following Monday).
+ // Each workplace keeps its own seven-day payroll period. The combined
+ // dates are the union, but only shifts inside THEIR workplace period count.
+ const weekDay=p=>Number.isInteger(p?.weekStartDay)&&p.weekStartDay>=0&&p.weekStartDay<=6?p.weekStartDay:1;
+ const orderFromMonday=d=>(d+6)%7;
+ const lead=snapshot.profiles.reduce((best,p)=>!best||
+  orderFromMonday(weekDay(p))>orderFromMonday(weekDay(best))?p:best,null);
+ const leadDay=weekDay(lead||selected);
+ const base=new Date(now);
+ base.setHours(12,0,0,0);
+ base.setDate(base.getDate()-(base.getDay()-leadDay+7)%7+7*offset);
+ const periods=new Map();
+ for(const p of snapshot.profiles){
+  const start=new Date(base);
+  start.setDate(base.getDate()+(weekDay(p)-leadDay+7)%7);
+  const end=new Date(start);end.setDate(start.getDate()+6);
+  periods.set(p.id,{start,end,startKey:localDate(start),endKey:localDate(end)})
+ }
+ const relevant=selected?[selected]:snapshot.profiles;
+ const ranges=relevant.map(p=>periods.get(p.id));
+ const start=ranges.length?new Date(Math.min(...ranges.map(p=>p.start.getTime()))):new Date(base);
+ const end=ranges.length?new Date(Math.max(...ranges.map(p=>p.end.getTime()))):new Date(base);
+ if(!ranges.length)end.setDate(start.getDate()+6);
  const pays=new Map(P.project(snapshot,now).shifts.map(x=>[x.shiftId,x]));
  const profiles=new Map(snapshot.profiles.map(p=>[p.id,p]));
  const totals={workedMs:0,grossCents:0,taxCents:0,netCents:0,overtimeMs:0,provisional:0};
  const byProfile=new Map();
  const entries=[];
- const startKey=localDate(start),endKey=localDate(end);
  for(const shift of snapshot.shifts){
   if(!includeAll&&shift.profileId!==selected.id)continue;
+  const period=periods.get(shift.profileId);
+  if(!period)continue;
   const key=localDate(shift.startedAt);
-  if(key<startKey||key>endKey)continue;
+  if(key<period.startKey||key>period.endKey)continue;
   const p=profiles.get(shift.profileId)||null;
   const marks={entry:[{time:shift.startedAt}],breakStart:[],breakEnd:[],exit:[]};
   let provisional=0;
@@ -773,7 +795,7 @@ function buildWeekReport(snapshot,profileId='all',offset=0,now=Date.now()){
   entries.push({shift,key,date:new Date(shift.startedAt),profile:p,initials:workInitials(p||{place:shift.place||shift.profileName}),marks,totals:amounts,isToday:key===localDate(now)})
  }
  entries.sort((a,b)=>a.shift.startedAt-b.shift.startedAt||String(a.shift.id).localeCompare(String(b.shift.id)));
- return {profile:selected,includeAll,start,weekEnd:end,entries,totals,byProfile}
+ return {profile:selected,includeAll,start,weekEnd:end,entries,totals,byProfile,periods}
 }
 function renderWeek(){
  const report=buildWeekReport(state,reportProfileId,reportWeekOffset);
