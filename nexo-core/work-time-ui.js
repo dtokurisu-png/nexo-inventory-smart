@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-upper-retract-2x";
+const APP_VERSION="20261114-phase7-capture-2-fluid-curves-1";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -251,20 +251,29 @@ function startOilScene(rootNode,hostNode){
     const leftWaist=cx-waistHalf,rightWaist=cx+waistHalf;
     const leftFlareY=leftY-Math.min(12,lowerGap*.24);
     const rightFlareY=rightY-Math.min(12,lowerGap*.24);
-    const fmt=n=>n.toFixed(2);
+    // Match the first derivatives at the waist, then smoothly join the
+    // elliptical cap; retain the original tips and lower-root handles.
+    const waistRun=Math.max(.04,Math.min(
+     (bottomHalf-waistHalf)*.34,(waistHalf-upperHalf)*.34,waistHalf*.20));
+    const waistRise=Math.max(.04,Math.min(
+     Math.max(0,contactY-midY)*.30,upperSpan*.32));
+    const capRise=Math.min(upperHalf*.73,initialRadius*.22);
+    const tipHandleRatio=Math.min(.22,Math.max(.02,
+     (waistHalf-upperHalf)/(upperHalf+.0001)*.42));
+    const fmt=n=>n.toFixed(3);
     const path='M '+fmt(leftBase)+' '+fmt(leftY)+
      ' C '+fmt(leftBase-bottomHalf*-.35)+' '+fmt(leftFlareY)+
-     ' '+fmt(cx-waistHalf*1.24)+' '+fmt(midY+lowerGap*.17)+
+     ' '+fmt(leftWaist-waistRun)+' '+fmt(midY+waistRise)+
      ' '+fmt(leftWaist)+' '+fmt(midY)+
-     ' C '+fmt(cx-waistHalf*.98)+' '+fmt(phase<=.315?midY-gap*.18:midY-upperSpan*.375)+
-     ' '+fmt(cx-upperHalf*.80)+' '+fmt(phase<=.315?tip+gap*.10:tip+upperSpan*(5/24))+
+     ' C '+fmt(leftWaist+waistRun)+' '+fmt(midY-waistRise)+
+     ' '+fmt(leftTop-upperHalf*tipHandleRatio)+' '+fmt(tip+capRise*tipHandleRatio)+
      ' '+fmt(leftTop)+' '+fmt(tip)+
-     ' Q '+fmt(cx)+' '+fmt(tip-Math.min(upperHalf*.73,initialRadius*.22))+
+     ' Q '+fmt(cx)+' '+fmt(tip-capRise)+
      ' '+fmt(rightTop)+' '+fmt(tip)+
-     ' C '+fmt(cx+upperHalf*.80)+' '+fmt(phase<=.315?tip+gap*.10:tip+upperSpan*(5/24))+
-     ' '+fmt(cx+waistHalf*.98)+' '+fmt(phase<=.315?midY-gap*.18:midY-upperSpan*.375)+
+     ' C '+fmt(rightTop+upperHalf*tipHandleRatio)+' '+fmt(tip+capRise*tipHandleRatio)+
+     ' '+fmt(rightWaist-waistRun)+' '+fmt(midY-waistRise)+
      ' '+fmt(rightWaist)+' '+fmt(midY)+
-     ' C '+fmt(cx+waistHalf*1.24)+' '+fmt(midY+lowerGap*.17)+
+     ' C '+fmt(rightWaist+waistRun)+' '+fmt(midY+waistRise)+
      ' '+fmt(rightBase+bottomHalf*-.35)+' '+fmt(rightFlareY)+
      ' '+fmt(rightBase)+' '+fmt(rightY)+
      surfaceClosure(rightBase,leftBase,t)+
