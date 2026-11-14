@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-oil-curve-1";
+const APP_VERSION="20261114-phase7-oil-curve-2";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -239,9 +239,9 @@ function startOilScene(rootNode,hostNode){
     // Its first handle flares slightly OUT from the surface, then the
     // same uninterrupted contour eases inward toward the bubble.
     const leftTop=cx-upperHalf,rightTop=cx+upperHalf;
-    const flare=Math.min(bottomHalf*.18,Math.max(.75,gap*.10));
+    const flare=Math.max(bottomHalf*.48,Math.min(bottomHalf*.62,gap*.24));
     const lowerLift=Math.min(gap*.19,initialRadius*.36);
-    const upperGuide=Math.max(upperHalf,waistHalf*.86);
+    const upperGuide=Math.max(upperHalf,waistHalf*.90,bottomHalf*1.12);
     const fmt=n=>n.toFixed(2);
     const path='M '+fmt(leftBase)+' '+fmt(leftY)+
      ' C '+fmt(leftBase-flare)+' '+fmt(leftY-lowerLift)+
