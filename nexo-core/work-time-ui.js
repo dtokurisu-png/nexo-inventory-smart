@@ -368,6 +368,25 @@ function message(msg,bad=false){$('message').textContent=msg;$('message').style.
 function save(next){state=next;localStorage.setItem(KEY,JSON.stringify(state));render()}
 function profile(){return state.profiles.find(p=>p.id===selectedProfile)}
 function payroll(){return P.project(state)}
+const WEEKDAY_NAMES=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+function closeDay(profileItem){
+ const start=Number(profileItem?.weekStartDay);
+ return Number.isInteger(start)&&start>=0&&start<=6?(start+6)%7:0
+}
+function weekStartKeyFor(profileItem,now){
+ const start=Number.isInteger(profileItem?.weekStartDay)?profileItem.weekStartDay:1;
+ const d=new Date(now);d.setHours(12,0,0,0);
+ d.setDate(d.getDate()-(d.getDay()-start+7)%7);
+ return localDate(d)
+}
+function renderWeekClose(now=Date.now()){
+ const p=profile(),banner=$('week-close-banner');
+ const day=p?new Intl.DateTimeFormat('en-US',{weekday:'short',timeZone:p.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone}).format(now):'';
+ const current=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(day);
+ const closing=!!p&&current===closeDay(p);
+ banner.hidden=!closing;
+ if(closing)$('week-close-place').textContent='Cierre de '+(p.place||p.name)+' · '+WEEKDAY_NAMES[current]
+}
 function validDate(v){const n=new Date(v).getTime();if(!Number.isFinite(n))throw Error('Fecha u hora inválida');return n}
 function duration(s){let pause=s.breaks.reduce((n,b)=>n+(b.endAt-b.startAt),0);if(s.breakStartedAt!==null)pause+=Math.max(0,(s.closedAt??Date.now())-s.breakStartedAt);return Math.max(0,(s.closedAt??Date.now())-s.startedAt-pause)}
 function profileSnapshot(p){return {profileId:p.id,profileName:p.name,place:p.place,rateCents:p.rateCents,taxBasisPoints:p.taxBasisPoints,overtimeAfterMilliseconds:p.overtimeAfterMilliseconds,overtimeMultiplierBasisPoints:p.overtimeMultiplierBasisPoints,weekStartDay:p.weekStartDay,timeZone:p.timeZone}}
@@ -436,6 +455,7 @@ const p=profile();const a=E.active(state);
 $('profile').replaceChildren();
 for(const item of state.profiles){const o=document.createElement('option');o.value=item.id;o.textContent=item.name+' · '+item.place;$('profile').append(o)}
 $('profile').value=selectedProfile;
+$('profile-week-close').disabled=!p;$('save-profile-week-close').disabled=!p;$('profile-week-close').value=String(closeDay(p));
 $('clock-in').disabled=!p||!!a;$('break-start').disabled=!a||a.breakStartedAt!==null;$('break-end').disabled=!a||a.breakStartedAt===null;$('clock-out').disabled=!a;
 $('active-info').textContent=a?('En '+a.place+' · '+(a.breakStartedAt===null?'Trabajando':'En descanso')+' · Inicio '+new Date(a.startedAt).toLocaleString('es')):'No hay un turno activo.';
 const calc=payroll(),sum=new Map(calc.shifts.map(x=>[x.shiftId,x]));
@@ -478,7 +498,9 @@ function detailedHours(milliseconds){
 }
 function buildWeekReport(snapshot,profileId,offset=0,now=Date.now()){
  const profile=snapshot.profiles.find(x=>x.id===profileId)||null;
- const start=new Date(now);start.setHours(12,0,0,0);start.setDate(start.getDate()-((start.getDay()+6)%7)+7*offset);
+ const start=new Date(now),weekStart=Number.isInteger(profile?.weekStartDay)?profile.weekStartDay:1;
+ start.setHours(12,0,0,0);
+ start.setDate(start.getDate()-((start.getDay()-weekStart+7)%7)+7*offset);
  const end=new Date(start);end.setDate(start.getDate()+6);
  const pays=new Map(P.project(snapshot,now).shifts.map(x=>[x.shiftId,x]));
  const totals={workedMs:0,grossCents:0,taxCents:0,netCents:0,overtimeMs:0,provisional:0};
@@ -952,8 +974,24 @@ function editShift(s){const f=$('shift-form');f.hidden=false;f.elements.id.value
 function guard(fn){try{fn();message('Cambios guardados.')}catch(e){message(e.message||'No se pudo guardar',true)}}
 $('show-profile').onclick=()=>{$('profile-form').hidden=false};
 $('cancel-profile').onclick=()=>{$('profile-form').hidden=true};
-$('profile-form').onsubmit=e=>{e.preventDefault();guard(()=>{const f=e.currentTarget,fd=new FormData(f);const next=E.addProfile(state,{name:fd.get('name'),place:fd.get('place'),hourlyRate:fd.get('hourlyRate'),taxEnabled:Number(fd.get('taxPercent'))>0,taxPercent:fd.get('taxPercent'),overtimeAfterHours:fd.get('overtimeAfterHours'),overtimeMultiplier:fd.get('overtimeMultiplier')});selectedProfile=next.profiles[next.profiles.length-1].id;save(next);f.reset();f.hidden=true})};
+$('profile-form').onsubmit=e=>{e.preventDefault();guard(()=>{const f=e.currentTarget,fd=new FormData(f);const next=E.addProfile(state,{name:fd.get('name'),place:fd.get('place'),hourlyRate:fd.get('hourlyRate'),taxEnabled:Number(fd.get('taxPercent'))>0,taxPercent:fd.get('taxPercent'),overtimeAfterHours:fd.get('overtimeAfterHours'),overtimeMultiplier:fd.get('overtimeMultiplier'),weekStartDay:(Number(fd.get('weekCloseDay'))+1)%7});selectedProfile=next.profiles[next.profiles.length-1].id;save(next);f.reset();f.hidden=true})};
 $('profile').onchange=e=>{if(geoMonitor)stopGeoMonitor('GPS detenido al cambiar de lugar de trabajo.');selectedProfile=e.target.value;render()};
+$('save-profile-week-close').onclick=()=>{
+ const p=profile();
+ if(!p){message('Primero creá un lugar de trabajo.',true);return}
+ const closing=Number($('profile-week-close').value);
+ if(!Number.isInteger(closing)||closing<0||closing>6){message('Seleccioná un día válido.',true);return}
+ const nextStart=(closing+1)%7;
+ if(p.weekStartDay===nextStart){message('El cierre de '+p.place+' ya es el '+WEEKDAY_NAMES[closing]+'.');return}
+ // Keep the workplace's shift snapshots consistent with the configured payroll week.
+ const next={
+  ...state,
+  profiles:state.profiles.map(item=>item.id===p.id?{...item,weekStartDay:nextStart}:item),
+  shifts:state.shifts.map(item=>item.profileId===p.id?{...item,weekStartDay:nextStart}:item)
+ };
+ save(next);
+ message('Cierre semanal actualizado: '+WEEKDAY_NAMES[closing]+'. Se recalcularon las semanas de '+p.place+'.')
+};
 function commitManualMark(type){
  try{markAt(type,capturedMarkAt)}catch(e){render();message(e.message||'No se pudo registrar la marca',true)}
 }
