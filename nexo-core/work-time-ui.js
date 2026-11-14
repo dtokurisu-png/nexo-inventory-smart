@@ -149,7 +149,7 @@ function startOilScene(rootNode,hostNode){
  if(!reduced)requestAnimationFrame(loop);
 }
 
-startOilScene(uiRoot,host);
+try{startOilScene(uiRoot,host)}catch(_){/* An optional visual effect must never block the time clock. */}
 try{
 /* Control de horas — motor puro, sin acceso a autenticación/Wix.
    Persistencia: el host proporciona un adapter load/save con identidad aislada. */
