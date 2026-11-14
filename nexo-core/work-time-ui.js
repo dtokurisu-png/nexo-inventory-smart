@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-lower-flare-neg026";
+const APP_VERSION="20261114-phase7-capture-2-lower-flare-neg035-merge";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -231,7 +231,7 @@ function startOilScene(rootNode,hostNode){
     .60+initialRadius*.055*afterRelease;
    const gap=Math.max(0,contactY-tip);
    const neckVisibility=smooth((phase-.008)/.055)*
-    (1-smooth((phase-.392)/.084));
+    (1-smooth((phase-.475)/.035));
    if(neckVisibility>.004&&gap>.7){
     // Each lower tip is attached to the sampled visible wave, even as the
     // latter oscillates and bends. The flare's Bézier controls extend
@@ -243,7 +243,7 @@ function startOilScene(rootNode,hostNode){
     const rightFlareY=rightY-Math.min(12,gap*.24);
     const fmt=n=>n.toFixed(2);
     const path='M '+fmt(leftBase)+' '+fmt(leftY)+
-     ' C '+fmt(leftBase-bottomHalf*-.26)+' '+fmt(leftFlareY)+
+     ' C '+fmt(leftBase-bottomHalf*-.35)+' '+fmt(leftFlareY)+
      ' '+fmt(cx-waistHalf*1.24)+' '+fmt(midY+gap*.17)+
      ' '+fmt(leftWaist)+' '+fmt(midY)+
      ' C '+fmt(cx-waistHalf*.98)+' '+fmt(midY-gap*.18)+
@@ -255,12 +255,12 @@ function startOilScene(rootNode,hostNode){
      ' '+fmt(cx+waistHalf*.98)+' '+fmt(midY-gap*.18)+
      ' '+fmt(rightWaist)+' '+fmt(midY)+
      ' C '+fmt(cx+waistHalf*1.24)+' '+fmt(midY+gap*.17)+
-     ' '+fmt(rightBase+bottomHalf*-.26)+' '+fmt(rightFlareY)+
+     ' '+fmt(rightBase+bottomHalf*-.35)+' '+fmt(rightFlareY)+
      ' '+fmt(rightBase)+' '+fmt(rightY)+
      surfaceClosure(rightBase,leftBase,t)+
      ' L '+fmt(leftBase)+' '+fmt(leftY)+' Z';
     b.bridge.setAttribute('d',path);
-    b.bridge.setAttribute('opacity',(neckVisibility*.90*(1-.3*afterRelease)).toFixed(3));
+    b.bridge.setAttribute('opacity',(neckVisibility*.90).toFixed(3));
    }else b.bridge.setAttribute('opacity','0');
    // The uppermost edge melts almost entirely into the sphere, and the
    // lower roots fade onto the matching wave with no visible seam.
