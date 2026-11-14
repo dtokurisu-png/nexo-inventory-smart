@@ -1102,7 +1102,7 @@ function buildChartModel(snapshot,mode,anchor=new Date(),now=Date.now()){
     const week=periodWeeks.get(p.id)?.[key];
     values.push(week?{...chartEmpty(),...(data.byPayrollWeek.get(p.id+'|'+week.key)||{}),range:fmtRange(week.start,week.end)}:chartEmpty())
    }else if(mode==='year'){
-    const items=dayRows.filter(([compound])=>compound.startsWith(p.id+'|')&&compound.slice(p.id.length+1,7+p.id.length)===key).map(([,v])=>v);
+    const items=dayRows.filter(([compound])=>compound.startsWith(p.id+'|')&&compound.slice(p.id.length+1,p.id.length+8)===key).map(([,v])=>v);
     values.push(chartAggregate(items))
    }else values.push({...chartEmpty(),...(data.byDay.get(p.id+'|'+key)||{})})
   }
@@ -1114,7 +1114,7 @@ function buildChartModel(snapshot,mode,anchor=new Date(),now=Date.now()){
  const maxBars=Math.max(0,...[...series.values()].flatMap(v=>v.map(x=>x.hours)));
  const maxThreshold=mode==='month'?Math.max(0,...thresholds.map(t=>t.hours)):0;
  const step=mode==='month'?8:mode==='year'?40:maxBars<=6?1:maxBars<=12?2:4;
- const yMax=Math.max(step,Math.ceil((Math.max(maxBars,maxThreshold)+.00001)/step)*step);
+ const yMax=Math.max(step,Math.ceil(Math.max(maxBars,maxThreshold)/step-1e-9)*step);
  return {mode,profiles,labels,keys,series,summaries,total,yMax,step,periodTitle,note,thresholds,periodWeeks}
 }
 function renderCharts(){
@@ -1154,6 +1154,7 @@ function renderCharts(){
  svg.setAttribute('width',chartWidth);
  svg.setAttribute('height',height);
  svg.setAttribute('viewBox','0 0 '+chartWidth+' '+height);
+ svg.style.width=chartWidth+'px';svg.style.height=height+'px';
  const axis=(hours)=>plotBottom-plotHeight*Math.max(0,hours)/model.yMax;
  const tickCount=Math.max(1,Math.round(model.yMax/model.step));
  const stride=Math.max(1,Math.ceil(tickCount/8));
