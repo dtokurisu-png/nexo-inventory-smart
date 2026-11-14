@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-lower-flare-neg035-merge";
+const APP_VERSION="20261114-phase7-capture-2-upper-retract-2x";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -226,7 +226,16 @@ function startOilScene(rootNode,hostNode){
    // with the emerging bead. After pinching, a wide remnant settles back.
    const lift=smooth((phase-.015)/.115);
    const beforeTip=contactY+(attachedTipY-contactY)*lift;
-   const tip=beforeTip+(contactY-initialRadius*.16-beforeTip)*afterRelease;
+   // The base and waist retain their original recovery time. Only the
+   // two points detached from the bead retract twice as quickly.
+   const lowerTip=beforeTip+(contactY-initialRadius*.16-beforeTip)*afterRelease;
+   const lowerGap=Math.max(0,contactY-lowerTip);
+   const waistY=lowerTip+lowerGap*.48;
+   const upperPhase=clamp((phase-.315)/.08);
+   const upperRecovery=1-(1-upperPhase)*(1-upperPhase);
+   const upperRest=Math.min(initialRadius*.13,Math.max(.25,lowerGap*.10));
+   const tip=phase<=.315?lowerTip:
+    beforeTip+(waistY-upperRest-beforeTip)*upperRecovery;
    const upperHalf=phase<=.315?topHalf:
     .60+initialRadius*.055*afterRelease;
    const gap=Math.max(0,contactY-tip);
@@ -236,25 +245,26 @@ function startOilScene(rootNode,hostNode){
     // Each lower tip is attached to the sampled visible wave, even as the
     // latter oscillates and bends. The flare's Bézier controls extend
     // OUTSIDE the roots instead of curving in beneath the water.
-    const midY=tip+gap*.48;
+    const midY=waistY;
+    const upperSpan=Math.max(0,midY-tip);
     const leftTop=cx-upperHalf,rightTop=cx+upperHalf;
     const leftWaist=cx-waistHalf,rightWaist=cx+waistHalf;
-    const leftFlareY=leftY-Math.min(12,gap*.24);
-    const rightFlareY=rightY-Math.min(12,gap*.24);
+    const leftFlareY=leftY-Math.min(12,lowerGap*.24);
+    const rightFlareY=rightY-Math.min(12,lowerGap*.24);
     const fmt=n=>n.toFixed(2);
     const path='M '+fmt(leftBase)+' '+fmt(leftY)+
      ' C '+fmt(leftBase-bottomHalf*-.35)+' '+fmt(leftFlareY)+
-     ' '+fmt(cx-waistHalf*1.24)+' '+fmt(midY+gap*.17)+
+     ' '+fmt(cx-waistHalf*1.24)+' '+fmt(midY+lowerGap*.17)+
      ' '+fmt(leftWaist)+' '+fmt(midY)+
-     ' C '+fmt(cx-waistHalf*.98)+' '+fmt(midY-gap*.18)+
-     ' '+fmt(cx-upperHalf*.80)+' '+fmt(tip+gap*.10)+
+     ' C '+fmt(cx-waistHalf*.98)+' '+fmt(phase<=.315?midY-gap*.18:midY-upperSpan*.375)+
+     ' '+fmt(cx-upperHalf*.80)+' '+fmt(phase<=.315?tip+gap*.10:tip+upperSpan*(5/24))+
      ' '+fmt(leftTop)+' '+fmt(tip)+
      ' Q '+fmt(cx)+' '+fmt(tip-Math.min(upperHalf*.73,initialRadius*.22))+
      ' '+fmt(rightTop)+' '+fmt(tip)+
-     ' C '+fmt(cx+upperHalf*.80)+' '+fmt(tip+gap*.10)+
-     ' '+fmt(cx+waistHalf*.98)+' '+fmt(midY-gap*.18)+
+     ' C '+fmt(cx+upperHalf*.80)+' '+fmt(phase<=.315?tip+gap*.10:tip+upperSpan*(5/24))+
+     ' '+fmt(cx+waistHalf*.98)+' '+fmt(phase<=.315?midY-gap*.18:midY-upperSpan*.375)+
      ' '+fmt(rightWaist)+' '+fmt(midY)+
-     ' C '+fmt(cx+waistHalf*1.24)+' '+fmt(midY+gap*.17)+
+     ' C '+fmt(cx+waistHalf*1.24)+' '+fmt(midY+lowerGap*.17)+
      ' '+fmt(rightBase+bottomHalf*-.35)+' '+fmt(rightFlareY)+
      ' '+fmt(rightBase)+' '+fmt(rightY)+
      surfaceClosure(rightBase,leftBase,t)+
