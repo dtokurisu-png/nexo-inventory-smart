@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase6-oil-1";
+const APP_VERSION="20261114-phase6-oil-2";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -105,6 +105,27 @@ function startOilScene(rootNode,hostNode){
   }
   return y
  }
+ // Sample precisely the same polyline that wavePath paints (including its
+ // discrete vertices), so neck roots touch the VISIBLE oil contour rather
+ // than floating over or hiding underneath a different smooth function.
+ function surfaceLine(x,t){
+  const steps=Math.max(32,Math.min(88,Math.ceil(width/10)));
+  const unit=width/steps,position=Math.max(0,Math.min(steps,x/unit));
+  const first=Math.min(steps-1,Math.floor(position));
+  const fraction=position-first;
+  return wave(first*unit,t)*(1-fraction)+wave((first+1)*unit,t)*fraction
+ }
+ function surfaceClosure(fromRight,toLeft,t){
+  const steps=Math.max(32,Math.min(88,Math.ceil(width/10))),unit=width/steps;
+  let path='';
+  // Reproduce the exact sampled surface between the anchored endpoints.
+  for(let i=Math.floor(fromRight/unit);i>=Math.ceil(toLeft/unit);i--){
+   const x=i*unit;
+   if(x<fromRight-.0001&&x>toLeft+.0001)
+    path+=' L '+x.toFixed(2)+' '+wave(x,t).toFixed(2)
+  }
+  return path
+ }
  const wavePath=(t,delta=0,fill=false)=>{
   let d='';
   const steps=Math.max(32,Math.min(88,Math.ceil(width/10)));
@@ -191,61 +212,59 @@ function startOilScene(rootNode,hostNode){
    // The two upper tips track x = +/- rx*sin(theta) on the bubble's
    // actual ellipse, from its mid-lower sides down to the bottom pole.
    const theta=1.15*(1-release);
-   const bottomHalf=Math.max(initialRadius*.55,rx*1.52);
-   const taper=smooth((phase-.07)/.255);
-   const waistHalf=Math.max(.48,radius*(1.10-1.07*taper));
+   const bottomHalf=Math.max(initialRadius*.80,rx*1.58);
+   const taper=smooth((phase-.085)/.265);
    const topHalf=Math.max(.60,rx*Math.sin(theta));
    const attachedTipY=cy+ry*Math.cos(theta);
-   // Recess the base into the liquid deeply enough that no edge or
-   // polygon tip can emerge during the largest surface undulation.
-   const submergedSurface=Math.max(
-    wave(cx-bottomHalf,t),surfaceY,wave(cx+bottomHalf,t));
-   const baseY=submergedSurface+Math.max(36,initialRadius*2.35);
-   // Once the two tips meet, the rounded remnant retracts INTO the wave
-   // while the detached bead rises independently.
-   const tip=attachedTipY+
-    (surfaceY+initialRadius*.25-attachedTipY)*afterRelease;
+   // The waist starts 10% wider than the actual bubble. It stays broader
+   // than the narrowing upper contact tips, never becoming a hairline.
+   const waistHalf=Math.max(radius*.26,topHalf*1.10,radius*(1.10-.83*taper));
+   const leftBase=cx-bottomHalf,rightBase=cx+bottomHalf;
+   const leftY=surfaceLine(leftBase,t),rightY=surfaceLine(rightBase,t);
+   const centerY=surfaceLine(cx,t),contactY=(leftY+rightY+centerY)/3;
+   // Start as a flat surface swelling, then lift the complete hourglass
+   // with the emerging bead. After pinching, a wide remnant settles back.
+   const lift=smooth((phase-.015)/.115);
+   const beforeTip=contactY+(attachedTipY-contactY)*lift;
+   const tip=beforeTip+(contactY-initialRadius*.16-beforeTip)*afterRelease;
    const upperHalf=phase<=.315?topHalf:
     .60+initialRadius*.055*afterRelease;
-   const gap=baseY-tip;
-   const neckVisibility=smooth((phase-.008)/.046)*
-    (1-smooth((phase-.388)/.088));
-   if(neckVisibility>.004&&gap>2){
-    const midY=tip+gap*.50;
-    const leftBase=cx-bottomHalf,rightBase=cx+bottomHalf;
+   const gap=Math.max(0,contactY-tip);
+   const neckVisibility=smooth((phase-.008)/.055)*
+    (1-smooth((phase-.392)/.084));
+   if(neckVisibility>.004&&gap>.7){
+    // Each lower tip is attached to the sampled visible wave, even as the
+    // latter oscillates and bends. The flare's Bézier controls extend
+    // OUTSIDE the roots instead of curving in beneath the water.
+    const midY=tip+gap*.48;
     const leftTop=cx-upperHalf,rightTop=cx+upperHalf;
     const leftWaist=cx-waistHalf,rightWaist=cx+waistHalf;
+    const leftFlareY=leftY-Math.min(12,gap*.24);
+    const rightFlareY=rightY-Math.min(12,gap*.24);
     const fmt=n=>n.toFixed(2);
-    // Outward-bulging lower Béziers blend below the surface;
-    // a convex upper cap closes as the two contact points meet.
-    const path='M '+fmt(leftBase)+' '+fmt(baseY)+
-     ' C '+fmt(cx-bottomHalf*1.24)+' '+fmt(baseY-gap*.14)+
-     ' '+fmt(cx-waistHalf*1.15)+' '+fmt(midY+gap*.14)+
+    const path='M '+fmt(leftBase)+' '+fmt(leftY)+
+     ' C '+fmt(leftBase-bottomHalf*.24)+' '+fmt(leftFlareY)+
+     ' '+fmt(cx-waistHalf*1.24)+' '+fmt(midY+gap*.17)+
      ' '+fmt(leftWaist)+' '+fmt(midY)+
-     ' C '+fmt(cx-waistHalf*.96)+' '+fmt(midY-gap*.17)+
-     ' '+fmt(cx-upperHalf*.78)+' '+fmt(tip+gap*.11)+
+     ' C '+fmt(cx-waistHalf*.98)+' '+fmt(midY-gap*.18)+
+     ' '+fmt(cx-upperHalf*.80)+' '+fmt(tip+gap*.10)+
      ' '+fmt(leftTop)+' '+fmt(tip)+
      ' Q '+fmt(cx)+' '+fmt(tip-Math.min(upperHalf*.73,initialRadius*.22))+
      ' '+fmt(rightTop)+' '+fmt(tip)+
-     ' C '+fmt(cx+upperHalf*.78)+' '+fmt(tip+gap*.11)+
-     ' '+fmt(cx+waistHalf*.96)+' '+fmt(midY-gap*.17)+
+     ' C '+fmt(cx+upperHalf*.80)+' '+fmt(tip+gap*.10)+
+     ' '+fmt(cx+waistHalf*.98)+' '+fmt(midY-gap*.18)+
      ' '+fmt(rightWaist)+' '+fmt(midY)+
-     ' C '+fmt(cx+waistHalf*1.15)+' '+fmt(midY+gap*.14)+
-     ' '+fmt(cx+bottomHalf*1.24)+' '+fmt(baseY-gap*.14)+
-     ' '+fmt(rightBase)+' '+fmt(baseY)+' Z';
+     ' C '+fmt(cx+waistHalf*1.24)+' '+fmt(midY+gap*.17)+
+     ' '+fmt(rightBase+bottomHalf*.24)+' '+fmt(rightFlareY)+
+     ' '+fmt(rightBase)+' '+fmt(rightY)+
+     surfaceClosure(rightBase,leftBase,t)+
+     ' L '+fmt(leftBase)+' '+fmt(leftY)+' Z';
     b.bridge.setAttribute('d',path);
     b.bridge.setAttribute('opacity',(neckVisibility*.90*(1-.3*afterRelease)).toFixed(3));
    }else b.bridge.setAttribute('opacity','0');
-   // Fade BOTH ends of the connector: into the bulb above and into the
-   // liquid sheet below, with a soft, luminous core between them.
-   const neckAlpha=[
-    .025+.22*afterRelease,
-    .13+.08*afterRelease,
-    .30,
-    .31,
-    .15,
-    0
-   ];
+   // The uppermost edge melts almost entirely into the sphere, and the
+   // lower roots fade onto the matching wave with no visible seam.
+   const neckAlpha=[0,.018+.015*afterRelease,.17,.285,.115,0];
    for(let i=0;i<b.neckStops.length;i++)
     b.neckStops[i].setAttribute('stop-opacity',neckAlpha[i].toFixed(3));
   }
