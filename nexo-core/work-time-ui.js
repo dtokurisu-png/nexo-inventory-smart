@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase6-charts-2";
+const APP_VERSION="20261114-phase6-charts-3";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -936,7 +936,7 @@ function workInitials(p){
  const label=String(p?.place||p?.name||'TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z]/g,'').toUpperCase();
  return (label+'TR').slice(0,2)
 }
-function buildWeekReport(snapshot,profileId='all',offset=0,now=Date.now()){
+function calculateWorkWeekPeriods(snapshot,profileId='all',offset=0,now=Date.now()){
  const selected=snapshot.profiles.find(x=>x.id===profileId)||null;
  const includeAll=!selected;
  // A multi-workplace report is a coordinated cycle, not a Monday–Sunday
@@ -964,6 +964,10 @@ function buildWeekReport(snapshot,profileId='all',offset=0,now=Date.now()){
  const start=ranges.length?new Date(Math.min(...ranges.map(p=>p.start.getTime()))):new Date(base);
  const end=ranges.length?new Date(Math.max(...ranges.map(p=>p.end.getTime()))):new Date(base);
  if(!ranges.length)end.setDate(start.getDate()+6);
+ return {selected,includeAll,start,end,periods,leadDay};
+}
+function buildWeekReport(snapshot,profileId='all',offset=0,now=Date.now()){
+ const {selected,includeAll,start,end,periods}=calculateWorkWeekPeriods(snapshot,profileId,offset,now);
  const pays=new Map(P.project(snapshot,now).shifts.map(x=>[x.shiftId,x]));
  const profiles=new Map(snapshot.profiles.map(p=>[p.id,p]));
  const totals={workedMs:0,grossCents:0,taxCents:0,netCents:0,overtimeMs:0,provisional:0};
@@ -1080,7 +1084,7 @@ function chartWeeklyProjection(snapshot,now=Date.now()){
 function buildChartModel(snapshot,mode,anchor=new Date(),now=Date.now()){
  const profiles=snapshot.profiles;
  const data=chartWeeklyProjection(snapshot,now),a=chartDateAt(anchor.getFullYear(),anchor.getMonth(),anchor.getDate());
- let keys=[],labels=[],periodTitle='',note='',periodWeeks=new Map(),thresholds=[];
+ let keys=[],labels=[],periodTitle='',note='',periodWeeks=new Map(),thresholds=[],weeklyPeriods=null;
  const dateOf=(d,shift=0)=>{const t=new Date(d);t.setDate(t.getDate()+shift);return t};
  const fmtRange=(l,r)=>chartDateLabel(l)+' – '+chartDateLabel(r)+' '+r.getFullYear();
  if(mode==='day'){
@@ -1089,11 +1093,17 @@ function buildChartModel(snapshot,mode,anchor=new Date(),now=Date.now()){
   periodTitle=a.toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   note='Comparación de horas registradas por lugar durante este día. Las jornadas abiertas se actualizan mientras la página está visible.'
  }else if(mode==='week'){
-  const start=chartWeekBegin(a,1);
-  keys=Array.from({length:7},(_,i)=>localDate(dateOf(start,i)));
-  labels=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  periodTitle=fmtRange(start,dateOf(start,6));
-  note='Esta gráfica compara días de lunes a domingo. Las horas extra se calculan según la semana laboral configurada de cada lugar.'
+  // IMPORTANT: Exactly the same workplace-specific cycle as Resumen
+  // semanal, including its combined span when week endings differ.
+  weeklyPeriods=calculateWorkWeekPeriods(snapshot,'all',0,a.getTime());
+  let cursor=new Date(weeklyPeriods.start);
+  while(cursor<=weeklyPeriods.end){
+   keys.push(localDate(cursor));
+   labels.push(cursor.toLocaleDateString('es',{weekday:'short',day:'numeric'}).replace('.',''));
+   cursor=dateOf(cursor,1)
+  }
+  periodTitle=fmtRange(weeklyPeriods.start,weeklyPeriods.end);
+  note='La vista semanal usa los mismos períodos del Resumen semanal. Cada lugar incluye solamente los días de su semana configurada, aunque la gráfica conjunta abarque más de siete días.'
  }else if(mode==='month'){
   const start=chartDateAt(a.getFullYear(),a.getMonth(),1),last=chartDateAt(a.getFullYear(),a.getMonth()+1,0);
   for(const p of profiles){
@@ -1127,6 +1137,10 @@ function buildChartModel(snapshot,mode,anchor=new Date(),now=Date.now()){
    }else if(mode==='year'){
     const items=dayRows.filter(([compound])=>compound.startsWith(p.id+'|')&&compound.slice(p.id.length+1,p.id.length+8)===key).map(([,v])=>v);
     values.push(chartAggregate(items))
+   }else if(mode==='week'){
+    const period=weeklyPeriods.periods.get(p.id);
+    values.push(period&&key>=period.startKey&&key<=period.endKey?
+     {...chartEmpty(),...(data.byDay.get(p.id+'|'+key)||{})}:chartEmpty())
    }else values.push({...chartEmpty(),...(data.byDay.get(p.id+'|'+key)||{})})
   }
   series.set(p.id,values);
@@ -1157,7 +1171,8 @@ function renderCharts(){
  const selection=$('chart-selection');selection.textContent='';selection.hidden=true;
  const today=new Date();
  const isFuture=chartMode==='day'?localDate(chartAnchor)>=localDate(today):
-  chartMode==='week'?localDate(chartWeekBegin(chartAnchor))>=localDate(chartWeekBegin(today)):
+  chartMode==='week'?localDate(calculateWorkWeekPeriods(state,'all',0,chartAnchor.getTime()).start)>=
+   localDate(calculateWorkWeekPeriods(state,'all',0,today.getTime()).start):
   chartMode==='month'?chartAnchor.getFullYear()*12+chartAnchor.getMonth()>=today.getFullYear()*12+today.getMonth():
   chartAnchor.getFullYear()>=today.getFullYear();
  $('chart-next').disabled=isFuture;
