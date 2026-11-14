@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-oil-curve-2";
+const APP_VERSION="20261114-phase7-oil-curve-3";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -212,7 +212,7 @@ function startOilScene(rootNode,hostNode){
    // The two upper tips track x = +/- rx*sin(theta) on the bubble's
    // actual ellipse, from its mid-lower sides down to the bottom pole.
    const theta=1.15*(1-release);
-   const bottomHalf=Math.max(initialRadius*.80,rx*1.58);
+   const bottomHalf=Math.max(initialRadius*.80,rx*1.58)*1.35;
    const taper=smooth((phase-.085)/.265);
    const topHalf=Math.max(.60,rx*Math.sin(theta));
    const attachedTipY=cy+ry*Math.cos(theta);
@@ -239,17 +239,17 @@ function startOilScene(rootNode,hostNode){
     // Its first handle flares slightly OUT from the surface, then the
     // same uninterrupted contour eases inward toward the bubble.
     const leftTop=cx-upperHalf,rightTop=cx+upperHalf;
-    const flare=Math.max(bottomHalf*.48,Math.min(bottomHalf*.62,gap*.24));
+    const flare=Math.max(bottomHalf*.52,Math.min(bottomHalf*.68,gap*.28));
     const lowerLift=Math.min(gap*.19,initialRadius*.36);
-    const upperGuide=Math.max(upperHalf,waistHalf*.90,bottomHalf*1.12);
+    const upperOut=Math.max(bottomHalf*.42,upperHalf*.62,waistHalf*.55);
     const fmt=n=>n.toFixed(2);
     const path='M '+fmt(leftBase)+' '+fmt(leftY)+
      ' C '+fmt(leftBase-flare)+' '+fmt(leftY-lowerLift)+
-     ' '+fmt(cx-upperGuide)+' '+fmt(tip+gap*.40)+
+     ' '+fmt(leftTop-upperOut)+' '+fmt(tip+gap*.44)+
      ' '+fmt(leftTop)+' '+fmt(tip)+
      ' Q '+fmt(cx)+' '+fmt(tip-Math.min(upperHalf*.73,initialRadius*.22))+
      ' '+fmt(rightTop)+' '+fmt(tip)+
-     ' C '+fmt(cx+upperGuide)+' '+fmt(tip+gap*.40)+
+     ' C '+fmt(rightTop+upperOut)+' '+fmt(tip+gap*.44)+
      ' '+fmt(rightBase+flare)+' '+fmt(rightY-lowerLift)+
      ' '+fmt(rightBase)+' '+fmt(rightY)+
      surfaceClosure(rightBase,leftBase,t)+
