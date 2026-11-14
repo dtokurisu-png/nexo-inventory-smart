@@ -625,6 +625,11 @@ function workTagInitials(p){
  const name=String(p.place||p.name||'TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z]/g,'').toUpperCase();
  return (name+'TR').slice(0,2)
 }
+function workTagDisplay(p){
+ const initials=workTagInitials(p);
+ const same=state.profiles.filter(x=>workTagInitials(x)===initials);
+ return same.length<=1?initials:initials+String(same.findIndex(x=>x.id===p.id)+1)
+}
 function alphaTag(color,opacity){
  return 'rgba('+color.rgb.join(',')+','+opacity+')'
 }
@@ -674,7 +679,7 @@ function renderOffPicker(){
  for(const p of state.profiles){
   const active=isOffDay(p.id,selectedDay),color=tagChoice(p);
   const b=document.createElement('button');b.type='button';b.className='calendar-off-tag';
-  b.textContent=workTagInitials(p);
+  b.textContent=workTagDisplay(p);
   b.setAttribute('aria-label',(active?'Quitar libre en ':'Marcar libre en ')+p.place+' para '+selectedDay);
   b.setAttribute('aria-pressed',active?'true':'false');
   b.title=p.place+(active?' · libre':' · marcar libre');
@@ -1604,7 +1609,7 @@ function renderCalendar(){
    const otherOff=state.profiles.filter(p=>isOffDay(p.id,date));
    if(otherOff.length){
     const small=document.createElement('small');small.className='calendar-off-label';
-    small.textContent='OFF';small.title=otherOff.map(p=>p.place).join(' · ');b.append(small)
+    small.textContent=otherOff.length===1?workTagDisplay(otherOff[0])+' OFF':'OFF';small.title=otherOff.map(p=>p.place).join(' · ');b.append(small)
    }
   }
   const note=starts.map(p=>'Inicio de semana: '+p.place)
