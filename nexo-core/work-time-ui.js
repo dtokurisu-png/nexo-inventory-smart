@@ -1254,9 +1254,13 @@ function restoreGeoMonitor(){
  // to check GPS on launch. No browser geolocation runs while the page is closed.
  const activeShift=E.active(state);
  const saved=persistedGeoSession();
- const activeZone=activeShift?geoFor(activeShift.profileId):null;
- const stored=saved||(activeShift&&activeZone?.enabled&&G.validZone(activeZone)?{
-  active:true,profileId:activeShift.profileId,shiftId:activeShift.id,
+ // An enabled zone is enough to resume foreground recognition, even
+ // before the first entry of the day. Never monitor a disabled zone.
+ const enabled=p=>p&&geoFor(p.id)?.enabled&&G.validZone(geoFor(p.id));
+ const preferred=activeShift?state.profiles.find(p=>p.id===activeShift.profileId):
+  state.profiles.find(p=>p.id===selectedProfile&&enabled(p))||state.profiles.find(enabled);
+ const stored=saved||(enabled(preferred)?{
+  active:true,profileId:preferred.id,shiftId:activeShift?.id||null,
   session:G.emptySession(),lastInsideAt:null,lastSampleAt:null
  }:null);
  if(!stored||geoMonitor)return false;
