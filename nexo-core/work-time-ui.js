@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-7-top-approach-fade";
+const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-8-irregular-spawn";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -30,12 +30,12 @@ function startOilScene(rootNode,hostNode){
  };
  const defs=query('oil-definitions');
  const models=[
-  {x:.13,r:18,period:23,offset:4},
-  {x:.33,r:27,period:29,offset:17},
-  {x:.58,r:23,period:26,offset:10},
-  {x:.81,r:30,period:32,offset:24},
-  {x:.45,r:20,period:27,offset:22},
-  {x:.69,r:18,period:24,offset:2}
+  {x:.13,r:18,period:23},
+  {x:.33,r:27,period:29},
+  {x:.58,r:23,period:26},
+  {x:.81,r:30,period:32},
+  {x:.45,r:20,period:27},
+  {x:.69,r:18,period:24}
  ].map((model,i)=>{
   // Per-bubble vertical transparency keeps the soft 3-D radial shading.
   // During detachment the lower edge is invisible, whereas at the upper
@@ -88,7 +88,7 @@ function startOilScene(rootNode,hostNode){
    {scale:.075,speed:.54,lag:.044,side:.51},
    {scale:.095,speed:1.47,lag:.067,side:.08}
   ].map(spec=>({...spec,node:create('ellipse','oil-spray-drop',rising)}));
-  return {...model,bridge,bubble,maskRect,maskStops,neckStops,satellites}
+  return {...model,homeX:model.x,bornAt:-Infinity,scenePhase:1,bridge,bubble,maskRect,maskStops,neckStops,satellites}
  });
  const down=[.035,.080,.115,.93,.965,.885,.06,.94,.12,.90].map((x,i)=>({
   x,r:3+(i%4)*1.4,period:13+(i%5)*3,offset:i*4.6,
@@ -97,6 +97,49 @@ function startOilScene(rootNode,hostNode){
  const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
  const smooth=x=>{const p=clamp(x);return p*p*(3-2*p)};
  const gaussian=(x,w)=>Math.exp(-Math.pow(x/Math.max(w,1),2));
+ // One irregular event clock prevents independent bubbles from spawning
+ // together. Original per-bubble ascent durations and fluid shapes remain.
+ const sceneStart=performance.now()/1000;
+ let nextBubbleAt=sceneStart-13;
+ const sizeBands=[11,18,27,38,52];
+ function scheduleBubbles(t){
+  // Avoid replaying a long backlog on return from a background tab.
+  if(t-nextBubbleAt>120){
+   nextBubbleAt=t-12;
+   for(const b of models){b.bornAt=-Infinity;b.scenePhase=1}
+  }
+  let guard=0;
+  while(nextBubbleAt<=t&&guard++<80){
+   const ready=models.filter(b=>!Number.isFinite(b.bornAt)||
+    nextBubbleAt-b.bornAt>=b.period);
+   if(!ready.length){
+    nextBubbleAt=Math.max(nextBubbleAt+1,
+     Math.min(...models.map(b=>b.bornAt+b.period))+.15);
+    continue
+   }
+   const b=ready[Math.floor(Math.random()*ready.length)];
+   const used=models.filter(m=>m!==b&&Number.isFinite(m.bornAt)&&
+    nextBubbleAt-m.bornAt<m.period).map(m=>m.r);
+   // Pick the most contrasting size among currently visible droplets.
+   const contrast=sizeBands.map(radius=>({
+    radius,spacing:used.length?Math.min(...used.map(v=>Math.abs(v-radius))):50
+   }));
+   const best=Math.max(...contrast.map(v=>v.spacing));
+   const choices=contrast.filter(v=>v.spacing>=best-.4);
+   b.r=choices[Math.floor(Math.random()*choices.length)].radius*
+    (.96+Math.random()*.08);
+   const scaled=b.r*Math.min(width/420,1.2);
+   const margin=(scaled*1.58+7)/Math.max(width,1);
+   b.x=clamp(b.homeX+(Math.random()-.5)*.09,
+    Math.max(.04,margin),Math.min(.96,1-margin));
+   b.bornAt=nextBubbleAt;
+   // Between 4.3 s and 8 s, never two births in one instant.
+   nextBubbleAt+=4.3+Math.random()*3.7;
+  }
+  for(const b of models)
+   b.scenePhase=Number.isFinite(b.bornAt)?
+    clamp((t-b.bornAt)/b.period):1;
+ }
  // Keep the head round at birth; taper only when the neck contracts.
  // For tear=0 these four cubics are an ordinary elliptical silhouette.
  const ELLIPSE_K=.5522847498;
@@ -146,7 +189,7 @@ function startOilScene(rootNode,hostNode){
   const amp=Math.max(4,Math.min(13,height*.015));
   let y=base+amp*(.53*Math.sin(x/Math.max(width,1)*Math.PI*3+t*.63)+.30*Math.sin(x/Math.max(width,1)*Math.PI*6.7-t*.41)+.19*Math.sin(x/Math.max(width,1)*Math.PI*1.6+t*.21));
   for(const m of models){
-   const phase=((t+m.offset)%m.period)/m.period;
+   const phase=m.scenePhase;
    const grow=smooth((phase-.008)/.12),rest=1-smooth((phase-.17)/.12);
    const rise=grow*rest;
    const ripple=phase>.18&&phase<.39?
@@ -199,6 +242,7 @@ function startOilScene(rootNode,hostNode){
    base=height*.846;
    svg.setAttribute('viewBox','0 0 '+width.toFixed(1)+' '+height.toFixed(1))
   }
+  scheduleBubbles(t);
   sheet.setAttribute('d',wavePath(t,0,true));
   band.setAttribute('d',wavePath(t,3,false));
   trace.setAttribute('d',wavePath(t,-9,false));
@@ -210,7 +254,7 @@ function startOilScene(rootNode,hostNode){
   }
   film.setAttribute('d',topD);
   for(const b of models){
-   const phase=((t+b.offset)%b.period)/b.period;
+   const phase=b.scenePhase;
    const cx=b.x*width,initialRadius=b.r*Math.min(width/420,1.2);
    const born=smooth(phase/.17),radius=Math.max(1,initialRadius*(.26+.74*born));
    const surfaceY=wave(cx,t);
@@ -395,7 +439,7 @@ function startOilScene(rootNode,hostNode){
   if(document.hidden||now-last<38)return;
   last=now;paint(now)
  }
- paint(0);
+ paint(sceneStart*1000);
  if(!reduced)requestAnimationFrame(loop);
 }
 
