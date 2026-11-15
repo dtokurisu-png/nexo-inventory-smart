@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-9-rest-day-home";
+const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-10-estimated-break-window";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -2634,7 +2634,61 @@ $('prev-month').onclick=()=>changeMonth(-1);$('next-month').onclick=()=>changeMo
 function changeMonth(step){const [y,m]=month.split('-').map(Number);const d=new Date(y,m-1+step,1);month=localDate(d).slice(0,7);selectedDay=month+'-01';render()}
 $('new-shift').onclick=()=>{if(!profile()){message('Primero agrega un lugar de trabajo',true);return}const f=$('shift-form');f.reset();f.hidden=false;f.elements.id.value='';f.elements.startedAt.value=selectedDay+'T09:00';f.elements.closedAt.value=selectedDay+'T17:00';f.elements.breakMinutes.value=0;f.scrollIntoView({behavior:'smooth',block:'nearest'})};
 $('cancel-shift').onclick=()=>{$('shift-form').hidden=true};
-$('shift-form').onsubmit=e=>{e.preventDefault();guard(()=>{const f=e.currentTarget,p=profile();if(!p)throw Error('Selecciona un perfil');const start=validDate(f.elements.startedAt.value),end=validDate(f.elements.closedAt.value),mins=Number(f.elements.breakMinutes.value);if(end<=start)throw Error('La salida debe ser posterior a la entrada');if(!Number.isInteger(mins)||mins<0||mins*60000>=end-start)throw Error('Descanso inválido');const existingId=f.elements.id.value,old=state.shifts.find(s=>s.id===existingId);if(existingId&&!old)throw Error('La jornada ya no existe');if(old&&old.closedAt===null)throw Error('Finaliza el turno antes de editarlo');const shift={...(old||profileSnapshot(p)),id:old?.id||('manual-'+Date.now()+'-'+Math.random().toString(36).slice(2)),startedAt:start,closedAt:end,breakStartedAt:null,breaks:mins?[{startAt:end-mins*60000,endAt:end}]:[]};const next={...state,shifts:existingId?state.shifts.map(s=>s.id===existingId?shift:s):[...state.shifts,shift]};if(next.shifts.filter(s=>s.closedAt===null).length>1)throw Error('Solo puede haber un turno activo');save(next);f.hidden=true;selectedDay=localDate(start);month=selectedDay.slice(0,7);render()})};
+// Only infer a placement when no break hours were punched. This is an
+// estimate, not a real punch: use a variable point between 3h30 and 6h
+// after entry, ensuring enough room before the actual end of the shift.
+function estimateUnpunchedBreak(start,end,minutes){
+ if(!minutes)return [];
+ const minute=60000,hour=60*minute,duration=minutes*minute;
+ const free=end-start-duration;
+ // Prefer a full hour between the estimated break's end and clock-out.
+ const beforeExit=Math.min(hour,Math.max(0,free*.20));
+ let earliest=start+3.5*hour;
+ let latest=Math.min(start+6*hour,end-duration-beforeExit);
+ if(latest<earliest){
+  // On short shifts where 3h30 is infeasible, estimate around the middle
+  // rather than pretending the break took place at clock-out.
+  earliest=start+free*.35;
+  latest=start+free*.55;
+ }
+ const proposed=earliest+(latest-earliest)*Math.random();
+ const rounded=Math.round(proposed/(5*minute))*(5*minute);
+ const begin=Math.max(earliest,Math.min(latest,rounded));
+ return [{startAt:begin,endAt:begin+duration,estimated:true,source:'manual-estimate'}]
+}
+// Edits to previously saved records must never silently move punched or
+// manually corrected breaks. Reuse their exact timestamps when duration
+// is unchanged, regardless of where the old break was located.
+function breaksForManualShift(old,start,end,minutes){
+ const existing=old?.breaks||[];
+ const priorMinutes=existing.reduce((total,b)=>total+(b.endAt-b.startAt),0)/60000;
+ if(old&&priorMinutes===minutes){
+  if(existing.some(b=>b.startAt<start||b.endAt>end))
+   throw Error('Los descansos existentes quedan fuera del nuevo horario. Revisá las horas antes de guardar.');
+  return existing.map(b=>({...b}))
+ }
+ if(old&&existing.length){
+  const legacyEstimated=String(old.id).startsWith('manual-')&&
+   existing.length===1&&existing[0].endAt===old.closedAt;
+  if(!legacyEstimated&&!existing.every(b=>b.estimated===true||b.source==='manual-estimate'))
+   throw Error('Esta jornada tiene descansos con horas específicas. No se cambiarán sus marcas al editar la duración.');
+ }
+ return estimateUnpunchedBreak(start,end,minutes)
+}
+$('shift-form').onsubmit=e=>{e.preventDefault();guard(()=>{
+ const f=e.currentTarget,p=profile();if(!p)throw Error('Selecciona un perfil');
+ const start=validDate(f.elements.startedAt.value),end=validDate(f.elements.closedAt.value),mins=Number(f.elements.breakMinutes.value);
+ if(end<=start)throw Error('La salida debe ser posterior a la entrada');
+ if(!Number.isInteger(mins)||mins<0||mins*60000>=end-start)throw Error('Descanso inválido');
+ const existingId=f.elements.id.value,old=state.shifts.find(s=>s.id===existingId);
+ if(existingId&&!old)throw Error('La jornada ya no existe');
+ if(old&&old.closedAt===null)throw Error('Finaliza el turno antes de editarlo');
+ const breaks=breaksForManualShift(old,start,end,mins);
+ const shift={...(old||profileSnapshot(p)),id:old?.id||('manual-'+Date.now()+'-'+Math.random().toString(36).slice(2)),startedAt:start,closedAt:end,breakStartedAt:null,breaks};
+ const next={...state,shifts:existingId?state.shifts.map(s=>s.id===existingId?shift:s):[...state.shifts,shift]};
+ if(next.shifts.filter(s=>s.closedAt===null).length>1)throw Error('Solo puede haber un turno activo');
+ save(next);f.hidden=true;selectedDay=localDate(start);month=selectedDay.slice(0,7);render()
+})};
 try{state=JSON.parse(localStorage.getItem(KEY)||'null')||E.blank();if(state.schemaVersion!==1||!Array.isArray(state.profiles)||!Array.isArray(state.shifts))throw Error('Formato inválido');selectedProfile=E.active(state)?.profileId||state.profiles[0]?.id||'';render();showView('home');checkAutoBreak();if(!restoreGeoMonitor())proposeNextMark()}
 catch(err){state=E.blank();render();showView('home');message('No se pudieron cargar los datos locales: '+err.message,true)}
 const breakMonitor=setInterval(()=>{try{checkAutoBreak()}catch(e){message('No se pudo comprobar descanso automático: '+e.message,true)}},15000);
