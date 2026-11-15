@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-5-soft-separation";
+const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-6-contact-lock";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -284,10 +284,9 @@ function startOilScene(rootNode,hostNode){
    const leftBase=cx-bottomHalf,rightBase=cx+bottomHalf;
    const leftY=surfaceLine(leftBase,t),rightY=surfaceLine(rightBase,t);
    const centerY=surfaceLine(cx,t),contactY=(leftY+rightY+centerY)/3;
-   // Start as a flat surface swelling, then lift the complete hourglass
-   // with the emerging bead. After pinching, a wide remnant settles back.
-   const lift=smooth((phase-.015)/.115);
-   const beforeTip=contactY+(attachedTipY-contactY)*lift;
+   // While attached, follow the bead's actual contact coordinate each frame.
+   // Interpolating the bridge from the wave caused its upper tips to lag.
+   const beforeTip=attachedTipY;
    // The complete neck recovers four times as fast as its original
    // recovery after detachment; the upper tips still fall twice as fast
    // as the lower waist.
@@ -297,13 +296,15 @@ function startOilScene(rootNode,hostNode){
    const upperPhase=clamp((phase-.315)/.02);
    const upperRecovery=1-(1-upperPhase)*(1-upperPhase);
    const upperRest=Math.min(initialRadius*.13,Math.max(.25,lowerGap*.10));
-   const tip=phase<=.315?lowerTip:
+   // Locked to the bead until separation, then recover independently.
+   const tip=phase<=.315?attachedTipY:
     beforeTip+(waistY-upperRest-beforeTip)*upperRecovery;
    // Keep the very same rounded width before AND after the split:
    // no abrupt replacement with a hairline-sized upper half.
    const upperHalf=topHalf;
    const gap=Math.max(0,contactY-tip);
-   const neckVisibility=smooth((phase-.008)/.055)*
+   // The bridge fades in together with the emerging bead, not afterward.
+   const neckVisibility=smooth((phase-.002)/.035)*
     (1-smooth((phase-.355)/.0175));
    if(neckVisibility>.004&&gap>.7){
     // Each lower tip is attached to the sampled visible wave, even as the
