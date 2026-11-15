@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-4-nostroke";
+const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-5-soft-separation";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -102,7 +102,8 @@ function startOilScene(rootNode,hostNode){
  const ELLIPSE_K=.5522847498;
  function dropGeometry(rx,ry,tear){
   return {wide:rx*(1-.045*tear),shoulder:-ry*.05*tear,
-   tail:rx*ELLIPSE_K*(1-.88*tear)};
+   // A wider horizontal tangent rounds the elongated bottom of the bead.
+   tail:rx*ELLIPSE_K*(1-.60*tear)};
  }
  function dropOutline(cx,cy,rx,ry,tear){
   const {wide,shoulder,tail}=dropGeometry(rx,ry,tear);
@@ -236,7 +237,7 @@ function startOilScene(rootNode,hostNode){
    const cy=startCY+(filmY+radius-startCY)*travel-initialRadius*1.31*fusion;
    // Move the center down by the same distance as the vertical radius
    // grows: the top of the bead stays fixed while the bottom elongates.
-   const verticalExtension=ry*.32*tear;
+   const verticalExtension=ry*.42*tear;
    const shapeCY=cy+verticalExtension;
    const shapeRY=ry+verticalExtension;
    const opacity=smooth(phase/.045)*(1-smooth((phase-.985)/.015));
@@ -267,18 +268,19 @@ function startOilScene(rootNode,hostNode){
    // The liquid neck is a connected hourglass, NOT a short cone.
    // At birth its waist is 110% of the bubble's width, but below
    // a still-broader base. Stretching progressively thins that waist.
-   // The two upper tips track x = +/- rx*sin(theta) on the bubble's
-   // actual ellipse, from its mid-lower sides down to the bottom pole.
-   const theta=1.15*(1-release);
+   // Contract the two upper contacts, but stop on the curved lower
+   // shoulders of the drop rather than collapsing onto its bottom pole.
+   // This retains a visible rounded crown at the exact separation frame.
+   const theta=.65+.50*(1-release);
    const bottomHalf=Math.max(initialRadius*.80,rx*1.58);
-   // The neck's waist and the bead's lower tip contract together.
+   // The neck's waist and the bead's lower rounded edge contract together.
    const taper=smooth((phase-.17)/.145);
    const contact=dropContact(rx,shapeRY,tear,theta);
-   const topHalf=Math.max(.60,contact.half);
+   const topHalf=Math.max(radius*.38,contact.half);
    const attachedTipY=shapeCY+contact.y;
-   // The waist starts 10% wider than the actual bubble. It stays broader
-   // than the narrowing upper contact tips, never becoming a hairline.
-   const waistHalf=Math.max(radius*.26,topHalf*1.10,radius*(1.10-.83*taper));
+   // Keep a visibly broad, flowing waist as the crown closes; avoid
+   // rebuilding the same sharp, pinched apex during separation.
+   const waistHalf=Math.max(radius*.36,topHalf*1.10,radius*(1.10-.83*taper));
    const leftBase=cx-bottomHalf,rightBase=cx+bottomHalf;
    const leftY=surfaceLine(leftBase,t),rightY=surfaceLine(rightBase,t);
    const centerY=surfaceLine(cx,t),contactY=(leftY+rightY+centerY)/3;
@@ -297,8 +299,9 @@ function startOilScene(rootNode,hostNode){
    const upperRest=Math.min(initialRadius*.13,Math.max(.25,lowerGap*.10));
    const tip=phase<=.315?lowerTip:
     beforeTip+(waistY-upperRest-beforeTip)*upperRecovery;
-   const upperHalf=phase<=.315?topHalf:
-    .60+initialRadius*.055*afterRelease;
+   // Keep the very same rounded width before AND after the split:
+   // no abrupt replacement with a hairline-sized upper half.
+   const upperHalf=topHalf;
    const gap=Math.max(0,contactY-tip);
    const neckVisibility=smooth((phase-.008)/.055)*
     (1-smooth((phase-.355)/.0175));
@@ -318,7 +321,8 @@ function startOilScene(rootNode,hostNode){
      (bottomHalf-waistHalf)*.34,(waistHalf-upperHalf)*.34,waistHalf*.20));
     const waistRise=Math.max(.04,Math.min(
      Math.max(0,contactY-midY)*.30,upperSpan*.32));
-    const capRise=Math.min(upperHalf*.73,initialRadius*.22);
+    // A broad shallow dome, with smooth curvature rather than a tip.
+    const capRise=Math.min(upperHalf*1.14,initialRadius*.57);
     const tipHandleRatio=Math.min(.22,Math.max(.02,
      (waistHalf-upperHalf)/(upperHalf+.0001)*.42));
     const fmt=n=>n.toFixed(3);
