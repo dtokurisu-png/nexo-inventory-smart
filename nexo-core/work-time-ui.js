@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-6-contact-lock";
+const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-7-top-approach-fade";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -228,8 +228,8 @@ function startOilScene(rootNode,hostNode){
    const oval=Math.sin((phase-.315)*48+b.x*19)*wobble;
    const angle=12*Math.sin((phase-.315)*38+b.x*13)*wobble;
    const distortion=1+Math.sin(t*3+b.x*20)*.018;
-   // Collision happens at ~90%: then, and only then, the upper edge
-   // begins entering the liquid film and fading INCLUDING its outline.
+   // Keep the original collision / shape merger near phase .90.
+   // Upper transparency begins earlier and remains independent of fusion.
    const fusion=smooth((phase-.90)/.10);
    const rx=radius*(1+.045*oval+.55*fusion);
    const ry=radius*distortion*(1-.065*oval)*(1-.79*fusion);
@@ -248,14 +248,16 @@ function startOilScene(rootNode,hostNode){
    // bead INCLUDING the outline; recover both only AFTER separation.
    // The upper collision melt remains independent of this attachment mask.
    const joined=1-smooth((phase-.315)/.065);
-   const topMelt=clamp((phase-.900)/.085);
+   // Mirror the lower attachment fade as the bead approaches the upper
+   // film: begin BEFORE impact and gradually dissolve from top to bottom.
+   const topMelt=smooth((phase-.825)/.090);
    const alpha=[
     1-topMelt,
     1-joined*.04-topMelt*.96,
-    1-joined*.25-topMelt*.77,
-    1-joined*.54-topMelt*.52,
-    1-joined*.82-topMelt*.34,
-    1-joined-topMelt*.15
+    1-joined*.25-topMelt*.79,
+    1-joined*.54-topMelt*.42,
+    1-joined*.82-topMelt*.14,
+    1-joined-topMelt*.02
    ];
    for(let i=0;i<b.maskStops.length;i++)
     b.maskStops[i].setAttribute('stop-opacity',Math.max(0,alpha[i]).toFixed(3));
