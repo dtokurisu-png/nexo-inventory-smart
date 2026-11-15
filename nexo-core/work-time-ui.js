@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-1";
+const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-2";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -49,7 +49,7 @@ function startOilScene(rootNode,hostNode){
   maskGradient.setAttribute('y2','100%');
   // Keep the top third solid while the lower two thirds melt into the neck.
   // The same SVG mask covers the ellipse's fill AND its stroke outline.
-  const maskStops=[0,.18,.34,.56,.79,1].map(position=>{
+  const maskStops=[0,.14,.32,.50,.73,1].map(position=>{
    const stop=create('stop','',maskGradient);
    stop.setAttribute('offset',String(position*100)+'%');
    stop.setAttribute('stop-color','#fff');
@@ -95,19 +95,19 @@ function startOilScene(rootNode,hostNode){
  const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
  const smooth=x=>{const p=clamp(x);return p*p*(3-2*p)};
  const gaussian=(x,w)=>Math.exp(-Math.pow(x/Math.max(w,1),2));
- // A smooth upper bulb tapers continuously toward the lower point.
+ // Keep the head round at birth; taper only when the neck contracts.
  // For tear=0 these four cubics are an ordinary elliptical silhouette.
  const ELLIPSE_K=.5522847498;
  function dropGeometry(rx,ry,tear){
-  return {wide:rx*(1+.14*tear),shoulder:-ry*.16*tear,
-   tail:rx*ELLIPSE_K*(1-.74*tear)};
+  return {wide:rx*(1-.045*tear),shoulder:-ry*.05*tear,
+   tail:rx*ELLIPSE_K*(1-.88*tear)};
  }
  function dropOutline(cx,cy,rx,ry,tear){
   const {wide,shoulder,tail}=dropGeometry(rx,ry,tear);
   const k=ELLIPSE_K,yTop=cy-ry,yShoulder=cy+shoulder,yBottom=cy+ry;
   const fmt=n=>n.toFixed(2);
   return 'M '+fmt(cx)+' '+fmt(yTop)+
-   ' C '+fmt(cx+rx*k*(1+.12*tear))+' '+fmt(yTop)+
+   ' C '+fmt(cx+rx*k*(1-.045*tear))+' '+fmt(yTop)+
    ' '+fmt(cx+wide)+' '+fmt(yShoulder-ry*k)+
    ' '+fmt(cx+wide)+' '+fmt(yShoulder)+
    ' C '+fmt(cx+wide)+' '+fmt(yShoulder+ry*k)+
@@ -117,7 +117,7 @@ function startOilScene(rootNode,hostNode){
    ' '+fmt(cx-wide)+' '+fmt(yShoulder+ry*k)+
    ' '+fmt(cx-wide)+' '+fmt(yShoulder)+
    ' C '+fmt(cx-wide)+' '+fmt(yShoulder-ry*k)+
-   ' '+fmt(cx-rx*k*(1+.12*tear))+' '+fmt(yTop)+
+   ' '+fmt(cx-rx*k*(1-.045*tear))+' '+fmt(yTop)+
    ' '+fmt(cx)+' '+fmt(yTop)+' Z';
  }
  function dropContact(rx,ry,tear,theta){
@@ -217,23 +217,29 @@ function startOilScene(rootNode,hostNode){
    // points finish converging. By mid-flight it becomes round again.
    const release=smooth((phase-.145)/.175);
    const afterRelease=smooth((phase-.315)/.04);
-   // Taper on the ascent, then return smoothly to the current oval wobble.
-   const tear=smooth((phase-.045)/.20)*(1-smooth((phase-.315)/.17));
+   // The bulb stays round while growing. Tear shape begins together with
+   // the two shrinking hourglass corners and releases back into its oval.
+   const tear=smooth((phase-.17)/.145)*(1-smooth((phase-.315)/.16));
    const wobble=smooth((phase-.315)/.042)*
     (1-smooth((phase-.56)/.14));
    const oval=Math.sin((phase-.315)*48+b.x*19)*wobble;
    const angle=12*Math.sin((phase-.315)*38+b.x*13)*wobble;
-   const distortion=phase<.18?1.26-.26*born:1+Math.sin(t*3+b.x*20)*.032;
+   const distortion=1+Math.sin(t*3+b.x*20)*.018;
    // Collision happens at ~90%: then, and only then, the upper edge
    // begins entering the liquid film and fading INCLUDING its outline.
    const fusion=smooth((phase-.90)/.10);
-   const rx=radius*(1+.13*oval+.55*fusion);
-   const ry=radius*distortion*(1-.12*oval)*(1-.79*fusion);
+   const rx=radius*(1+.045*oval+.55*fusion);
+   const ry=radius*distortion*(1-.065*oval)*(1-.79*fusion);
    const startCY=surfaceY-radius*.5-initialRadius*2.2*born;
    const cy=startCY+(filmY+radius-startCY)*travel-initialRadius*1.31*fusion;
+   // Move the center down by the same distance as the vertical radius
+   // grows: the top of the bead stays fixed while the bottom elongates.
+   const verticalExtension=ry*.32*tear;
+   const shapeCY=cy+verticalExtension;
+   const shapeRY=ry+verticalExtension;
    const opacity=smooth(phase/.045)*(1-smooth((phase-.985)/.015));
-   b.bubble.setAttribute('d',dropOutline(cx,cy,rx,Math.max(1,ry),tear));
-   b.bubble.setAttribute('transform','rotate('+angle.toFixed(2)+' '+cx.toFixed(1)+' '+cy.toFixed(1)+')');
+   b.bubble.setAttribute('d',dropOutline(cx,shapeCY,rx,Math.max(1,shapeRY),tear));
+   b.bubble.setAttribute('transform','rotate('+angle.toFixed(2)+' '+cx.toFixed(1)+' '+shapeCY.toFixed(1)+')');
    b.bubble.setAttribute('opacity',(opacity*.68).toFixed(3));
    // During attachment, only the upper third stays essentially opaque.
    // The entire lower outline is masked along with the sphere's fill.
@@ -242,19 +248,19 @@ function startOilScene(rootNode,hostNode){
    const topMelt=clamp((phase-.900)/.085);
    const alpha=[
     1-topMelt,
-    1-topMelt*.96,
-    1-topMelt*.62-joined*.02,
-    1-topMelt*.15-joined*.43,
-    1-joined*.90,
-    1-joined
+    1-joined*.06-topMelt*.96,
+    1-joined*.17-topMelt*.77,
+    1-joined*.30-topMelt*.52,
+    1-joined*.52-topMelt*.34,
+    1-joined*.80-topMelt*.15
    ];
    for(let i=0;i<b.maskStops.length;i++)
     b.maskStops[i].setAttribute('stop-opacity',Math.max(0,alpha[i]).toFixed(3));
-   const maskHalfWidth=rx*(1+.14*tear);
-   b.maskRect.setAttribute('x',(cx-maskHalfWidth-4).toFixed(2));
-   b.maskRect.setAttribute('y',(cy-ry-4).toFixed(2));
-   b.maskRect.setAttribute('width',(maskHalfWidth*2+8).toFixed(2));
-   b.maskRect.setAttribute('height',(ry*2+8).toFixed(2));
+   const maskHalfWidth=rx+4;
+   b.maskRect.setAttribute('x',(cx-maskHalfWidth).toFixed(2));
+   b.maskRect.setAttribute('y',(shapeCY-shapeRY-4).toFixed(2));
+   b.maskRect.setAttribute('width',(maskHalfWidth*2).toFixed(2));
+   b.maskRect.setAttribute('height',(shapeRY*2+8).toFixed(2));
 
    // The liquid neck is a connected hourglass, NOT a short cone.
    // At birth its waist is 110% of the bubble's width, but below
@@ -263,10 +269,11 @@ function startOilScene(rootNode,hostNode){
    // actual ellipse, from its mid-lower sides down to the bottom pole.
    const theta=1.15*(1-release);
    const bottomHalf=Math.max(initialRadius*.80,rx*1.58);
-   const taper=smooth((phase-.085)/.265);
-   const contact=dropContact(rx,ry,tear,theta);
+   // The neck's waist and the bead's lower tip contract together.
+   const taper=smooth((phase-.17)/.145);
+   const contact=dropContact(rx,shapeRY,tear,theta);
    const topHalf=Math.max(.60,contact.half);
-   const attachedTipY=cy+contact.y;
+   const attachedTipY=shapeCY+contact.y;
    // The waist starts 10% wider than the actual bubble. It stays broader
    // than the narrowing upper contact tips, never becoming a hairline.
    const waistHalf=Math.max(radius*.26,topHalf*1.10,radius*(1.10-.83*taper));
@@ -335,7 +342,7 @@ function startOilScene(rootNode,hostNode){
    }else b.bridge.setAttribute('opacity','0');
    // The uppermost edge melts almost entirely into the sphere, and the
    // lower roots fade onto the matching wave with no visible seam.
-   const neckAlpha=[0,.018+.015*afterRelease,.17,.285,.115,0];
+   const neckAlpha=[.045,.11+.015*afterRelease,.205,.27,.145,0];
    for(let i=0;i<b.neckStops.length;i++)
     b.neckStops[i].setAttribute('stop-opacity',neckAlpha[i].toFixed(3));
 
@@ -349,7 +356,7 @@ function startOilScene(rootNode,hostNode){
     const progress=age/life;
     const x=cx+initialRadius*(d.side*.66+
      Math.sin(progress*6+b.x*23+d.speed)*.13*progress);
-    const y=detachY+initialRadius*.78-height*age*d.speed/.60;
+    const y=detachY+initialRadius*1.64-height*age*d.speed/.60;
     const size=Math.max(1,initialRadius*d.scale);
     d.node.setAttribute('cx',x.toFixed(2));
     d.node.setAttribute('cy',y.toFixed(2));
