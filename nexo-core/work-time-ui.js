@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-2";
+const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-3";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -47,9 +47,9 @@ function startOilScene(rootNode,hostNode){
   maskGradient.setAttribute('y1','0%');
   maskGradient.setAttribute('x2','0%');
   maskGradient.setAttribute('y2','100%');
-  // Keep the top third solid while the lower two thirds melt into the neck.
-  // The same SVG mask covers the ellipse's fill AND its stroke outline.
-  const maskStops=[0,.14,.32,.50,.73,1].map(position=>{
+  // Both the radial fill AND the stroke disappear down the lower edge
+  // while attached; the smooth gradient begins in the upper half.
+  const maskStops=[0,.20,.40,.60,.80,1].map(position=>{
    const stop=create('stop','',maskGradient);
    stop.setAttribute('offset',String(position*100)+'%');
    stop.setAttribute('stop-color','#fff');
@@ -67,11 +67,13 @@ function startOilScene(rootNode,hostNode){
   neckGradient.setAttribute('id',neckGradientId);
   neckGradient.setAttribute('x1','0%');neckGradient.setAttribute('y1','0%');
   neckGradient.setAttribute('x2','0%');neckGradient.setAttribute('y2','100%');
-  const neckStops=[0,.17,.42,.70,.88,1].map((position,j)=>{
+  // The connecting hourglass has a fully transparent upper edge,
+  // blending into the masked bottom of the still-attached bead.
+  const neckStops=[0,.20,.39,.66,.87,1].map((position,j)=>{
    const stop=create('stop','',neckGradient);
    stop.setAttribute('offset',String(position*100)+'%');
    stop.setAttribute('style','stop-color:rgb(var(--nx-fluid-rgb))');
-   stop.setAttribute('stop-opacity',String([.025,.13,.30,.31,.15,0][j]));
+   stop.setAttribute('stop-opacity',String([0,.003,.035,.22,.145,0][j]));
    return stop
   });
   const bridge=create('path','oil-bridge',bridges);
@@ -241,18 +243,18 @@ function startOilScene(rootNode,hostNode){
    b.bubble.setAttribute('d',dropOutline(cx,shapeCY,rx,Math.max(1,shapeRY),tear));
    b.bubble.setAttribute('transform','rotate('+angle.toFixed(2)+' '+cx.toFixed(1)+' '+shapeCY.toFixed(1)+')');
    b.bubble.setAttribute('opacity',(opacity*.68).toFixed(3));
-   // During attachment, only the upper third stays essentially opaque.
-   // The entire lower outline is masked along with the sphere's fill.
-   // The lower edge regains solidity only as the neck finishes pinching.
-   const joined=1-smooth((phase-.286)/.067);
+   // While the bead and bridge share a surface, erase the bottom of the
+   // bead INCLUDING the outline; recover both only AFTER separation.
+   // The upper collision melt remains independent of this attachment mask.
+   const joined=1-smooth((phase-.315)/.065);
    const topMelt=clamp((phase-.900)/.085);
    const alpha=[
     1-topMelt,
-    1-joined*.06-topMelt*.96,
-    1-joined*.17-topMelt*.77,
-    1-joined*.30-topMelt*.52,
-    1-joined*.52-topMelt*.34,
-    1-joined*.80-topMelt*.15
+    1-joined*.04-topMelt*.96,
+    1-joined*.25-topMelt*.77,
+    1-joined*.54-topMelt*.52,
+    1-joined*.82-topMelt*.34,
+    1-joined-topMelt*.15
    ];
    for(let i=0;i<b.maskStops.length;i++)
     b.maskStops[i].setAttribute('stop-opacity',Math.max(0,alpha[i]).toFixed(3));
@@ -342,7 +344,9 @@ function startOilScene(rootNode,hostNode){
    }else b.bridge.setAttribute('opacity','0');
    // The uppermost edge melts almost entirely into the sphere, and the
    // lower roots fade onto the matching wave with no visible seam.
-   const neckAlpha=[.045,.11+.015*afterRelease,.205,.27,.145,0];
+   // No visible upper cap or upper outline: the top of the hourglass
+   // vanishes gradually into the lower fade of the main drop.
+   const neckAlpha=[0,.003,.035,.22,.145,0];
    for(let i=0;i<b.neckStops.length;i++)
     b.neckStops[i].setAttribute('stop-opacity',neckAlpha[i].toFixed(3));
 
