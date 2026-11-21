@@ -1,7 +1,7 @@
 /* Nexo Group / Horas - map picker v3, manual opt-in geo naming via Photon demo */
 (function(){
 'use strict';
-const APP_VERSION="20261114-phase7-capture-2-all-recovery-4x-teardrop-10-estimated-break-window";
+const APP_VERSION="20261121-break-duration-edit-1";
 const ROOT_ID='nxo-work-time-app';
 if(!decodeURIComponent(location.pathname).replace(/\/+$/,'').endsWith('/blank-2'))return;
 if(window.__nexoWorkTimeApp&&window.__nexoWorkTimeVersion===APP_VERSION&&document.getElementById(ROOT_ID))return;
@@ -2401,7 +2401,7 @@ const actions=document.createElement('div');actions.className='actions';
 if(s.closedAt!==null){const edit=document.createElement('button');edit.textContent='Editar';edit.onclick=()=>editShift(s);actions.append(edit);const del=document.createElement('button');del.className='danger';del.textContent='Eliminar';del.onclick=()=>{if(confirm('¿Eliminar esta jornada?')){save({...state,shifts:state.shifts.filter(x=>x.id!==s.id)});message('Jornada eliminada.')}};actions.append(del)}
 row.append(actions);box.append(row)}
 }
-function editShift(s){const f=$('shift-form');f.hidden=false;f.elements.id.value=s.id;f.elements.startedAt.value=asInput(s.startedAt);f.elements.closedAt.value=asInput(s.closedAt);f.elements.breakMinutes.value=s.breaks.reduce((n,b)=>n+(b.endAt-b.startAt),0)/60000;f.scrollIntoView({behavior:'smooth',block:'nearest'})}
+function editShift(s){const f=$('shift-form');f.hidden=false;f.elements.id.value=s.id;f.elements.startedAt.value=asInput(s.startedAt);f.elements.closedAt.value=asInput(s.closedAt);f.elements.breakMinutes.value=String(Math.round(s.breaks.reduce((n,b)=>n+(b.endAt-b.startAt),0)/60000));f.elements.breakMinutes.dataset.prefilled=f.elements.breakMinutes.value;f.scrollIntoView({behavior:'smooth',block:'nearest'})}
 function guard(fn){try{fn();message('Cambios guardados.')}catch(e){message(e.message||'No se pudo guardar',true)}}
 const SETTINGS_INFOS={
  week:{title:'Cierre de semana',text:'Cada lugar tiene su propio día de cierre. Al modificarlo se recalculan los períodos semanales y las horas extra de ese trabajo, sin borrar marcas anteriores. Las tarifas de jornadas ya registradas se conservan.'},
@@ -2632,7 +2632,7 @@ captureInfo.onkeydown=e=>{
 $('report-open-calendar').onclick=()=>{selectedDay=localDate(new Date());month=selectedDay.slice(0,7);render();showView('calendar')};
 $('prev-month').onclick=()=>changeMonth(-1);$('next-month').onclick=()=>changeMonth(1);
 function changeMonth(step){const [y,m]=month.split('-').map(Number);const d=new Date(y,m-1+step,1);month=localDate(d).slice(0,7);selectedDay=month+'-01';render()}
-$('new-shift').onclick=()=>{if(!profile()){message('Primero agrega un lugar de trabajo',true);return}const f=$('shift-form');f.reset();f.hidden=false;f.elements.id.value='';f.elements.startedAt.value=selectedDay+'T09:00';f.elements.closedAt.value=selectedDay+'T17:00';f.elements.breakMinutes.value=0;f.scrollIntoView({behavior:'smooth',block:'nearest'})};
+$('new-shift').onclick=()=>{if(!profile()){message('Primero agrega un lugar de trabajo',true);return}const f=$('shift-form');f.reset();f.hidden=false;f.elements.id.value='';f.elements.startedAt.value=selectedDay+'T09:00';f.elements.closedAt.value=selectedDay+'T17:00';f.elements.breakMinutes.value=0;f.elements.breakMinutes.dataset.prefilled='';f.scrollIntoView({behavior:'smooth',block:'nearest'})};
 $('cancel-shift').onclick=()=>{$('shift-form').hidden=true};
 // Only infer a placement when no break hours were punched. This is an
 // estimate, not a real punch: use a variable point between 3h30 and 6h
@@ -2656,24 +2656,58 @@ function estimateUnpunchedBreak(start,end,minutes){
  const begin=Math.max(earliest,Math.min(latest,rounded));
  return [{startAt:begin,endAt:begin+duration,estimated:true,source:'manual-estimate'}]
 }
-// Edits to previously saved records must never silently move punched or
-// manually corrected breaks. Reuse their exact timestamps when duration
-// is unchanged, regardless of where the old break was located.
-function breaksForManualShift(old,start,end,minutes){
+// A user-edited total break duration overrides earlier manual or automatic
+// marks, without changing shift entry/exit or creating overlapping breaks.
+// Preserve real marks when the total is untouched; otherwise adjust existing
+// intervals from last to first and mark the correction's provenance.
+function breaksForManualShift(old,start,end,minutes,preserveRecorded=false){
  const existing=old?.breaks||[];
- const priorMinutes=existing.reduce((total,b)=>total+(b.endAt-b.startAt),0)/60000;
- if(old&&priorMinutes===minutes){
-  if(existing.some(b=>b.startAt<start||b.endAt>end))
+ const priorMs=existing.reduce((total,b)=>total+(b.endAt-b.startAt),0);
+ const targetMs=minutes*60000;
+ const withinShift=items=>{
+  let cursor=start;
+  for(const b of items){
+   if(!Number.isFinite(b.startAt)||!Number.isFinite(b.endAt)||b.startAt<cursor||b.endAt<=b.startAt||b.endAt>end)return false;
+   cursor=b.endAt;
+  }
+  return true;
+ };
+ if(old&&(preserveRecorded||priorMs===targetMs)){
+  if(!withinShift([...existing].sort((a,b)=>a.startAt-b.startAt)))
    throw Error('Los descansos existentes quedan fuera del nuevo horario. Revisá las horas antes de guardar.');
-  return existing.map(b=>({...b}))
+  return existing.map(b=>({...b}));
  }
- if(old&&existing.length){
-  const legacyEstimated=String(old.id).startsWith('manual-')&&
-   existing.length===1&&existing[0].endAt===old.closedAt;
-  if(!legacyEstimated&&!existing.every(b=>b.estimated===true||b.source==='manual-estimate'))
-   throw Error('Esta jornada tiene descansos con horas específicas. No se cambiarán sus marcas al editar la duración.');
+ if(!minutes)return [];
+ if(!old||!existing.length)return estimateUnpunchedBreak(start,end,minutes);
+ const sorted=existing.map(b=>({...b})).sort((a,b)=>a.startAt-b.startAt);
+ const asCorrection=items=>items.map(b=>({
+  ...b,provisional:false,corrected:true,correctedAt:Date.now(),
+  originalSource:b.originalSource||b.source||'recorded',
+  source:'manual-duration-correction'
+ }));
+ if(!withinShift(sorted))return asCorrection(estimateUnpunchedBreak(start,end,minutes));
+ let delta=targetMs-priorMs;
+ if(delta<0){
+  for(let i=sorted.length-1;i>=0&&delta<0;i--){
+   const remove=Math.min(-delta,sorted[i].endAt-sorted[i].startAt);
+   sorted[i].endAt-=remove;
+   delta+=remove;
+   if(sorted[i].endAt===sorted[i].startAt)sorted.splice(i,1);
+  }
+ }else if(delta>0){
+  for(let i=sorted.length-1;i>=0&&delta>0;i--){
+   const limit=i===sorted.length-1?end:sorted[i+1].startAt;
+   const add=Math.min(delta,limit-sorted[i].endAt);
+   sorted[i].endAt+=add;delta-=add;
+  }
+  for(let i=sorted.length-1;i>=0&&delta>0;i--){
+   const limit=i===0?start:sorted[i-1].endAt;
+   const add=Math.min(delta,sorted[i].startAt-limit);
+   sorted[i].startAt-=add;delta-=add;
+  }
  }
- return estimateUnpunchedBreak(start,end,minutes)
+ if(delta!==0||!withinShift(sorted))return asCorrection(estimateUnpunchedBreak(start,end,minutes));
+ return asCorrection(sorted);
 }
 $('shift-form').onsubmit=e=>{e.preventDefault();guard(()=>{
  const f=e.currentTarget,p=profile();if(!p)throw Error('Selecciona un perfil');
@@ -2683,7 +2717,8 @@ $('shift-form').onsubmit=e=>{e.preventDefault();guard(()=>{
  const existingId=f.elements.id.value,old=state.shifts.find(s=>s.id===existingId);
  if(existingId&&!old)throw Error('La jornada ya no existe');
  if(old&&old.closedAt===null)throw Error('Finaliza el turno antes de editarlo');
- const breaks=breaksForManualShift(old,start,end,mins);
+ const preserved=!!old&&f.elements.breakMinutes.value===f.elements.breakMinutes.dataset.prefilled;
+ const breaks=breaksForManualShift(old,start,end,mins,preserved);
  const shift={...(old||profileSnapshot(p)),id:old?.id||('manual-'+Date.now()+'-'+Math.random().toString(36).slice(2)),startedAt:start,closedAt:end,breakStartedAt:null,breaks};
  const next={...state,shifts:existingId?state.shifts.map(s=>s.id===existingId?shift:s):[...state.shifts,shift]};
  if(next.shifts.filter(s=>s.closedAt===null).length>1)throw Error('Solo puede haber un turno activo');
